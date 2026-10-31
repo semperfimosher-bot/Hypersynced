@@ -1,0 +1,785 @@
+from datetime import (
+    UTC,
+    datetime,
+)
+from typing import cast
+from uuid import uuid4
+
+import pytest
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from backend.app.database import get_session_factory
+from backend.app.models import Base
+from backend.app.models.account import User
+from backend.app.models.media import Track
+from backend.app.models.playlist import (
+    Playlist,
+    PlaylistTrack,
+    SavedPlaylist,
+)
+from backend.app.services import (
+    generated_playlists,
+)
+from backend.app.services.generated_playlists import (
+    MAX_GENERATED_TRACKS,
+    ensure_artist_playlist,
+    ensure_smart_playlist,
+    refresh_smart_playlists_for_track,
+    smart_cache_key,
+    smart_track_score,
+)
+from scripts.verification.postgres_database import create_postgres_test_engine
+
+
+@pytest.mark.asyncio
+async def test_saved_generated_playlist_refreshes_in_place_for_new_music() -> None:
+    run_id = uuid4().hex[:8]
+    artist = f"Generated Refresh {run_id}"
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        user = User(
+            id=uuid4(),
+            username=f"refresh-{run_id}",
+            username_normalized=f"refresh-{run_id}",
+            email=f"refresh-{run_id}@example.com",
+            password_hash="test-password-hash",
+            account_type="registered",
+            is_active=True,
+        )
+
+        session.add(user)
+
+        session.add_all(
+            [
+                Track(
+                    id=uuid4(),
+                    title="First",
+                    artist=artist,
+                    album="Generated",
+                    b2_object_key=f"audio/{run_id}-first.mp3",
+                    mime_type="audio/mpeg",
+                    file_size=1000,
+                    duration_seconds=180,
+                    is_published=True,
+                ),
+                Track(
+                    id=uuid4(),
+                    title="Second",
+                    artist=artist,
+                    album="Generated",
+                    b2_object_key=f"audio/{run_id}-second.mp3",
+                    mime_type="audio/mpeg",
+                    file_size=1000,
+                    duration_seconds=180,
+                    is_published=True,
+                ),
+            ]
+        )
+
+        await session.commit()
+
+        playlist = await ensure_artist_playlist(
+            session,
+            artist,
+        )
+
+        assert playlist is not None
+        assert playlist.title == artist
+
+        playlist_id = playlist.id
+
+        session.add(
+            SavedPlaylist(
+                user_id=user.id,
+                playlist_id=playlist_id,
+            )
+        )
+
+        await session.commit()
+
+        session.add(
+            Track(
+                id=uuid4(),
+                title="Third",
+                artist=artist,
+                album="Generated",
+                b2_object_key=f"audio/{run_id}-third.mp3",
+                mime_type="audio/mpeg",
+                file_size=1000,
+                duration_seconds=180,
+                is_published=True,
+            )
+        )
+
+        await session.commit()
+
+        refreshed = await ensure_artist_playlist(
+            session,
+            artist,
+        )
+
+        assert refreshed is not None
+        assert refreshed.id == playlist_id
+        assert refreshed.title == artist
+
+        track_count = (
+            await session.execute(
+                select(
+                    func.count(
+                        PlaylistTrack.id,
+                    )
+                ).where(
+                    PlaylistTrack.playlist_id
+                    == playlist_id,
+                )
+            )
+        ).scalar_one()
+
+        assert track_count == 3
+
+        saved = await session.get(
+            SavedPlaylist,
+            (
+                user.id,
+                playlist_id,
+            ),
+        )
+
+        assert saved is not None
+
+
+@pytest.mark.asyncio
+async def test_generated_artist_playlist_respects_configured_track_cap() -> None:
+    run_id = uuid4().hex[:8]
+    artist = f"Generated Full Catalog {run_id}"
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        matching_tracks = [
+            Track(
+                id=uuid4(),
+                title=f"Catalog Song {index:03d}",
+                artist=artist,
+                album="Full Catalog",
+                b2_object_key=(
+                    f"audio/{run_id}-catalog-{index:03d}.mp3"
+                ),
+                mime_type="audio/mpeg",
+                file_size=1000,
+                duration_seconds=180,
+                is_published=True,
+            )
+            for index in range(
+                MAX_GENERATED_TRACKS + 5,
+            )
+        ]
+
+        session.add_all(
+            matching_tracks
+        )
+
+        session.add(
+            Track(
+                id=uuid4(),
+                title="Unpublished",
+                artist=artist,
+                album="Full Catalog",
+                b2_object_key=(
+                    f"audio/{run_id}-unpublished.mp3"
+                ),
+                mime_type="audio/mpeg",
+                file_size=1000,
+                duration_seconds=180,
+                is_published=False,
+            )
+        )
+
+        session.add(
+            Track(
+                id=uuid4(),
+                title="Other Artist",
+                artist=f"Other Artist {run_id}",
+                album="Full Catalog",
+                b2_object_key=(
+                    f"audio/{run_id}-other-artist.mp3"
+                ),
+                mime_type="audio/mpeg",
+                file_size=1000,
+                duration_seconds=180,
+                is_published=True,
+            )
+        )
+
+        await session.commit()
+
+        playlist = await ensure_artist_playlist(
+            session,
+            artist,
+        )
+
+        assert playlist is not None
+
+        rows = list(
+            (
+                await session.execute(
+                    select(
+                        PlaylistTrack.track_id,
+                    ).where(
+                        PlaylistTrack.playlist_id
+                        == playlist.id,
+                    )
+                )
+            ).scalars().all()
+        )
+
+        assert len(rows) == MAX_GENERATED_TRACKS
+
+        matching_ids = {
+            track.id
+            for track in matching_tracks
+        }
+
+        assert set(rows).issubset(
+            matching_ids,
+        )
+
+
+@pytest.mark.asyncio
+async def test_legacy_essentials_title_is_removed_without_catalog_change() -> None:
+    run_id = uuid4().hex[:8]
+    artist = f"Generated Rename {run_id}"
+
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        session.add_all(
+            [
+                Track(
+                    id=uuid4(),
+                    title="First",
+                    artist=artist,
+                    album="Generated",
+                    b2_object_key=f"audio/{run_id}-rename-first.mp3",
+                    mime_type="audio/mpeg",
+                    file_size=1000,
+                    duration_seconds=180,
+                    is_published=True,
+                ),
+                Track(
+                    id=uuid4(),
+                    title="Second",
+                    artist=artist,
+                    album="Generated",
+                    b2_object_key=f"audio/{run_id}-rename-second.mp3",
+                    mime_type="audio/mpeg",
+                    file_size=1000,
+                    duration_seconds=180,
+                    is_published=True,
+                ),
+            ]
+        )
+
+        await session.commit()
+
+        playlist = await ensure_artist_playlist(
+            session,
+            artist,
+        )
+
+        assert playlist is not None
+
+        playlist_id = playlist.id
+        playlist.title = (
+            f"{artist} Essentials"
+        )
+
+        await session.commit()
+
+        renamed = await ensure_artist_playlist(
+            session,
+            artist,
+        )
+
+        assert renamed is not None
+        assert renamed.id == playlist_id
+        assert renamed.title == artist
+
+
+def test_country_smart_match_rejects_rap() -> None:
+    country = Track(
+        id=uuid4(),
+        title="Country Song",
+        artist="Country Artist",
+        album="Country Album",
+        genre="Country",
+        b2_object_key="audio/country.mp3",
+        mime_type="audio/mpeg",
+        file_size=1000,
+        duration_seconds=180,
+        is_published=True,
+    )
+
+    rap = Track(
+        id=uuid4(),
+        title="Rap Song",
+        artist="Rap Artist",
+        album="Rap Album",
+        genre="Hip-Hop/Rap",
+        b2_object_key="audio/rap.mp3",
+        mime_type="audio/mpeg",
+        file_size=1000,
+        duration_seconds=180,
+        is_published=True,
+    )
+
+    assert (
+        smart_track_score(
+            country,
+            "country",
+        )
+        > 0
+    )
+
+    assert (
+        smart_track_score(
+            rap,
+            "country",
+        )
+        == 0
+    )
+
+
+def test_chill_evening_query_uses_calm_genre_families() -> None:
+    soul = Track(
+        id=uuid4(),
+        title="Slow Lights",
+        artist="Night Artist",
+        album="After Dark",
+        genre="R&B/Soul",
+        b2_object_key="audio/soul.mp3",
+        mime_type="audio/mpeg",
+        file_size=1000,
+        duration_seconds=180,
+        is_published=True,
+    )
+
+    metal = Track(
+        id=uuid4(),
+        title="Heavy Lights",
+        artist="Loud Artist",
+        album="After Dark",
+        genre="Metal",
+        b2_object_key="audio/metal.mp3",
+        mime_type="audio/mpeg",
+        file_size=1000,
+        duration_seconds=180,
+        is_published=True,
+    )
+
+    assert (
+        smart_track_score(
+            soul,
+            "chill evening music",
+        )
+        > 0
+    )
+
+    assert (
+        smart_track_score(
+            metal,
+            "chill evening music",
+        )
+        == 0
+    )
+
+
+@pytest.mark.asyncio
+async def test_smart_genre_playlist_refreshes_when_matching_music_is_added() -> None:
+    run_id = uuid4().hex[:8]
+    engine = create_postgres_test_engine()
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with session_factory() as session:
+        user = User(
+            id=uuid4(),
+            username=f"smart-{run_id}",
+            username_normalized=f"smart-{run_id}",
+            email=f"smart-{run_id}@example.com",
+            password_hash="test-password-hash",
+            account_type="registered",
+            is_active=True,
+        )
+
+        first_country = Track(
+            id=uuid4(),
+            title="First Country",
+            artist=f"Country Artist {run_id}",
+            album="Country",
+            genre="Country",
+            b2_object_key=f"audio/{run_id}-country-1.mp3",
+            mime_type="audio/mpeg",
+            file_size=1000,
+            duration_seconds=180,
+            is_published=True,
+        )
+
+        rap = Track(
+            id=uuid4(),
+            title="Unrelated Rap",
+            artist=f"Rap Artist {run_id}",
+            album="Rap",
+            genre="Hip-Hop/Rap",
+            b2_object_key=f"audio/{run_id}-rap.mp3",
+            mime_type="audio/mpeg",
+            file_size=1000,
+            duration_seconds=180,
+            is_published=True,
+        )
+
+        session.add_all(
+            [
+                user,
+                first_country,
+                rap,
+            ]
+        )
+
+        await session.commit()
+
+        playlist = await ensure_smart_playlist(
+            session,
+            user.id,
+            "country",
+        )
+
+        assert playlist is not None
+
+        playlist_id = playlist.id
+
+        first_rows = list(
+            (
+                await session.execute(
+                    select(
+                        PlaylistTrack.track_id,
+                    ).where(
+                        PlaylistTrack.playlist_id
+                        == playlist_id,
+                    )
+                )
+            ).scalars().all()
+        )
+
+        assert first_rows == [
+            first_country.id,
+        ]
+
+        second_country = Track(
+            id=uuid4(),
+            title="Second Country",
+            artist=f"Another Country Artist {run_id}",
+            album="Country",
+            genre="Americana",
+            b2_object_key=f"audio/{run_id}-country-2.mp3",
+            mime_type="audio/mpeg",
+            file_size=1000,
+            duration_seconds=180,
+            is_published=True,
+        )
+
+        session.add(
+            second_country,
+        )
+
+        await session.commit()
+
+        refreshed_count = (
+            await refresh_smart_playlists_for_track(
+                session,
+                second_country,
+            )
+        )
+
+        assert refreshed_count >= 1
+
+        refreshed = await ensure_smart_playlist(
+            session,
+            user.id,
+            "country",
+        )
+
+        assert refreshed is not None
+        assert refreshed.id == playlist_id
+
+        refreshed_rows = set(
+            (
+                await session.execute(
+                    select(
+                        PlaylistTrack.track_id,
+                    ).where(
+                        PlaylistTrack.playlist_id
+                        == playlist_id,
+                    )
+                )
+            ).scalars().all()
+        )
+
+        assert refreshed_rows == {
+            first_country.id,
+            second_country.id,
+        }
+
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_smart_playlist_gains_future_matching_upload() -> None:
+    run_id = uuid4().hex[:8]
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        user = User(
+            id=uuid4(),
+            username=f"empty-smart-{run_id}",
+            username_normalized=f"empty-smart-{run_id}",
+            email=f"empty-smart-{run_id}@example.com",
+            password_hash="test-password-hash",
+            account_type="registered",
+            is_active=True,
+        )
+
+        session.add(user)
+        await session.commit()
+
+        playlist = await ensure_smart_playlist(
+            session,
+            user.id,
+            "country",
+        )
+
+        assert playlist is not None
+        assert playlist.generated_query == "country"
+        assert playlist.generated_kind == "genre"
+
+        initial_count = (
+            await session.execute(
+                select(
+                    func.count(
+                        PlaylistTrack.id,
+                    )
+                ).where(
+                    PlaylistTrack.playlist_id
+                    == playlist.id,
+                )
+            )
+        ).scalar_one()
+
+        assert initial_count >= 0
+
+        track = Track(
+            id=uuid4(),
+            title="Future Country Song",
+            artist=f"Future Country {run_id}",
+            album="Future",
+            genre="Country",
+            b2_object_key=f"audio/{run_id}-future-country.mp3",
+            mime_type="audio/mpeg",
+            file_size=1000,
+            duration_seconds=180,
+            is_published=True,
+        )
+
+        session.add(track)
+        await session.commit()
+
+        refreshed_count = await refresh_smart_playlists_for_track(
+            session,
+            track,
+        )
+
+        assert refreshed_count >= 1
+
+        final_count = (
+            await session.execute(
+                select(
+                    func.count(
+                        PlaylistTrack.id,
+                    )
+                ).where(
+                    PlaylistTrack.playlist_id
+                    == playlist.id,
+                )
+            )
+        ).scalar_one()
+
+        assert final_count == (
+            initial_count + 1
+        )
+
+
+@pytest.mark.asyncio
+async def test_generated_playlist_collision_does_not_rollback_unrelated_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    run_id = uuid4().hex[:8]
+    query = (
+        "collision "
+        + run_id
+    )
+    session_factory = get_session_factory()
+
+    async with session_factory() as session:
+        user = User(
+            id=uuid4(),
+            username=(
+                "collision-"
+                + run_id
+            ),
+            username_normalized=(
+                "collision-"
+                + run_id
+            ),
+            email=(
+                "collision-"
+                + run_id
+                + "@example.com"
+            ),
+            password_hash="test-password-hash",
+            account_type="registered",
+            is_active=True,
+        )
+
+        unrelated = Track(
+            id=uuid4(),
+            title="Unrelated",
+            artist="Unrelated Artist",
+            album="Unrelated Album",
+            genre=None,
+            b2_object_key=(
+                "audio/"
+                + run_id
+                + "-unrelated.mp3"
+            ),
+            mime_type="audio/mpeg",
+            is_published=True,
+        )
+
+        winner = Playlist(
+            owner_id=user.id,
+            title=query,
+            description="Existing winner",
+            visibility="generated",
+            generated_key=smart_cache_key(
+                user.id,
+                query,
+            ),
+            generated_query=query,
+            generated_kind="smart",
+            generator_version=3,
+            generated_at=datetime.now(
+                UTC,
+            ),
+        )
+
+        session.add_all(
+            [
+                user,
+                unrelated,
+                winner,
+            ]
+        )
+        await session.commit()
+
+        # Simulate the classic race: the initial lookup misses,
+        # another request has already inserted the same unique
+        # generated_key, and this caller also has unrelated
+        # pending work in its transaction.
+        unrelated.genre = "Country"
+
+        original_find = (
+            generated_playlists
+            ._find_smart_playlist
+        )
+        find_calls = 0
+
+        async def racing_find(
+            active_session,
+            user_id,
+            active_query,
+        ):
+            nonlocal find_calls
+            find_calls += 1
+
+            if find_calls == 1:
+                return None
+
+            return await original_find(
+                active_session,
+                user_id,
+                active_query,
+            )
+
+        monkeypatch.setattr(
+            generated_playlists,
+            "_find_smart_playlist",
+            racing_find,
+        )
+
+        resolved = await ensure_smart_playlist(
+            session,
+            user.id,
+            query,
+        )
+
+        assert resolved is not None
+        assert resolved.id == winner.id
+        assert unrelated.genre == "Country"
+
+        await session.commit()
+
+        persisted = await session.get(
+            Track,
+            unrelated.id,
+        )
+
+        assert persisted is not None
+        assert persisted.genre == "Country"
+
+
+@pytest.mark.asyncio
+async def test_smart_playlist_freshness_reuses_precomputed_catalog_timestamp() -> None:
+    now = datetime.now(UTC)
+    playlist = Playlist(
+        id=uuid4(),
+        title="country",
+        description=None,
+        visibility="generated",
+        owner_id=uuid4(),
+        generated_kind="smart",
+        generated_query="country",
+        generated_at=now,
+        generator_version=generated_playlists.GENERATOR_VERSION,
+    )
+
+    class Session:
+        calls = 0
+
+        async def execute(self, statement):
+            self.calls += 1
+            raise AssertionError("precomputed catalog freshness must avoid another query")
+
+    session = Session()
+    is_stale = await generated_playlists.generated_playlist_needs_refresh(
+        cast(AsyncSession, session),
+        playlist,
+        catalog_latest_track_update=now,
+        catalog_freshness_checked=True,
+    )
+
+    assert is_stale is False
+    assert session.calls == 0

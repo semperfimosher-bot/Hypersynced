@@ -1,0 +1,1744 @@
+from __future__ import annotations
+
+import hmac
+from datetime import (
+    UTC,
+    datetime,
+    timedelta,
+)
+from typing import Literal, cast
+from uuid import UUID
+
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    HTTPException,
+    Request,
+    status,
+)
+from pydantic import BaseModel, Field
+from sqlalchemy import (
+    and_,
+    delete,
+    func,
+    or_,
+    select,
+    update,
+)
+from sqlalchemy.orm import selectinload
+
+from ...config import get_settings
+from ...models.account import (
+    AccountType,
+    User,
+    UserRole,
+)
+from ...models.messaging import (
+    AdminNotification,
+    Message,
+    PushSubscription,
+)
+from ...security.rate_limit import enforce_rate_limit
+from ...services.admin_notifications import (
+    record_admin_activity,
+)
+from ...services.message_retention import (
+    MESSAGE_RETENTION_AFTER_VIEW,
+    delete_expired_messages,
+)
+from ...services.web_push import (
+    PushSubscriptionData,
+    deliver_message_push,
+    validate_push_endpoint,
+    web_push_enabled,
+)
+from ..dependencies import (
+    CurrentUser,
+    DatabaseSession,
+)
+
+router = APIRouter(
+    prefix="/messages",
+    tags=["messages"],
+)
+
+SharedMusicKind = Literal[
+    "track",
+    "album",
+    "artist",
+    "playlist",
+]
+
+DIRECT_MESSAGE_NOTIFICATION_KIND = (
+    "direct_message"
+)
+
+
+class SharedMusicItem(BaseModel):
+    kind: SharedMusicKind
+
+    key: str = Field(
+        min_length=1,
+        max_length=512,
+    )
+
+    title: str = Field(
+        min_length=1,
+        max_length=300,
+    )
+
+    subtitle: str | None = Field(
+        default=None,
+        max_length=300,
+    )
+
+    artwork_url: str | None = Field(
+        default=None,
+        max_length=4096,
+    )
+
+
+class MessageCreateRequest(BaseModel):
+    body: str = Field(
+        default="",
+        max_length=2000,
+    )
+
+    shared_music: SharedMusicItem | None = None
+
+
+class MessageResponse(BaseModel):
+    id: UUID
+    sender_username: str
+    recipient_username: str
+    body: str
+    created_at: datetime
+    viewed_at: datetime | None
+    expires_at: datetime | None
+    mine: bool
+
+    shared_music: SharedMusicItem | None = None
+
+
+class MessageUserResponse(BaseModel):
+    username: str
+    display_name: str
+    avatar_url: str | None = None
+
+
+class ConversationSummary(BaseModel):
+    username: str
+    display_name: str
+    avatar_url: str | None = None
+    latest_body: str
+    latest_at: datetime
+    unread_count: int
+
+
+class ConversationListResponse(BaseModel):
+    conversations: list[ConversationSummary]
+    unread_count: int
+
+
+class ConversationResponse(BaseModel):
+    participant: MessageUserResponse
+    messages: list[MessageResponse]
+
+
+class MessageNotification(BaseModel):
+    type: Literal["message"] = "message"
+    message_id: UUID
+    sender_username: str
+    sender_display_name: str
+    sender_avatar_url: str | None = None
+    recipient_username: str
+    preview: str
+    body: str
+    shared_music: SharedMusicItem | None = None
+    created_at: datetime
+
+
+class AdminActivityNotification(BaseModel):
+    type: Literal["admin_activity"] = "admin_activity"
+    notification_id: UUID
+    kind: str
+    title: str
+    body: str
+    actor_username: str | None = None
+    created_at: datetime
+
+
+class AdminAccountNotification(BaseModel):
+    type: Literal[
+        "admin_account_notification"
+    ] = "admin_account_notification"
+    notification_id: UUID
+    kind: str
+    title: str
+    body: str
+    actor_username: str | None = None
+    recipient_username: str
+    created_at: datetime
+
+
+class NotificationResponse(BaseModel):
+    unread_count: int
+    notifications: list[
+        MessageNotification
+        | AdminActivityNotification
+        | AdminAccountNotification
+    ]
+
+
+class PushKeys(BaseModel):
+    p256dh: str = Field(
+        min_length=1,
+        max_length=1024,
+    )
+    auth: str = Field(
+        min_length=1,
+        max_length=1024,
+    )
+
+
+class PushSubscriptionRequest(BaseModel):
+    endpoint: str = Field(
+        min_length=1,
+        max_length=4096,
+    )
+    keys: PushKeys
+
+
+class PushUnsubscribeRequest(BaseModel):
+    endpoint: str = Field(
+        min_length=1,
+        max_length=4096,
+    )
+
+
+class PushConfigResponse(BaseModel):
+    enabled: bool
+    public_key: str | None = None
+
+
+def _avatar_url(
+    user: User,
+) -> str | None:
+    if (
+        user.profile is None
+        or not user.profile.avatar_object_key
+    ):
+        return None
+
+    return (
+        "/api/users/"
+        + str(user.username)
+        + "/avatar"
+    )
+
+
+def _message_preview(
+    message: Message,
+) -> str:
+    body = (
+        message.body or ""
+    ).strip()
+
+    if body:
+        return body
+
+    if (
+        message.shared_kind
+        and message.shared_title
+    ):
+        labels = {
+            "track": "song",
+            "album": "album",
+            "artist": "artist",
+            "playlist": "playlist",
+        }
+
+        label = labels.get(
+            message.shared_kind,
+            "music",
+        )
+
+        return (
+            "Shared a "
+            + label
+            + ": "
+            + message.shared_title
+        )
+
+    return "Shared music"
+
+
+def _shared_music_response(
+    message: Message,
+) -> SharedMusicItem | None:
+    if (
+        not message.shared_kind
+        or not message.shared_key
+        or not message.shared_title
+    ):
+        return None
+
+    if message.shared_kind not in {
+        "track",
+        "album",
+        "artist",
+        "playlist",
+    }:
+        return None
+
+    return SharedMusicItem(
+        kind=cast(SharedMusicKind, message.shared_kind),
+        key=message.shared_key,
+        title=message.shared_title,
+        subtitle=(
+            message.shared_subtitle
+        ),
+        artwork_url=(
+            message.shared_artwork_url
+        ),
+    )
+
+
+def _admin_message_details(
+    *,
+    sender_username: str,
+    recipient_username: str,
+) -> str:
+    return (
+        "@"
+        + (
+            sender_username
+            or "unknown"
+        )
+        + " sent a private message to @"
+        + (
+            recipient_username
+            or "unknown"
+        )
+        + ". Message contents are not copied "
+        + "to administrator notifications."
+    )
+
+
+def _legacy_admin_message_details(
+    *,
+    sender_username: str,
+    recipient_username: str,
+    body: str,
+    shared_kind: str | None = None,
+    shared_title: str | None = None,
+    shared_subtitle: str | None = None,
+) -> str:
+    """
+    Reconstruct the pre-hardening notification body only so deleting an
+    old message can remove legacy admin copies that were stored without a
+    source_message_id. New notifications never use this content.
+    """
+
+    details = (
+        "@"
+        + (
+            sender_username
+            or "unknown"
+        )
+        + " sent a message to @"
+        + (
+            recipient_username
+            or "unknown"
+        )
+        + "."
+    )
+
+    if body:
+        details += (
+            "\n\nMessage:\n"
+            + body
+        )
+
+    if (
+        shared_kind
+        and shared_title
+    ):
+        details += (
+            "\n\nShared "
+            + shared_kind
+            + ': "'
+            + shared_title
+            + '"'
+        )
+
+        if shared_subtitle:
+            details += (
+                " — "
+                + shared_subtitle
+            )
+
+    return details
+
+
+def _message_user(
+    user: User,
+) -> MessageUserResponse:
+    return MessageUserResponse(
+        username=user.username or "",
+        display_name=(
+            user.profile.display_name
+            if user.profile
+            else user.username or "User"
+        ),
+        avatar_url=_avatar_url(user),
+    )
+
+
+def _message_response(
+    message: Message,
+    viewer: User,
+    sender: User,
+    recipient: User,
+) -> MessageResponse:
+    expires_at = (
+        message.viewed_at
+        + MESSAGE_RETENTION_AFTER_VIEW
+        if message.viewed_at
+        else None
+    )
+
+    return MessageResponse(
+        id=message.id,
+        sender_username=sender.username or "",
+        recipient_username=recipient.username or "",
+        body=message.body,
+        created_at=message.created_at,
+        viewed_at=message.viewed_at,
+        expires_at=expires_at,
+        mine=message.sender_id == viewer.id,
+        shared_music=(
+            _shared_music_response(
+                message,
+            )
+        ),
+    )
+
+
+async def _cleanup_expired(
+    session: DatabaseSession,
+) -> None:
+    await delete_expired_messages(
+        session,
+    )
+
+
+async def _get_message_user(
+    session: DatabaseSession,
+    username: str,
+) -> User:
+    normalized = username.strip().lower()
+
+    result = await session.execute(
+        select(User)
+        .options(
+            selectinload(User.profile),
+        )
+        .where(
+            User.username_normalized == normalized,
+            User.account_type == AccountType.REGISTERED,
+            User.is_active.is_(True),
+        )
+    )
+
+    target = result.scalar_one_or_none()
+
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    return target
+
+
+async def _load_users(
+    session: DatabaseSession,
+    user_ids: set[UUID],
+) -> dict[UUID, User]:
+    if not user_ids:
+        return {}
+
+    result = await session.execute(
+        select(User)
+        .options(
+            selectinload(User.profile),
+        )
+        .where(
+            User.id.in_(user_ids),
+        )
+    )
+
+    return {
+        user.id: user
+        for user in result.scalars().all()
+    }
+
+
+@router.get(
+    "/conversations",
+    response_model=ConversationListResponse,
+)
+async def list_conversations(
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> ConversationListResponse:
+    await _cleanup_expired(session)
+
+    result = await session.execute(
+        select(Message)
+        .where(
+            or_(
+                Message.sender_id == user.id,
+                Message.recipient_id == user.id,
+            )
+        )
+        .order_by(
+            Message.created_at.desc(),
+        )
+        .limit(500)
+    )
+
+    messages = result.scalars().all()
+
+    latest_by_user: dict[UUID, Message] = {}
+    other_ids: set[UUID] = set()
+
+    for message in messages:
+        other_id = (
+            message.recipient_id
+            if message.sender_id == user.id
+            else message.sender_id
+        )
+
+        other_ids.add(other_id)
+        latest_by_user.setdefault(
+            other_id,
+            message,
+        )
+
+    unread_result = await session.execute(
+        select(
+            Message.sender_id,
+            func.count(Message.id),
+        )
+        .where(
+            Message.recipient_id == user.id,
+            Message.viewed_at.is_(None),
+        )
+        .group_by(
+            Message.sender_id,
+        )
+    )
+
+    unread_by_user = {
+        sender_id: int(count)
+        for sender_id, count
+        in unread_result.all()
+    }
+
+    users = await _load_users(
+        session,
+        other_ids,
+    )
+
+    conversations: list[ConversationSummary] = []
+
+    for other_id, message in latest_by_user.items():
+        other = users.get(other_id)
+
+        if other is None:
+            continue
+
+        summary = _message_user(other)
+
+        conversations.append(
+            ConversationSummary(
+                username=summary.username,
+                display_name=summary.display_name,
+                avatar_url=summary.avatar_url,
+                latest_body=(
+                    _message_preview(
+                        message,
+                    )
+                ),
+                latest_at=message.created_at,
+                unread_count=unread_by_user.get(
+                    other_id,
+                    0,
+                ),
+            )
+        )
+
+    await session.commit()
+
+    return ConversationListResponse(
+        conversations=conversations,
+        unread_count=sum(
+            unread_by_user.values()
+        ),
+    )
+
+
+@router.get(
+    "/conversations/{username}",
+    response_model=ConversationResponse,
+)
+async def get_conversation(
+    username: str,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> ConversationResponse:
+    await _cleanup_expired(session)
+
+    target = await _get_message_user(
+        session,
+        username,
+    )
+
+    if target.id == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot message yourself.",
+        )
+
+    viewed_at = datetime.now(UTC)
+
+    incoming_message_ids = (
+        select(
+            Message.id,
+        )
+        .where(
+            Message.sender_id == target.id,
+            Message.recipient_id == user.id,
+        )
+    )
+
+    await session.execute(
+        update(Message)
+        .where(
+            Message.sender_id == target.id,
+            Message.recipient_id == user.id,
+            Message.viewed_at.is_(None),
+        )
+        .values(
+            viewed_at=viewed_at,
+        )
+    )
+
+    await session.execute(
+        delete(
+            AdminNotification,
+        ).where(
+            AdminNotification.recipient_id
+            == user.id,
+            AdminNotification.kind
+            == DIRECT_MESSAGE_NOTIFICATION_KIND,
+            AdminNotification.source_message_id
+            .in_(
+                incoming_message_ids,
+            ),
+        )
+    )
+
+    result = await session.execute(
+        select(Message)
+        .where(
+            or_(
+                and_(
+                    Message.sender_id == user.id,
+                    Message.recipient_id == target.id,
+                ),
+                and_(
+                    Message.sender_id == target.id,
+                    Message.recipient_id == user.id,
+                ),
+            )
+        )
+        .order_by(
+            Message.created_at.desc(),
+        )
+        .limit(500)
+    )
+
+    messages = list(
+        reversed(
+            result.scalars().all()
+        )
+    )
+
+    await session.commit()
+
+    return ConversationResponse(
+        participant=_message_user(target),
+        messages=[
+            _message_response(
+                message,
+                user,
+                (
+                    user
+                    if message.sender_id == user.id
+                    else target
+                ),
+                (
+                    target
+                    if message.recipient_id == target.id
+                    else user
+                ),
+            )
+            for message in messages
+        ],
+    )
+
+
+@router.post(
+    "/conversations/{username}",
+    response_model=MessageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def send_message(
+    username: str,
+    payload: MessageCreateRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> MessageResponse:
+    settings = get_settings()
+
+    await enforce_rate_limit(
+        request,
+        scope="message-send",
+        identity=str(user.id),
+        include_client=False,
+        limit=settings.message_send_rate_limit,
+        window_seconds=(
+            settings.message_send_rate_window_seconds
+        ),
+    )
+
+    await _cleanup_expired(session)
+
+    target = await _get_message_user(
+        session,
+        username,
+    )
+
+    if target.id == user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot message yourself.",
+        )
+
+    body = payload.body.strip()
+
+    shared_music = (
+        payload.shared_music
+    )
+
+    if (
+        not body
+        and shared_music is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Message cannot be empty."
+            ),
+        )
+
+    message = Message(
+        sender_id=user.id,
+        recipient_id=target.id,
+        body=body,
+        shared_kind=(
+            shared_music.kind
+            if shared_music
+            else None
+        ),
+        shared_key=(
+            shared_music.key
+            if shared_music
+            else None
+        ),
+        shared_title=(
+            shared_music.title
+            if shared_music
+            else None
+        ),
+        shared_subtitle=(
+            shared_music.subtitle
+            if shared_music
+            else None
+        ),
+        shared_artwork_url=(
+            shared_music.artwork_url
+            if shared_music
+            else None
+        ),
+    )
+
+    session.add(message)
+    await session.flush()
+
+    session.add(
+        AdminNotification(
+            recipient_id=target.id,
+            kind=(
+                DIRECT_MESSAGE_NOTIFICATION_KIND
+            ),
+            title="New message",
+            body="",
+            actor_username=(
+                user.username
+            ),
+            source_message_id=(
+                message.id
+            ),
+        )
+    )
+
+    subscription_result = await session.execute(
+        select(PushSubscription).where(
+            PushSubscription.user_id == target.id,
+        )
+    )
+
+    subscriptions: list[PushSubscriptionData] = [
+        {
+            "endpoint": subscription.endpoint,
+            "p256dh": subscription.p256dh,
+            "auth": subscription.auth,
+        }
+        for subscription
+        in subscription_result.scalars().all()
+    ]
+
+    await session.commit()
+
+    if subscriptions:
+        background_tasks.add_task(
+            deliver_message_push,
+            subscriptions,
+            user.username
+            or "HyperSynced user",
+        )
+
+    message_details = (
+        _admin_message_details(
+            sender_username=(
+                user.username
+                or ""
+            ),
+            recipient_username=(
+                target.username
+                or ""
+            ),
+        )
+    )
+
+    await record_admin_activity(
+        kind="message",
+        title="New user message",
+        body=message_details,
+        actor_user_id=user.id,
+        actor_username=user.username,
+        source_message_id=message.id,
+    )
+
+    return _message_response(
+        message,
+        user,
+        user,
+        target,
+    )
+
+
+@router.delete(
+    "/messages/{message_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_sent_message(
+    message_id: UUID,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    result = await session.execute(
+        select(
+            Message,
+        ).where(
+            Message.id
+            == message_id,
+            Message.sender_id
+            == user.id,
+        )
+    )
+
+    message = (
+        result.scalar_one_or_none()
+    )
+
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sent message not found.",
+        )
+
+    recipient = await session.get(
+        User,
+        message.recipient_id,
+    )
+
+    legacy_details = (
+        _legacy_admin_message_details(
+            sender_username=(
+                user.username
+                or ""
+            ),
+            recipient_username=(
+                recipient.username
+                if recipient
+                and recipient.username
+                else "unknown"
+            ),
+            body=message.body,
+            shared_kind=(
+                message.shared_kind
+            ),
+            shared_title=(
+                message.shared_title
+            ),
+            shared_subtitle=(
+                message.shared_subtitle
+            ),
+        )
+    )
+
+    await session.execute(
+        delete(
+            AdminNotification,
+        ).where(
+            or_(
+                AdminNotification.source_message_id
+                == message.id,
+                and_(
+                    AdminNotification.source_message_id
+                    .is_(
+                        None,
+                    ),
+                    AdminNotification.kind
+                    == "message",
+                    AdminNotification.title
+                    == "New user message",
+                    AdminNotification.actor_username
+                    == user.username,
+                    AdminNotification.body
+                    == legacy_details,
+                    AdminNotification.created_at
+                    >= (
+                        message.created_at
+                        - timedelta(
+                            seconds=2,
+                        )
+                    ),
+                    AdminNotification.created_at
+                    <= (
+                        message.created_at
+                        + timedelta(
+                            minutes=1,
+                        )
+                    ),
+                ),
+            )
+        )
+    )
+
+    await session.delete(
+        message,
+    )
+
+    await session.commit()
+
+
+@router.get(
+    "/notifications",
+    response_model=NotificationResponse,
+)
+async def message_notifications(
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> NotificationResponse:
+    await _cleanup_expired(session)
+
+    unread_result = await session.execute(
+        select(
+            Message,
+        )
+        .where(
+            Message.recipient_id
+            == user.id,
+            Message.viewed_at.is_(
+                None,
+            ),
+        )
+        .order_by(
+            Message.created_at.desc(),
+        )
+        .limit(50)
+    )
+
+    unread_messages = list(
+        unread_result
+        .scalars()
+        .all()
+    )
+
+    unread_ids = [
+        message.id
+        for message in unread_messages
+    ]
+
+    if unread_ids:
+        existing_result = (
+            await session.execute(
+                select(
+                    AdminNotification
+                    .source_message_id,
+                ).where(
+                    AdminNotification
+                    .recipient_id
+                    == user.id,
+                    AdminNotification.kind
+                    == DIRECT_MESSAGE_NOTIFICATION_KIND,
+                    AdminNotification
+                    .source_message_id
+                    .in_(
+                        unread_ids,
+                    ),
+                )
+            )
+        )
+
+        existing_ids = {
+            source_id
+            for source_id in
+            existing_result
+            .scalars()
+            .all()
+            if source_id is not None
+        }
+
+        for message in unread_messages:
+            if message.id in existing_ids:
+                continue
+
+            session.add(
+                AdminNotification(
+                    recipient_id=user.id,
+                    kind=(
+                        DIRECT_MESSAGE_NOTIFICATION_KIND
+                    ),
+                    title="New message",
+                    body="",
+                    source_message_id=(
+                        message.id
+                    ),
+                )
+            )
+
+        await session.flush()
+
+    direct_notification_result = (
+        await session.execute(
+            select(
+                AdminNotification,
+            )
+            .where(
+                AdminNotification.recipient_id
+                == user.id,
+                AdminNotification.kind
+                == DIRECT_MESSAGE_NOTIFICATION_KIND,
+                AdminNotification
+                .source_message_id
+                .is_not(
+                    None,
+                ),
+            )
+            .order_by(
+                AdminNotification
+                .created_at
+                .desc(),
+            )
+            .limit(20)
+        )
+    )
+
+    direct_notifications = list(
+        direct_notification_result
+        .scalars()
+        .all()
+    )
+
+    direct_message_ids = [
+        notification.source_message_id
+        for notification
+        in direct_notifications
+        if notification.source_message_id
+        is not None
+    ]
+
+    direct_messages_result = (
+        await session.execute(
+            select(
+                Message,
+            ).where(
+                Message.id.in_(
+                    direct_message_ids,
+                )
+            )
+        )
+        if direct_message_ids
+        else None
+    )
+
+    direct_messages = {
+        message.id:
+            message
+        for message in (
+            direct_messages_result
+            .scalars()
+            .all()
+            if direct_messages_result
+            is not None
+            else []
+        )
+    }
+
+    sender_ids = {
+        message.sender_id
+        for message in
+        direct_messages.values()
+    }
+
+    users = await _load_users(
+        session,
+        sender_ids,
+    )
+
+    notifications: list[
+        MessageNotification
+        | AdminActivityNotification
+        | AdminAccountNotification
+    ] = []
+
+    for notification in direct_notifications:
+        message = direct_messages.get(
+            notification
+            .source_message_id,
+        )
+
+        if (
+            message is None
+            or message.recipient_id
+            != user.id
+        ):
+            continue
+
+        sender = users.get(
+            message.sender_id,
+        )
+
+        if sender is None:
+            continue
+
+        summary = _message_user(
+            sender,
+        )
+
+        notifications.append(
+            MessageNotification(
+                message_id=message.id,
+                sender_username=(
+                    summary.username
+                ),
+                sender_display_name=(
+                    summary.display_name
+                ),
+                sender_avatar_url=(
+                    summary.avatar_url
+                ),
+                recipient_username=(
+                    user.username
+                    or ""
+                ),
+                preview=(
+                    _message_preview(
+                        message,
+                    )[:120]
+                ),
+                body=message.body,
+                shared_music=(
+                    _shared_music_response(
+                        message,
+                    )
+                ),
+                created_at=(
+                    notification
+                    .created_at
+                ),
+            )
+        )
+
+    if user.role == UserRole.ADMIN:
+        admin_result = await session.execute(
+            select(
+                AdminNotification,
+            )
+            .where(
+                AdminNotification.recipient_id
+                == user.id,
+                AdminNotification.kind
+                != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                AdminNotification.viewed_at
+                .is_(
+                    None,
+                ),
+            )
+            .order_by(
+                AdminNotification.created_at.desc(),
+            )
+            .limit(20)
+        )
+
+        admin_unread = list(
+            admin_result
+            .scalars()
+            .all()
+        )
+
+        notifications.extend(
+            [
+                AdminActivityNotification(
+                    notification_id=(
+                        notification.id
+                    ),
+                    kind=notification.kind,
+                    title=notification.title,
+                    body=notification.body,
+                    actor_username=(
+                        notification
+                        .actor_username
+                    ),
+                    created_at=(
+                        notification
+                        .created_at
+                    ),
+                )
+                for notification
+                in admin_unread
+            ]
+        )
+
+        account_result = await session.execute(
+            select(
+                AdminNotification,
+            )
+            .where(
+                AdminNotification.recipient_id
+                != user.id,
+                AdminNotification.kind
+                == DIRECT_MESSAGE_NOTIFICATION_KIND,
+                AdminNotification.viewed_at
+                .is_(
+                    None,
+                ),
+                AdminNotification.source_message_id
+                .is_not(
+                    None,
+                ),
+            )
+            .order_by(
+                AdminNotification.created_at.desc(),
+            )
+            .limit(20)
+        )
+
+        account_rows = list(
+            account_result
+            .scalars()
+            .all()
+        )
+
+        account_message_ids = [
+            row.source_message_id
+            for row in account_rows
+            if row.source_message_id
+            is not None
+        ]
+
+        account_messages_result = (
+            await session.execute(
+                select(
+                    Message,
+                ).where(
+                    Message.id.in_(
+                        account_message_ids,
+                    )
+                )
+            )
+            if account_message_ids
+            else None
+        )
+
+        account_messages = {
+            message.id:
+                message
+            for message in (
+                account_messages_result
+                .scalars()
+                .all()
+                if account_messages_result
+                is not None
+                else []
+            )
+        }
+
+        account_user_ids = {
+            user_id
+            for message in
+            account_messages.values()
+            for user_id in (
+                message.sender_id,
+                message.recipient_id,
+            )
+        }
+
+        account_users = await _load_users(
+            session,
+            account_user_ids,
+        )
+
+        for row in account_rows:
+            message = account_messages.get(
+                row.source_message_id,
+            )
+
+            if message is None:
+                continue
+
+            sender = account_users.get(
+                message.sender_id,
+            )
+
+            recipient = account_users.get(
+                message.recipient_id,
+            )
+
+            if recipient is None:
+                continue
+
+            sender_username = (
+                sender.username
+                if sender is not None
+                else None
+            )
+
+            recipient_username = (
+                recipient.username
+                or "unknown"
+            )
+
+            notifications.append(
+                AdminAccountNotification(
+                    notification_id=(
+                        row.id
+                    ),
+                    kind=(
+                        DIRECT_MESSAGE_NOTIFICATION_KIND
+                    ),
+                    title=(
+                        "Notification for @"
+                        + recipient_username
+                    ),
+                    body=(
+                        "New private message"
+                        + (
+                            " from @"
+                            + sender_username
+                            if sender_username
+                            else ""
+                        )
+                        + ". Message contents are hidden "
+                        + "from the administrator view."
+                    ),
+                    actor_username=(
+                        sender_username
+                    ),
+                    recipient_username=(
+                        recipient_username
+                    ),
+                    created_at=(
+                        row.created_at
+                    ),
+                )
+            )
+
+    notifications.sort(
+        key=lambda notification:
+            notification.created_at,
+        reverse=True,
+    )
+
+    direct_count_result = (
+        await session.execute(
+            select(
+                func.count(
+                    AdminNotification.id,
+                ),
+            ).where(
+                AdminNotification.recipient_id
+                == user.id,
+                AdminNotification.kind
+                == DIRECT_MESSAGE_NOTIFICATION_KIND,
+            )
+        )
+    )
+
+    direct_total = int(
+        direct_count_result.scalar_one()
+        or 0
+    )
+
+    admin_total = 0
+
+    if user.role == UserRole.ADMIN:
+        admin_count_result = (
+            await session.execute(
+                select(
+                    func.count(
+                        AdminNotification.id,
+                    ),
+                ).where(
+                    AdminNotification.recipient_id
+                    == user.id,
+                    AdminNotification.kind
+                    != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                    AdminNotification.viewed_at
+                    .is_(
+                        None,
+                    ),
+                )
+            )
+        )
+
+        admin_total = int(
+            admin_count_result.scalar_one()
+            or 0
+        )
+
+        account_count_result = (
+            await session.execute(
+                select(
+                    func.count(
+                        AdminNotification.id,
+                    ),
+                ).where(
+                    AdminNotification.recipient_id
+                    != user.id,
+                    AdminNotification.kind
+                    == DIRECT_MESSAGE_NOTIFICATION_KIND,
+                    AdminNotification.viewed_at
+                    .is_(
+                        None,
+                    ),
+                    AdminNotification
+                    .source_message_id
+                    .is_not(
+                        None,
+                    ),
+                )
+            )
+        )
+
+        admin_total += int(
+            account_count_result.scalar_one()
+            or 0
+        )
+
+    await session.commit()
+
+    return NotificationResponse(
+        unread_count=(
+            direct_total
+            + admin_total
+        ),
+        notifications=(
+            notifications[:20]
+        ),
+    )
+
+
+@router.post(
+    "/notifications/messages/{message_id}/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def read_message_notification(
+    message_id: UUID,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    result = await session.execute(
+        select(
+            Message,
+        ).where(
+            Message.id
+            == message_id,
+            Message.recipient_id
+            == user.id,
+        )
+    )
+
+    message = result.scalar_one_or_none()
+
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Message notification not found."
+            ),
+        )
+
+    if message.viewed_at is None:
+        message.viewed_at = datetime.now(
+            UTC,
+        )
+
+    await session.execute(
+        delete(
+            AdminNotification,
+        ).where(
+            AdminNotification.recipient_id
+            == user.id,
+            AdminNotification.kind
+            == DIRECT_MESSAGE_NOTIFICATION_KIND,
+            AdminNotification.source_message_id
+            == message.id,
+        )
+    )
+
+    await session.commit()
+
+
+@router.post(
+    "/admin-account-notifications/{notification_id}/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def read_admin_account_notification(
+    notification_id: UUID,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Administrator access required."
+            ),
+        )
+
+    result = await session.execute(
+        select(
+            AdminNotification,
+        ).where(
+            AdminNotification.id
+            == notification_id,
+            AdminNotification.recipient_id
+            != user.id,
+            AdminNotification.kind
+            == DIRECT_MESSAGE_NOTIFICATION_KIND,
+            AdminNotification.source_message_id
+            .is_not(
+                None,
+            ),
+        )
+    )
+
+    notification = (
+        result.scalar_one_or_none()
+    )
+
+    if notification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Account notification not found."
+            ),
+        )
+
+    if notification.viewed_at is None:
+        notification.viewed_at = datetime.now(
+            UTC,
+        )
+
+    await session.commit()
+
+
+@router.post(
+    "/admin-notifications/{notification_id}/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def read_admin_notification(
+    notification_id: UUID,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Administrator access required."
+            ),
+        )
+
+    # Dismissal can race with another tab or a repeated click. A scoped DELETE
+    # makes an already-dismissed row a successful no-op without revealing IDs
+    # belonging to another account or deleting direct-message notifications.
+    await session.execute(
+        delete(AdminNotification).where(
+            AdminNotification.id == notification_id,
+            AdminNotification.recipient_id == user.id,
+            AdminNotification.kind != DIRECT_MESSAGE_NOTIFICATION_KIND,
+        )
+    )
+    await session.commit()
+
+
+@router.get(
+    "/push/config",
+    response_model=PushConfigResponse,
+)
+async def push_config(
+    user: CurrentUser,
+) -> PushConfigResponse:
+    del user
+
+    settings = get_settings()
+    enabled = web_push_enabled()
+
+    return PushConfigResponse(
+        enabled=enabled,
+        public_key=(
+            settings.web_push_vapid_public_key
+            if enabled
+            else None
+        ),
+    )
+
+
+@router.post(
+    "/push/subscriptions",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def subscribe_push(
+    payload: PushSubscriptionRequest,
+    request: Request,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    try:
+        endpoint = validate_push_endpoint(
+            payload.endpoint,
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_400_BAD_REQUEST
+            ),
+            detail="Invalid push subscription endpoint.",
+        ) from None
+
+    result = await session.execute(
+        select(PushSubscription).where(
+            PushSubscription.endpoint
+            == endpoint,
+        )
+    )
+
+    subscription = result.scalar_one_or_none()
+
+    if subscription is None:
+        subscription = PushSubscription(
+            user_id=user.id,
+            endpoint=endpoint,
+            p256dh=payload.keys.p256dh,
+            auth=payload.keys.auth,
+            user_agent=request.headers.get(
+                "user-agent",
+            ),
+        )
+        session.add(subscription)
+    else:
+        same_keys = (
+            hmac.compare_digest(
+                subscription.p256dh,
+                payload.keys.p256dh,
+            )
+            and hmac.compare_digest(
+                subscription.auth,
+                payload.keys.auth,
+            )
+        )
+
+        if (
+            subscription.user_id
+            != user.id
+            and not same_keys
+        ):
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_409_CONFLICT
+                ),
+                detail=(
+                    "That push subscription is already "
+                    "registered to another account."
+                ),
+            )
+
+        subscription.user_id = user.id
+        subscription.p256dh = payload.keys.p256dh
+        subscription.auth = payload.keys.auth
+        subscription.user_agent = request.headers.get(
+            "user-agent",
+        )
+
+    await session.commit()
+
+
+@router.delete(
+    "/push/subscriptions",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def unsubscribe_push(
+    payload: PushUnsubscribeRequest,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> None:
+    await session.execute(
+        delete(PushSubscription).where(
+            PushSubscription.user_id == user.id,
+            PushSubscription.endpoint
+            == payload.endpoint,
+        )
+    )
+
+    await session.commit()

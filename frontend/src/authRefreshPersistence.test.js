@@ -1,0 +1,395 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+
+function createStorage(
+  initial = {},
+) {
+  const values =
+    new Map(
+      Object.entries(
+        initial,
+      ),
+    );
+
+  return {
+    getItem(key) {
+      return values.has(key)
+        ? values.get(key)
+        : null;
+    },
+
+    setItem(
+      key,
+      value,
+    ) {
+      values.set(
+        key,
+        String(value),
+      );
+    },
+
+    removeItem(key) {
+      values.delete(key);
+    },
+
+    clear() {
+      values.clear();
+    },
+  };
+}
+
+
+const sharedLocalStorage =
+  createStorage();
+
+const sharedSessionStorage =
+  createStorage();
+
+
+function resetStorage(
+  localValues = {},
+  sessionValues = {},
+) {
+  sharedLocalStorage.clear();
+  sharedSessionStorage.clear();
+
+  Object.entries(
+    localValues,
+  ).forEach(
+    ([key, value]) => {
+      sharedLocalStorage.setItem(
+        key,
+        value,
+      );
+    },
+  );
+
+  Object.entries(
+    sessionValues,
+  ).forEach(
+    ([key, value]) => {
+      sharedSessionStorage.setItem(
+        key,
+        value,
+      );
+    },
+  );
+
+  globalThis.localStorage =
+    sharedLocalStorage;
+
+  globalThis.sessionStorage =
+    sharedSessionStorage;
+}
+
+
+test(
+  "rejected refresh clears the stale remembered browser session",
+  async () => {
+    resetStorage({
+      hypersync_session_active:
+        "true",
+      hypersync_remember_me:
+        "true",
+      hypersync_user_profile:
+        JSON.stringify({
+          id:
+            "user-1",
+          username:
+            "listener",
+        }),
+    });
+
+    const originalFetch =
+      globalThis.fetch;
+
+    const calls = [];
+
+    globalThis.fetch =
+      async (
+        url,
+      ) => {
+        calls.push(
+          String(
+            url,
+          ),
+        );
+
+        return {
+          ok:
+            false,
+          status:
+            401,
+          headers: {
+            get() {
+              return null;
+            },
+          },
+          async json() {
+            return {
+              detail:
+                "Refresh session is no longer active.",
+            };
+          },
+        };
+      };
+
+    try {
+      const client =
+        await import(
+          `./api/client.js?refresh-persistence=${Date.now()}`
+        );
+
+      await assert.rejects(
+        () =>
+          client.refreshAccessToken(),
+        /Refresh session is no longer active/,
+      );
+
+      assert.equal(
+        localStorage.getItem(
+          "hypersync_session_active",
+        ),
+        null,
+      );
+
+      assert.equal(
+        localStorage.getItem(
+          "hypersync_user_profile",
+        ),
+        null,
+      );
+
+      const callCountAfterRefresh =
+        calls.length;
+
+      await assert.rejects(
+        () =>
+          client.apiRequest(
+            "/users/me/app-state",
+          ),
+        /Authentication required/,
+      );
+
+      assert.equal(
+        calls.length,
+        callCountAfterRefresh,
+      );
+    } finally {
+      globalThis.fetch =
+        originalFetch;
+    }
+  },
+);
+
+
+test(
+  "429 refresh cooldown suppresses repeated protected requests",
+  async () => {
+    resetStorage({
+      hypersync_session_active:
+        "true",
+      hypersync_remember_me:
+        "true",
+      hypersync_user_profile:
+        JSON.stringify({
+          id:
+            "user-1",
+          username:
+            "listener",
+        }),
+    });
+
+    const originalFetch =
+      globalThis.fetch;
+
+    const calls = [];
+
+    globalThis.fetch =
+      async (
+        url,
+      ) => {
+        calls.push(
+          String(
+            url,
+          ),
+        );
+
+        return {
+          ok:
+            false,
+          status:
+            429,
+          headers: {
+            get(name) {
+              return (
+                String(
+                  name,
+                ).toLowerCase() ===
+                "retry-after"
+              )
+                ? "60"
+                : null;
+            },
+          },
+          async json() {
+            return {
+              detail:
+                "Too many requests. Try again shortly.",
+            };
+          },
+        };
+      };
+
+    try {
+      const client =
+        await import(
+          `./api/client.js?refresh-cooldown=${Date.now()}`
+        );
+
+      await assert.rejects(
+        () =>
+          client.refreshAccessToken(),
+        /Too many requests/,
+      );
+
+      assert.equal(
+        calls.length,
+        1,
+      );
+
+      await assert.rejects(
+        () =>
+          client.apiRequest(
+            "/users/me/app-state",
+          ),
+        /Too many requests/,
+      );
+
+      assert.equal(
+        calls.length,
+        1,
+      );
+
+      assert.equal(
+        client.isAuthRefreshCoolingDown(),
+        true,
+      );
+
+      assert.equal(
+        localStorage.getItem(
+          "hypersync_session_active",
+        ),
+        "true",
+      );
+
+      assert.notEqual(
+        localStorage.getItem(
+          "hypersync_user_profile",
+        ),
+        null,
+      );
+    } finally {
+      globalThis.fetch =
+        originalFetch;
+    }
+  },
+);
+
+
+test(
+  "concurrent refresh calls share one network request",
+  async () => {
+    resetStorage({
+      hypersync_session_active:
+        "true",
+      hypersync_remember_me:
+        "true",
+      hypersync_user_profile:
+        JSON.stringify({
+          id:
+            "user-1",
+          username:
+            "listener",
+        }),
+    });
+
+    const originalFetch =
+      globalThis.fetch;
+
+    let calls = 0;
+
+    globalThis.fetch =
+      async () => {
+        calls += 1;
+
+        await new Promise(
+          (resolve) => {
+            setTimeout(
+              resolve,
+              15,
+            );
+          },
+        );
+
+        return {
+          ok:
+            true,
+          status:
+            200,
+          headers: {
+            get() {
+              return null;
+            },
+          },
+          async json() {
+            return {
+              access_token:
+                "shared-refresh-token",
+            };
+          },
+        };
+      };
+
+    try {
+      const client =
+        await import(
+          `./api/client.js?refresh-single-flight=${Date.now()}`
+        );
+
+      const [
+        first,
+        second,
+        third,
+      ] = await Promise.all([
+        client.refreshAccessToken(),
+        client.refreshAccessToken(),
+        client.refreshAccessToken(),
+      ]);
+
+      assert.equal(
+        calls,
+        1,
+      );
+
+      assert.equal(
+        first.access_token,
+        "shared-refresh-token",
+      );
+
+      assert.equal(
+        second.access_token,
+        "shared-refresh-token",
+      );
+
+      assert.equal(
+        third.access_token,
+        "shared-refresh-token",
+      );
+    } finally {
+      globalThis.fetch =
+        originalFetch;
+    }
+  },
+);

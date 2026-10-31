@@ -1,0 +1,2147 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import "fake-indexeddb/auto";
+
+async function loadMediaStoreModule() {
+  return import("./mediaStore.js")
+    .catch(() => ({}));
+}
+
+
+test(
+  "media cache key is stable across changing signed URLs",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.buildMediaCacheKey,
+      "function",
+    );
+
+    const firstKey =
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-abc",
+      );
+
+    const secondKey =
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-abc",
+      );
+
+    assert.equal(
+      firstKey,
+      secondKey,
+    );
+
+    assert.equal(
+      firstKey,
+      "track-123:version-abc",
+    );
+  },
+);
+
+
+test(
+  "different media versions produce different cache keys",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-one",
+      ),
+      "track-123:version-one",
+    );
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-two",
+      ),
+      "track-123:version-two",
+    );
+
+    assert.notEqual(
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-one",
+      ),
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "version-two",
+      ),
+    );
+  },
+);
+
+
+test(
+  "media cache key requires track id and media version",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        null,
+        "version-one",
+      ),
+      null,
+    );
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        null,
+      ),
+      null,
+    );
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        "",
+        "version-one",
+      ),
+      null,
+    );
+
+    assert.equal(
+      mediaStore.buildMediaCacheKey(
+        "track-123",
+        "",
+      ),
+      null,
+    );
+  },
+);
+
+test(
+  "media record keeps stable identity and explicit cache state",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.createMediaRecord,
+      "function",
+    );
+
+    const partialRecord =
+      mediaStore.createMediaRecord({
+        trackId: "track-123",
+        mediaVersion:
+          "version-abc",
+        mimeType: "audio/mpeg",
+        fileSize: 5_000_000,
+        state: "PARTIAL",
+      });
+
+    assert.deepEqual(
+      partialRecord,
+      {
+        key:
+          "track-123:version-abc",
+        trackId:
+          "track-123",
+        mediaVersion:
+          "version-abc",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          5_000_000,
+        state:
+          "PARTIAL",
+        cachedBytes:
+          0,
+        lastPlayedAt:
+          null,
+        expiresAt:
+          null,
+        warmUntil:
+          null,
+        warmByteStart:
+          null,
+        warmByteEnd:
+          null,
+      },
+    );
+
+    const completeRecord =
+      mediaStore.createMediaRecord({
+        trackId: "track-123",
+        mediaVersion:
+          "version-abc",
+        mimeType: "audio/mpeg",
+        fileSize: 5_000_000,
+        state: "COMPLETE",
+      });
+
+    assert.equal(
+      completeRecord.key,
+      partialRecord.key,
+    );
+
+    assert.equal(
+      completeRecord.state,
+      "COMPLETE",
+    );
+  },
+);
+
+test(
+  "media record accepts only known cache states",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    for (
+      const state of [
+        "NONE",
+        "PARTIAL",
+        "COMPLETE",
+        "PINNED",
+      ]
+    ) {
+      const record =
+        mediaStore.createMediaRecord({
+          trackId: "track-123",
+          mediaVersion:
+            "version-abc",
+          state,
+        });
+
+      assert.equal(
+        record.state,
+        state,
+      );
+    }
+
+    assert.throws(
+      () =>
+        mediaStore.createMediaRecord({
+          trackId: "track-123",
+          mediaVersion:
+            "version-abc",
+          state: "BROKEN",
+        }),
+      {
+        name: "RangeError",
+        message:
+          "Invalid media cache state: BROKEN",
+      },
+    );
+  },
+);
+
+test(
+  "media record persists across store reopen",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.saveMediaRecord,
+      "function",
+    );
+
+    assert.equal(
+      typeof mediaStore.getMediaRecord,
+      "function",
+    );
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId:
+          "persistent-track",
+        mediaVersion:
+          "persistent-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          5_000_000,
+        state:
+          "PARTIAL",
+      });
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    const reopenedStore =
+      await import(
+        "./mediaStore.js?reopen-test"
+      );
+
+    const restored =
+      await reopenedStore.getMediaRecord(
+        "persistent-track",
+        "persistent-version",
+      );
+
+    assert.deepEqual(
+      restored,
+      record,
+    );
+  },
+);
+
+test(
+  "audio chunk persists across store reopen",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.saveMediaChunk,
+      "function",
+    );
+
+    assert.equal(
+      typeof mediaStore.getMediaChunk,
+      "function",
+    );
+
+    const originalBytes =
+      new Uint8Array([
+        0x49,
+        0x44,
+        0x33,
+        0x04,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+      ]);
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "chunk-track",
+      mediaVersion:
+        "chunk-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        originalBytes.buffer,
+    });
+
+    const reopenedStore =
+      await import(
+        "./mediaStore.js?chunk-reopen-test"
+      );
+
+    const restored =
+      await reopenedStore.getMediaChunk(
+        "chunk-track",
+        "chunk-version",
+        0,
+      );
+
+    assert.ok(
+      restored,
+    );
+
+    assert.equal(
+      restored.mediaKey,
+      "chunk-track:chunk-version",
+    );
+
+    assert.equal(
+      restored.chunkIndex,
+      0,
+    );
+
+    assert.equal(
+      restored.byteStart,
+      0,
+    );
+
+    assert.equal(
+      restored.byteEnd,
+      originalBytes.byteLength - 1,
+    );
+
+    assert.equal(
+      restored.byteLength,
+      originalBytes.byteLength,
+    );
+
+    assert.ok(
+      restored.data instanceof
+        ArrayBuffer,
+    );
+
+    assert.deepEqual(
+      Array.from(
+        new Uint8Array(
+          restored.data,
+        ),
+      ),
+      Array.from(
+        originalBytes,
+      ),
+    );
+  },
+);
+
+test(
+  "saved chunks update cached bytes and media state",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const firstChunkSize =
+      256 * 1024;
+
+    const finalChunkSize =
+      4;
+
+    const fileSize =
+      firstChunkSize +
+      finalChunkSize;
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId:
+          "state-track",
+        mediaVersion:
+          "state-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize,
+        state:
+          "NONE",
+      });
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "state-track",
+      mediaVersion:
+        "state-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array(
+          firstChunkSize
+        ).buffer,
+    });
+
+    const partialRecord =
+      await mediaStore.getMediaRecord(
+        "state-track",
+        "state-version",
+      );
+
+    assert.equal(
+      partialRecord.cachedBytes,
+      firstChunkSize,
+    );
+
+    assert.equal(
+      partialRecord.state,
+      "PARTIAL",
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "state-track",
+      mediaVersion:
+        "state-version",
+      chunkIndex:
+        1,
+      byteStart:
+        firstChunkSize,
+      data:
+        new Uint8Array(
+          finalChunkSize
+        ).buffer,
+    });
+
+    const completeRecord =
+      await mediaStore.getMediaRecord(
+        "state-track",
+        "state-version",
+      );
+
+    assert.equal(
+      completeRecord.cachedBytes,
+      fileSize,
+    );
+
+    assert.equal(
+      completeRecord.state,
+      "COMPLETE",
+    );
+  },
+);
+
+test(
+  "replacing a chunk does not double count cached bytes",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId:
+          "replace-track",
+        mediaVersion:
+          "replace-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          10,
+        state:
+          "NONE",
+      });
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "replace-track",
+      mediaVersion:
+        "replace-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          1,
+          2,
+          3,
+          4,
+        ]).buffer,
+    });
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "replace-track",
+      mediaVersion:
+        "replace-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+        ]).buffer,
+    });
+
+    const updatedRecord =
+      await mediaStore.getMediaRecord(
+        "replace-track",
+        "replace-version",
+      );
+
+    assert.equal(
+      updatedRecord.cachedBytes,
+      6,
+    );
+
+    assert.equal(
+      updatedRecord.state,
+      "PARTIAL",
+    );
+
+    const storedChunk =
+      await mediaStore.getMediaChunk(
+        "replace-track",
+        "replace-version",
+        0,
+      );
+
+    assert.equal(
+      storedChunk.byteLength,
+      6,
+    );
+  },
+);
+
+test(
+  "media chunks must start at their deterministic byte position",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    await assert.rejects(
+      () =>
+        mediaStore.saveMediaChunk({
+          trackId:
+            "geometry-track",
+          mediaVersion:
+            "geometry-version",
+          chunkIndex:
+            1,
+          byteStart:
+            7,
+          data:
+            new Uint8Array([
+              1,
+              2,
+              3,
+              4,
+            ]).buffer,
+        }),
+      {
+        name: "RangeError",
+        message:
+          "Media chunk byte start does not match chunk index.",
+      },
+    );
+  },
+);
+
+test(
+  "media chunk cannot exceed the configured chunk size",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const oversizedChunk =
+      new Uint8Array(
+        256 * 1024 + 1,
+      ).buffer;
+
+    await assert.rejects(
+      () =>
+        mediaStore.saveMediaChunk({
+          trackId:
+            "oversized-track",
+          mediaVersion:
+            "oversized-version",
+          chunkIndex:
+            0,
+          byteStart:
+            0,
+          data:
+            oversizedChunk,
+        }),
+      {
+        name: "RangeError",
+        message:
+          "Media chunk exceeds maximum chunk size.",
+      },
+    );
+  },
+);
+
+test(
+  "bounded byte range maps to required chunk indexes",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.getChunkIndexesForRange,
+      "function",
+    );
+
+    assert.deepEqual(
+      mediaStore.getChunkIndexesForRange(
+        300_000,
+        700_000,
+      ),
+      [
+        1,
+        2,
+      ],
+    );
+  },
+);
+
+test(
+  "range crossing one chunk boundary returns both chunks",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.deepEqual(
+      mediaStore.getChunkIndexesForRange(
+        262_143,
+        262_144,
+      ),
+      [
+        0,
+        1,
+      ],
+    );
+  },
+);
+
+test(
+  "byte range cannot end before it starts",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.throws(
+      () =>
+        mediaStore.getChunkIndexesForRange(
+          700_000,
+          300_000,
+        ),
+      {
+        name: "RangeError",
+        message:
+          "Media byte range end cannot be before start.",
+      },
+    );
+  },
+);
+
+test(
+  "normalized byte range cannot contain negative positions",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.throws(
+      () =>
+        mediaStore.getChunkIndexesForRange(
+          -1,
+          0,
+        ),
+      {
+        name: "RangeError",
+        message:
+          "Media byte range positions cannot be negative.",
+      },
+    );
+  },
+);
+
+test(
+  "normalized byte range positions must be integers",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.throws(
+      () =>
+        mediaStore.getChunkIndexesForRange(
+          300_000.5,
+          700_000,
+        ),
+      {
+        name: "RangeError",
+        message:
+          "Media byte range positions must be integers.",
+      },
+    );
+
+    assert.throws(
+      () =>
+        mediaStore.getChunkIndexesForRange(
+          300_000,
+          700_000.5,
+        ),
+      {
+        name: "RangeError",
+        message:
+          "Media byte range positions must be integers.",
+      },
+    );
+  },
+);
+
+test(
+  "cached media range assembles bytes across chunk boundaries",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.getCachedMediaRange,
+      "function",
+    );
+
+    const chunkSize =
+      256 * 1024;
+
+    const firstChunk =
+      new Uint8Array(
+        chunkSize,
+      );
+
+    firstChunk[
+      chunkSize - 2
+    ] = 0xaa;
+
+    firstChunk[
+      chunkSize - 1
+    ] = 0xbb;
+
+    const secondChunk =
+      new Uint8Array([
+        0xcc,
+        0xdd,
+        0xee,
+        0xff,
+      ]);
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId:
+          "range-track",
+        mediaVersion:
+          "range-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          chunkSize +
+          secondChunk.byteLength,
+        state:
+          "NONE",
+      });
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "range-track",
+      mediaVersion:
+        "range-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        firstChunk.buffer,
+    });
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "range-track",
+      mediaVersion:
+        "range-version",
+      chunkIndex:
+        1,
+      byteStart:
+        chunkSize,
+      data:
+        secondChunk.buffer,
+    });
+
+    const data =
+      await mediaStore.getCachedMediaRange(
+        "range-track",
+        "range-version",
+        chunkSize - 2,
+        chunkSize + 1,
+      );
+
+    assert.ok(
+      data instanceof ArrayBuffer,
+    );
+
+    assert.deepEqual(
+      Array.from(
+        new Uint8Array(
+          data,
+        ),
+      ),
+      [
+        0xaa,
+        0xbb,
+        0xcc,
+        0xdd,
+      ],
+    );
+  },
+);
+
+test(
+  "cached media range returns null when stored bytes do not cover the full request",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId:
+          "partial-range-track",
+        mediaVersion:
+          "partial-range-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          8,
+        state:
+          "NONE",
+      });
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        "partial-range-track",
+      mediaVersion:
+        "partial-range-version",
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0xaa,
+          0xbb,
+          0xcc,
+          0xdd,
+        ]).buffer,
+    });
+
+    const data =
+      await mediaStore.getCachedMediaRange(
+        "partial-range-track",
+        "partial-range-version",
+        0,
+        5,
+      );
+
+    assert.equal(
+      data,
+      null,
+    );
+  },
+);
+
+test(
+  "ensuring a playback media record preserves existing cache progress",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.ensureMediaRecord,
+      "function",
+    );
+
+    const existing =
+      mediaStore.createMediaRecord({
+        trackId:
+          "seed-track",
+        mediaVersion:
+          "seed-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000,
+        state:
+          "PARTIAL",
+      });
+
+    existing.cachedBytes =
+      256;
+
+    existing.lastPlayedAt =
+      123;
+
+    existing.expiresAt =
+      456;
+
+    await mediaStore.saveMediaRecord(
+      existing,
+    );
+
+    const ensured =
+      await mediaStore.ensureMediaRecord({
+        trackId:
+          "seed-track",
+        mediaVersion:
+          "seed-version",
+        mimeType:
+          "audio/ogg",
+        fileSize:
+          2_000,
+      });
+
+    assert.equal(
+      ensured.state,
+      "PARTIAL",
+    );
+
+    assert.equal(
+      ensured.cachedBytes,
+      256,
+    );
+
+    assert.equal(
+      ensured.lastPlayedAt,
+      123,
+    );
+
+    assert.equal(
+      ensured.expiresAt,
+      456,
+    );
+
+    assert.equal(
+      ensured.mimeType,
+      "audio/ogg",
+    );
+
+    assert.equal(
+      ensured.fileSize,
+      2_000,
+    );
+  },
+);
+
+test(
+  "marking media played refreshes its 14-day sliding expiry",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.markMediaPlayed,
+      "function",
+    );
+
+    const trackId =
+      "ttl-track";
+
+    const mediaVersion =
+      "ttl-version";
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000_000,
+        state:
+          "PARTIAL",
+      });
+
+    record.cachedBytes =
+      256;
+
+    record.lastPlayedAt =
+      100;
+
+    record.expiresAt =
+      200;
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    const playedAt =
+      1_700_000_000_000;
+
+    const updated =
+      await mediaStore.markMediaPlayed(
+        trackId,
+        mediaVersion,
+        playedAt,
+      );
+
+    assert.equal(
+      updated.state,
+      "PARTIAL",
+    );
+
+    assert.equal(
+      updated.cachedBytes,
+      256,
+    );
+
+    assert.equal(
+      updated.lastPlayedAt,
+      playedAt,
+    );
+
+    assert.equal(
+      updated.expiresAt,
+      playedAt +
+        14 *
+          24 *
+          60 *
+          60 *
+          1000,
+    );
+
+    const persisted =
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      );
+
+    assert.equal(
+      persisted.lastPlayedAt,
+      playedAt,
+    );
+
+    assert.equal(
+      persisted.expiresAt,
+      updated.expiresAt,
+    );
+  },
+);
+
+test(
+  "expired media cleanup removes expired records and chunks but preserves fresh and pinned media",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    assert.equal(
+      typeof mediaStore.cleanupExpiredMedia,
+      "function",
+    );
+
+    const now =
+      1;
+
+    const expired =
+      mediaStore.createMediaRecord({
+        trackId:
+          "expired-track",
+        mediaVersion:
+          "expired-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000,
+        state:
+          "NONE",
+      });
+
+    expired.lastPlayedAt =
+        0;
+
+    expired.expiresAt =
+        now;
+
+    const fresh =
+      mediaStore.createMediaRecord({
+        trackId:
+          "fresh-track",
+        mediaVersion:
+          "fresh-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000,
+        state:
+          "NONE",
+      });
+
+    fresh.lastPlayedAt =
+        now;
+
+    fresh.expiresAt =
+        now + 1;
+
+    const pinned =
+      mediaStore.createMediaRecord({
+        trackId:
+          "pinned-track",
+        mediaVersion:
+          "pinned-version",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000,
+        state:
+          "PINNED",
+      });
+
+    pinned.lastPlayedAt =
+        0;
+
+    pinned.expiresAt =
+        now;
+
+    await mediaStore.saveMediaRecord(
+      expired,
+    );
+
+    await mediaStore.saveMediaRecord(
+      fresh,
+    );
+
+    await mediaStore.saveMediaRecord(
+      pinned,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        expired.trackId,
+      mediaVersion:
+        expired.mediaVersion,
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0x11,
+        ]).buffer,
+    });
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        fresh.trackId,
+      mediaVersion:
+        fresh.mediaVersion,
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0x22,
+        ]).buffer,
+    });
+
+    await mediaStore.saveMediaChunk({
+      trackId:
+        pinned.trackId,
+      mediaVersion:
+        pinned.mediaVersion,
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0x33,
+        ]).buffer,
+    });
+
+    const deletedCount =
+      await mediaStore.cleanupExpiredMedia(
+        now,
+      );
+
+    assert.ok(
+      deletedCount >= 1,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaRecord(
+        expired.trackId,
+        expired.mediaVersion,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaChunk(
+        expired.trackId,
+        expired.mediaVersion,
+        0,
+      ),
+      null,
+    );
+
+    assert.ok(
+      await mediaStore.getMediaRecord(
+        fresh.trackId,
+        fresh.mediaVersion,
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getMediaChunk(
+        fresh.trackId,
+        fresh.mediaVersion,
+        0,
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getMediaRecord(
+        pinned.trackId,
+        pinned.mediaVersion,
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getMediaChunk(
+        pinned.trackId,
+        pinned.mediaVersion,
+        0,
+      ),
+    );
+  },
+);
+
+test(
+  "marking media played does not overwrite concurrent chunk progress",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "concurrent-play-track";
+
+    const mediaVersion =
+      "concurrent-play-version";
+
+    await mediaStore.saveMediaRecord(
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000,
+        state:
+          "NONE",
+      }),
+    );
+
+    const playedAt =
+      1_800_000_000_000;
+
+    await Promise.all([
+      mediaStore.markMediaPlayed(
+        trackId,
+        mediaVersion,
+        playedAt,
+      ),
+
+      mediaStore.saveMediaChunk({
+        trackId,
+        mediaVersion,
+        chunkIndex:
+          0,
+        byteStart:
+          0,
+        data:
+          new Uint8Array([
+            0x55,
+          ]).buffer,
+      }),
+    ]);
+
+    const persisted =
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      );
+
+    assert.equal(
+      persisted.cachedBytes,
+      1,
+    );
+
+    assert.equal(
+      persisted.state,
+      "PARTIAL",
+    );
+
+    assert.equal(
+      persisted.lastPlayedAt,
+      playedAt,
+    );
+
+    assert.equal(
+      persisted.expiresAt,
+      playedAt +
+        mediaStore.MEDIA_EXPIRY_MS,
+    );
+  },
+);
+
+test(
+  "offline artwork persists in IndexedDB",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const data =
+      new Uint8Array([
+        0x89,
+        0x50,
+        0x4e,
+        0x47,
+      ]).buffer;
+
+    await mediaStore.saveArtwork({
+      trackId:
+        "artwork-track",
+      data,
+      mimeType:
+        "image/png",
+      sourceUrl:
+        "https://example.test/art.png",
+    });
+
+    const stored =
+      await mediaStore.getArtwork(
+        "artwork-track",
+      );
+
+    assert.equal(
+      stored.mimeType,
+      "image/png",
+    );
+
+    assert.deepEqual(
+      Array.from(
+        new Uint8Array(
+          stored.data,
+        ),
+      ),
+      [
+        0x89,
+        0x50,
+        0x4e,
+        0x47,
+      ],
+    );
+  },
+);
+
+test(
+  "offline lyrics persist by track",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const lyrics = {
+      status:
+        "synced",
+      synced_lyrics:
+        "[00:01.00]Hello",
+      plain_lyrics:
+        null,
+    };
+
+    await mediaStore.saveLyrics(
+      "lyrics-track",
+      lyrics,
+    );
+
+    assert.deepEqual(
+      await mediaStore.getLyrics(
+        "lyrics-track",
+      ),
+      lyrics,
+    );
+  },
+);
+
+test(
+  "download jobs survive page-level state changes",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    await mediaStore.saveDownloadJob({
+      id:
+        "playlist:test",
+      state:
+        "downloading",
+      totalBytes:
+        1000,
+      downloadedBytes:
+        400,
+      trackKeys: [
+        "one:v1",
+        "two:v1",
+      ],
+    });
+
+    const jobs =
+      await mediaStore.getDownloadJobs();
+
+    const job =
+      jobs.find(
+        (value) =>
+          value.id ===
+          "playlist:test",
+      );
+
+    assert.ok(job);
+
+    assert.equal(
+      job.state,
+      "downloading",
+    );
+
+    assert.equal(
+      job.downloadedBytes,
+      400,
+    );
+  },
+);
+
+
+test(
+  "download job progress updates preserve playlist metadata",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    await mediaStore.saveDownloadJob({
+      id:
+        "playlist:generated-test",
+      state:
+        "downloading",
+      playlistId:
+        "generated-test",
+      playlistTitle:
+        "Generated Test",
+      playlistVisibility:
+        "generated",
+      trackKeys: [
+        "one:v1",
+      ],
+    });
+
+    await mediaStore.saveDownloadJob({
+      id:
+        "playlist:generated-test",
+      state:
+        "complete",
+      downloadedBytes:
+        1000,
+      totalBytes:
+        1000,
+      trackKeys: [
+        "one:v1",
+      ],
+    });
+
+    const jobs =
+      await mediaStore.getDownloadJobs();
+
+    const job =
+      jobs.find(
+        (value) =>
+          value.id ===
+          "playlist:generated-test",
+      );
+
+    assert.ok(job);
+
+    assert.equal(
+      job.playlistId,
+      "generated-test",
+    );
+
+    assert.equal(
+      job.playlistTitle,
+      "Generated Test",
+    );
+
+    assert.equal(
+      job.playlistVisibility,
+      "generated",
+    );
+  },
+);
+
+
+test(
+  "removing downloaded media clears audio artwork and lyrics",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "remove-track";
+
+    const mediaVersion =
+      "remove-version";
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1,
+        state:
+          "PINNED",
+      });
+
+    record.cachedBytes =
+      1;
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId,
+      mediaVersion,
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0x42,
+        ]).buffer,
+    });
+
+    await mediaStore.saveArtwork({
+      trackId,
+      data:
+        new Uint8Array([
+          0x89,
+        ]).buffer,
+      mimeType:
+        "image/png",
+    });
+
+    await mediaStore.saveLyrics(
+      trackId,
+      {
+        status:
+          "plain",
+        plain_lyrics:
+          "hello",
+      },
+    );
+
+    assert.equal(
+      await mediaStore.removeDownloadedMedia(
+        trackId,
+        mediaVersion,
+      ),
+      true,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaChunk(
+        trackId,
+        mediaVersion,
+        0,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getArtwork(
+        trackId,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getLyrics(
+        trackId,
+      ),
+      null,
+    );
+  },
+);
+
+
+test(
+  "removing an old media version preserves shared assets for a newer pinned version",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "versioned-track";
+
+    for (
+      const mediaVersion
+      of [
+        "old-version",
+        "new-version",
+      ]
+    ) {
+      const record =
+        mediaStore.createMediaRecord({
+          trackId,
+          mediaVersion,
+          mimeType:
+            "audio/mpeg",
+          fileSize:
+            1,
+          state:
+            "PINNED",
+        });
+
+      record.cachedBytes =
+        1;
+
+      await mediaStore.saveMediaRecord(
+        record,
+      );
+    }
+
+    await mediaStore.saveArtwork({
+      trackId,
+      data:
+        new Uint8Array([
+          0x89,
+        ]).buffer,
+      mimeType:
+        "image/png",
+    });
+
+    await mediaStore.saveLyrics(
+      trackId,
+      {
+        status:
+          "plain",
+        plain_lyrics:
+          "still here",
+      },
+    );
+
+    await mediaStore.removeDownloadedMedia(
+      trackId,
+      "old-version",
+    );
+
+    assert.equal(
+      await mediaStore.getMediaRecord(
+        trackId,
+        "old-version",
+      ),
+      null,
+    );
+
+    assert.ok(
+      await mediaStore.getMediaRecord(
+        trackId,
+        "new-version",
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getArtwork(
+        trackId,
+      ),
+    );
+
+    assert.deepEqual(
+      await mediaStore.getLyrics(
+        trackId,
+      ),
+      {
+        status:
+          "plain",
+        plain_lyrics:
+          "still here",
+      },
+    );
+  },
+);
+
+
+test(
+  "scoped pin removal preserves media until the final reference is removed",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "pin-reference-track";
+
+    const mediaVersion =
+      "pin-reference-version";
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1,
+        state:
+          "PINNED",
+      });
+
+    record.cachedBytes =
+      1;
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await mediaStore.saveMediaChunk({
+      trackId,
+      mediaVersion,
+      chunkIndex:
+        0,
+      byteStart:
+        0,
+      data:
+        new Uint8Array([
+          0x42,
+        ]).buffer,
+    });
+
+    await mediaStore.saveArtwork({
+      trackId,
+      data:
+        new Uint8Array([
+          0x89,
+        ]).buffer,
+      mimeType:
+        "image/png",
+    });
+
+    await mediaStore.saveLyrics(
+      trackId,
+      {
+        status:
+          "plain",
+        plain_lyrics:
+          "shared",
+      },
+    );
+
+    const manualPin =
+      "owner:user-a|manual";
+
+    const playlistPin =
+      "owner:user-a|playlist:list-a";
+
+    await mediaStore.addMediaPinReference(
+      trackId,
+      mediaVersion,
+      manualPin,
+    );
+
+    await mediaStore.addMediaPinReference(
+      trackId,
+      mediaVersion,
+      playlistPin,
+    );
+
+    assert.equal(
+      await mediaStore.removeDownloadedMedia(
+        trackId,
+        mediaVersion,
+        playlistPin,
+      ),
+      true,
+    );
+
+    const retained =
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      );
+
+    assert.ok(retained);
+
+    assert.deepEqual(
+      mediaStore.getMediaPinReferences(
+        retained,
+      ),
+      [manualPin],
+    );
+
+    assert.ok(
+      await mediaStore.getMediaChunk(
+        trackId,
+        mediaVersion,
+        0,
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getArtwork(
+        trackId,
+      ),
+    );
+
+    assert.ok(
+      await mediaStore.getLyrics(
+        trackId,
+      ),
+    );
+
+    assert.equal(
+      await mediaStore.removeDownloadedMedia(
+        trackId,
+        mediaVersion,
+        manualPin,
+      ),
+      true,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaChunk(
+        trackId,
+        mediaVersion,
+        0,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getArtwork(
+        trackId,
+      ),
+      null,
+    );
+
+    assert.equal(
+      await mediaStore.getLyrics(
+        trackId,
+      ),
+      null,
+    );
+  },
+);
+
+test(
+  "newer existing media database versions reopen without losing cached media",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "newer-db-version-track";
+
+    const mediaVersion =
+      "newer-db-version-media";
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1,
+        state:
+          "PINNED",
+      });
+
+    record.cachedBytes =
+      1;
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    await new Promise(
+      (
+        resolve,
+        reject,
+      ) => {
+        const request =
+          indexedDB.open(
+            "hypersynced-media-v1",
+            5,
+          );
+
+        request.onsuccess =
+          () => {
+            request.result.close();
+            resolve();
+          };
+
+        request.onerror =
+          () => {
+            reject(
+              request.error,
+            );
+          };
+      },
+    );
+
+    const compatibleStore =
+      await import(
+        "./mediaStore.js?newer-db-version"
+      );
+
+    const restored =
+      await compatibleStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      );
+
+    assert.ok(
+      restored,
+    );
+
+    assert.equal(
+      restored.key,
+      record.key,
+    );
+
+    assert.equal(
+      restored.state,
+      "PINNED",
+    );
+
+    assert.equal(
+      restored.cachedBytes,
+      1,
+    );
+  },
+);
+
+
+test(
+  "warm playback lease protects expired media until the lease ends",
+  async () => {
+    const mediaStore =
+      await loadMediaStoreModule();
+
+    const trackId =
+      "warm-lease-track-" +
+      Date.now();
+
+    const mediaVersion =
+      "warm-lease-version";
+
+    const record =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion,
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          1_000_000,
+        state:
+          "PARTIAL",
+      });
+
+    record.expiresAt =
+      100;
+
+    await mediaStore.saveMediaRecord(
+      record,
+    );
+
+    const warm =
+      await mediaStore.markMediaWarm(
+        trackId,
+        mediaVersion,
+        {
+          warmUntil:
+            1_000,
+
+          byteStart:
+            0,
+
+          byteEnd:
+            262_143,
+        },
+      );
+
+    assert.equal(
+      warm.warmUntil,
+      1_000,
+    );
+
+    assert.equal(
+      warm.warmByteStart,
+      0,
+    );
+
+    assert.equal(
+      warm.warmByteEnd,
+      262_143,
+    );
+
+    await mediaStore.cleanupExpiredMedia(
+      500,
+    );
+
+    assert.ok(
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      ),
+    );
+
+    await mediaStore.cleanupExpiredMedia(
+      1_001,
+    );
+
+    assert.equal(
+      await mediaStore.getMediaRecord(
+        trackId,
+        mediaVersion,
+      ),
+      null,
+    );
+  },
+);
+
+test(
+  "expired-media cleanup removes automatic cache records that were never played",
+  async () => {
+    const mediaStore = await loadMediaStoreModule();
+    const trackId = "never-played-cleanup-track";
+    const mediaVersion = "never-played-cleanup-version";
+    const record = mediaStore.createMediaRecord({
+      trackId,
+      mediaVersion,
+      mimeType: "audio/mpeg",
+      fileSize: 4,
+      state: "PARTIAL",
+    });
+    await mediaStore.saveMediaRecord(record);
+    await mediaStore.saveMediaChunk({
+      trackId,
+      mediaVersion,
+      chunkIndex: 0,
+      byteStart: 0,
+      data: new Uint8Array([1, 2, 3, 4]).buffer,
+    });
+
+    const deleted = await mediaStore.cleanupExpiredMedia(Date.now());
+    assert.ok(deleted >= 1);
+    assert.equal(await mediaStore.getMediaRecord(trackId, mediaVersion), null);
+    assert.equal(await mediaStore.getMediaChunk(trackId, mediaVersion, 0), null);
+  },
+);
+

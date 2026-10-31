@@ -1,0 +1,29 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+COPY requirements.backend.txt ./
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir -r requirements.backend.txt
+
+
+RUN ffmpeg -version
+
+COPY backend ./backend
+COPY migrations ./migrations
+COPY alembic.ini ./
+COPY scripts/backend-entrypoint.sh /app/backend-entrypoint.sh
+
+WORKDIR /app/backend
+
+EXPOSE 8000
+
+CMD ["sh", "/app/backend-entrypoint.sh"]

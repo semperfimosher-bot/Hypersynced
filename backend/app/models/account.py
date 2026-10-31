@@ -1,0 +1,596 @@
+from __future__ import annotations
+
+from datetime import datetime
+from enum import StrEnum
+from uuid import UUID, uuid4
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Uuid,
+    false,
+    func,
+    true,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+
+def enum_values(enum_class: type[StrEnum]) -> list[str]:
+    return [member.value for member in enum_class]
+
+
+class AccountType(StrEnum):
+    GUEST = "guest"
+    REGISTERED = "registered"
+
+
+class UserRole(StrEnum):
+    USER = "user"
+    ADMIN = "admin"
+
+
+class User(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "users"
+
+    __table_args__ = (
+        CheckConstraint(
+            """
+            (
+                account_type = 'guest'
+                AND email IS NULL
+                AND username IS NULL
+                AND username_normalized IS NULL
+                AND password_hash IS NULL
+            )
+            OR
+            (
+                account_type = 'registered'
+                AND email IS NOT NULL
+                AND username IS NOT NULL
+                AND username_normalized IS NOT NULL
+                AND password_hash IS NOT NULL
+            )
+            """,
+            name="account_fields_match_type",
+        ),
+    )
+
+    account_type: Mapped[AccountType] = mapped_column(
+        Enum(
+            AccountType,
+            name="account_type",
+            native_enum=False,
+            create_constraint=True,
+            validate_strings=True,
+            values_callable=enum_values,
+        ),
+        nullable=False,
+        default=AccountType.GUEST,
+        server_default=AccountType.GUEST.value,
+    )
+
+    email: Mapped[str | None] = mapped_column(
+        String(320),
+        nullable=True,
+        unique=True,
+    )
+
+    username: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    username_normalized: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+        unique=True,
+    )
+
+    password_hash: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    role: Mapped[UserRole] = mapped_column(
+        Enum(
+            UserRole,
+            name="user_role",
+            native_enum=False,
+            create_constraint=True,
+            validate_strings=True,
+            values_callable=enum_values,
+        ),
+        nullable=False,
+        default=UserRole.USER,
+        server_default=UserRole.USER.value,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
+
+    is_email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    profile: Mapped[UserProfile | None] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+    sessions: Mapped[list[UserSession]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class UserProfile(
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "user_profiles"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    display_name: Mapped[str] = mapped_column(
+        String(80),
+        nullable=False,
+    )
+
+    bio: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    avatar_object_key: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+    )
+
+    is_public: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
+
+    music_activity_public: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    user: Mapped[User] = relationship(
+        back_populates="profile",
+    )
+
+
+class UserSession(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "user_sessions"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    family_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        nullable=False,
+        default=uuid4,
+        index=True,
+    )
+
+    refresh_token_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+    )
+
+    previous_refresh_token_hash: Mapped[
+        str | None
+    ] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
+
+    previous_refresh_valid_until: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(
+            timezone=True,
+        ),
+        nullable=True,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    last_used_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    revoke_reason: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    user_agent: Mapped[str | None] = mapped_column(
+        String(512),
+        nullable=True,
+    )
+
+    ip_address: Mapped[str | None] = mapped_column(
+        String(45),
+        nullable=True,
+    )
+
+    user: Mapped[User] = relationship(
+        back_populates="sessions",
+    )
+
+
+class PasswordRecovery(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "password_recoveries"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    otp_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    reset_token_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    attempts: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+
+    consumed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+class UserFollow(
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "user_follows"
+
+    __table_args__ = (
+        CheckConstraint(
+            "follower_id <> following_id",
+            name="ck_user_follows_not_self",
+        ),
+    )
+
+    follower_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    following_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+class ListeningEvent(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "listening_events"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    track_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "tracks.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    listened_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+    progress_seconds: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    completion_ratio: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    completed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    skipped: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+# Legacy schema mappings are retained for existing databases and admin cleanup.
+# PERFECT has no runtime device-control routes, services or background transport.
+class PlaybackDevice(
+    Base,
+):
+    __tablename__ = "playback_devices"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    device_id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
+    device_type: Mapped[str] = mapped_column(
+        String(24),
+        nullable=False,
+        default="browser",
+        server_default="browser",
+    )
+
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+
+class PlaybackCommand(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "playback_commands"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    target_device_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        index=True,
+    )
+
+    source_device_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    action: Mapped[str] = mapped_column(
+        String(24),
+        nullable=False,
+    )
+
+    value: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    consumed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    )
+
+
+class UserAppState(
+    TimestampMixin,
+    Base,
+):
+    __tablename__ = "user_app_state"
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    active_page: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="home",
+        server_default="home",
+    )
+
+    search_query: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        default="",
+        server_default="",
+    )
+
+    search_sort_mode: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="smart",
+        server_default="smart",
+    )
+
+    profile_username: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
+    playback_track_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(
+            "tracks.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+
+    playback_position_seconds: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+        server_default="0",
+    )
+
+    playback_paused: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
+
+    playback_device_id: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
+
+    playback_queue_track_ids: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        server_default="[]",
+    )
+
+    playback_queue_index: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    playback_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(
+            timezone=True,
+        ),
+        nullable=True,
+    )
