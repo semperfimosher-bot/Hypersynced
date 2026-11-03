@@ -2069,3 +2069,32 @@ A worker should be able to:
 12. Clean temporary data
 
 That complete system is the target represented by this repository.
+
+
+## Local-only development
+
+Use `go-local` when you want to run the exact working tree on your computer,
+including uncommitted edits. Unlike `go`, it does not fetch, pull, switch
+branches, reset, stash, or check out files. It starts the current checkout
+through `update-local.ps1` and leaves the normal `go` update workflow intact.
+
+Install the separate command once from the repository root:
+
+```powershell
+.\\install-go-local.ps1
+```
+
+Restart PowerShell (or dot-source your PowerShell profile), then run:
+
+```powershell
+go-local
+```
+
+Database migrations are skipped by default. To explicitly apply migrations
+before startup, run `go-local -RunMigrations`. To avoid dependency installation
+as well, run `go-local -SkipDependencies`. The standard local ports remain
+frontend `4153` and backend `8000`.
+
+The installer keeps its launcher copy under `%LOCALAPPDATA%\\HyperSync\\bin`
+and adds a separate `go-local` profile function and command shim; it does not
+replace the installed `go` launcher.
