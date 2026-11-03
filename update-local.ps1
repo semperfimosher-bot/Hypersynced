@@ -6,8 +6,7 @@ param(
     [switch]$NoBrowser,
     [switch]$SkipDependencies,
     [switch]$SkipMigrations,
-    [switch]$AfterGitUpdate,
-    [switch]$SkipGoInstall
+    [switch]$AfterGitUpdate
 )
 
 Set-StrictMode -Version Latest
@@ -248,12 +247,7 @@ if (-not $AfterGitUpdate) {
 Push-Location $RepoRoot
 try {
     $commitLabel = Get-GitOutput -Arguments @("log", "-1", "--oneline")
-    if ([string]::IsNullOrWhiteSpace($Branch)) {
-        Write-Host ("Starting current local working tree: " + $commitLabel) -ForegroundColor Cyan
-    }
-    else {
-        Write-Host ("Starting fetched branch " + $Branch + ": " + $commitLabel) -ForegroundColor Cyan
-    }
+    Write-Host ("Starting fetched branch " + $Branch + ": " + $commitLabel) -ForegroundColor Cyan
 }
 finally {
     Pop-Location
@@ -277,7 +271,7 @@ if (-not $SkipMigrations) {
 }
 
 
-if (-not $SkipGoInstall -and (Test-Path -LiteralPath $InstallGoScript)) {
+if (Test-Path -LiteralPath $InstallGoScript) {
     & $InstallGoScript -Quiet
 }
 
