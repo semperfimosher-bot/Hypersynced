@@ -659,6 +659,9 @@ async def reset_password_from_recovery_link(
 ):
     settings = get_settings()
     token = payload.token.strip()
+    reset_token_hash = _hash_recovery_reset_token(
+        token,
+    )
 
     await enforce_rate_limit(
         request,
@@ -691,35 +694,140 @@ async def reset_password_from_recovery_link(
         ),
     )
 
-    new_password_hash = (
-        await hash_password_async(
-            payload.new_password,
-        )
-    )
-
     session_factory = get_session_factory()
 
+    # Validate before running Argon2. This read-only preflight deliberately
+    # releases its database connection before the expensive password hash.
     async with session_factory() as session:
-        recovery_result = (
-            await session.execute(
-                select(
-                    PasswordRecovery,
-                )
-                .where(
-                    PasswordRecovery.reset_token_hash
-                    == _hash_recovery_reset_token(
-                        token,
-                    ),
-                    PasswordRecovery.consumed_at
-                    .is_(
-                        None,
-                    ),
-                )
-                .limit(
-                    1,
-                )
-                .with_for_update()
+        recovery_result = await session.execute(
+            select(
+                PasswordRecovery,
             )
+            .where(
+                PasswordRecovery.reset_token_hash
+                == reset_token_hash,
+                PasswordRecovery.consumed_at
+                .is_(
+                    None,
+                ),
+            )
+            .limit(
+                1,
+            )
+        )
+
+        recovery = (
+            recovery_result
+            .scalar_one_or_none()
+        )
+
+        if recovery is None:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_410_GONE
+                ),
+                detail=(
+                    "This password reset link "
+                    "is invalid or has expired."
+                ),
+            )
+
+        now = datetime.now(
+            UTC,
+        )
+        expires_at = _as_utc_aware(
+            recovery.expires_at,
+        )
+
+        if (
+            expires_at is None
+            or expires_at <= now
+        ):
+            await session.execute(
+                delete(
+                    PasswordRecovery,
+                ).where(
+                    PasswordRecovery.id
+                    == recovery.id,
+                )
+            )
+            await session.commit()
+
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_410_GONE
+                ),
+                detail=(
+                    "This password reset link "
+                    "has expired. Request a new one."
+                ),
+            )
+
+        user_result = await session.execute(
+            select(
+                User,
+            )
+            .where(
+                User.id
+                == recovery.user_id,
+                User.account_type
+                == AccountType.REGISTERED,
+            )
+            .limit(
+                1,
+            )
+        )
+
+        user = (
+            user_result
+            .scalar_one_or_none()
+        )
+
+        if user is None:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_404_NOT_FOUND
+                ),
+                detail=(
+                    "The account for this reset "
+                    "link no longer exists."
+                ),
+            )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_403_FORBIDDEN
+                ),
+                detail=(
+                    "This account is disabled."
+                ),
+            )
+
+    # Argon2 runs only after preflight validation and outside a DB transaction.
+    new_password_hash = await hash_password_async(
+        payload.new_password,
+    )
+
+    # Revalidate under row locks: another request may have consumed or replaced
+    # the recovery link while Argon2 was running.
+    async with session_factory() as session:
+        recovery_result = await session.execute(
+            select(
+                PasswordRecovery,
+            )
+            .where(
+                PasswordRecovery.reset_token_hash
+                == reset_token_hash,
+                PasswordRecovery.consumed_at
+                .is_(
+                    None,
+                ),
+            )
+            .limit(
+                1,
+            )
+            .with_for_update()
         )
 
         recovery = (
@@ -770,21 +878,20 @@ async def reset_password_from_recovery_link(
                 ),
             )
 
-        user_result = (
-            await session.execute(
-                select(
-                    User,
-                )
-                .where(
-                    User.id
-                    == recovery.user_id,
-                    User.account_type
-                    == AccountType.REGISTERED,
-                )
-                .limit(
-                    1,
-                )
+        user_result = await session.execute(
+            select(
+                User,
             )
+            .where(
+                User.id
+                == recovery.user_id,
+                User.account_type
+                == AccountType.REGISTERED,
+            )
+            .limit(
+                1,
+            )
+            .with_for_update()
         )
 
         user = (

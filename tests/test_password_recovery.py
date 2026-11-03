@@ -90,6 +90,47 @@ async def _register(
 
 
 @pytest.mark.asyncio
+async def test_invalid_password_reset_link_does_not_hash_password(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hashing_was_called = False
+
+    async def unexpected_password_hash(
+        password: str,
+    ) -> str:
+        nonlocal hashing_was_called
+        hashing_was_called = True
+        raise AssertionError(
+            "Password hashing must not run for an invalid reset link."
+        )
+
+    monkeypatch.setattr(
+        auth_routes,
+        "hash_password_async",
+        unexpected_password_hash,
+    )
+
+    transport = ASGITransport(
+        app=app,
+    )
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/auth/password-recovery/reset",
+            json={
+                "token": "this-is-not-a-valid-reset-token",
+                "new_password": "replacement-password",
+            },
+        )
+
+    assert response.status_code == 410
+    assert hashing_was_called is False
+
+
+@pytest.mark.asyncio
 async def test_login_does_not_reveal_account_state() -> None:
     transport = ASGITransport(
         app=app,
