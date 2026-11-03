@@ -748,3 +748,109 @@ async def test_expired_access_session_deletes_itself_from_database() -> None:
             )
 
             assert row is None
+
+@pytest.mark.asyncio
+async def test_expired_previous_refresh_token_does_not_affect_other_session() -> None:
+    transport = ASGITransport(
+        app=app,
+    )
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as client:
+        registered = await _register(client)
+
+        claims = decode_access_token(
+            registered["access_token"],
+        )
+
+        original_refresh_token = client.cookies.get(
+            "hypersync_refresh",
+        )
+
+        assert original_refresh_token
+
+        refreshed = await client.post(
+            "/api/auth/refresh",
+        )
+
+        assert refreshed.status_code == 200
+
+        current_refresh_token = client.cookies.get(
+            "hypersync_refresh",
+        )
+
+        assert current_refresh_token
+        assert current_refresh_token != original_refresh_token
+
+    session_factory = get_session_factory()
+    sibling_id = uuid4()
+    sibling_token = create_refresh_token()
+
+    async with session_factory() as session:
+        current = await session.get(
+            UserSession,
+            claims.session_id,
+        )
+
+        assert current is not None
+
+        # Expire the previous-token grace period.
+        current.previous_refresh_valid_until = (
+            datetime.now(UTC) - timedelta(seconds=1)
+        )
+
+        # Create a separate active browser session.
+        session.add(
+            UserSession(
+                id=sibling_id,
+                user_id=current.user_id,
+                family_id=uuid4(),
+                refresh_token_hash=hash_refresh_token(
+                    sibling_token,
+                ),
+                expires_at=(
+                    datetime.now(UTC) + timedelta(days=2)
+                ),
+            )
+        )
+
+        await session.commit()
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={
+            "Cookie": (
+                "hypersync_refresh="
+                + original_refresh_token
+            ),
+        },
+    ) as stale_tab:
+        response = await stale_tab.post(
+            "/api/auth/refresh",
+        )
+
+        assert response.status_code == 401
+
+    async with session_factory() as session:
+        current = await session.get(
+            UserSession,
+            claims.session_id,
+        )
+
+        sibling = await session.get(
+            UserSession,
+            sibling_id,
+        )
+
+        assert current is not None
+        assert current.revoked_at is None
+        assert (
+            current.refresh_token_hash
+            == hash_refresh_token(current_refresh_token)
+        )
+
+        assert sibling is not None
+        assert sibling.revoked_at is None
