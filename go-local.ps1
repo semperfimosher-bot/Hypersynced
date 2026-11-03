@@ -44,6 +44,7 @@ $parameters = @{
     NoBrowser = $NoBrowser
     SkipDependencies = $SkipDependencies
     AfterGitUpdate = $true
+    SkipGoInstall = $true
 }
 if (-not $RunMigrations) {
     $parameters.SkipMigrations = $true
