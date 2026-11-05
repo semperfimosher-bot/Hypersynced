@@ -379,11 +379,14 @@ async def stream_audio(
     downloaded = None
     try:
         bucket = await run_blocking(get_b2_bucket)
-        file_info = await run_blocking(
-            bucket.get_file_info_by_name,
-            track.b2_object_key,
-        )
-        file_size = file_info.size
+        file_size = track.file_size
+
+        if not isinstance(file_size, int) or file_size <= 0:
+            file_info = await run_blocking(
+                bucket.get_file_info_by_name,
+                track.b2_object_key,
+            )
+            file_size = file_info.size
         start, end = parse_range(
             range,
             file_size,
