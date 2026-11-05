@@ -3252,6 +3252,16 @@ async function downloadOpenedPlaylist() {
                             setSelectedTrackIndex(
                               trackIndex,
                             );
+                            void player.warmTrackForPlayback(
+                              track.id,
+                              track,
+                            );
+                          }}
+                          onFocus={() => {
+                            void player.warmTrackForPlayback(
+                              track.id,
+                              track,
+                            );
                           }}
                           onMouseLeave={() => {
                             setSelectedTrackIndex(
@@ -3794,6 +3804,16 @@ displayResults.tracks.length > 0 ? (
                         onMouseEnter={() => {
                         setSelectedTrackIndex(
                         trackIndex,
+                        );
+                        void player.warmTrackForPlayback(
+                        track.id,
+                        track,
+                        );
+                        }}
+                        onFocus={() => {
+                        void player.warmTrackForPlayback(
+                        track.id,
+                        track,
                         );
                         }}
                         onMouseLeave={() => {
