@@ -2770,6 +2770,18 @@ if (offline) {
                 ]
                   .filter(Boolean)
                   .join(" ")}
+                onMouseEnter={() => {
+                  void player.warmTrackForPlayback(
+                    track.id,
+                    track,
+                  );
+                }}
+                onFocus={() => {
+                  void player.warmTrackForPlayback(
+                    track.id,
+                    track,
+                  );
+                }}
                 onClick={
                   playTrack
                 }
