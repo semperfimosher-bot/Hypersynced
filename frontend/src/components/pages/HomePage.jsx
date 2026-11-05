@@ -591,6 +591,18 @@ useQuietRefresh(
           {...trackActionMenu.getTriggerProps(
             track,
           )}
+          onMouseEnter={() => {
+            void player.warmTrackForPlayback(
+              track.id,
+              track,
+            );
+          }}
+          onFocus={() => {
+            void player.warmTrackForPlayback(
+              track.id,
+              track,
+            );
+          }}
           onClick={() =>
             playTrack(
               track.id,
