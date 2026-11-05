@@ -168,32 +168,52 @@ const queuedAudioWarmups =
 function warmQueuedAudioEntry(
   entry,
 ) {
+  return warmTrackForPlayback(
+    entry?.id,
+    entry?.meta ?? {},
+  );
+}
+
+
+export function warmTrackForPlayback(
+  trackId,
+  meta = {},
+) {
+  const mediaVersion =
+    meta.mediaVersion ??
+    meta.media_version ??
+    null;
+
+  const fileSize =
+    Number(
+      meta.fileSize ??
+      meta.file_size ??
+      null,
+    );
+
+  const useStableMediaRoute =
+    Boolean(
+      globalThis.navigator
+        ?.serviceWorker
+        ?.controller,
+    );
+
   if (
-    !entry?.id ||
-    !entry?.meta?.audioUrl ||
-    typeof globalThis.fetch !==
-      "function"
+    !trackId ||
+    !mediaVersion ||
+    !Number.isSafeInteger(
+      fileSize,
+    ) ||
+    fileSize <= 0 ||
+    !useStableMediaRoute
   ) {
     return null;
   }
 
-  const source =
-    resolveMediaUrl(
-      entry.meta.audioUrl,
-    );
-
-  if (!source) {
-    return null;
-  }
-
   const key = [
-    String(
-      entry.id,
-    ),
-    source,
-  ].join(
-    "|",
-  );
+    String(trackId),
+    String(mediaVersion),
+  ].join("|");
 
   const existing =
     queuedAudioWarmups.get(
@@ -205,55 +225,35 @@ function warmQueuedAudioEntry(
   }
 
   const task =
-    (async () => {
-      try {
-        const response =
-          await globalThis.fetch(
-            source,
-            {
-              method:
-                "GET",
-              headers: {
-                Range:
-                  "bytes=0-524287",
-              },
-              credentials:
-                "include",
-            },
-          );
-
-        if (
-          !response?.ok &&
-          response?.status !==
-            206
-        ) {
-          return false;
-        }
-
-        const reader =
-          response.body
-            ?.getReader?.();
-
-        if (reader) {
-          try {
-            await reader.read();
-          } finally {
-            await reader.cancel()
-              .catch(
-                () => {},
-              );
+    warmTrackPlayback(
+      trackId,
+      meta,
+      {
+        positionSeconds:
+          0,
+        durationSeconds:
+          meta.durationSeconds ??
+          meta.duration_seconds ??
+          null,
+        useStableMediaRoute:
+          true,
+      },
+    )
+      .catch(
+        () => false,
+      )
+      .finally(
+        () => {
+          if (
+            queuedAudioWarmups.get(key) ===
+              task
+          ) {
+            queuedAudioWarmups.delete(
+              key,
+            );
           }
-        }
-
-        return true;
-      } catch {
-        return false;
-      } finally {
-        queuedAudioWarmups.delete(
-          key,
-        );
-      }
-    })();
+        },
+      );
 
   queuedAudioWarmups.set(
     key,
