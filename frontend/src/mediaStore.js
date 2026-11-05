@@ -961,18 +961,31 @@ export async function ensureMediaRecord({
     );
 
   if (existing) {
+    const nextMimeType =
+      mimeType ??
+      existing.mimeType ??
+      null;
+
+    const nextFileSize =
+      fileSize ??
+      existing.fileSize ??
+      null;
+
+    if (
+      existing.mimeType ===
+        nextMimeType &&
+      existing.fileSize ===
+        nextFileSize
+    ) {
+      return existing;
+    }
+
     const updated = {
       ...existing,
-
       mimeType:
-        mimeType ??
-        existing.mimeType ??
-        null,
-
+        nextMimeType,
       fileSize:
-        fileSize ??
-        existing.fileSize ??
-        null,
+        nextFileSize,
     };
 
     await saveMediaRecord(
