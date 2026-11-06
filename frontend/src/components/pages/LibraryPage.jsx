@@ -402,6 +402,7 @@ const [
 );
 
 const libraryTracksRef = useRef(libraryTracks);
+const hasLoadedLibraryRef = useRef(Boolean(cachedLibrary));
 const libraryNextOffsetRef = useRef(
   cachedLibrary?.libraryNextOffset ?? libraryTracks.length,
 );
@@ -989,6 +990,7 @@ const [
        * snapshot immediately.
        */
       if (offline) {
+        hasLoadedLibraryRef.current = true;
         if (cached) {
           setOwnedPlaylists(
             Array.isArray(
@@ -1063,6 +1065,8 @@ const [
               offset: 0,
             }),
           ]);
+
+        hasLoadedLibraryRef.current = true;
 
         const nextOwned =
           Array.isArray(mine)
@@ -1151,6 +1155,7 @@ const [
           );
 
         if (fallback) {
+          hasLoadedLibraryRef.current = true;
           setOwnedPlaylists(
             Array.isArray(
               fallback.owned,
@@ -1268,7 +1273,9 @@ const [
   ]);
 
   useEffect(() => {
-    void loadLibrary();
+    void loadLibrary({
+      quiet: hasLoadedLibraryRef.current,
+    });
   }, [
     loadLibrary,
   ]);

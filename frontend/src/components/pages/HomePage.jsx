@@ -165,6 +165,7 @@ const [
 ] = useState("");
 
 const localRecentTracks = useRef([]);
+const hasRecentDataRef = useRef(false);
 
 
 const loadDownloadedFallback =
@@ -225,6 +226,7 @@ const loadRecentlyPlayed =
           await loadDownloadedFallback();
         if (!isCurrent()) return;
 
+        hasRecentDataRef.current = true;
         setRecentlyPlayed(
           localTracks,
         );
@@ -248,6 +250,7 @@ const loadRecentlyPlayed =
         if (!isCurrent()) return;
 
         const serverTracks = getHomeRecentlyPlayed(profile);
+        hasRecentDataRef.current = true;
         const localTracks = localRecentTracks.current;
         setRecentlyPlayed(
           [
@@ -324,6 +327,7 @@ useEffect(() => {
       audio_url: state.src ?? null,
     };
 
+    hasRecentDataRef.current = true;
     localRecentTracks.current = [
       track,
       ...localRecentTracks.current.filter(
@@ -346,7 +350,9 @@ useEffect(() => {
 
 
 useEffect(() => {
-  void loadRecentlyPlayed();
+  void loadRecentlyPlayed({
+    quiet: hasRecentDataRef.current,
+  });
   return () => { historyRequest.current += 1; };
 }, [
   loadRecentlyPlayed,

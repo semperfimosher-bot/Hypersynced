@@ -666,10 +666,12 @@ useEffect(() => {
         "\u0000",
       );
 
+    // Keep existing results visible when React Activity resumes this page.
+    // The same query/sort/account key means this is a background refresh,
+    // not a first load; quietSearchVersion still triggers periodic refreshes.
     const quietRefresh =
       searchLoadKeyRef.current ===
-        searchKey &&
-      quietSearchVersion > 0;
+      searchKey;
 
     const controller =
       new AbortController();
