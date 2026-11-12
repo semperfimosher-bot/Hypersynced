@@ -4,9 +4,9 @@ from uuid import uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+import backend.app.api.routes.audio as audio_route
 from backend.app.api.routes.audio import safe_filename
 from backend.app.main import app
-import backend.app.api.routes.audio as audio_route
 
 
 @pytest.mark.asyncio
