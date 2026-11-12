@@ -404,6 +404,8 @@ const [
 
 const libraryTracksRef = useRef(libraryTracks);
 const libraryLoadInFlightRef = useRef(false);
+const libraryChangeTokenRef = useRef(cachedLibrary?.changeToken ?? null);
+const hydratedLibraryOwnerRef = useRef(cachedLibrary ? libraryCacheKey : null);
 const libraryNextOffsetRef = useRef(
   cachedLibrary?.libraryNextOffset ?? libraryTracks.length,
 );
@@ -974,14 +976,32 @@ const [
         navigator.onLine ===
           false;
 
-      const cached =
-        offline
-          ? await getCachedLibraryAsync(
-              libraryCacheKey,
-            )
-          : getCachedLibrary(
-              libraryCacheKey,
-            );
+      const cached = await getCachedLibraryAsync(
+        libraryCacheKey,
+      );
+
+      // Restore IndexedDB-only snapshots before checking the server. This is
+      // essential for large libraries whose localStorage mirror is a marker.
+      if (
+        cached &&
+        hydratedLibraryOwnerRef.current !== libraryCacheKey
+      ) {
+        const cachedOwned = Array.isArray(cached.owned) ? cached.owned : [];
+        const cachedSaved = Array.isArray(cached.saved) ? cached.saved : [];
+        const cachedTracks = Array.isArray(cached.tracks) ? cached.tracks : [];
+        setOwnedPlaylists(cachedOwned);
+        setSavedPlaylists(cachedSaved);
+        setLibraryTracks(cachedTracks);
+        libraryTracksRef.current = cachedTracks;
+        libraryNextOffsetRef.current =
+          cached.libraryNextOffset ?? cachedTracks.length;
+        setHasMoreLibraryTracks(
+          cached.hasMoreLibraryTracks ??
+          cachedTracks.length >= LIBRARY_TRACKS_PAGE_SIZE,
+        );
+        libraryChangeTokenRef.current = cached.changeToken ?? null;
+        hydratedLibraryOwnerRef.current = libraryCacheKey;
+      }
 
 
       /*
@@ -1073,7 +1093,7 @@ const [
           cached &&
           !force &&
           changeToken &&
-          cached.changeToken === changeToken
+          libraryChangeTokenRef.current === changeToken
         ) {
           return;
         }
@@ -1081,6 +1101,8 @@ const [
         if (quiet && cached && !changeToken) {
           return;
         }
+
+        libraryChangeTokenRef.current = changeToken;
 
         const [
           mine,
@@ -1284,7 +1306,7 @@ const [
         tracks: nextTracks,
         hasMoreLibraryTracks: nextHasMore,
         libraryNextOffset: libraryNextOffsetRef.current,
-        changeToken: getCachedLibrary(libraryCacheKey)?.changeToken ?? null,
+        changeToken: libraryChangeTokenRef.current,
       });
     } catch (requestError) {
       setError(
