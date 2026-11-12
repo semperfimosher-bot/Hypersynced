@@ -172,6 +172,61 @@ export async function getPlaylist(
     };
   }
 
+  const expectedTrackCount = Number(firstPage?.track_count);
+
+  if (
+    Number.isInteger(expectedTrackCount) &&
+    expectedTrackCount > tracks.length
+  ) {
+    const remainingOffsets = [];
+    for (
+      let pageOffset = TRACKS_PAGE_SIZE;
+      pageOffset < expectedTrackCount;
+      pageOffset += TRACKS_PAGE_SIZE
+    ) {
+      remainingOffsets.push(pageOffset);
+    }
+
+    // Keep collection opening responsive without flooding the API for very
+    // large playlists. Each small batch is fetched concurrently, then appended
+    // in offset order so playback order remains unchanged.
+    const PAGE_REQUEST_CONCURRENCY = 3;
+    for (
+      let index = 0;
+      index < remainingOffsets.length;
+      index += PAGE_REQUEST_CONCURRENCY
+    ) {
+      const batchOffsets = remainingOffsets.slice(
+        index,
+        index + PAGE_REQUEST_CONCURRENCY,
+      );
+      const pages = await Promise.all(
+        batchOffsets.map(async (pageOffset) => {
+          const query = buildTrackPageQuery(
+            TRACKS_PAGE_SIZE,
+            pageOffset,
+          );
+          return apiRequest(
+            `/playlists/${encodedId}?${query}`,
+          );
+        }),
+      );
+
+      for (const page of pages) {
+        if (Array.isArray(page?.tracks)) {
+          tracks.push(...page.tracks);
+        }
+      }
+    }
+
+    return {
+      ...firstPage,
+      tracks,
+    };
+  }
+
+  // Older API responses may not include track_count. Preserve the safe
+  // short-page termination behavior for those responses.
   for (
     let pageOffset = TRACKS_PAGE_SIZE;
     ;

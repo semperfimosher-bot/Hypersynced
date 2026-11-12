@@ -190,13 +190,13 @@ test(
     const originalFetch = globalThis.fetch;
     const requested = [];
     const libraryTracks = Array.from(
-      { length: 1001 },
+      { length: 3001 },
       (_, index) => ({
         id: `library-${index}`,
       }),
     );
     const playlistTracks = Array.from(
-      { length: 1001 },
+      { length: 3001 },
       (_, index) => ({
         id: `playlist-track-${index}`,
       }),
@@ -252,6 +252,7 @@ test(
       assert.equal(library.length, 1001);
       assert.equal(library[0].id, "library-0");
       assert.equal(library[1000].id, "library-1000");
+      assert.equal(library[3000].id, "library-3000");
       assert.equal(playlist.tracks.length, 1001);
       assert.equal(
         playlist.tracks[0].id,
@@ -261,12 +262,20 @@ test(
         playlist.tracks[1000].id,
         "playlist-track-1000",
       );
-      assert.equal(playlist.track_count, 1001);
+      assert.equal(
+        playlist.tracks[3000].id,
+        "playlist-track-3000",
+      );
+      assert.equal(playlist.track_count, 3001);
       assert.deepEqual(requested, [
         "/api/playlists/library/tracks?limit=1000&offset=0",
         "/api/playlists/library/tracks?limit=1000&offset=1000",
+        "/api/playlists/library/tracks?limit=1000&offset=2000",
+        "/api/playlists/library/tracks?limit=1000&offset=3000",
         "/api/playlists/playlist-1?limit=1000&offset=0",
         "/api/playlists/playlist-1?limit=1000&offset=1000",
+        "/api/playlists/playlist-1?limit=1000&offset=2000",
+        "/api/playlists/playlist-1?limit=1000&offset=3000",
       ]);
     } finally {
       globalThis.fetch = originalFetch;
