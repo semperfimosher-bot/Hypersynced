@@ -178,6 +178,10 @@ export default function useMessageNotifications({
           return;
         }
 
+        // A refresh started before dismissal may still contain this item.
+        // Invalidate it before changing local state or sending the mutation.
+        notificationRefreshCoordinatorRef.current.invalidate(ownerId);
+
         setOwnedNotificationState((current) =>
           updateOwnedNotificationSnapshot(
             current,
@@ -217,6 +221,8 @@ export default function useMessageNotifications({
           // Refresh restores the item if the
           // server-side dismissal failed.
         } finally {
+          // Also invalidate requests that began while the mutation was in flight.
+          notificationRefreshCoordinatorRef.current.invalidate(ownerId);
           await refreshMessageNotifications();
         }
       },
