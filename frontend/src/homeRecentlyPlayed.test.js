@@ -119,3 +119,57 @@ test(
   assert.equal(isCurrentHistoryResponse(2, 2, "alice", "bob"), false);
   assert.equal(isCurrentHistoryResponse(2, 2, "alice", "alice"), true);
 });
+
+
+test("recently played cache is account-scoped and bounded", async () => {
+  const {
+    readCachedHomeRecentlyPlayed,
+    writeCachedHomeRecentlyPlayed,
+  } = await import("./homeRecentlyPlayed.js");
+  const values = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+  try {
+    const tracks = Array.from({ length: 15 }, (_, index) => ({
+      id: String(index + 1),
+      title: "Track " + (index + 1),
+    }));
+    assert.equal(writeCachedHomeRecentlyPlayed("user-a", tracks), true);
+    assert.equal(readCachedHomeRecentlyPlayed("user-a").length, 12);
+    assert.deepEqual(readCachedHomeRecentlyPlayed("user-b"), []);
+    assert.equal(readCachedHomeRecentlyPlayed("user-a")[0].id, "1");
+  } finally {
+    if (original === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = original;
+  }
+});
+
+test("recently played cache deduplicates tracks and tolerates blocked storage", async () => {
+  const {
+    readCachedHomeRecentlyPlayed,
+    writeCachedHomeRecentlyPlayed,
+  } = await import("./homeRecentlyPlayed.js");
+  const values = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+  try {
+    assert.equal(writeCachedHomeRecentlyPlayed("user-c", [
+      { id: 1, title: "First" },
+      { id: "1", title: "Duplicate" },
+      { id: 2, title: "Second" },
+    ]), true);
+    assert.deepEqual(
+      readCachedHomeRecentlyPlayed("user-c").map((track) => track.id),
+      [1, 2],
+    );
+  } finally {
+    if (original === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = original;
+  }
+});
