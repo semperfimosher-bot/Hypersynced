@@ -107,7 +107,11 @@ export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12) {
     const id = String(track.id);
     if (seen.has(id)) continue;
     seen.add(id);
-    normalized.push(track);
+    // Never persist signed/temporary media URLs in the browser snapshot.
+    const cachedTrack = { ...track };
+    delete cachedTrack.audio_url;
+    delete cachedTrack.src;
+    normalized.push(cachedTrack);
     if (normalized.length >= Math.max(0, limit)) break;
   }
   try {
