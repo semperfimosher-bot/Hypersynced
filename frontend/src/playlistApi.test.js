@@ -249,11 +249,11 @@ test(
       const library = await getLibraryTracks();
       const playlist = await getPlaylist("playlist-1");
 
-      assert.equal(library.length, 1001);
+      assert.equal(library.length, 3001);
       assert.equal(library[0].id, "library-0");
       assert.equal(library[1000].id, "library-1000");
       assert.equal(library[3000].id, "library-3000");
-      assert.equal(playlist.tracks.length, 1001);
+      assert.equal(playlist.tracks.length, 3001);
       assert.equal(
         playlist.tracks[0].id,
         "playlist-track-0",
