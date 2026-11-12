@@ -69,11 +69,20 @@ test(
 
     assert.ok(localRaw);
     assert.ok(localRaw.length < 1_000);
-    assert.equal(getCachedLibrary(owner), null);
+
+    // Large snapshots stay out of localStorage, but the in-memory fast path
+    // must make the just-loaded Library available synchronously on re-entry.
+    const immediateLibrary = getCachedLibrary(owner);
+    assert.equal(immediateLibrary.tracks.length, 4_000);
+    assert.equal(
+      immediateLibrary.tracks[3_999].id,
+      "large-track-3999",
+    );
 
     const cachedLibrary =
       await getCachedLibraryAsync(owner);
 
+    assert.strictEqual(cachedLibrary, immediateLibrary);
     assert.equal(cachedLibrary.tracks.length, 4_000);
     assert.equal(
       cachedLibrary.tracks[3_999].id,
@@ -152,6 +161,14 @@ test(
     );
 
     assert.equal(
+      getCachedLibrary(ownerA).tracks[0].id,
+      "owner-a-track",
+    );
+    assert.equal(
+      getCachedLibrary(ownerB).tracks[0].id,
+      "owner-b-track",
+    );
+    assert.equal(
       (
         await getCachedLibraryAsync(ownerB)
       ).tracks[0].id,
@@ -164,6 +181,10 @@ test(
 
     await clearCachedLibraryScope(ownerA);
 
+    assert.equal(
+      getCachedLibrary(ownerA),
+      null,
+    );
     assert.equal(
       await getCachedLibraryAsync(ownerA),
       null,
