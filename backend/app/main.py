@@ -70,6 +70,7 @@ _ACTIVITY_EXCLUDED_PREFIXES = (
 
 _ACTIVITY_EXCLUDED_PATHS = {
     "/api/auth/register",
+    "/api/auth/login",
 }
 
 
