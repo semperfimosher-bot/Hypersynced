@@ -44,6 +44,8 @@ import {
 import {
   getHomeRecentlyPlayed,
   isCurrentHistoryResponse,
+  readCachedHomeRecentlyPlayed,
+  writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 
@@ -150,7 +152,9 @@ function HomePage({
   const [
   recentlyPlayed,
   setRecentlyPlayed,
-] = useState([]);
+] = useState(() =>
+  readCachedHomeRecentlyPlayed(currentUser?.id ?? currentUser?.username),
+);
 
 const [
   recentLoading,
@@ -249,17 +253,20 @@ const loadRecentlyPlayed =
 
         const serverTracks = getHomeRecentlyPlayed(profile);
         const localTracks = localRecentTracks.current;
-        setRecentlyPlayed(
-          [
-            ...localTracks,
-            ...serverTracks.filter(
-              (track) =>
-                !localTracks.some(
-                  (localTrack) =>
-                    String(localTrack.id) === String(track.id),
-                ),
-            ),
-          ].slice(0, 12),
+        const mergedTracks = [
+          ...localTracks,
+          ...serverTracks.filter(
+            (track) =>
+              !localTracks.some(
+                (localTrack) =>
+                  String(localTrack.id) === String(track.id),
+              ),
+          ),
+        ].slice(0, 12);
+        setRecentlyPlayed(mergedTracks);
+        writeCachedHomeRecentlyPlayed(
+          currentUser?.id ?? currentUser?.username,
+          mergedTracks,
         );
 
         setRecentError(
@@ -331,12 +338,19 @@ useEffect(() => {
       ),
     ].slice(0, 12);
 
-    setRecentlyPlayed((current) => [
-      track,
-      ...current.filter(
-        (existing) => String(existing.id) !== String(track.id),
-      ),
-    ].slice(0, 12));
+    setRecentlyPlayed((current) => {
+      const next = [
+        track,
+        ...current.filter(
+          (existing) => String(existing.id) !== String(track.id),
+        ),
+      ].slice(0, 12);
+      writeCachedHomeRecentlyPlayed(
+        currentUser?.id ?? currentUser?.username,
+        next,
+      );
+      return next;
+    });
     setRecentError("");
   };
 
