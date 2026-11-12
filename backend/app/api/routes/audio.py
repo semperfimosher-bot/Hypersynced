@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 def close_s3_body(body) -> None:
     close = getattr(body, "close", None)
     if callable(close):
-        close()
+        try:
+            close()
+        except Exception:
+            logger.debug("B2 response body was already closed.", exc_info=True)
 
 
 class S3StreamingResponse(StreamingResponse):
