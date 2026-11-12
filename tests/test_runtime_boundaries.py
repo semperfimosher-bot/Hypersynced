@@ -13,6 +13,21 @@ from backend.app.services.audio_metadata import (
 )
 
 
+def test_login_does_not_create_admin_activity_notification() -> None:
+    assert app_main._activity_description(
+        "POST",
+        "/api/auth/login",
+    ) is None
+
+    assert app_main._activity_description(
+        "POST",
+        "/api/auth/password-recovery/reset",
+    ) == (
+        "auth",
+        "Password recovery activity",
+    )
+
+
 def test_artist_and_track_identity_share_normalization() -> None:
     value = "  Café\u00a0Artist  "
 
