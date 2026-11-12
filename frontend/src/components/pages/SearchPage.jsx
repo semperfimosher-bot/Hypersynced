@@ -632,12 +632,12 @@ useEffect(() => {
 }, []);
 
 
-  /* Debounce catalog search and abort stale requests while typing. */
+  /*
+   * Search with the local default immediately. If the saved preference loads
+   * later and changes the sort mode, the effect reruns with that mode; search
+   * no longer waits on an unrelated preferences request.
+   */
   useEffect(() => {
-    if (!preferenceReady) {
-      return undefined;
-    }
-
     if (!normalizedQuery) {
       searchLoadKeyRef.current =
         "";
@@ -891,7 +891,7 @@ useEffect(() => {
             }
           }
         },
-        180,
+        120,
       );
 
     return () => {
@@ -906,7 +906,6 @@ useEffect(() => {
     isRegistered,
     normalizedQuery,
     offlineOwnerKey,
-    preferenceReady,
     quietSearchVersion,
     sortMode,
   ]);
