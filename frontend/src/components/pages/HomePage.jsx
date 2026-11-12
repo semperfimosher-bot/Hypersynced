@@ -314,7 +314,11 @@ const loadRecentlyPlayed =
 
 
 useEffect(() => {
-  if (!currentUser?.id) {
+  const recentOwner = currentUser?.id ?? currentUser?.username;
+  localRecentTracks.current = readCachedHomeRecentlyPlayed(recentOwner);
+  setRecentlyPlayed(localRecentTracks.current);
+
+  if (!recentOwner) {
     localRecentTracks.current = [];
     return undefined;
   }
@@ -356,7 +360,7 @@ useEffect(() => {
 
   recordPlayerTrack(player.getState());
   return player.subscribe(recordPlayerTrack);
-}, [currentUser?.id]);
+}, [currentUser?.id, currentUser?.username]);
 
 
 useEffect(() => {
