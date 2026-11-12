@@ -1209,6 +1209,8 @@ async def message_notifications(
                 == user.id,
                 AdminNotification.kind
                 != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                AdminNotification.title
+                != "User signed in",
                 AdminNotification.viewed_at
                 .is_(
                     None,
@@ -1433,6 +1435,8 @@ async def message_notifications(
                     == user.id,
                     AdminNotification.kind
                     != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                    AdminNotification.title
+                    != "User signed in",
                     AdminNotification.viewed_at
                     .is_(
                         None,
