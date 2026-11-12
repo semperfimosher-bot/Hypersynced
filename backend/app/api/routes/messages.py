@@ -980,6 +980,18 @@ async def message_notifications(
 ) -> NotificationResponse:
     await _cleanup_expired(session)
 
+    # Remove legacy login alerts created before sign-in activity was excluded.
+    # Filtering them from the response alone leaves the stale rows in storage
+    # and allows older application instances to keep surfacing them.
+    if user.role == UserRole.ADMIN:
+        await session.execute(
+            delete(AdminNotification).where(
+                AdminNotification.recipient_id == user.id,
+                AdminNotification.kind != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                AdminNotification.title == "User signed in",
+            )
+        )
+
     unread_result = await session.execute(
         select(
             Message,
