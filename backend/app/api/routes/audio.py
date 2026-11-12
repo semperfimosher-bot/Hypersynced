@@ -1,6 +1,5 @@
 import asyncio
-import os
-import threading
+import logging
 import unicodedata
 from pathlib import Path
 from uuid import UUID
@@ -13,7 +12,7 @@ from starlette.types import Receive, Scope, Send
 from ...config import get_settings
 from ...database import get_session_factory
 from ...models.media import Track
-from ...services.b2 import get_b2_bucket
+from ...services.b2 import get_b2_s3_client
 from ...services.thread_work import run_blocking, run_blocking_resource
 
 router = APIRouter(
@@ -23,18 +22,19 @@ router = APIRouter(
 
 
 STREAM_CHUNK_SIZE = 1024 * 1024
+logger = logging.getLogger(__name__)
 
 
-def close_b2_download(downloaded) -> None:
-    close = getattr(getattr(downloaded, "response", None), "close", None)
+def close_s3_body(body) -> None:
+    close = getattr(body, "close", None)
     if callable(close):
         close()
 
 
-class B2StreamingResponse(StreamingResponse):
-    def __init__(self, downloaded, **kwargs):
-        self.downloaded = downloaded
-        self.stream = stream_b2_file(downloaded)
+class S3StreamingResponse(StreamingResponse):
+    def __init__(self, body, **kwargs):
+        self.body = body
+        self.stream = stream_s3_body(body)
         super().__init__(self.stream, **kwargs)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -44,8 +44,8 @@ class B2StreamingResponse(StreamingResponse):
             try:
                 await self.stream.aclose()
             finally:
-                # The iterator may never start when response headers fail.
-                await run_blocking(close_b2_download, self.downloaded)
+                # Also close when the client disconnects before iteration starts.
+                await run_blocking(close_s3_body, self.body)
 
 
 def range_error(
@@ -212,67 +212,18 @@ def safe_filename(
     return f"{filename}.mp3"
 
 
-async def stream_b2_file(
-    downloaded,
-):
-    read_fd, write_fd = os.pipe()
-
-    error: list[BaseException] = []
-
-    def download() -> None:
-        try:
-            with os.fdopen(
-                write_fd,
-                "wb",
-                buffering=0,
-            ) as output:
-                downloaded.save(
-                    output,
-                    allow_seeking=False,
-                )
-
-        except BaseException as exc:
-            error.append(exc)
-
-    thread = threading.Thread(
-        target=download,
-        daemon=True,
-    )
-
-    thread.start()
-
+async def stream_s3_body(body):
     try:
         while True:
             chunk = await asyncio.to_thread(
-                os.read,
-                read_fd,
+                body.read,
                 STREAM_CHUNK_SIZE,
             )
-
             if not chunk:
                 break
-
             yield chunk
-
-        await asyncio.to_thread(
-            thread.join,
-        )
-
-        if error:
-            raise error[0]
-
     finally:
-        try:
-            os.close(read_fd)
-        except OSError:
-            pass
-        # Closing the pipe interrupts a producer blocked on a slow consumer.
-        # Close upstream too, then settle the producer before its memory permit
-        # can be reused. SDK network timeouts bound an unresponsive provider.
-        try:
-            await run_blocking(close_b2_download, downloaded)
-        finally:
-            await run_blocking(thread.join)
+        await run_blocking(close_s3_body, body)
 
 
 def resolve_local_audio_fallback(
@@ -376,63 +327,61 @@ async def stream_audio(
             detail="Track not found.",
         )
 
-    downloaded = None
+    body = None
     try:
-        bucket = await run_blocking(get_b2_bucket)
-        file_size = track.file_size
+        settings = get_settings()
+        if not settings.b2_bucket_name:
+            raise RuntimeError("B2_BUCKET_NAME is not configured.")
 
+        s3 = await run_blocking(get_b2_s3_client)
+        file_size = getattr(track, "file_size", None)
         if not isinstance(file_size, int) or file_size <= 0:
-            file_info = await run_blocking(
-                bucket.get_file_info_by_name,
-                track.b2_object_key,
+            metadata = await run_blocking(
+                s3.head_object,
+                Bucket=settings.b2_bucket_name,
+                Key=track.b2_object_key,
             )
-            file_size = file_info.size
-        start, end = parse_range(
-            range,
-            file_size,
-        )
+            file_size = metadata["ContentLength"]
+
+        # Validate the client range before contacting storage. In particular,
+        # never turn a valid 416 response into a misleading storage 503.
+        start, end = parse_range(range, file_size)
+        request_args = {
+            "Bucket": settings.b2_bucket_name,
+            "Key": track.b2_object_key,
+        }
+        if range:
+            request_args["Range"] = f"bytes={start}-{end}"
+
         downloaded = await run_blocking_resource(
-            bucket.download_file_by_name,
-            close_b2_download,
-            track.b2_object_key,
-            range_=(start, end),
+            s3.get_object,
+            lambda result: close_s3_body(result["Body"]),
+            **request_args,
         )
+        body = downloaded["Body"]
+        file_size = downloaded.get("ContentRange", "").rsplit("/", 1)[-1] or file_size
+        file_size = int(file_size)
 
+    except HTTPException:
+        raise
     except Exception as storage_error:
-        fallback_file = (
-            resolve_local_audio_fallback(
-                track.b2_object_key,
-            )
+        logger.exception(
+            "Unable to stream audio from B2 for track %s (object key %s).",
+            track.id,
+            track.b2_object_key,
         )
-
+        fallback_file = resolve_local_audio_fallback(track.b2_object_key)
         if fallback_file is None:
             raise HTTPException(
-                status_code=(
-                    status.HTTP_503_SERVICE_UNAVAILABLE
-                ),
-                detail=(
-                    "Audio storage is temporarily unavailable."
-                ),
-                headers={
-                    "Retry-After":
-                        "2",
-                },
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Audio storage is temporarily unavailable.",
+                headers={"Retry-After": "2"},
             ) from storage_error
 
-        file_size = (
-            fallback_file.stat().st_size
-        )
-
-        start, end = parse_range(
-            range,
-            file_size,
-        )
-
-        body = stream_local_file(
-            fallback_file,
-            start,
-            end,
-        )
+        file_size = fallback_file.stat().st_size
+        start, end = parse_range(range, file_size)
+        body = None
+        local_body = stream_local_file(fallback_file, start, end)
 
     content_length = end - start + 1
 
@@ -449,9 +398,10 @@ async def stream_audio(
 
     status_code = 206 if range else 200
 
-    response_type = B2StreamingResponse if downloaded is not None else StreamingResponse
+    response_type = S3StreamingResponse if body is not None else StreamingResponse
+    response_body = body if body is not None else local_body
     return response_type(
-        downloaded if downloaded is not None else body,
+        response_body,
         status_code=status_code,
         headers=response_headers,
         media_type=track.mime_type,
