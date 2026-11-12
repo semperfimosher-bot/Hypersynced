@@ -16,6 +16,14 @@ const CACHE_PREFIX =
 const LOCAL_STORAGE_CACHE_LIMIT =
   256_000;
 
+/*
+ * Keep the most recently loaded account snapshots in the current app runtime.
+ * This is the synchronous fast path for revisiting Library: large snapshots
+ * may be IndexedDB-only on disk, but remain immediately readable in memory.
+ * Keys are account-scoped and logout cleanup removes the matching entry.
+ */
+const libraryMemoryCache = new Map();
+
 
 function normalizeOwnerKey(
   userKey,
@@ -364,15 +372,23 @@ export async function setCachedLibraryPageAsync(userKey, offset, tracks) {
 export function getCachedLibrary(
   userKey,
 ) {
-  return readCache(
-    userKey,
-  ).library;
+  const ownerKey = normalizeOwnerKey(userKey);
+  if (libraryMemoryCache.has(ownerKey)) {
+    return libraryMemoryCache.get(ownerKey);
+  }
+
+  return readCache(ownerKey).library;
 }
 
 
 export async function getCachedLibraryAsync(
   userKey,
 ) {
+  const ownerKey = normalizeOwnerKey(userKey);
+  if (libraryMemoryCache.has(ownerKey)) {
+    return libraryMemoryCache.get(ownerKey);
+  }
+
   try {
     const snapshot =
       await getLibrarySnapshot(
@@ -385,6 +401,7 @@ export async function getCachedLibraryAsync(
       snapshot &&
       typeof snapshot === "object"
     ) {
+      libraryMemoryCache.set(ownerKey, snapshot);
       return snapshot;
     }
   } catch {
@@ -392,11 +409,10 @@ export async function getCachedLibraryAsync(
   }
 
   const legacy =
-    getCachedLibrary(
-      userKey,
-    );
+    readCache(ownerKey).library;
 
   if (legacy) {
+    libraryMemoryCache.set(ownerKey, legacy);
     void persistSnapshot(
       getLibrarySnapshotKey(
         userKey,
@@ -423,6 +439,10 @@ export function setCachedLibrary(
     cachedAt:
       Date.now(),
   };
+
+  // Publish synchronously before any IndexedDB write so the next page visit
+  // can render this exact snapshot without waiting for storage.
+  libraryMemoryCache.set(normalizeOwnerKey(userKey), nextLibrary);
 
   const nextCache = {
     ...cache,
@@ -458,6 +478,8 @@ export function setCachedLibrary(
 export function clearCachedLibraryScope(
   userKey,
 ) {
+  libraryMemoryCache.delete(normalizeOwnerKey(userKey));
+
   const storage =
     getStorage();
 
@@ -484,6 +506,8 @@ export function clearCachedLibraryScope(
 export function clearCachedLibrary(
   userKey,
 ) {
+  libraryMemoryCache.delete(normalizeOwnerKey(userKey));
+
   const cache =
     readCache(
       userKey,
