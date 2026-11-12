@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
+  writeCachedHomeRecentlyPlayed,
   notifyListeningHistoryChanged,
   subscribeListeningHistoryChanged,
   canRecordListeningHistory,
