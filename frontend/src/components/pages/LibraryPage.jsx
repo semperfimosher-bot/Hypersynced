@@ -1093,7 +1093,7 @@ const [
           cached &&
           !force &&
           changeToken &&
-          libraryChangeTokenRef.current === changeToken
+          cached.changeToken === changeToken
         ) {
           return;
         }
@@ -1101,8 +1101,6 @@ const [
         if (quiet && cached && !changeToken) {
           return;
         }
-
-        libraryChangeTokenRef.current = changeToken;
 
         const [
           mine,
@@ -1169,6 +1167,7 @@ const [
         libraryTracksRef.current = nextTracks;
         setHasMoreLibraryTracks(nextHasMore);
 
+        libraryChangeTokenRef.current = changeToken;
         await setCachedLibrary(
           libraryCacheKey,
           {
