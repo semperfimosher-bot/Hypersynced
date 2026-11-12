@@ -155,3 +155,37 @@ test(
     });
   },
 );
+
+
+
+test(
+  "invalidating a refresh prevents a stale result from restoring dismissed notifications",
+  async () => {
+    const coordinator = createOwnerScopedRequestCoordinator();
+    const stale = deferred();
+
+    const oldRefresh = coordinator.run(
+      "account-a",
+      () => stale.promise,
+    );
+    await Promise.resolve();
+
+    coordinator.invalidate("account-a");
+
+    const freshRefresh = coordinator.run(
+      "account-a",
+      async () => ({ notifications: [] }),
+    );
+
+    stale.resolve({ notifications: ["dismissed-login-alert"] });
+
+    assert.deepEqual(await oldRefresh, {
+      current: false,
+      value: { notifications: ["dismissed-login-alert"] },
+    });
+    assert.deepEqual(await freshRefresh, {
+      current: true,
+      value: { notifications: [] },
+    });
+  },
+);
