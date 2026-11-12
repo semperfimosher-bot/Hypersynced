@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   getHomeRecentlyPlayed,
+  getHomeRecentlyPlayedForOwner,
   notifyListeningHistoryChanged,
   subscribeListeningHistoryChanged,
   canRecordListeningHistory,
@@ -167,6 +168,37 @@ test("recently played cache deduplicates tracks and tolerates blocked storage", 
     assert.deepEqual(
       readCachedHomeRecentlyPlayed("user-c").map((track) => track.id),
       [1, 2],
+    );
+  } finally {
+    if (original === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = original;
+  }
+});
+
+
+test("recently played immediately uses the active account cache without leaking the previous account", () => {
+  const values = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+
+  try {
+    writeCachedHomeRecentlyPlayed("alice", [{ id: "a1", title: "Alice track" }]);
+    writeCachedHomeRecentlyPlayed("bob", [{ id: "b1", title: "Bob track" }]);
+
+    assert.deepEqual(
+      getHomeRecentlyPlayedForOwner("alice", "alice", [{ id: "a2" }]),
+      [{ id: "a2" }],
+    );
+    assert.deepEqual(
+      getHomeRecentlyPlayedForOwner("bob", "alice", [{ id: "a2" }]),
+      [{ id: "b1", title: "Bob track" }],
+    );
+    assert.deepEqual(
+      getHomeRecentlyPlayedForOwner(null, "alice", [{ id: "a2" }]),
+      [],
     );
   } finally {
     if (original === undefined) delete globalThis.localStorage;

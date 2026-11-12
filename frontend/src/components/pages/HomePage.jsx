@@ -43,6 +43,7 @@ import {
 
 import {
   getHomeRecentlyPlayed,
+  getHomeRecentlyPlayedForOwner,
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
@@ -149,12 +150,28 @@ function HomePage({
   const greetingName =
     getGreetingName(currentUser);
 
-  const [
-  recentlyPlayed,
-  setRecentlyPlayed,
-] = useState(() =>
-  readCachedHomeRecentlyPlayed(currentUser?.id ?? currentUser?.username),
-);
+  const recentOwner = currentUser?.id ?? currentUser?.username;
+  const [recentlyPlayedState, setRecentlyPlayedState] = useState(() => ({
+    owner: recentOwner,
+    tracks: readCachedHomeRecentlyPlayed(recentOwner),
+  }));
+  const recentlyPlayed = getHomeRecentlyPlayedForOwner(
+    recentOwner,
+    recentlyPlayedState.owner,
+    recentlyPlayedState.tracks,
+  );
+  const setRecentlyPlayed = (nextTracks) => {
+    setRecentlyPlayedState((current) => ({
+      owner: recentOwner,
+      tracks: typeof nextTracks === "function"
+        ? nextTracks(
+            current.owner === recentOwner
+              ? current.tracks
+              : readCachedHomeRecentlyPlayed(recentOwner),
+          )
+        : nextTracks,
+    }));
+  };
 
 const [
   recentLoading,
@@ -314,7 +331,6 @@ const loadRecentlyPlayed =
 
 
 useEffect(() => {
-  const recentOwner = currentUser?.id ?? currentUser?.username;
   localRecentTracks.current = readCachedHomeRecentlyPlayed(recentOwner);
   setRecentlyPlayed(localRecentTracks.current);
 
@@ -518,9 +534,97 @@ useQuietRefresh(
           {!online && currentUser ? (
   <OfflineNotice
     compact
-    title="Go back online to see Recently Played"
-    description="Your real listening history syncs from your HyperSynced account. Downloaded music is still available in Library."
+    title="Go back online to sync Recently Played"
+    description="Showing saved history when available. Downloaded music is still available in Library."
   />
+) : null}
+
+          {recentlyPlayed.length > 0 ? (
+  <div
+    className="home-track-grid"
+    aria-busy={recentLoading}
+  >
+
+    {recentlyPlayed.map(
+      (track, index) => (
+
+        <button
+          key={track.id}
+          type="button"
+          className="home-track-card"
+          {...trackActionMenu.getTriggerProps(
+            track,
+          )}
+          onMouseEnter={() => {
+            void player.warmTrackForPlayback(
+              track.id,
+              track,
+            );
+          }}
+          onFocus={() => {
+            void player.warmTrackForPlayback(
+              track.id,
+              track,
+            );
+          }}
+          onClick={() =>
+            playTrack(
+              track.id,
+              track,
+            )
+          }
+        >
+
+          <div className="home-track-card__art">
+
+            {track.artwork_url ? (
+
+              <img
+                src={
+                  resolveArtworkUrl(
+                    track.artwork_url,
+                  )
+                }
+                alt=""
+              />
+
+            ) : (
+
+              <div
+                className={
+                  "home-track-card__fallback " +
+                  `home-track-card__fallback--${(index % 4) + 1}`
+                }
+              >
+                H
+              </div>
+
+            )}
+
+            <span className="home-track-card__play">
+              ▶
+            </span>
+
+          </div>
+
+          <div className="home-track-card__info">
+
+            <strong>
+              {track.title}
+            </strong>
+
+            <small>
+              {track.artist}
+            </small>
+
+          </div>
+
+        </button>
+
+      ),
+    )}
+  </div>
+
 ) : recentLoading ? (
 
   <div
@@ -590,95 +694,6 @@ useQuietRefresh(
       </p>
     </div>
 
-  </div>
-
-) : recentlyPlayed.length > 0 ? (
-
-  <div
-    className={`home-track-grid${recentLoading ? " home-track-grid--loading" : ""}`}
-    aria-busy={recentLoading}
-  >
-
-    {recentlyPlayed.map(
-      (track, index) => (
-
-        <button
-          key={track.id}
-          type="button"
-          className="home-track-card"
-          {...trackActionMenu.getTriggerProps(
-            track,
-          )}
-          onMouseEnter={() => {
-            void player.warmTrackForPlayback(
-              track.id,
-              track,
-            );
-          }}
-          onFocus={() => {
-            void player.warmTrackForPlayback(
-              track.id,
-              track,
-            );
-          }}
-          onClick={() =>
-            playTrack(
-              track.id,
-              track,
-            )
-          }
-        >
-
-          <div className="home-track-card__art">
-
-            {track.artwork_url ? (
-
-              <img
-                src={
-                  resolveArtworkUrl(
-                    track.artwork_url,
-                  )
-                }
-                alt=""
-              />
-
-            ) : (
-
-              <div
-                className={
-                  "home-track-card__fallback " +
-                  `home-track-card__fallback--${
-                    (index % 4) + 1
-                  }`
-                }
-              >
-                H
-              </div>
-
-            )}
-
-            <span className="home-track-card__play">
-              ▶
-            </span>
-
-          </div>
-
-          <div className="home-track-card__info">
-
-            <strong>
-              {track.title}
-            </strong>
-
-            <small>
-              {track.artist}
-            </small>
-
-          </div>
-
-        </button>
-
-      ),
-    )}
   </div>
 
 ) : (

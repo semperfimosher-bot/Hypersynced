@@ -81,6 +81,19 @@ function homeRecentOwnerKey(owner) {
   return value ? HOME_RECENT_CACHE_PREFIX + encodeURIComponent(value) : null;
 }
 
+export function getHomeRecentlyPlayedForOwner(owner, stateOwner, tracks) {
+  if (owner === null || owner === undefined || String(owner).trim() === "") {
+    return [];
+  }
+
+  if (String(owner) === String(stateOwner)) {
+    return Array.isArray(tracks) ? tracks : [];
+  }
+
+  return readCachedHomeRecentlyPlayed(owner);
+}
+
+
 export function readCachedHomeRecentlyPlayed(owner, limit = 12) {
   const key = homeRecentOwnerKey(owner);
   if (!key) return [];
