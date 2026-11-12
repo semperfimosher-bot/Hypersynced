@@ -23,6 +23,19 @@ export function createOwnerScopedRequestCoordinator() {
     inFlight = null;
   }
 
+  function invalidate(owner) {
+    const normalizedOwner =
+      owner == null ? null : String(owner);
+
+    if (normalizedOwner !== activeOwner) {
+      return;
+    }
+
+    // Discard any refresh that began before a notification mutation.
+    generation += 1;
+    inFlight = null;
+  }
+
   function run(owner, request, isOwnerActive = () => true) {
     const normalizedOwner =
       owner == null ? null : String(owner);
@@ -75,6 +88,7 @@ export function createOwnerScopedRequestCoordinator() {
 
   return {
     setOwner,
+    invalidate,
     run,
   };
 }
