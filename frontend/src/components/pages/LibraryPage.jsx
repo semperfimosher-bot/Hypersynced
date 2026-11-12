@@ -20,6 +20,7 @@ import * as player from
 import {
   createPlaylist,
   deletePlaylist,
+  getLibraryChanges,
   getLibraryTracks,
   LIBRARY_TRACKS_PAGE_SIZE,
   getMyPlaylists,
@@ -402,6 +403,7 @@ const [
 );
 
 const libraryTracksRef = useRef(libraryTracks);
+const libraryLoadInFlightRef = useRef(false);
 const libraryNextOffsetRef = useRef(
   cachedLibrary?.libraryNextOffset ?? libraryTracks.length,
 );
@@ -953,6 +955,7 @@ const [
   useCallback(
     async ({
       quiet = false,
+      force = false,
     } = {}) => {
       if (!isRegistered) {
         setOwnedPlaylists([]);
@@ -1049,7 +1052,36 @@ const [
         setError("");
       }
 
+      if (libraryLoadInFlightRef.current) {
+        return;
+      }
+      libraryLoadInFlightRef.current = true;
+
       try {
+        let changeToken = null;
+        try {
+          const changes = await getLibraryChanges();
+          changeToken = changes?.version ?? null;
+        } catch {
+          // A failed background check must never blank or reload a usable cache.
+          if (quiet && cached) {
+            return;
+          }
+        }
+
+        if (
+          cached &&
+          !force &&
+          changeToken &&
+          cached.changeToken === changeToken
+        ) {
+          return;
+        }
+
+        if (quiet && cached && !changeToken) {
+          return;
+        }
+
         const [
           mine,
           saved,
@@ -1132,6 +1164,8 @@ const [
 
             libraryNextOffset:
               libraryNextOffsetRef.current,
+
+            changeToken,
           },
         );
         await setCachedLibraryPageAsync(
@@ -1188,6 +1222,7 @@ const [
           );
         }
       } finally {
+        libraryLoadInFlightRef.current = false;
         if (!quiet) {
           setLoading(false);
         }
@@ -1249,6 +1284,7 @@ const [
         tracks: nextTracks,
         hasMoreLibraryTracks: nextHasMore,
         libraryNextOffset: libraryNextOffsetRef.current,
+        changeToken: getCachedLibrary(libraryCacheKey)?.changeToken ?? null,
       });
     } catch (requestError) {
       setError(
@@ -1347,7 +1383,7 @@ const [
   useEffect(() => {
     const handleLibraryChanged =
       () => {
-        void loadLibrary();
+        void loadLibrary({ force: true });
       };
 
     window.addEventListener(

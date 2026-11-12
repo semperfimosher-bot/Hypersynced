@@ -3,6 +3,11 @@ import {
 } from "./api/client.js";
 
 
+export function getLibraryChanges() {
+  return apiRequest("/playlists/library/changes");
+}
+
+
 export function getMyPlaylists() {
   return apiRequest(
     "/playlists/mine",

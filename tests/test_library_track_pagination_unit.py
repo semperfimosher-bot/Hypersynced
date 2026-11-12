@@ -101,3 +101,47 @@ async def test_library_track_legacy_call_keeps_unpaged_contract(monkeypatch):
     assert session.statement is not None
     assert session.statement._limit_clause is None
     assert session.statement._offset_clause is None
+
+
+
+@pytest.mark.asyncio
+async def test_library_change_version_uses_account_scoped_aggregate_state():
+    user = SimpleNamespace(
+        id=uuid4(),
+        account_type=AccountType.REGISTERED,
+    )
+
+    class Result:
+        def __init__(self, row):
+            self.row = row
+
+        def one(self):
+            return self.row
+
+    class Session:
+        def __init__(self):
+            self.statements = []
+
+        async def execute(self, statement):
+            self.statements.append(statement)
+            if len(self.statements) == 1:
+                return Result((2, None))
+            if len(self.statements) == 2:
+                return Result((1, None))
+            return Result((8, None, None))
+
+    session = Session()
+    result = await routes.get_library_changes(
+        cast(Any, user),
+        cast(Any, session),
+    )
+
+    assert len(session.statements) == 3
+    assert isinstance(result["version"], str)
+    assert len(result["version"]) == 64
+    assert result["version"] == (
+        await routes.get_library_changes(
+            cast(Any, user),
+            cast(Any, Session()),
+        )
+    )["version"]

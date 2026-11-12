@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const {
+  getLibraryChanges,
   getLibraryTrack,
   getLibraryTracks,
   getPlaylist,
@@ -276,6 +277,38 @@ test(
         "/api/playlists/playlist-1?limit=1000&offset=1000",
         "/api/playlists/playlist-1?limit=1000&offset=2000",
         "/api/playlists/playlist-1?limit=1000&offset=3000",
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  },
+);
+
+
+
+test(
+  "library change check requests the lightweight account-scoped version endpoint",
+  async () => {
+    const originalFetch = globalThis.fetch;
+    const requested = [];
+
+    globalThis.fetch = async (url) => {
+      requested.push(String(url));
+      return new Response(
+        JSON.stringify({ version: "library-version-1" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    };
+
+    try {
+      assert.deepEqual(await getLibraryChanges(), {
+        version: "library-version-1",
+      });
+      assert.deepEqual(requested, [
+        "/api/playlists/library/changes",
       ]);
     } finally {
       globalThis.fetch = originalFetch;

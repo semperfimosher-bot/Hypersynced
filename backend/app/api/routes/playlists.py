@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from hashlib import sha256
 from typing import Literal, overload
 from uuid import UUID
 
@@ -932,6 +933,79 @@ async def get_saved_playlists(
         refreshed_playlists,
         user,
     )
+
+
+@router.get(
+    "/library/changes",
+)
+async def get_library_changes(
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> dict[str, str]:
+    """Return a cheap, account-scoped version for stale-while-revalidate clients."""
+    require_registered_user(user)
+
+    owned = await session.execute(
+        select(
+            func.count(Playlist.id),
+            func.max(Playlist.updated_at),
+        ).where(
+            Playlist.owner_id == user.id,
+        )
+    )
+    owned_count, owned_updated_at = owned.one()
+
+    saved = await session.execute(
+        select(
+            func.count(SavedPlaylist.playlist_id),
+            func.max(SavedPlaylist.created_at),
+        ).where(
+            SavedPlaylist.user_id == user.id,
+        )
+    )
+    saved_count, saved_created_at = saved.one()
+
+    relevant_playlist_ids = (
+        select(Playlist.id)
+        .where(Playlist.owner_id == user.id)
+        .union(
+            select(SavedPlaylist.playlist_id).where(
+                SavedPlaylist.user_id == user.id,
+            )
+        )
+    )
+    membership = await session.execute(
+        select(
+            func.count(PlaylistTrack.id),
+            func.max(PlaylistTrack.updated_at),
+            func.max(Track.updated_at),
+        )
+        .select_from(PlaylistTrack)
+        .join(
+            Playlist,
+            Playlist.id == PlaylistTrack.playlist_id,
+        )
+        .join(
+            Track,
+            Track.id == PlaylistTrack.track_id,
+        )
+        .where(
+            Playlist.id.in_(relevant_playlist_ids),
+        )
+    )
+    track_count, membership_updated_at, track_updated_at = membership.one()
+
+    parts = (
+        str(owned_count or 0),
+        owned_updated_at.isoformat() if owned_updated_at else "",
+        str(saved_count or 0),
+        saved_created_at.isoformat() if saved_created_at else "",
+        str(track_count or 0),
+        membership_updated_at.isoformat() if membership_updated_at else "",
+        track_updated_at.isoformat() if track_updated_at else "",
+    )
+    version = sha256("|".join(parts).encode("utf-8")).hexdigest()
+    return {"version": version}
 
 
 @router.get(
