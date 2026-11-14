@@ -51,19 +51,21 @@ export function bindAccountPlayback(userId) {
     const key = `${trackId ?? "none"}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
     if (!force && (key === lastSavedKey || key === pendingKey)) return writeChain;
     pendingKey = key;
-    const payload = {
-      track_id: trackId,
-      position_seconds: position,
-      paused,
-      expected_playback_updated_at: lastServerUpdatedAtValue,
-    };
     writeChain = writeChain.catch(() => {}).then(async () => {
       if (!active) return;
       try {
+        const payload = {
+          track_id: trackId,
+          position_seconds: position,
+          paused,
+          // Read the version when this serialized write actually runs. Earlier
+          // queued writes may have advanced the version in the meantime.
+          expected_playback_updated_at: lastServerUpdatedAtValue,
+        };
         const saved = await apiRequest("/users/me/playback-state", {
           method: "PUT",
           body: JSON.stringify(payload),
-         });
+        });
         lastSavedKey = key;
         lastServerUpdatedAtValue = saved?.updated_at ?? null;
         lastServerUpdatedAt = Math.max(
