@@ -1367,10 +1367,10 @@ const restoreSavedAppView =
       restoreGeneration =
         navigationGenerationRef.current,
     ) => {
-      const requestId = ++appViewRestoreRequestRef.current;
       if (navigationGenerationRef.current !== restoreGeneration) {
         return;
       }
+      const requestId = ++appViewRestoreRequestRef.current;
 
       const params =
         new URLSearchParams(
