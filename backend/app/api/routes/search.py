@@ -2542,21 +2542,21 @@ async def update_search_preferences(
     user: CurrentUser,
     session: DatabaseSession,
 ) -> SearchPreferenceResponse:
-    state = await session.get(
-        UserAppState,
-        user.id,
+    # Keep search preferences independent from the saved navigation version.
+    # The user-row lock also serializes first-time creation of user_app_state.
+    await session.execute(
+        select(User.id).where(User.id == user.id).with_for_update()
     )
+    state = await session.get(UserAppState, user.id)
+    existing_state = state is not None
 
     if state is None:
-        state = UserAppState(
-            user_id=user.id,
-        )
-
-        session.add(
-            state,
-        )
+        state = UserAppState(user_id=user.id)
+        session.add(state)
 
     state.search_sort_mode = payload.sort_mode
+    if existing_state:
+        state.updated_at = UserAppState.updated_at
 
     await session.commit()
 
