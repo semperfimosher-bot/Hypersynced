@@ -14,7 +14,7 @@ from starlette.types import Receive, Scope, Send
 from ...config import get_settings
 from ...database import get_session_factory
 from ...models.media import Track
-from ...services.b2 import get_b2_bucket, get_b2_s3_client
+from ...services.b2 import get_b2_s3_client
 from ...services.thread_work import run_blocking, run_blocking_resource
 
 router = APIRouter(
