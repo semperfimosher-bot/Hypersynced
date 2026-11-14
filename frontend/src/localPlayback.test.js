@@ -4,8 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-// Account state is restored from the database, with an account-scoped cache
-// used only as an immediate startup hint.
+// Account state and playback are restored exclusively from the database.
 test("app shell restores and persists account playback through the existing API", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
@@ -25,11 +24,9 @@ test("app view is restored and persisted only through the account database API",
 
 test("playback state is restored only from Neon, never from persistent browser storage", () => {
   const player = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
-  const persistence = readFileSync(new URL("./playerPersistence.js", import.meta.url), "utf8");
   assert.match(player, /setPlaybackPersistenceOwner/);
-  assert.doesNotMatch(player, /restorePersistedPlayerState\(nextOwner\)/);
-  assert.doesNotMatch(player, /attachEvents\(\);\s*restorePersistedPlayerState\(\);/);
-  assert.doesNotMatch(persistence, /localStorage|sessionStorage|hypersync_player_state_v2/);
+  assert.match(player, /restoreTrackPaused/);
+  assert.doesNotMatch(player, /playerPersistence|PersistedPlayerState|localStorage|sessionStorage/);
 });
 
 class TestAudio extends EventTarget {
