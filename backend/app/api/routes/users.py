@@ -26,7 +26,8 @@ from pydantic import (
     Field,
 )
 from sqlalchemy import func, select
-from sqlalchemy.orm import flag_modified, selectinload
+from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 
 from ...config import get_settings
 from ...database import get_session_factory
