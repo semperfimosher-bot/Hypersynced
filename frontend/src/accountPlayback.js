@@ -8,6 +8,7 @@ export function bindAccountPlayback(userId) {
   let active = true;
   let ready = false;
   let userInteractedBeforeRestore = false;
+  let awaitingResume = false;
   let lastTrackId = player.getState()?.trackId ?? null;
   let lastSavedKey = "";
   let pendingKey = "";
@@ -16,7 +17,7 @@ export function bindAccountPlayback(userId) {
   let lastPaused = player.getState()?.paused ?? true;
 
   const save = (force = false, keepalive = false) => {
-    if (!active || !ready) return writeChain;
+    if (!active || !ready || awaitingResume) return writeChain;
     const state = player.getState();
     const trackId = state?.trackId ?? null;
     const position = trackId
@@ -58,6 +59,15 @@ export function bindAccountPlayback(userId) {
       lastTrackId = trackId;
       return;
     }
+    if (awaitingResume) {
+      if (trackId !== lastTrackId || state?.phase === "playing" || !paused) {
+        awaitingResume = false;
+      } else {
+        lastPhase = state?.phase ?? null;
+        lastPaused = paused;
+        return;
+      }
+    }
     if (trackId !== lastTrackId) {
       lastTrackId = trackId;
       void save(true);
@@ -70,7 +80,7 @@ export function bindAccountPlayback(userId) {
     lastPaused = paused;
   });
 
-  const interval = window.setInterval(() => void save(false), 15_000);
+  const interval = window.setInterval(() => void save(false), 5_000);
   const onVisibilityChange = () => {
     if (document.visibilityState === "hidden") void save(true, true);
   };
@@ -84,7 +94,9 @@ export function bindAccountPlayback(userId) {
       if (!userInteractedBeforeRestore) {
         if (saved?.track?.id) {
           lastTrackId = saved.track.id;
-          lastSavedKey = `${saved.track.id}:${Math.floor(Number(saved.position_seconds) || 0)}:paused`;
+          const savedPaused = saved.paused !== false;
+          awaitingResume = !savedPaused;
+          lastSavedKey = `${saved.track.id}:${Math.floor(Number(saved.position_seconds) || 0}:${savedPaused ? "paused" : "playing"}`;
           await player.restoreTrackPaused(saved.track, saved.position_seconds);
         } else {
           player.stopTrack();
