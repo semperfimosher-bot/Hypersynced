@@ -2251,6 +2251,474 @@ return getState();
 }
 
 
+export async function playTrack(
+  trackId,
+  meta = {},
+) {
+
+
+  finishListeningEvent(
+  "skipped",
+  getSafeCurrentTime(),
+);
+  const state =
+    await playTrackInternal(
+      trackId,
+      meta,
+      false,
+    );
+
+
+  void ensureAutoplayQueue({
+    force:
+      true,
+  }).catch(
+    () => {},
+  );
+
+
+  return state;
+}
+
+export async function playQueueIndex(
+  index,
+) {
+  const track =
+    getQueueTrackAtIndex(
+      currentQueue,
+      index,
+    );
+
+  if (!track) {
+    return false;
+  }
+
+
+  finishListeningEvent(
+  "skipped",
+  getSafeCurrentTime(),
+);
+
+
+  currentQueueIndex =
+    index;
+
+
+  try {
+    const state =
+      await playTrackInternal(
+        track.id,
+        track.meta,
+        true,
+      );
+
+
+    notify();
+
+
+    void ensureAutoplayQueue()
+      .catch(
+        () => {},
+      );
+
+
+    return state ??
+      false;
+
+  } catch (error) {
+    notify();
+
+    throw error;
+  }
+}
+
+export async function playTrackQueue(
+  tracks,
+  startIndex = 0,
+) {
+  const queue =
+    buildTrackQueue(
+      tracks,
+    );
+
+
+  if (
+    queue.length ===
+    0
+  ) {
+    cancelActivePlaybackSession();
+
+    clearQueue();
+
+    return null;
+  }
+
+
+  const requestedIndex =
+    Number.isInteger(
+      startIndex,
+    )
+      ? startIndex
+      : 0;
+
+
+  const safeIndex =
+    Math.min(
+      Math.max(
+        requestedIndex,
+        0,
+      ),
+      queue.length - 1,
+    );
+
+
+  queueRevision +=
+    1;
+
+
+  currentQueue =
+    queue;
+
+  currentQueueIndex =
+    safeIndex;
+
+
+  const track =
+    currentQueue[
+      currentQueueIndex
+    ];
+
+
+  finishListeningEvent(
+    "skipped",
+    getSafeCurrentTime(),
+  );
+
+
+  const state =
+    await playTrackInternal(
+      track.id,
+      track.meta,
+      true,
+    );
+
+
+  void ensureAutoplayQueue()
+    .catch(
+      () => {},
+    );
+
+
+  return state;
+}
+
+export function playTrackNext(
+  track,
+) {
+  const entries =
+    buildTrackQueue([
+      track,
+    ]);
+
+  const entry =
+    entries[0];
+
+  if (!entry) {
+    return false;
+  }
+
+  /*
+   * Manual queue choices always win over
+   * autoplay. If the current song started
+   * outside a queue, materialize it first
+   * so "Play next" has a stable insertion
+   * point.
+   */
+  ensureCurrentTrackInQueue();
+
+  currentQueue =
+    insertQueueEntryAsNext(
+      currentQueue,
+      currentQueueIndex,
+      entry,
+    );
+
+  /*
+   * Any recommendation request that began
+   * before this manual edit is stale. Its
+   * response will be ignored by the
+   * revision guard in ensureAutoplayQueue.
+   */
+  queueRevision +=
+    1;
+
+  notify();
+
+  void Promise.resolve(
+    warmQueuedAudioEntry(
+      entry,
+    ),
+  ).catch(
+    () => {},
+  );
+
+  return true;
+}
+
+
+export function addTrackToQueue(
+  track,
+) {
+  const entries =
+    buildTrackQueue([
+      track,
+    ]);
+
+  const entry =
+    entries[0];
+
+  if (!entry) {
+    return false;
+  }
+
+  ensureCurrentTrackInQueue();
+
+  currentQueue =
+    appendQueueEntry(
+      currentQueue,
+      currentQueueIndex,
+      entry,
+    );
+
+  queueRevision +=
+    1;
+
+  notify();
+
+  void Promise.resolve(
+    warmQueuedAudioEntry(
+      entry,
+    ),
+  ).catch(
+    () => {},
+  );
+
+  return true;
+}
+
+export async function playUrl(
+  url,
+  meta = {},
+) {
+
+
+  if (!url) {
+    return null;
+  }
+
+
+  const session =
+    beginPlaybackSession(
+      null,
+    );
+
+
+  clearQueue();
+
+
+  const {
+    artworkUrl = null,
+    title = "",
+    artist = "",
+  } = meta;
+
+
+  currentTrackId =
+    null;
+
+  currentTrackMeta =
+  null;
+
+  restoredTimeSeconds =
+  0;
+currentArtworkUrl =
+    artworkUrl;
+
+  currentTrackTitle =
+    title;
+
+  currentTrackArtist =
+    artist;
+
+
+  setPlaybackPhase(
+    "loading",
+  );
+
+  notify();
+
+
+  const mediaUrl =
+    resolveMediaUrl(
+      url,
+    );
+
+
+  if (
+    !isPlaybackSessionCurrent(
+      session,
+    )
+  ) {
+    return null;
+  }
+
+
+  loadAudioSource(
+    mediaUrl,
+    null,
+  );
+
+  audio.load();
+
+
+  try {
+    await audio.play();
+  } catch (error) {
+    if (
+      !isPlaybackSessionCurrent(
+        session,
+      ) ||
+      isExpectedPlayInterruption(
+        error,
+      )
+    ) {
+      return null;
+    }
+
+    setPlaybackPhase(
+      "error",
+      error instanceof Error
+        ? error.message
+        : "Unable to start playback.",
+    );
+
+    notify();
+
+    throw error;
+  }
+
+
+  if (
+    !isPlaybackSessionCurrent(
+      session,
+    )
+  ) {
+    return null;
+  }
+
+
+  return getState();
+}
+
+
+export async function togglePlay() {
+
+
+  if (audio.paused) {
+    /*
+     * Normally this has already been
+     * preloaded during restoration.
+     *
+     * If the user clicks extremely fast,
+     * or preload previously failed,
+     * prepare it now.
+     */
+    await ensureCurrentTrackSource();
+
+
+    if (
+      !hasAudioSource()
+    ) {
+      return getState();
+    }
+
+
+    setPlaybackPhase(
+      "loading",
+    );
+
+    notify();
+
+    try {
+      await audio.play();
+    } catch (error) {
+      if (
+        !isExpectedPlayInterruption(
+          error,
+        )
+      ) {
+        throw error;
+      }
+
+      return getState();
+    }
+
+  } else {
+    audio.pause();
+
+    /*
+     * Do not make pause wait on network.
+     * Warm the resume window in the
+     * background for the next Play tap.
+     */
+    void warmCurrentTrackForResume();
+  }
+
+
+  return getState();
+}
+
+
+export function pausePlayback() {
+
+
+  return silenceLocalPlayback();
+}
+
+
+export function silenceLocalPlayback() {
+  if (
+    !audio.paused
+  ) {
+    audio.pause();
+  }
+
+  /*
+   * Keep this exact pause point hot for
+   * two hours. The Audio element remains
+   * attached, and the nearby media bytes
+   * are also persisted through the
+   * service worker cache.
+   */
+  void warmCurrentTrackForResume();
+
+
+  if (
+    currentTrackId ||
+    hasAudioSource()
+  ) {
+    setPlaybackPhase(
+      "paused",
+    );
+  }
+notify();
+
+  return getState();
+}
+
+
+
+
 export function setPlaybackPersistenceOwner(userId) {
   const nextOwner = String(userId ?? "").trim() || null;
   if (activePlaybackOwnerId === nextOwner) return;
