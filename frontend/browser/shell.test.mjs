@@ -377,7 +377,7 @@ test("cache quota exhaustion cannot break a successful online script", { timeout
 
 test("IndexedDB media survives reload and supports offline range, decoding, playback and seek", { timeout: 45000 }, async (t) => {
   const { page, context, pageErrors, state } = await fixture(t, { admin: true });
-  const fileSize = await page.evaluate(async () => {
+  const seededMedia = await page.evaluate(async () => {
     const samples = 64000;
     const data = new ArrayBuffer(44 + samples * 2);
     const view = new DataView(data);
@@ -403,9 +403,26 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       tx.oncomplete = resolveWrite;
       tx.onerror = () => reject(tx.error);
     });
+    const seedSnapshot = await new Promise((resolveRead, reject) => {
+      const tx = db.transaction(["media", "chunks"], "readonly");
+      const mediaRequest = tx.objectStore("media").get("browser-audio:v1");
+      const chunkRequest = tx.objectStore("chunks").get("browser-audio:v1:0");
+      tx.oncomplete = () => resolveRead({
+        recordFound: Boolean(mediaRequest.result),
+        chunkFound: Boolean(chunkRequest.result),
+        chunkLength: chunkRequest.result?.data?.byteLength ?? null,
+      });
+      tx.onerror = () => reject(tx.error);
+    });
     db.close();
-    return data.byteLength;
+    return { fileSize: data.byteLength, ...seedSnapshot };
   });
+  const fileSize = seededMedia.fileSize;
+  assert.deepEqual(
+    { recordFound: seededMedia.recordFound, chunkFound: seededMedia.chunkFound, chunkLength: seededMedia.chunkLength },
+    { recordFound: true, chunkFound: true, chunkLength: fileSize },
+    "media fixture must be written before the reload",
+  );
   await context.addInitScript(() => {
     const NativeAudio = window.Audio;
     window.__appAudioInstances = [];
