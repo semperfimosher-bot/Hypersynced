@@ -36,6 +36,7 @@ class TestAudio extends EventTarget {
   paused = true;
   currentTime = 0;
   duration = 120;
+  readyState = 1;
   volume = 1;
   muted = false;
   src = "";
@@ -91,6 +92,31 @@ test("automatic offline retention starts only after the audio element emits play
   player.stopTrack();
 });
 
+
+test("database restore reapplies the saved position to an already-loaded track and pauses it", async () => {
+  const trackId = "restore-same-loaded-track";
+  await player.playTrack(trackId, {
+    title: "Restored track",
+    artist: "Test",
+    audioUrl: "https://example.invalid/restored-track.mp3",
+  });
+
+  const audio = player._getAudioElement();
+  audio.currentTime = 73;
+  audio.paused = false;
+
+  await player.restoreTrackPaused({
+    id: trackId,
+    title: "Restored track",
+    artist: "Test",
+    audio_url: "https://example.invalid/restored-track.mp3",
+  }, 18);
+
+  assert.equal(audio.currentTime, 18, "Neon position must replace the stale in-memory position");
+  assert.equal(audio.paused, true, "database restoration must never continue local playback");
+  assert.equal(player.getState().phase, "paused");
+  player.stopTrack();
+});
 
 test("seek, volume and pause change the local audio element", () => {
   const audio = player._getAudioElement();
