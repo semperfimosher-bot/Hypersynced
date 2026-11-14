@@ -2145,3 +2145,32 @@ test(
   },
 );
 
+
+
+test("offline account identity is minimal, IndexedDB-only, and removable on logout", async () => {
+  const mediaStore = await loadMediaStoreModule();
+  assert.equal(typeof mediaStore.saveOfflineIdentity, "function");
+  assert.equal(typeof mediaStore.getOfflineIdentity, "function");
+  assert.equal(typeof mediaStore.clearOfflineIdentity, "function");
+
+  await mediaStore.saveOfflineIdentity({
+    id: "offline-owner-1",
+    username: "listener",
+    display_name: "Listener",
+    role: "admin",
+    account_type: "registered",
+    email: "must-not-be-cached@example.test",
+    access_token: "must-not-be-cached",
+  });
+
+  assert.deepEqual(await mediaStore.getOfflineIdentity(), {
+    id: "offline-owner-1",
+    username: "listener",
+    display_name: "Listener",
+    role: "admin",
+    account_type: "registered",
+  });
+
+  await mediaStore.clearOfflineIdentity();
+  assert.equal(await mediaStore.getOfflineIdentity(), null);
+});
