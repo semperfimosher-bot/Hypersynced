@@ -319,7 +319,7 @@ test("cache quota exhaustion cannot break a successful online script", { timeout
 });
 
 test("IndexedDB media survives reload and supports offline range, decoding, playback and seek", { timeout: 45000 }, async (t) => {
-  const { page, context, pageErrors } = await fixture(t, { admin: true });
+  const { page, context, pageErrors, state } = await fixture(t, { admin: true });
   const fileSize = await page.evaluate(async () => {
     const samples = 64000;
     const data = new ArrayBuffer(44 + samples * 2);
