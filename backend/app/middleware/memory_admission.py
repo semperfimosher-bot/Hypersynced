@@ -62,7 +62,7 @@ class MemoryAdmissionMiddleware:
 
     async def _reject(
         self,
-        scope: starlette.types.Scope,
+        scope: Any,
         receive: Any,
         send: Any,
     ) -> None:
@@ -76,9 +76,9 @@ class MemoryAdmissionMiddleware:
 
     async def __call__(
         self,
-        scope: starlette.types.Scope,
-        receive: starlette.types.Receive,
-        send: starlette.types.Send,
+        scope: Any,
+        receive: Any,
+        send: Any,
     ) -> None:
         permit = self._permit(scope) if scope["type"] == "http" else None
         if permit is None:
