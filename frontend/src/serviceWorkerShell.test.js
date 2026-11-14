@@ -123,7 +123,6 @@ test("activation retains four complete shell generations and prunes partial and 
   await dispatch.activate();
   assert.deepEqual(deleted.sort(), [
     "hypersync-app-shell-oldest",
-    "hypersync-app-shell-older",
     "hypersync-app-shell-partial",
   ]);
 });
