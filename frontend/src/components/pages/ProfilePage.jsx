@@ -39,6 +39,7 @@ import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 
 import {
+  applyOptimisticRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 
@@ -246,11 +247,22 @@ export default function ProfilePage({
     }
 
     return subscribeListeningHistoryChanged(
-      () => {
-        void loadProfile({
-          quiet:
-            true,
-        });
+      (event) => {
+        if (event.detail?.type === "optimistic-play" && event.detail.track) {
+          setProfile((current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              tracks_played: (Number(current.tracks_played) || 0) + 1,
+              recently_played: applyOptimisticRecentlyPlayed(
+                current.recently_played,
+                event.detail.track,
+              ),
+            };
+          });
+          return;
+        }
+        void loadProfile({ quiet: true });
       },
     );
   }, [
