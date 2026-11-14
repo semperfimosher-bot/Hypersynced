@@ -1466,7 +1466,7 @@ const persistAppView =
       appStateSaveQueueRef.current =
         appStateSaveQueueRef.current
           .catch(() => {})
-          .then(() => {
+          .then(async () => {
             if (activeAppStateOwnerRef.current !== ownerId) {
               return null;
             }
