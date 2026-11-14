@@ -377,7 +377,6 @@ function sampleListeningProgress() {
 function saveListeningProgress(keepalive = false) {
   const event = activeListeningEvent;
   if (!event || event.progressPromise) return event?.progressPromise ?? Promise.resolve();
-  sampleListeningProgress();
   const elapsed = Math.floor(event.listenedSeconds);
   if (elapsed <= event.lastProgressSentAt) return Promise.resolve();
 
@@ -1607,7 +1606,10 @@ function handleBackgroundPlaybackLifecycle() {
     force:
       true,
   });
-  if (hidden) void saveListeningProgress(true);
+  if (hidden) {
+    sampleListeningProgress();
+    void saveListeningProgress(true);
+  }
 
   updateMediaSession(
     getState(),
