@@ -3,8 +3,7 @@
 import asyncio
 from urllib.parse import parse_qs
 
-from starlette.responses import JSONResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette import responses, types
 
 
 BUSY_DETAIL = "Media processing is busy. Please retry shortly."
@@ -14,7 +13,7 @@ RETRY_AFTER_SECONDS = "1"
 class MemoryAdmissionMiddleware:
     def __init__(
         self,
-        app: ASGIApp,
+        app: types.ASGIApp,
         *,
         upload_limit: int = 1,
         stream_limit: int = 4,
@@ -34,7 +33,7 @@ class MemoryAdmissionMiddleware:
         self._artwork = asyncio.Semaphore(artwork_limit)
         self._catalog = asyncio.Semaphore(catalog_limit)
 
-    def _permit(self, scope: Scope) -> asyncio.Semaphore | None:
+    def _permit(self, scope: types.Scope) -> asyncio.Semaphore | None:
         path = scope.get("path", "")
         method = scope.get("method", "")
         if method == "POST" and path.rstrip("/") in {
@@ -61,8 +60,8 @@ class MemoryAdmissionMiddleware:
                     return self._catalog
         return None
 
-    async def _reject(self, scope: Scope, receive: Receive, send: Send) -> None:
-        await JSONResponse(
+    async def _reject(self, scope: Scope, receive: types.Receive, send: types.Send) -> None:
+        await responses.JSONResponse(
             {"detail": BUSY_DETAIL},
             status_code=503,
             headers={"Retry-After": RETRY_AFTER_SECONDS},
