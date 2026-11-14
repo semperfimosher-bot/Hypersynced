@@ -38,6 +38,7 @@ export default function PlayerBar({
   onOpenMessage,
   onOpenNotification,
   onDeleteNotification,
+  onRefreshNotifications,
   onEnablePush,
   pushBusy,
   pushEnabled,
@@ -623,7 +624,13 @@ export default function PlayerBar({
               }
 
               setNotificationsOpen(
-                (open) => !open,
+                (open) => {
+                  const nextOpen = !open;
+                  if (nextOpen) {
+                    void onRefreshNotifications?.();
+                  }
+                  return nextOpen;
+                },
               );
             }}
           >
