@@ -126,6 +126,8 @@ let sourcePreparationTrackId =
 let lastPersistenceWriteAt =
   0;
 
+let playbackPersistenceOwnerId = null;
+
 
 let currentQueue =
   [];
@@ -502,7 +504,7 @@ function persistPlayerState({
   lastPersistenceWriteAt =
     now;
 
-  writePersistedPlayerState({
+  writePersistedPlayerState(playbackPersistenceOwnerId, {
     trackId:
       currentTrackId,
 
@@ -1568,7 +1570,6 @@ function attachEvents() {
 
 
 attachEvents();
-restorePersistedPlayerState();
 
 
 function handleBackgroundPlaybackLifecycle() {
@@ -2067,9 +2068,9 @@ async function ensureCurrentTrackSource() {
 }
 
 
-function restorePersistedPlayerState() {
+function restorePersistedPlayerState(userId) {
   const saved =
-    readPersistedPlayerState();
+    readPersistedPlayerState(userId);
 
   if (
     !saved?.trackId
@@ -2181,14 +2182,6 @@ function restorePersistedPlayerState() {
   );
 
   notify();
-
-
-  void ensureAutoplayQueue({
-    force:
-      true,
-  }).catch(
-    () => {},
-  );
 
 
   /*
@@ -2461,6 +2454,14 @@ beginListeningEvent(
 
 
 return getState();
+}
+
+
+export function setPlaybackPersistenceOwner(userId) {
+  const nextOwner = String(userId ?? "").trim() || null;
+  if (playbackPersistenceOwnerId === nextOwner) return;
+  playbackPersistenceOwnerId = nextOwner;
+  if (nextOwner) restorePersistedPlayerState(nextOwner);
 }
 
 
@@ -2780,7 +2781,7 @@ export async function playUrl(
   restoredTimeSeconds =
   0;
 
-  clearPersistedPlayerState();
+  clearPersistedPlayerState(playbackPersistenceOwnerId);
 
   currentArtworkUrl =
     artworkUrl;
