@@ -1,7 +1,6 @@
 """Keep expensive uploads, exports and slow media consumers within fixed budgets."""
 
 import asyncio
-from typing import Any
 
 
 BUSY_DETAIL = "Media processing is busy. Please retry shortly."
@@ -11,7 +10,7 @@ RETRY_AFTER_SECONDS = "1"
 class MemoryAdmissionMiddleware:
     def __init__(
         self,
-        app: Any,
+        app,
         *,
         upload_limit: int = 1,
         stream_limit: int = 4,
@@ -31,7 +30,7 @@ class MemoryAdmissionMiddleware:
         self._artwork = asyncio.Semaphore(artwork_limit)
         self._catalog = asyncio.Semaphore(catalog_limit)
 
-    def _permit(self, scope: Any) -> asyncio.Semaphore | None:
+    def _permit(self, scope) -> asyncio.Semaphore | None:
         path = scope.get("path", "")
         method = scope.get("method", "")
         if method == "POST" and path.rstrip("/") in {
@@ -62,9 +61,9 @@ class MemoryAdmissionMiddleware:
 
     async def _reject(
         self,
-        scope: Any,
-        receive: Any,
-        send: Any,
+        scope,
+        receive,
+        send,
     ) -> None:
         from starlette.responses import JSONResponse
 
@@ -76,9 +75,9 @@ class MemoryAdmissionMiddleware:
 
     async def __call__(
         self,
-        scope: Any,
-        receive: Any,
-        send: Any,
+        scope,
+        receive,
+        send,
     ) -> None:
         permit = self._permit(scope) if scope["type"] == "http" else None
         if permit is None:
