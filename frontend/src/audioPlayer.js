@@ -2755,19 +2755,67 @@ export function setPlaybackPersistenceOwner(userId) {
 }
 
 
+async function applyRestoredPlaybackPosition(trackId, positionSeconds) {
+  if (currentTrackId !== trackId || loadedAudioTrackId !== trackId || !hasAudioSource()) {
+    return false;
+  }
+
+  if (audio.readyState < 1) {
+    await new Promise((resolve, reject) => {
+      const cleanup = () => {
+        audio.removeEventListener("loadedmetadata", handleLoaded);
+        audio.removeEventListener("error", handleError);
+      };
+      const handleLoaded = () => {
+        cleanup();
+        resolve();
+      };
+      const handleError = () => {
+        cleanup();
+        reject(new Error("Unable to load the restored track metadata."));
+      };
+      audio.addEventListener("loadedmetadata", handleLoaded, { once: true });
+      audio.addEventListener("error", handleError, { once: true });
+      if (audio.readyState >= 1) handleLoaded();
+    });
+  }
+
+  if (currentTrackId !== trackId || loadedAudioTrackId !== trackId || !hasAudioSource()) {
+    return false;
+  }
+
+  const requestedTime = Math.max(0, Number(positionSeconds) || 0);
+  const maximum = Number.isFinite(audio.duration) && audio.duration > 0
+    ? audio.duration
+    : requestedTime;
+
+  audio.currentTime = Math.max(0, Math.min(requestedTime, maximum));
+  restoredTimeSeconds = 0;
+  return true;
+}
+
 export async function restoreTrackPaused(track, positionSeconds = 0) {
   if (!track?.id) return null;
   const restoringTrackId = String(track.id);
   cancelActivePlaybackSession();
   clearQueue();
+
+  // A database restore is authoritative even when this tab already has the
+  // same track loaded. Pause first so a remote restore can never keep playing.
+  audio.pause();
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
 
-  // Restore the media source and saved seek position without autoplaying.
-  // Player controls remain disabled until a source exists, so preparation
-  // must finish before the account restore is considered ready.
   try {
     await ensureCurrentTrackSource();
+    await applyRestoredPlaybackPosition(
+      restoringTrackId,
+      positionSeconds,
+    );
+
+    if (currentTrackId === restoringTrackId) {
+      setPlaybackPhase("paused");
+    }
   } catch (error) {
     if (currentTrackId === restoringTrackId) {
       setPlaybackPhase(
@@ -2781,7 +2829,6 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   }
 
   notify();
-
   return getState();
 }
 
