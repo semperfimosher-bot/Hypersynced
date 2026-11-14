@@ -459,26 +459,11 @@ async def build_dashboard(
         )
     )
 
-    # Count a play only after 30 seconds, or half of a shorter track.
-    minimum_play_seconds = func.greatest(
-        1,
-        func.least(
-            30,
-            func.coalesce(Track.duration_seconds, 60) / 2,
-        ),
-    )
-    qualified_play = (
-        func.coalesce(ListeningEvent.progress_seconds, 0)
-        >= minimum_play_seconds
-    )
-
+    # A play is recorded when the audio element confirms actual playback.
+    # Do not delay the count until a listening-time threshold is reached.
     plays_result = await session.execute(
-        select(func.count(ListeningEvent.id))
-        .select_from(ListeningEvent)
-        .join(Track, Track.id == ListeningEvent.track_id)
-        .where(
+        select(func.count(ListeningEvent.id)).where(
             ListeningEvent.user_id == user.id,
-            qualified_play,
         )
     )
 
@@ -496,9 +481,7 @@ async def build_dashboard(
             ListeningEvent.track_id.label(
                 "track_id",
             ),
-            func.count(ListeningEvent.id).filter(
-                qualified_play,
-            ).label(
+            func.count(ListeningEvent.id).label(
                 "play_count",
             ),
             func.max(
@@ -513,7 +496,6 @@ async def build_dashboard(
         )
         .where(
             ListeningEvent.user_id == user.id,
-            func.coalesce(ListeningEvent.progress_seconds, 0) > 0,
         )
         .group_by(
             ListeningEvent.track_id,
@@ -596,7 +578,6 @@ async def build_dashboard(
         )
         .where(
             ListeningEvent.user_id == user.id,
-            qualified_play,
         )
         .group_by(
             Track.artist,
