@@ -12,7 +12,9 @@ on:
 
 jobs:
   frontend:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 does not ship a Chromium build for ubuntu-26.04.
+    # Pin the browser job to the supported 24.04 runner image.
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
