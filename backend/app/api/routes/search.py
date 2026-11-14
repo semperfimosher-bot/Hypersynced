@@ -23,9 +23,9 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import (
-    flag_modified,
     selectinload,
 )
+from sqlalchemy.orm.attributes import flag_modified
 
 from ...models.account import (
     ListeningEvent,
