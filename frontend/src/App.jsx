@@ -1469,7 +1469,9 @@ const persistAppView =
               },
             );
           })
-          .catch(() => {});
+          .catch((error) => {
+            console.error("[HyperSynced] Unable to save app view state.", error);
+          });
     },
     [currentUser],
   );
@@ -1874,6 +1876,7 @@ const clearPlaylistToOpen =
         }
 
         navigationGenerationRef.current += 1;
+        cancelPendingSearchSave();
 
         setArtistToOpen(
           cleanName,
@@ -1901,7 +1904,7 @@ const clearPlaylistToOpen =
           "",
         );
       },
-      [persistAppView],
+      [cancelPendingSearchSave, persistAppView],
     );
 
     const openUserProfile =
