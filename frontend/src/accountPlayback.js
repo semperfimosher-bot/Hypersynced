@@ -113,9 +113,9 @@ export function bindAccountPlayback(userId) {
         }
         if (serverUpdatedAt && serverUpdatedAt <= lastServerUpdatedAt) return;
         if (!initial && !serverUpdatedAt) return;
-        lastServerUpdatedAtValue = saved?.updated_at ?? null;
 
         if (initial && userInteractedBeforeRestore) {
+          lastServerUpdatedAtValue = saved?.updated_at ?? null;
           lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
           return;
         }
@@ -130,7 +130,12 @@ export function bindAccountPlayback(userId) {
             saved.track,
             saved.position_seconds,
           );
-          if (!active || localRevision !== revisionAtRequest) return;
+          if (!active) return;
+          if (localRevision !== revisionAtRequest) {
+            lastServerUpdatedAtValue = saved?.updated_at ?? null;
+            lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
+            return;
+          }
 
           // Browsers must not autoplay after a refresh or remote-device update.
           awaitingResume = saved.paused === false;
@@ -141,6 +146,7 @@ export function bindAccountPlayback(userId) {
           lastSavedKey = "none:0:paused";
         }
 
+        lastServerUpdatedAtValue = saved?.updated_at ?? null;
         lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
       } catch (error) {
         if (initial) {
