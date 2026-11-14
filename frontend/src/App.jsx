@@ -1465,6 +1465,7 @@ const persistAppView =
 
       const savedState = { ...state };
       const ownerId = currentUser.id;
+      const navigationGeneration = navigationGenerationRef.current;
 
       appStateSaveQueueRef.current =
         appStateSaveQueueRef.current
@@ -1496,6 +1497,24 @@ const persistAppView =
             return saved;
           })
           .catch((error) => {
+            if (error?.status === 409 && activeAppStateOwnerRef.current === ownerId) {
+              // Resolve a version conflict from Neon; never replay the stale page payload.
+              void apiRequest("/users/me/app-state").then((latest) => {
+                if (
+                  activeAppStateOwnerRef.current !== ownerId ||
+                  navigationGenerationRef.current !== navigationGeneration ||
+                  searchStateTimerRef.current
+                ) return;
+                appStateVersionRef.current = latest?.updated_at ?? null;
+                appStateVersionLoadedRef.current = true;
+                const restored = normalizeAppViewState(latest, currentUser.role);
+                setActivePage(restored.activePage);
+                setSearchQuery(restored.searchQuery);
+                setActiveProfileUsername(restored.profileUsername);
+              }).catch((refreshError) => {
+                console.error("[HyperSynced] Unable to reconcile app view state.", refreshError);
+              });
+            }
             console.error("[HyperSynced] Unable to save app view state.", error);
           });
     },
