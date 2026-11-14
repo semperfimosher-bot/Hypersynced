@@ -1383,15 +1383,6 @@ const restoreSavedAppView =
       }
       const requestId = ++appViewRestoreRequestRef.current;
 
-      // Establish the account owner before fetching so its DB version is
-      // retained even though the authenticated UI is not mounted yet.
-      if (activeAppStateOwnerRef.current !== user?.id) {
-        activeAppStateOwnerRef.current = user?.id ?? null;
-        appStateVersionRef.current = null;
-        appStateVersionLoadedRef.current = false;
-        appStateSaveQueueRef.current = Promise.resolve();
-      }
-
       const params =
         new URLSearchParams(
           window.location.search,
