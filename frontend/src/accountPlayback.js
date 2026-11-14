@@ -152,8 +152,7 @@ export function bindAccountPlayback(userId) {
       // A different track or an actual Play action is still a local user action.
       if (
         trackId !== expectedRemoteTrackId ||
-        state?.phase === "playing" ||
-        !paused
+        state?.phase === "playing"
       ) {
         localRevision += 1;
         userInteractedBeforeRestore = true;
