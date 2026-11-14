@@ -4,12 +4,19 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-// Account checkpoints may restore the last track, but the app must not
-// register live device discovery, remote commands, or cross-device control.
-test("app shell keeps account checkpoints separate from live remote controls", () => {
+// The browser is the only persistence source for startup playback state.
+test("app shell does not restore or save account playback state", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
-  assert.match(source, /bindAccountPlayback/);
+  assert.doesNotMatch(source, /bindAccountPlayback|playback-state|accountPlayback/);
   assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
+});
+
+// The browser is the only persistence source for the last app view.
+test("app shell does not restore or save app view state through the API", () => {
+  const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  assert.match(source, /readPersistedAppView/);
+  assert.match(source, /writePersistedAppView/);
+  assert.doesNotMatch(source, /\/users\/me\/app-state/);
 });
 
 class TestAudio extends EventTarget {
