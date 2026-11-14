@@ -460,9 +460,12 @@ async def build_dashboard(
     )
 
     # Count a play only after 30 seconds, or half of a shorter track.
-    minimum_play_seconds = func.least(
-        30,
-        func.coalesce(Track.duration_seconds, 60) / 2,
+    minimum_play_seconds = func.greatest(
+        1,
+        func.least(
+            30,
+            func.coalesce(Track.duration_seconds, 60) / 2,
+        ),
     )
     qualified_play = (
         func.coalesce(ListeningEvent.progress_seconds, 0)
