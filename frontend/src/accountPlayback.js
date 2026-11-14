@@ -219,7 +219,7 @@ export function bindAccountPlayback(userId) {
     void refreshFromDatabase(false).finally(() => {
       void save(false);
     });
-  }, 5_000);
+  }, 2_000);
 
   const onVisibilityChange = () => {
     if (document.visibilityState === "hidden") void save(true, true);
