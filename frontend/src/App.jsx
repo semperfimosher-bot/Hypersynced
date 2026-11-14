@@ -771,6 +771,8 @@ export default function App() {
 
   // Invalidates asynchronous saved-view/session restores after user navigation.
   const navigationGenerationRef = useRef(0);
+  // Ensures overlapping session/auth restores cannot apply out of order.
+  const appViewRestoreRequestRef = useRef(0);
 
     const [
     activeProfileUsername,
@@ -1365,6 +1367,11 @@ const restoreSavedAppView =
       restoreGeneration =
         navigationGenerationRef.current,
     ) => {
+      const requestId = ++appViewRestoreRequestRef.current;
+      if (navigationGenerationRef.current !== restoreGeneration) {
+        return;
+      }
+
       const params =
         new URLSearchParams(
           window.location.search,
@@ -1432,8 +1439,8 @@ const restoreSavedAppView =
           );
 
         if (
-          navigationGenerationRef.current !==
-          restoreGeneration
+          navigationGenerationRef.current !== restoreGeneration ||
+          appViewRestoreRequestRef.current !== requestId
         ) {
           return;
         }
@@ -1830,6 +1837,8 @@ const clearPlaylistToOpen =
           return;
         }
 
+        navigationGenerationRef.current += 1;
+
         setArtistToOpen(
           cleanName,
         );
@@ -1862,6 +1871,7 @@ const clearPlaylistToOpen =
     const openUserProfile =
   useCallback(
     (username) => {
+      navigationGenerationRef.current += 1;
       cancelPendingSearchSave();
 
       setActiveProfileUsername(
@@ -1897,6 +1907,7 @@ const clearPlaylistToOpen =
   const updateSearch =
   useCallback(
     (value) => {
+      navigationGenerationRef.current += 1;
       setSearchQuery(
         value,
       );
