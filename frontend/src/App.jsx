@@ -1349,6 +1349,7 @@ export default function App() {
   const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
   const appStateVersionRef = useRef(null);
   const appStateVersionLoadedRef = useRef(false);
+  const appStateLastQueuedSignatureRef = useRef(null);
   if (activeAppStateOwnerRef.current !== (currentUser?.id ?? null)) {
     activeAppStateOwnerRef.current = currentUser?.id ?? null;
     appStateVersionRef.current = null;
@@ -1436,6 +1437,11 @@ const restoreSavedAppView =
         setActiveProfileUsername(
           restored.profileUsername,
         );
+        appStateLastQueuedSignatureRef.current = JSON.stringify({
+          active_page: restored.activePage,
+          search_query: restored.searchQuery,
+          profile_username: restored.profileUsername,
+        });
 
         // A message URL may select a conversation only after Neon confirms
         // that Messages is the account's saved page. It never overrides it.
@@ -1468,6 +1474,11 @@ const persistAppView =
       }
 
       const savedState = { ...state };
+      appStateLastQueuedSignatureRef.current = JSON.stringify({
+        active_page: savedState.active_page,
+        search_query: savedState.search_query ?? "",
+        profile_username: savedState.profile_username ?? null,
+      });
       const ownerId = currentUser.id;
       const navigationGeneration = navigationGenerationRef.current;
 
@@ -1524,6 +1535,42 @@ const persistAppView =
     },
     [currentUser],
   );
+
+  // Safety net: every persisted account-view change is saved from the
+  // authoritative React state, even if a button bypasses a navigation helper.
+  // Search typing is coalesced; page/profile changes are saved immediately.
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.offline_only || !accountStateReady) {
+      return undefined;
+    }
+
+    const state = {
+      active_page: activePage,
+      search_query: activePage === "search" ? searchQuery : "",
+      profile_username: activePage === "public-profile" ? activeProfileUsername : null,
+    };
+    const signature = JSON.stringify(state);
+    if (signature === appStateLastQueuedSignatureRef.current) {
+      return undefined;
+    }
+
+    const delay = activePage === "search" ? 350 : 0;
+    const timer = window.setTimeout(() => {
+      if (signature !== appStateLastQueuedSignatureRef.current) {
+        persistAppView(state);
+      }
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    currentUser?.id,
+    currentUser?.offline_only,
+    accountStateReady,
+    activePage,
+    searchQuery,
+    activeProfileUsername,
+    persistAppView,
+  ]);
 
   useEffect(() => {
   return () => {
