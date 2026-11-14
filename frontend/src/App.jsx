@@ -34,7 +34,6 @@ import { normalizeAppViewState } from "./appViewState.js";
 import {
   readPersistedAppView,
   writePersistedAppView,
-  clearPersistedAppView,
 } from "./persistedAppView.js";
 
 import {
