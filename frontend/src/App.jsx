@@ -1660,6 +1660,64 @@ const persistAppView =
   restoreSavedAppView,
 ]);
 
+  // Keep the saved page in sync across signed-in devices without reloading.
+  // Local navigation/search edits always win over an older in-flight poll.
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.offline_only) return undefined;
+
+    let active = true;
+    let refreshing = false;
+
+    const refreshSavedView = async () => {
+      if (refreshing || searchStateTimerRef.current) return;
+      refreshing = true;
+      const ownerId = currentUser.id;
+      const navigationGeneration = navigationGenerationRef.current;
+
+      try {
+        await appStateSaveQueueRef.current.catch(() => {});
+        if (
+          !active ||
+          activeAppStateOwnerRef.current !== ownerId ||
+          navigationGenerationRef.current !== navigationGeneration ||
+          searchStateTimerRef.current
+        ) return;
+
+        const state = await apiRequest("/users/me/app-state");
+        if (
+          !active ||
+          activeAppStateOwnerRef.current !== ownerId ||
+          navigationGenerationRef.current !== navigationGeneration ||
+          searchStateTimerRef.current
+        ) return;
+
+        const restored = normalizeAppViewState(state, currentUser.role);
+        setActivePage((current) =>
+          current === restored.activePage ? current : restored.activePage
+        );
+        setSearchQuery((current) =>
+          current === restored.searchQuery ? current : restored.searchQuery
+        );
+        setActiveProfileUsername((current) =>
+          current === restored.profileUsername ? current : restored.profileUsername
+        );
+      } catch {
+        // Keep the current view during temporary network failures.
+      } finally {
+        refreshing = false;
+      }
+    };
+
+    const initialSync = window.setTimeout(refreshSavedView, 1_500);
+    const interval = window.setInterval(refreshSavedView, 2_000);
+
+    return () => {
+      active = false;
+      window.clearTimeout(initialSync);
+      window.clearInterval(interval);
+    };
+  }, [currentUser?.id, currentUser?.offline_only, currentUser?.role]);
+
   const navigate =
   useCallback(
     (page) => {
