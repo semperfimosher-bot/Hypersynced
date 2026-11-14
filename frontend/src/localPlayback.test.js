@@ -16,12 +16,11 @@ test("app shell restores and persists account playback through the existing API"
   assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
 });
 
-test("app view uses a warm cache and reconciles with the account database state", () => {
+test("app view is restored and persisted only through the account database API", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
-  assert.match(source, /readPersistedAppView/);
-  assert.match(source, /writePersistedAppView/);
+  assert.doesNotMatch(source, /persistedAppView|readPersistedAppView|writePersistedAppView|localStorage/);
   assert.match(source, /\/users\/me\/app-state/);
-  assert.match(source, /server remains/);
+  assert.match(source, /method: "PATCH"/);
 });
 
 test("playback cache is account-scoped and is not restored before authentication", () => {
