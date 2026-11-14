@@ -18,13 +18,15 @@ export function bindAccountPlayback(userId) {
   const save = (force = false, keepalive = false) => {
     if (!active || !ready) return writeChain;
     const state = player.getState();
-    if (!state?.trackId) return writeChain;
-    const position = Math.max(0, Number(state.currentTime) || 0);
+    const trackId = state?.trackId ?? null;
+    const position = trackId
+      ? Math.max(0, Number(state.currentTime) || 0)
+      : 0;
     const paused = Boolean(state.paused);
-    const key = `${state.trackId}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
+    const key = `${trackId ?? "none"}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
     if (!force && (key === lastSavedKey || key === pendingKey)) return writeChain;
     pendingKey = key;
-    const payload = { track_id: state.trackId, position_seconds: position, paused };
+    const payload = { track_id: trackId, position_seconds: position, paused };
     writeChain = writeChain.catch(() => {}).then(async () => {
       if (!active) return;
       try {
@@ -56,7 +58,7 @@ export function bindAccountPlayback(userId) {
       lastTrackId = trackId;
       return;
     }
-    if (trackId && trackId !== lastTrackId) {
+    if (trackId !== lastTrackId) {
       lastTrackId = trackId;
       void save(true);
     } else if (paused !== lastPaused) {
