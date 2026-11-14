@@ -81,9 +81,18 @@ async function fixture(t, { admin = false } = {}) {
     }
   });
   context = await browser.newContext();
+  // Keep the shell fixture isolated from the live global-reset service.
+  // A reset response above generation zero would intentionally purge every
+  // HyperSync IndexedDB database and invalidate this offline-media scenario.
+  await context.route("**/api/system/reset-state", (route) => route.fulfill({
+    status:  200,
+    contentType: "application/json",
+    body: JSON.stringify({ generation: 0 }),
+  }));
   if (admin) await context.addInitScript((profile) => {
     localStorage.setItem("hypersync_session_active", "true");
     localStorage.setItem("hypersync_remember_me", "true");
+    localStorage.setItem("hypersync_global_reset_generation", "0");
     localStorage.setItem("hypersync_user_profile", JSON.stringify(profile));
   }, user);
   const page = await context.newPage();
