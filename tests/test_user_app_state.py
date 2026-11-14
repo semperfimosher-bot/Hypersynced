@@ -301,3 +301,40 @@ async def test_playback_state_rejects_stale_version_and_preserves_app_version() 
 
         app_after = await client.get("/api/users/me/app-state", headers=headers)
         assert app_after.json()["updated_at"] == app_version
+
+
+
+@pytest.mark.asyncio
+async def test_search_preferences_do_not_advance_app_view_version() -> None:
+    run_id = uuid4().hex[:8]
+    username = f"state-search-pref-{run_id}"
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await register_and_login(client, username)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        saved = await client.patch(
+            "/api/users/me/app-state",
+            headers=headers,
+            json={
+                "active_page": "library",
+                "search_query": "",
+                "profile_username": None,
+                "expected_updated_at": None,
+            },
+        )
+        assert saved.status_code == 200, saved.text
+        app_version = saved.json()["updated_at"]
+
+        preference = await client.patch(
+            "/api/search/preferences",
+            headers=headers,
+            json={"sort_mode": "recent"},
+        )
+        assert preference.status_code == 200, preference.text
+
+        current = await client.get("/api/users/me/app-state", headers=headers)
+        assert current.status_code == 200
+        assert current.json()["updated_at"] == app_version
+        assert current.json()["active_page"] == "library"
