@@ -355,7 +355,6 @@ function sampleListeningProgress() {
   event.lastMediaTime = mediaTime;
 
   if (
-    !audio.paused &&
     playbackPhase === "playing" &&
     mediaSeconds > 0 &&
     mediaSeconds <= Math.max(1.25, wallSeconds * Math.max(audio.playbackRate || 1, 1) * 1.8)
@@ -1451,6 +1450,7 @@ function attachEvents() {
   audio.addEventListener(
   "pause",
   () => {
+    sampleListeningProgress();
     if (
       currentTrackId ||
       audio.currentSrc
