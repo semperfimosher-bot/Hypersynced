@@ -82,6 +82,25 @@ async function fixture(t, { admin = false } = {}) {
   });
   context = await browser.newContext();
   await context.addInitScript(() => {
+    let trace = {};
+    try { trace = JSON.parse(window.name || "{}"); } catch { trace = {}; }
+    trace.events ??= [];
+    const note = (event) => {
+      trace.events.push(event);
+      window.name = JSON.stringify(trace);
+    };
+    const nativeDeleteDatabase = IDBFactory.prototype.deleteDatabase;
+    IDBFactory.prototype.deleteDatabase = function(name) {
+      note({ type: "delete-database", name: String(name) });
+      return nativeDeleteDatabase.call(this, name);
+    };
+    const nativePostMessage = ServiceWorker.prototype.postMessage;
+    ServiceWorker.prototype.postMessage = function(message, transfer) {
+      if (message?.type === "HYPERSYNC_CLEAR_ALL_CLIENT_DATA") {
+        note({ type: "clear-client-data-message" });
+      }
+      return nativePostMessage.call(this, message, transfer);
+    };
     const nativeFetch = window.fetch.bind(window);
     window.fetch = (input, init) => {
       const rawUrl = input instanceof Request ? input.url : String(input);
@@ -426,6 +445,10 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       chunkFound: Boolean(result.chunk),
       chunkLength: result.chunk?.data?.byteLength ?? null,
       resetGeneration: localStorage.getItem("hypersync_global_reset_generation"),
+      traceEvents: (() => {
+        try { return JSON.parse(window.name || "{}").events ?? []; } catch { return []; }
+      })(),
+      databases: typeof indexedDB.databases === "function" ? await indexedDB.databases() : [],
     };
   });
   assert.deepEqual(cachedMedia, {
