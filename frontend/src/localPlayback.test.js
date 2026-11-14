@@ -29,8 +29,7 @@ test("playback state is restored only from Neon, never from persistent browser s
   assert.match(player, /setPlaybackPersistenceOwner/);
   assert.doesNotMatch(player, /restorePersistedPlayerState\(nextOwner\)/);
   assert.doesNotMatch(player, /attachEvents\(\);\s*restorePersistedPlayerState\(\);/);
-  assert.match(persistence, /hypersync_player_state_v2:/);
-  assert.match(persistence, /storageKey\(userId\)/);
+  assert.doesNotMatch(persistence, /localStorage|sessionStorage|hypersync_player_state_v2/);
 });
 
 class TestAudio extends EventTarget {
