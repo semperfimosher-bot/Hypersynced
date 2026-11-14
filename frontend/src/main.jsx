@@ -19,6 +19,31 @@ import "./styles.css";
 
 initializePwaInstall();
 
+// A tab can remain open across a frontend deployment. Its already-loaded
+// module graph may later request a lazy chunk that no longer exists in the
+// newly deployed image. Recover once per build by fetching the current HTML
+// and module graph; the build revision prevents reload loops on a broken build.
+if (import.meta.env.PROD) {
+  const buildRevision = document
+    .querySelector('meta[name="hypersync-build"]')
+    ?.getAttribute("content") ?? "unknown";
+  const recoveryKey = `hypersync:chunk-recovery:${buildRevision}`;
+
+  window.addEventListener("vite:preloadError", (event) => {
+    try {
+      if (globalThis.sessionStorage?.getItem(recoveryKey) === "1") return;
+      globalThis.sessionStorage?.setItem(recoveryKey, "1");
+    } catch {
+      // If storage is blocked, leave the original import error visible rather
+      // than risk an automatic reload loop.
+      return;
+    }
+
+    event.preventDefault();
+    window.location.reload();
+  });
+}
+
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
