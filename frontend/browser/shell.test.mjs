@@ -18,7 +18,7 @@ after(async () => { await browser?.close(); });
 
 async function fixture(t, { admin = false } = {}) {
   const html = await readFile(resolve(dist, "index.html"), "utf8");
-  const state = { mode: "healthy", build: "base", catalogFetches: 0 };
+  const state = { mode: "healthy", build: "base", catalogFetches: 0, playbackState: null };
   const user = { id: "browser-admin", username: "browser-admin", display_name: "Fixture Admin", role: "admin", account_type: "registered" };
   const catalog = Array.from({ length: 261 }, (_, index) => ({ id: `track-${index}`, title: `Song ${String(index).padStart(3, "0")}`, artist: "Fixture Artist", album: "Fixture Album", genre: "Fixture", mime_type: "audio/wav" }));
   const revision = () => state.build === "base" || state.build === "rollback" ? shellManifest.revision : `${shellManifest.revision}-${state.build}`;
@@ -41,7 +41,9 @@ async function fixture(t, { admin = false } = {}) {
           const token = "fixture." + Buffer.from(JSON.stringify({ sub: user.id, role: "admin", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url") + ".fixture";
           send(200, JSON.stringify({ access_token: token, user }), "application/json");
         } else if (admin && path === "/api/users/me") send(200, JSON.stringify(user), "application/json");
-        else if (admin && path === "/api/catalog/tracks") {
+        else if (admin && path === "/api/users/me/playback-state") {
+          send(200, JSON.stringify(state.playbackState ?? { track: null, position_seconds: 0 }), "application/json");
+        } else if (admin && path === "/api/catalog/tracks") {
           state.catalogFetches += 1;
           const second = new URL(request.url, "http://127.0.0.1").searchParams.has("cursor");
           send(200, JSON.stringify({ items: second ? catalog.slice(250) : catalog.slice(0, 250), next_cursor: second ? null : "fixture-next" }), "application/json");
@@ -356,8 +358,16 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       return audio;
     } });
   });
+  state.playbackState = {
+    track: {
+      id: "browser-audio", title: "Offline Fixture", artist: "Fixture",
+      audio_url: "/__hypersync/media/browser-audio/v1", mime_type: "audio/wav",
+      file_size: fileSize, duration_seconds: 8, media_version: "v1",
+    },
+    position_seconds: 0,
+  };
   await page.evaluate((size) => localStorage.setItem("hypersync_player_state_v2:browser-admin", JSON.stringify({
-    trackId: "browser-audio", currentTime: 0, volume: 0.2, muted: false,
+    trackId: "browser-audio", currentTime: 3, volume: 0.2, muted: false,
     meta: { title: "Offline Fixture", artist: "Fixture", mediaVersion: "v1", mimeType: "audio/wav", fileSize: size, durationSeconds: 8 },
   })), fileSize);
   await context.setOffline(true);
