@@ -206,3 +206,41 @@ test("recently played immediately uses the active account cache without leaking 
     else globalThis.localStorage = original;
   }
 });
+
+
+test("optimistic playback moves a track to the front and increments its play count", async () => {
+  const { applyOptimisticRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
+  const current = [
+    { id: "old", title: "Older", play_count: 3 },
+    { id: "song", title: "Song", artist: "Artist", play_count: 4 },
+  ];
+  const next = applyOptimisticRecentlyPlayed(current, {
+    id: "song",
+    title: "Song",
+    artist: "Artist",
+    artworkUrl: "/art/song.jpg",
+  });
+  assert.deepEqual(next.map((track) => track.id), ["song", "old"]);
+  assert.equal(next[0].play_count, 5);
+  assert.equal(next[0].artwork_url, "/art/song.jpg");
+  assert.equal(next[0].last_played_at.length > 0, true);
+});
+
+test("listening history notifications carry optimistic playback details", () => {
+  const target = new EventTarget();
+  let received = null;
+  target.addEventListener("hypersynced:listening-history-changed", (event) => {
+    received = event.detail;
+  });
+  assert.equal(
+    notifyListeningHistoryChanged(
+      { type: "optimistic-play", track: { id: "song" } },
+      target,
+    ),
+    true,
+  );
+  assert.deepEqual(received, {
+    type: "optimistic-play",
+    track: { id: "song" },
+  });
+});
