@@ -102,27 +102,50 @@ test("build inventory precaches deferred modules with at most four simultaneous 
   assert.equal(written.at(-1), "/");
 });
 
-test("activation retains current and previous complete shells and prunes stale/partial builds", async (t) => {
+test("activation retains four complete shell generations and prunes partial and oldest builds", async (t) => {
   const deleted = [];
   const dispatch = await worker(t, {
     manifest: { revision: "current", assets: [] },
     cacheStorage: {
-      keys: async () => ["unrelated", "hypersync-app-shell-old", "hypersync-app-shell-previous", "hypersync-app-shell-partial", "hypersync-app-shell-current"],
+      keys: async () => [
+        "unrelated",
+        "hypersync-app-shell-oldest",
+        "hypersync-app-shell-older",
+        "hypersync-app-shell-old",
+        "hypersync-app-shell-previous",
+        "hypersync-app-shell-partial",
+        "hypersync-app-shell-current",
+      ],
       open: async (name) => ({ match: async (path) => name.endsWith("partial") || path !== "/" ? undefined : new Response("ready"), put: async () => {} }),
       delete: async (name) => { deleted.push(name); },
     },
   });
   await dispatch.activate();
-  assert.deepEqual(deleted.sort(), ["hypersync-app-shell-old", "hypersync-app-shell-partial"]);
+  assert.deepEqual(deleted.sort(), [
+    "hypersync-app-shell-oldest",
+    "hypersync-app-shell-older",
+    "hypersync-app-shell-partial",
+  ]);
 });
 
-test("rollback activation order, rather than cache creation order, chooses the retained generation", async (t) => {
+test("rollback activation order, rather than cache creation order, chooses the four retained generations", async (t) => {
   const deleted = [];
-  const records = { "hypersync-app-shell-a": 30, "hypersync-app-shell-b": 20 };
+  const records = {
+    "hypersync-app-shell-a": 50,
+    "hypersync-app-shell-b": 40,
+    "hypersync-app-shell-c": 30,
+    "hypersync-app-shell-d": 20,
+  };
   const dispatch = await worker(t, {
-    manifest: { revision: "c", assets: [] },
+    manifest: { revision: "e", assets: [] },
     cacheStorage: {
-      keys: async () => ["hypersync-app-shell-a", "hypersync-app-shell-b", "hypersync-app-shell-c"],
+      keys: async () => [
+        "hypersync-app-shell-a",
+        "hypersync-app-shell-b",
+        "hypersync-app-shell-c",
+        "hypersync-app-shell-d",
+        "hypersync-app-shell-e",
+      ],
       open: async (name) => ({
         match: async (path) => path === "/" ? new Response("ready") : records[name] ? Response.json({ order: records[name] }) : undefined,
         put: async (_path, response) => { records[name] = (await response.json()).order; },
@@ -131,8 +154,8 @@ test("rollback activation order, rather than cache creation order, chooses the r
     },
   });
   await dispatch.activate();
-  assert.deepEqual(deleted, ["hypersync-app-shell-b"]);
-  assert.ok(records["hypersync-app-shell-c"] > 30);
+  assert.deepEqual(deleted, ["hypersync-app-shell-d"]);
+  assert.ok(records["hypersync-app-shell-e"] > 50);
 });
 
 test("old tabs can retrieve their hashed modules from the retained shell", async (t) => {
