@@ -63,6 +63,10 @@ async function worker(t, { cached, network, put = async () => {}, manifest, cach
   return dispatch;
 }
 
+function requestPath(value) {
+  return new URL(value, "https://app.test").pathname;
+}
+
 function navigation() {
   const request = new Request("https://app.test/library");
   Object.defineProperty(request, "mode", { value: "navigate" });
@@ -87,7 +91,7 @@ test("build inventory precaches deferred modules with at most four simultaneous 
   const dispatch = await worker(t, {
     manifest,
     network: async (url) => {
-      if (url === "/") return new Response('<meta name="hypersync-build" content="fixture-build">');
+      if (requestPath(url) === "/") return new Response('<meta name="hypersync-build" content="fixture-build">');
       active += 1;
       peak = Math.max(peak, active);
       await new Promise((resolve) => setImmediate(resolve));
@@ -184,7 +188,7 @@ test("a worker never publishes navigation HTML from a different build", async (t
 test("stalled precache resources have bounded deadlines", { timeout: 1000 }, async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const dispatch = await worker(t, {
-    network: async (url) => url === "/"
+    network: async (url) => requestPath(url) === "/"
       ? new Response('<script src="/assets/stalled-aa11.js"></script>')
       : new Promise(() => {}),
   });
@@ -289,7 +293,7 @@ test("static asset delivery survives a cache quota error", async (t) => {
 test("failed shell install preserves the previous offline entry point", async (t) => {
   const writes = [];
   const dispatch = await worker(t, {
-    network: async (url) => url === "/"
+    network: async (url) => requestPath(url) === "/"
       ? new Response('<script src="/assets/new.js"></script>')
       : new Response("unavailable", { status: 503 }),
     put: async (url) => { writes.push(url); },
@@ -308,7 +312,7 @@ test("shell install cannot report success when the entry point is unavailable", 
 test("shell entry point is published after required scripts and styles", async (t) => {
   const writes = [];
   const dispatch = await worker(t, {
-    network: async (url) => url === "/"
+    network: async (url) => requestPath(url) === "/"
       ? new Response('<script src="/assets/app.js"></script><link rel="stylesheet" href="/assets/app.css">')
       : String(url).includes("/assets/")
         ? new Response("asset") : new Response("optional icon missing", { status: 404 }),
@@ -322,7 +326,7 @@ for (const failure of ["fetch", "storage"]) {
   test(`offline preparation reports ${failure} failure without replacing the cached app`, async (t) => {
     const writes = [];
     const dispatch = await worker(t, {
-      network: async (url) => url === "/"
+      network: async (url) => requestPath(url) === "/"
         ? new Response('<script src="/assets/new.js"></script>')
         : new Response("asset", { status: failure === "fetch" ? 503 : 200 }),
       put: async (url) => {
@@ -342,7 +346,7 @@ test("navigation keeps the last complete shell when a new build has a missing re
   const html = '<script src="/assets/new.js"></script>';
   const dispatch = await worker(t, {
     cached: async () => new Response("last complete app"),
-    network: async (request) => request instanceof Request && request.url.endsWith("/library")
+    network: async (request) => requestPath(request) === "/library"
       ? new Response(html) : new Response("bundle not found", { status: 404 }),
     put: async (url) => { writes.push(url); },
   });
