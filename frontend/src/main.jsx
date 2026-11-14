@@ -21,8 +21,9 @@ initializePwaInstall();
 
 // A tab can remain open across a frontend deployment. Its already-loaded
 // module graph may later request a lazy chunk that no longer exists in the
-// newly deployed image. Recover once per build by fetching the current HTML
-// and module graph; the build revision prevents reload loops on a broken build.
+// deployed image. First reload against the current HTML. If the same failure
+// survives that reload, bypass the service worker and remove only app-shell
+// caches (never offline media) before one final reload.
 if (import.meta.env.PROD) {
   const buildRevision = document
     .querySelector('meta[name="hypersync-build"]')
@@ -30,9 +31,11 @@ if (import.meta.env.PROD) {
   const recoveryKey = `hypersync:chunk-recovery:${buildRevision}`;
 
   window.addEventListener("vite:preloadError", (event) => {
+    let attempts = 0;
     try {
-      if (globalThis.sessionStorage?.getItem(recoveryKey) === "1") return;
-      globalThis.sessionStorage?.setItem(recoveryKey, "1");
+      attempts = Number(globalThis.sessionStorage?.getItem(recoveryKey)) || 0;
+      if (attempts >= 2) return;
+      globalThis.sessionStorage?.setItem(recoveryKey, String(attempts + 1));
     } catch {
       // If storage is blocked, leave the original import error visible rather
       // than risk an automatic reload loop.
@@ -40,7 +43,25 @@ if (import.meta.env.PROD) {
     }
 
     event.preventDefault();
-    window.location.reload();
+    if (attempts === 0) {
+      window.location.reload();
+      return;
+    }
+
+    void (async () => {
+      const registrations = await navigator.serviceWorker?.getRegistrations?.() ?? [];
+      await Promise.allSettled(registrations.map((registration) => registration.unregister()));
+      const cacheKeys = await caches?.keys?.() ?? [];
+      await Promise.allSettled(
+        cacheKeys
+          .filter((key) => key.startsWith("hypersync-app-shell-"))
+          .map((key) => caches.delete(key)),
+      );
+      window.location.reload();
+    })().catch(() => {
+      // Do not loop if browser cache APIs are unavailable.
+      window.location.reload();
+    });
   });
 }
 
