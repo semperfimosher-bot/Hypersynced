@@ -74,6 +74,9 @@ async def record_admin_activity(
             )
 
             if not admin_ids:
+                logger.warning(
+                    "Admin activity was not stored because no active registered admin recipients were found."
+                )
                 return
 
             normalized_kind = (
@@ -89,8 +92,8 @@ async def record_admin_activity(
                 or "Activity occurred."
             )
 
-            for admin_id in admin_ids:
-                session.add(
+            session.add_all(
+                [
                     AdminNotification(
                         recipient_id=admin_id,
                         kind=normalized_kind,
@@ -100,13 +103,20 @@ async def record_admin_activity(
                             resolved_actor[:32]
                             or None
                         ),
-                        source_message_id=(
-                            source_message_id
-                        ),
+                        source_message_id=source_message_id,
                     )
-                )
+                    for admin_id in admin_ids
+                ]
+            )
 
+            # Flush explicitly so constraint/foreign-key failures are
+            # attributed to notification persistence before committing.
+            await session.flush()
             await session.commit()
+            logger.info(
+                "Stored admin activity notification for %d active admin recipient(s).",
+                len(admin_ids),
+            )
     except Exception:
         # Notifications are non-critical and must never
         # make the user's original action fail.
