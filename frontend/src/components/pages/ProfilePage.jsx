@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -145,6 +146,10 @@ export default function ProfilePage({
   const collectionActionMenu =
     useCollectionActionMenu();
 
+  const profileRequest = useRef(0);
+  const profileOwner = useRef(currentUser?.id ?? null);
+  profileOwner.current = currentUser?.id ?? null;
+
   const [profile, setProfile] =
     useState(null);
 
@@ -171,6 +176,12 @@ export default function ProfilePage({
       async ({
         quiet = false,
       } = {}) => {
+        const request = ++profileRequest.current;
+        const owner = currentUser?.id ?? null;
+        const isCurrent = () =>
+          request === profileRequest.current &&
+          owner === profileOwner.current;
+
         if (!currentUser) {
           setProfile(null);
           setLoading(false);
@@ -192,10 +203,12 @@ export default function ProfilePage({
           const data =
             await getMyProfile();
 
+          if (!isCurrent()) return;
           setProfile(data);
           setError("");
 
         } catch (loadError) {
+          if (!isCurrent()) return;
           if (!quiet) {
             setError(
               loadError instanceof Error
@@ -205,7 +218,7 @@ export default function ProfilePage({
           }
 
         } finally {
-          if (!quiet) {
+          if (isCurrent() && !quiet) {
             setLoading(false);
           }
         }
