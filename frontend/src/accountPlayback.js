@@ -38,9 +38,14 @@ export function bindAccountPlayback(userId) {
     if (!active || !ready || awaitingResume || applyingRemoteState) return writeChain;
     const state = player.getState();
     const trackId = state?.trackId ?? null;
-    const position = trackId
-      ? Math.max(0, Number(state.currentTime) || 0)
-      : 0;
+
+    // An idle player is not an instruction to erase the account's last
+    // playback position. In particular, a fresh tab can be temporarily
+    // idle while Neon is still restoring the saved track. Only a real
+    // track selection may update the persisted playback record.
+    if (!trackId) return writeChain;
+
+    const position = Math.max(0, Number(state.currentTime) || 0);
     const paused = Boolean(state.paused);
     const key = `${trackId ?? "none"}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
     if (!force && (key === lastSavedKey || key === pendingKey)) return writeChain;
