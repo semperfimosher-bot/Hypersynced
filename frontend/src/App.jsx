@@ -1846,11 +1846,17 @@ const clearPlaylistToOpen =
           "search",
         );
 
+        persistAppView({
+          active_page: "search",
+          search_query: cleanName,
+          profile_username: null,
+        });
+
         setStatusMessage(
           "",
         );
       },
-      [],
+      [persistAppView],
     );
 
     const openUserProfile =
