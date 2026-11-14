@@ -2486,12 +2486,18 @@ export function setPlaybackPersistenceOwner(userId) {
 
 export async function restoreTrackPaused(track, positionSeconds = 0) {
   if (!track?.id) return null;
+  const restoringTrackId = String(track.id);
   cancelActivePlaybackSession();
   clearQueue();
-  applyTrackMetadata(track.id, track);
+  applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
   persistPlayerState({ force: true, currentTime: restoredTimeSeconds });
   const state = await ensureCurrentTrackSource();
+
+  // A manual track selection made while the database restore was loading
+  // always wins; the delayed restore must not pause or seek that new track.
+  if (currentTrackId !== restoringTrackId) return getState();
+
   if (audio.readyState >= 1) {
     const maximum = Number.isFinite(audio.duration)
       ? audio.duration
