@@ -26,8 +26,8 @@ jobs:
 
       - name: Build production backend image
         run: |
-        docker build --file Dockerfile.backend --tag hypersynced-backend:ci .
-        docker build --file frontend/Dockerfile --tag hypersynced-frontend:ci .
+          docker build --file Dockerfile.backend --tag hypersynced-backend:ci .
+          docker build --file frontend/Dockerfile --tag hypersynced-frontend:ci .
 
   deploy:
     name: Deploy and health-check VPS
