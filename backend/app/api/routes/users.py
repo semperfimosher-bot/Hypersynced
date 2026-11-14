@@ -852,6 +852,14 @@ async def finish_listening(
         int(payload.position_seconds),
     )
 
+    if event.ended_at is not None:
+        return {
+            "completed": event.completed,
+            "skipped": event.skipped,
+            "completion_ratio": event.completion_ratio,
+            "progress_seconds": int(event.progress_seconds or 0),
+        }
+
     if payload.outcome == "progress":
         event.progress_seconds = position
         await session.commit()
@@ -863,14 +871,6 @@ async def finish_listening(
                 else position >= 30
             ),
             "progress_seconds": position,
-        }
-
-    if event.ended_at is not None:
-        return {
-            "completed": event.completed,
-            "skipped": event.skipped,
-            "completion_ratio": event.completion_ratio,
-            "progress_seconds": int(event.progress_seconds or 0),
         }
 
     ratio = min(position / duration, 1.0) if duration > 0 else None
