@@ -44,6 +44,7 @@ import {
 import {
   getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
+  applyOptimisticRecentlyPlayed,
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
@@ -282,11 +283,14 @@ useEffect(() => {
 useEffect(
   () =>
     subscribeListeningHistoryChanged(
-      () => {
-        void loadRecentlyPlayed({
-          quiet:
-            true,
-        });
+      (event) => {
+        if (event.detail?.type === "optimistic-play" && event.detail.track) {
+          setRecentlyPlayed((current) =>
+            applyOptimisticRecentlyPlayed(current, event.detail.track),
+          );
+          return;
+        }
+        void loadRecentlyPlayed({ quiet: true });
       },
     ),
   [
