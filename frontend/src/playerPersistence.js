@@ -1,120 +1,34 @@
-const PLAYER_STATE_PREFIX =
-  "hypersync_player_state_v2:";
+/*
+ * Ephemeral playback snapshot only. Neon is the authoritative playback
+ * store; this Map exists solely for same-runtime coordination and is never
+ * written to browser storage.
+ */
 
-function storageKey(userId) {
-  const id = String(userId ?? "").trim();
-  return id ? PLAYER_STATE_PREFIX + encodeURIComponent(id) : "";
+const states = new Map();
+
+function normalizeOwner(userId) {
+  return String(userId ?? "").trim();
 }
-
-
-function getStorage() {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return null;
-  }
-
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
 
 export function readPersistedPlayerState(userId) {
-  const key = storageKey(userId);
-  const storage =
-    getStorage();
-
-  if (!storage || !key) {
-    return null;
-  }
-
-  try {
-    const raw =
-      storage.getItem(
-        key,
-      );
-
-    if (!raw) {
-      return null;
-    }
-
-    const parsed =
-      JSON.parse(raw);
-
-    if (
-      !parsed ||
-      typeof parsed !==
-        "object" ||
-      !parsed.trackId
-    ) {
-      return null;
-    }
-
-    return parsed;
-
-  } catch {
-    return null;
-  }
+  const owner = normalizeOwner(userId);
+  if (!owner) return null;
+  const state = states.get(owner);
+  return state ? { ...state, meta: state.meta ? { ...state.meta } : null } : null;
 }
 
-
-export function writePersistedPlayerState(
-  userId,
-  state,
-) {
-  const key = storageKey(userId);
-  const storage =
-    getStorage();
-
-  if (
-    !storage ||
-    !key ||
-    !state?.trackId
-  ) {
-    return;
-  }
-
-  try {
-    storage.setItem(
-      key,
-      JSON.stringify({
-        ...state,
-
-        version:
-          1,
-
-        savedAt:
-          Date.now(),
-      }),
-    );
-
-  } catch {
-    /*
-     * Persistence should never be able
-     * to interrupt normal playback.
-     */
-  }
+export function writePersistedPlayerState(userId, state) {
+  const owner = normalizeOwner(userId);
+  if (!owner || !state?.trackId) return;
+  states.set(owner, {
+    ...state,
+    meta: state.meta ? { ...state.meta } : null,
+    version: 1,
+    savedAt: Date.now(),
+  });
 }
-
 
 export function clearPersistedPlayerState(userId) {
-  const key = storageKey(userId);
-  const storage =
-    getStorage();
-
-  if (!storage || !key) {
-    return;
-  }
-
-  try {
-    storage.removeItem(
-      key,
-    );
-  } catch {
-    // Ignore storage failures.
-  }
+  const owner = normalizeOwner(userId);
+  if (owner) states.delete(owner);
 }

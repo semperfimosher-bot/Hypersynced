@@ -1,84 +1,25 @@
-export const ACCESS_TOKEN_KEY =
-  "hypersync_access_token";
-
-export const SESSION_ACTIVE_KEY =
-  "hypersync_session_active";
-
-export const REMEMBER_ME_KEY =
-  "hypersync_remember_me";
-
-export const CACHED_USER_KEY =
-  "hypersync_user_profile";
-
-function safeStorage(name) {
-  return {
-    getItem(key) {
-      try {
-        return globalThis[name]?.getItem(key) ?? null;
-      } catch {
-        return null;
-      }
-    },
-    setItem(key, value) {
-      try {
-        globalThis[name]?.setItem(key, value);
-      } catch {
-        // Storage can be disabled while memory-only auth remains available.
-      }
-    },
-    removeItem(key) {
-      try {
-        globalThis[name]?.removeItem(key);
-      } catch {
-        // Clearing a blocked store must not interrupt logout.
-      }
-    },
-  };
-}
-
-const localStorage = safeStorage("localStorage");
-const sessionStorage = safeStorage("sessionStorage");
-
-const STORAGES = [
-  localStorage,
-  sessionStorage,
-];
-
-let memoryAccessToken =
-  null;
-
 /*
- * Access tokens intentionally live only in
- * JavaScript memory. The HttpOnly refresh
- * cookie restores them after an online reload.
- *
- * Remove tokens written by older builds.
+ * Authentication state is intentionally memory-only in the frontend.
+ * The HttpOnly refresh cookie and server-side session are authoritative.
+ * No profile, token, remember-me flag, or session marker is written to
+ * localStorage or sessionStorage.
  */
-for (const storage of STORAGES) {
-  storage.removeItem(
-    ACCESS_TOKEN_KEY,
-  );
-}
+
+export const ACCESS_TOKEN_KEY = "hypersync_access_token";
+export const SESSION_ACTIVE_KEY = "hypersync_session_active";
+export const REMEMBER_ME_KEY = "hypersync_remember_me";
+export const CACHED_USER_KEY = "hypersync_user_profile";
+
+let memoryAccessToken = null;
+let memorySessionActive = false;
+let memoryUserProfile = null;
 
 export function shouldRememberSession() {
-  return (
-    localStorage.getItem(
-      REMEMBER_ME_KEY,
-    ) !== "false"
-  );
+  // Refresh-cookie lifetime is controlled by the server.
+  return true;
 }
 
-
 export function getActiveStorage() {
-  for (const storage of STORAGES) {
-    if (
-      storage.getItem(SESSION_ACTIVE_KEY) ===
-      "true"
-    ) {
-      return storage;
-    }
-  }
-
   return null;
 }
 
@@ -87,114 +28,36 @@ export function getAccessToken() {
 }
 
 export function hasStoredSession() {
-  return STORAGES.some(
-    (storage) =>
-      storage.getItem(SESSION_ACTIVE_KEY) ===
-      "true",
-  );
+  return memorySessionActive;
 }
 
 export function readCachedUserProfile() {
-  try {
-    const raw =
-      localStorage.getItem(CACHED_USER_KEY) ||
-      sessionStorage.getItem(CACHED_USER_KEY);
-
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return memoryUserProfile;
 }
 
-export function cacheUserProfile(
-  user,
-  {
-    remember =
-      shouldRememberSession(),
-  } = {},
-) {
-  if (!user) {
-    return;
+export function cacheUserProfile(user) {
+  if (user && typeof user === "object") {
+    memoryUserProfile = { ...user };
   }
-
-  const primary = remember
-    ? localStorage
-    : sessionStorage;
-
-  const secondary = remember
-    ? sessionStorage
-    : localStorage;
-
-  const serialized =
-    JSON.stringify(user);
-
-  primary.setItem(
-    CACHED_USER_KEY,
-    serialized,
-  );
-
-  secondary.removeItem(CACHED_USER_KEY);
 }
 
 export function clearCachedUserProfile() {
-  sessionStorage.removeItem(CACHED_USER_KEY);
-  localStorage.removeItem(CACHED_USER_KEY);
+  memoryUserProfile = null;
 }
 
 export function shouldRestoreSession() {
-  return (
-    hasStoredSession() ||
-    Boolean(getAccessToken()) ||
-    Boolean(readCachedUserProfile())
-  );
+  // Always check the HttpOnly refresh cookie on app startup. A browser
+  // storage marker must not decide whether an account session exists.
+  return true;
 }
 
-export function saveAuthSession(
-  accessToken,
-  { remember = true } = {},
-) {
-  const primary = remember
-    ? localStorage
-    : sessionStorage;
-
-  const secondary = remember
-    ? sessionStorage
-    : localStorage;
-
-  memoryAccessToken =
-    accessToken ||
-    null;
-
-  primary.setItem(
-    SESSION_ACTIVE_KEY,
-    "true",
-  );
-
-  localStorage.setItem(
-    REMEMBER_ME_KEY,
-    remember ? "true" : "false",
-  );
-
-  for (const storage of STORAGES) {
-    storage.removeItem(
-      ACCESS_TOKEN_KEY,
-    );
-  }
-
-  secondary.removeItem(
-    SESSION_ACTIVE_KEY,
-  );
+export function saveAuthSession(accessToken) {
+  memoryAccessToken = accessToken || null;
+  memorySessionActive = Boolean(accessToken);
 }
 
 export function clearAuthSession() {
-  memoryAccessToken =
-    null;
-
-  for (const storage of STORAGES) {
-    storage.removeItem(ACCESS_TOKEN_KEY);
-    storage.removeItem(SESSION_ACTIVE_KEY);
-  }
-
-  localStorage.removeItem(REMEMBER_ME_KEY);
-  clearCachedUserProfile();
+  memoryAccessToken = null;
+  memorySessionActive = false;
+  memoryUserProfile = null;
 }
