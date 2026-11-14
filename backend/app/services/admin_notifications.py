@@ -75,7 +75,10 @@ async def record_admin_activity(
 
             if not admin_ids:
                 logger.warning(
-                    "Admin activity was not stored because no active registered admin recipients were found."
+                    (
+                        "Admin activity was not stored because no active "
+                        "registered admin recipients were found."
+                    )
                 )
                 return
 
