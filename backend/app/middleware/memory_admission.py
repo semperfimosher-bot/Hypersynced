@@ -61,14 +61,24 @@ class MemoryAdmissionMiddleware:
                     return self._catalog
         return None
 
-    async def _reject(self, scope: types.Scope, receive: starlette.types.Receive, send: starlette.types.Send) -> None:
+    async def _reject(
+        self,
+        scope: starlette.types.Scope,
+        receive: starlette.types.Receive,
+        send: starlette.types.Send,
+    ) -> None:
         await starlette.responses.JSONResponse(
             {"detail": BUSY_DETAIL},
             status_code=503,
             headers={"Retry-After": RETRY_AFTER_SECONDS},
         )(scope, receive, send)
 
-    async def __call__(self, scope: types.Scope, receive: types.Receive, send: types.Send) -> None:
+    async def __call__(
+        self,
+        scope: starlette.types.Scope,
+        receive: starlette.types.Receive,
+        send: starlette.types.Send,
+    ) -> None:
         permit = self._permit(scope) if scope["type"] == "http" else None
         if permit is None:
             await self.app(scope, receive, send)
