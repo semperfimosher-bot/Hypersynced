@@ -1354,6 +1354,7 @@ export default function App() {
     activeAppStateOwnerRef.current = currentUser?.id ?? null;
     appStateVersionRef.current = null;
     appStateVersionLoadedRef.current = false;
+    appStateLastQueuedSignatureRef.current = null;
     appStateSaveQueueRef.current = Promise.resolve();
   }
 
