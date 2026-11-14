@@ -292,14 +292,14 @@ test("worker updates retain four complete builds for old tabs and prune older bu
   await update("rollback", [baseCache, `${baseCache}-b`], `${baseCache}-b`);
   await update("c", [baseCache, `${baseCache}-b`, `${baseCache}-c`], baseCache);
   await update("d", [baseCache, `${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`], `${baseCache}-c`);
-  await update("e", [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], `${baseCache}-d`);
+  await update("e", [baseCache, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], `${baseCache}-d`);
   // The fifth distinct generation must prune the least-recently activated complete shell.
   await page.waitForFunction(async (expected) => {
     const names = (await caches.keys()).filter((name) => name.startsWith("hypersync-app-shell-")).sort();
     return JSON.stringify(names) === JSON.stringify([...expected].sort());
-  }, [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], { timeout: 10000 });
+  }, [baseCache, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], { timeout: 10000 });
   const names = (await page.evaluate(() => caches.keys())).filter((name) => name.startsWith("hypersync-app-shell-"));
-  assert.deepEqual(names.sort(), [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`].sort());
+  assert.deepEqual(names.sort(), [baseCache, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`].sort());
 });
 
 test("cache quota exhaustion cannot break a successful online script", { timeout: 45000 }, async (t) => {
