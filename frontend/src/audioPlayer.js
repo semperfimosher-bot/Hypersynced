@@ -2754,6 +2754,23 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
 
+  // Restore the media source and saved seek position without autoplaying.
+  // Player controls remain disabled until a source exists, so preparation
+  // must finish before the account restore is considered ready.
+  try {
+    await ensureCurrentTrackSource();
+  } catch (error) {
+    if (currentTrackId === restoringTrackId) {
+      setPlaybackPhase(
+        "error",
+        error instanceof Error
+          ? error.message
+          : "Unable to restore the track audio source.",
+      );
+      notify();
+    }
+  }
+
   notify();
 
   return getState();
