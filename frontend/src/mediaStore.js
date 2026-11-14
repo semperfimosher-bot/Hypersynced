@@ -31,11 +31,14 @@ const MEDIA_DOWNLOAD_JOB_STORE =
 const MEDIA_LYRICS_STORE =
   "lyrics";
 
+const OFFLINE_IDENTITY_STORE =
+  "offlineIdentity";
+
 const OFFLINE_DATABASE_NAME =
   "hypersynced-offline-v1";
 
 const OFFLINE_DATABASE_VERSION =
-  3;
+  4;
 
 
 let databasePromise = null;
@@ -514,6 +517,10 @@ function openOfflineDatabase() {
         if (database.objectStoreNames.contains("library_snapshots")) {
           database.deleteObjectStore("library_snapshots");
         }
+
+        if (!database.objectStoreNames.contains(OFFLINE_IDENTITY_STORE)) {
+          database.createObjectStore(OFFLINE_IDENTITY_STORE, { keyPath: "key" });
+        }
       },
     })
       .then(
@@ -542,6 +549,52 @@ function openOfflineDatabase() {
   return offlineDatabasePromise;
 }
 
+
+
+export async function getOfflineIdentity() {
+  const database = await openOfflineDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(OFFLINE_IDENTITY_STORE, "readonly");
+    const request = transaction.objectStore(OFFLINE_IDENTITY_STORE).get("active");
+    request.onsuccess = () => resolve(request.result?.user ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Unable to read offline account identity."));
+  });
+}
+
+export async function saveOfflineIdentity(user) {
+  const id = String(user?.id ?? "").trim();
+  if (!id) return false;
+  const safeUser = {
+    id,
+    username: String(user.username ?? ""),
+    display_name: String(user.display_name ?? user.username ?? ""),
+    role: user.role === "admin" ? "admin" : "user",
+    account_type: user.account_type === "registered" ? "registered" : "guest",
+  };
+  const database = await openOfflineDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(OFFLINE_IDENTITY_STORE, "readwrite");
+    transaction.objectStore(OFFLINE_IDENTITY_STORE).put({
+      key: "active",
+      user: safeUser,
+      updatedAt: Date.now(),
+    });
+    transaction.oncomplete = () => resolve(true);
+    transaction.onerror = () => reject(transaction.error ?? new Error("Unable to save offline account identity."));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Saving offline account identity was aborted."));
+  });
+}
+
+export async function clearOfflineIdentity() {
+  const database = await openOfflineDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(OFFLINE_IDENTITY_STORE, "readwrite");
+    transaction.objectStore(OFFLINE_IDENTITY_STORE).delete("active");
+    transaction.oncomplete = () => resolve(true);
+    transaction.onerror = () => reject(transaction.error ?? new Error("Unable to clear offline account identity."));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Clearing offline account identity was aborted."));
+  });
+}
 
 
 export async function saveMediaRecord(

@@ -109,6 +109,13 @@ import {
 } from "./libraryCache.js";
 
 import {
+  saveOfflineIdentity,
+  clearOfflineIdentity,
+} from "./mediaStore.js";
+
+
+
+import {
   getPwaInstallState,
   requestPwaInstall,
   subscribePwaInstall,
@@ -1491,9 +1498,23 @@ const persistAppView =
 ]);
 
   useEffect(() => {
-    if (!currentUser?.id) return undefined;
+    if (!currentUser?.id || currentUser.offline_only) return undefined;
     return bindAccountPlayback(currentUser.id);
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.offline_only]);
+
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.offline_only) return;
+    void saveOfflineIdentity(currentUser).catch((error) => {
+      console.warn("[HyperSynced] Unable to save offline account identity.", error);
+    });
+  }, [
+    currentUser?.id,
+    currentUser?.username,
+    currentUser?.display_name,
+    currentUser?.role,
+    currentUser?.account_type,
+    currentUser?.offline_only,
+  ]);
 
   function handleLogout() {
   navigationGenerationRef.current += 1;
@@ -1607,10 +1628,12 @@ const persistAppView =
       setCurrentUser(user);
       setAuthOpen(false);
 
-      await restoreSavedAppView(
-      user,
-      restoreGeneration,
-      );
+      if (!user.offline_only) {
+        await restoreSavedAppView(
+          user,
+          restoreGeneration,
+        );
+      }
 
       return;
       }

@@ -1,4 +1,9 @@
 import {
+  clearOfflineIdentity,
+  getOfflineIdentity,
+} from "../mediaStore.js";
+
+import {
   apiRequest,
   refreshAccessToken,
 } from "./client.js";
@@ -152,14 +157,16 @@ const isOffline =
  * Do not contact the server and do not
  * destroy the local session.
  */
-if (
-  isOffline &&
-  cachedProfile
-) {
-  return buildRestoredUser(
-    cachedProfile,
-    token,
-  );
+if (isOffline) {
+  const offlineProfile = cachedProfile ??
+    await getOfflineIdentity().catch(() => null);
+  if (offlineProfile) {
+    return {
+      ...buildRestoredUser(offlineProfile, token),
+      offline_only: true,
+    };
+  }
+  return null;
 }
 
   if (
@@ -267,6 +274,7 @@ if (
       error?.status ===
         403
     ) {
+      await clearOfflineIdentity().catch(() => {});
       return null;
     }
 
@@ -298,6 +306,7 @@ export function restoreSession() {
 
 
 export function logoutSession() {
+  void clearOfflineIdentity().catch(() => {});
   const request =
     apiRequest(
       "/auth/logout",

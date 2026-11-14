@@ -1,3 +1,5 @@
+import { clearOfflineIdentity } from "../mediaStore.js";
+
 import {
   clearAuthSession,
   getAccessToken,
@@ -332,6 +334,7 @@ export async function refreshAccessToken() {
          * session.
          */
         clearAuthSession();
+        void clearOfflineIdentity().catch(() => {});
       }
 
       rememberRefreshFailure(
