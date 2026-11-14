@@ -35,7 +35,7 @@ export function bindAccountPlayback(userId) {
     lastPaused = Boolean(current?.paused);
   };
 
-  const save = (force = false, keepalive = false) => {
+  const save = (force = false) => {
     if (!active || !ready || awaitingResume || applyingRemoteState) return writeChain;
     const state = player.getState();
     const trackId = state?.trackId ?? null;
@@ -63,8 +63,7 @@ export function bindAccountPlayback(userId) {
         const saved = await apiRequest("/users/me/playback-state", {
           method: "PUT",
           body: JSON.stringify(payload),
-          ...(keepalive ? { keepalive: true } : {}),
-        });
+         });
         lastSavedKey = key;
         lastServerUpdatedAtValue = saved?.updated_at ?? null;
         lastServerUpdatedAt = Math.max(
@@ -103,8 +102,10 @@ export function bindAccountPlayback(userId) {
         if (!active) return;
 
         const serverUpdatedAt = timestampValue(saved?.updated_at);
-        lastServerUpdatedAtValue = saved?.updated_at ?? null;
         if (localRevision !== revisionAtRequest) {
+          if (serverUpdatedAt >= lastServerUpdatedAt) {
+            lastServerUpdatedAtValue = saved?.updated_at ?? null;
+          }
           if (serverUpdatedAt) {
             lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
           }
@@ -112,6 +113,7 @@ export function bindAccountPlayback(userId) {
         }
         if (serverUpdatedAt && serverUpdatedAt <= lastServerUpdatedAt) return;
         if (!initial && !serverUpdatedAt) return;
+        lastServerUpdatedAtValue = saved?.updated_at ?? null;
 
         if (initial && userInteractedBeforeRestore) {
           lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
