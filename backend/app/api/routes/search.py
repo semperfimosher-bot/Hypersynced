@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import (
+    flag_modified,
     selectinload,
 )
 
@@ -2556,7 +2557,7 @@ async def update_search_preferences(
 
     state.search_sort_mode = payload.sort_mode
     if existing_state:
-        state.updated_at = UserAppState.updated_at
+        flag_modified(state, "updated_at")
 
     await session.commit()
 
