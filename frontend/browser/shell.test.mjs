@@ -375,8 +375,10 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
   );
   assert.equal(legacyPlayerCache, null, "legacy browser playback state must be purged");
+  // Keep the account session and player in memory while taking the media
+  // request offline. A full offline reload cannot consult Neon for account
+  // playback state; downloaded media remains playable after the user selects it.
   await context.setOffline(true);
-  await page.reload();
   await page.locator("main").waitFor({ state: "visible" });
   const range = await page.evaluate(async () => {
     const response = await fetch("/__hypersync/media/browser-audio/v1", { headers: { Range: "bytes=10-19" } });
