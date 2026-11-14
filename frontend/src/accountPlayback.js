@@ -95,9 +95,9 @@ export function bindAccountPlayback(userId) {
         if (saved?.track?.id) {
           lastTrackId = saved.track.id;
           const savedPaused = saved.paused !== false;
-          awaitingResume = !savedPaused;
-          lastSavedKey = `${saved.track.id}:${Math.floor(Number(saved.position_seconds) || 0}:${savedPaused ? "paused" : "playing"}`;
           await player.restoreTrackPaused(saved.track, saved.position_seconds);
+          awaitingResume = !savedPaused;
+          lastSavedKey = `${saved.track.id}:${Math.floor(Number(saved.position_seconds) || 0)}:${savedPaused ? "paused" : "playing"}`;
         } else {
           player.stopTrack();
         }
