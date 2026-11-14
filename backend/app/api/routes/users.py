@@ -117,10 +117,9 @@ ADMIN_APP_PAGES: set[AppPage] = {
 
 class AppStateResponse(BaseModel):
     active_page: AppPage
-
     search_query: str = ""
-
     profile_username: str | None = None
+    updated_at: datetime | None = None
 
 
 class AppStateUpdateRequest(
@@ -137,6 +136,7 @@ class AppStateUpdateRequest(
         default=None,
         max_length=32,
     )
+    expected_updated_at: datetime | None
 
 class ListeningOutcomeRequest(
     BaseModel,
@@ -331,6 +331,7 @@ async def build_app_state(
         active_page=active_page,
         search_query=(state.search_query or ""),
         profile_username=(profile_username),
+        updated_at=state.updated_at,
     )
 
 
@@ -1183,6 +1184,7 @@ class PlaybackStateUpdateRequest(BaseModel):
     track_id: UUID | None = None
     position_seconds: float = Field(default=0, ge=0, le=86_400)
     paused: bool = True
+    expected_playback_updated_at: datetime | None
 
 
 class PlaybackTrackSummary(BaseModel):
@@ -1284,15 +1286,32 @@ async def update_my_playback_state(
                 detail="Track not found.",
             )
 
+    # Serialize first-time row creation and compare-and-swap writes per account.
+    await session.execute(
+        select(User.id).where(User.id == user.id).with_for_update()
+    )
     state = await session.get(UserAppState, user.id)
     if state is None:
+        current_playback_version = None
         state = UserAppState(user_id=user.id)
         session.add(state)
+    else:
+        current_playback_version = state.playback_updated_at
 
+    if current_playback_version != payload.expected_playback_updated_at:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Playback state changed on another session. Refresh before saving.",
+        )
+
+    previous_updated_at = state.updated_at if state in session else None
     state.playback_track_id = track.id if track is not None else None
     state.playback_position_seconds = payload.position_seconds
     state.playback_paused = payload.paused
     state.playback_updated_at = datetime.now(UTC)
+    # Playback writes must not invalidate the independent app-navigation version.
+    if previous_updated_at is not None:
+        state.updated_at = previous_updated_at
     await session.commit()
 
     if track is None:
@@ -1377,19 +1396,22 @@ async def update_my_app_state(
     else:
         profile_username = None
 
-    app_state = await session.get(
-        UserAppState,
-        user.id,
+    # A per-account row lock makes the version check and write atomic,
+    # including the first write when user_app_state does not exist yet.
+    await session.execute(
+        select(User.id).where(User.id == user.id).with_for_update()
     )
+    app_state = await session.get(UserAppState, user.id)
+    current_app_version = app_state.updated_at if app_state is not None else None
+    if current_app_version != payload.expected_updated_at:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="App view changed on another session. Refresh before saving.",
+        )
 
     if app_state is None:
-        app_state = UserAppState(
-            user_id=user.id,
-        )
-
-        session.add(
-            app_state,
-        )
+        app_state = UserAppState(user_id=user.id)
+        session.add(app_state)
 
     app_state.active_page = payload.active_page
 
@@ -1399,10 +1421,12 @@ async def update_my_app_state(
 
     await session.commit()
 
+    await session.refresh(app_state)
     return AppStateResponse(
-        active_page=(payload.active_page),
-        search_query=(app_state.search_query),
-        profile_username=(app_state.profile_username),
+        active_page=payload.active_page,
+        search_query=app_state.search_query,
+        profile_username=app_state.profile_username,
+        updated_at=app_state.updated_at,
     )
 
 
