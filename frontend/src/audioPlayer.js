@@ -317,7 +317,13 @@ function beginListeningEvent(
         },
       )
       .catch(
-        () => null,
+        (error) => {
+          console.error(
+            "[HyperSynced] Listening history event was not saved.",
+            error,
+          );
+          return null;
+        },
       );
 
 
@@ -389,7 +395,12 @@ function finishListeningEvent(
       );
     }
   )().catch(
-    () => {},
+    (error) => {
+      console.error(
+        "[HyperSynced] Listening history outcome was not saved.",
+        error,
+      );
+    },
   );
 }
 
