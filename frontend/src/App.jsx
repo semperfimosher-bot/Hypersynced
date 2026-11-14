@@ -1681,27 +1681,13 @@ const persistAppView =
       });
     };
 
-    if (
-      typeof requestIdleCallback ===
-      "function"
-    ) {
-      const idleId =
-        requestIdleCallback(syncSession, {
-          timeout: 250,
-        });
-
-      return () => {
-        cancelled = true;
-        cancelIdleCallback(idleId);
-      };
-    }
-
-    const timeoutId =
-      window.setTimeout(syncSession, 0);
+    // Restore the authenticated account and its Neon-backed app view
+    // immediately. Deferring this to an idle callback lets the default or
+    // previously rendered page appear before the saved database state loads.
+    syncSession();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timeoutId);
     };
 }, [
   restoreSavedAppView,
