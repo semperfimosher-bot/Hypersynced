@@ -337,15 +337,16 @@ for (const failure of ["fetch", "storage"]) {
   });
 }
 
-test("successful navigation does not publish HTML whose required bundle failed", async (t) => {
+test("navigation keeps the last complete shell when a new build has a missing required bundle", async (t) => {
   const writes = [];
   const html = '<script src="/assets/new.js"></script>';
   const dispatch = await worker(t, {
+    cached: async () => new Response("last complete app"),
     network: async (request) => request instanceof Request && request.url.endsWith("/library")
-      ? new Response(html) : new Response("unavailable", { status: 503 }),
+      ? new Response(html) : new Response("bundle not found", { status: 404 }),
     put: async (url) => { writes.push(url); },
   });
-  assert.equal(await (await dispatch(navigation())).text(), html);
+  assert.equal(await (await dispatch(navigation())).text(), "last complete app");
   await dispatch.background();
   assert.equal(writes.includes("/"), false);
 });
