@@ -1293,6 +1293,7 @@ async def update_my_playback_state(
         select(User.id).where(User.id == user.id).with_for_update()
     )
     state = await session.get(UserAppState, user.id)
+    existing_state = state is not None
     if state is None:
         current_playback_version = None
         state = UserAppState(user_id=user.id)
@@ -1306,8 +1307,7 @@ async def update_my_playback_state(
             detail="Playback state changed on another session. Refresh before saving.",
         )
 
-    existing_state = state in session and state.updated_at is not None
-    state.playback_track_id = track.id if track is not None else None
+        state.playback_track_id = track.id if track is not None else None
     state.playback_position_seconds = payload.position_seconds
     state.playback_paused = payload.paused
     next_playback_version = datetime.now(UTC)
