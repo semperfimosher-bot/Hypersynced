@@ -1,5 +1,10 @@
-const PLAYER_STATE_KEY =
-  "hypersync_player_state_v1";
+const PLAYER_STATE_PREFIX =
+  "hypersync_player_state_v2:";
+
+function storageKey(userId) {
+  const id = String(userId ?? "").trim();
+  return id ? PLAYER_STATE_PREFIX + encodeURIComponent(id) : "";
+}
 
 
 function getStorage() {
@@ -18,18 +23,19 @@ function getStorage() {
 }
 
 
-export function readPersistedPlayerState() {
+export function readPersistedPlayerState(userId) {
+  const key = storageKey(userId);
   const storage =
     getStorage();
 
-  if (!storage) {
+  if (!storage || !key) {
     return null;
   }
 
   try {
     const raw =
       storage.getItem(
-        PLAYER_STATE_KEY,
+        key,
       );
 
     if (!raw) {
@@ -57,13 +63,16 @@ export function readPersistedPlayerState() {
 
 
 export function writePersistedPlayerState(
+  userId,
   state,
 ) {
+  const key = storageKey(userId);
   const storage =
     getStorage();
 
   if (
     !storage ||
+    !key ||
     !state?.trackId
   ) {
     return;
@@ -71,7 +80,7 @@ export function writePersistedPlayerState(
 
   try {
     storage.setItem(
-      PLAYER_STATE_KEY,
+      key,
       JSON.stringify({
         ...state,
 
@@ -92,17 +101,18 @@ export function writePersistedPlayerState(
 }
 
 
-export function clearPersistedPlayerState() {
+export function clearPersistedPlayerState(userId) {
+  const key = storageKey(userId);
   const storage =
     getStorage();
 
-  if (!storage) {
+  if (!storage || !key) {
     return;
   }
 
   try {
     storage.removeItem(
-      PLAYER_STATE_KEY,
+      key,
     );
   } catch {
     // Ignore storage failures.
