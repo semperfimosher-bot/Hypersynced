@@ -1339,6 +1339,8 @@ export default function App() {
 
   // Keep server writes ordered so an older navigation cannot overwrite the latest view.
   const appStateSaveQueueRef = useRef(Promise.resolve());
+  const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
+  activeAppStateOwnerRef.current = currentUser?.id ?? null;
 
   const cancelPendingSearchSave =
   useCallback(() => {
@@ -1499,19 +1501,23 @@ const persistAppView =
       writePersistedAppView(currentUser.id, state);
 
       const savedState = { ...state };
+      const ownerId = currentUser.id;
 
       appStateSaveQueueRef.current =
         appStateSaveQueueRef.current
           .catch(() => {})
-          .then(() =>
-            apiRequest(
+          .then(() => {
+            if (activeAppStateOwnerRef.current !== ownerId) {
+              return null;
+            }
+            return apiRequest(
               "/users/me/app-state",
               {
                 method: "PATCH",
                 body: JSON.stringify(savedState),
               },
-            ),
-          )
+            );
+          })
           .catch(() => {});
     },
     [currentUser],
@@ -2516,6 +2522,9 @@ const clearPlaylistToOpen =
         }
         onDeleteNotification={
           deleteNotification
+        }
+        onRefreshNotifications={
+          refreshMessageNotifications
         }
         onEnablePush={() => {
           void handleEnablePush();
