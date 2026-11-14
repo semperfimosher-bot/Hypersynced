@@ -366,19 +366,15 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     },
     position_seconds: 0,
   };
-  await page.evaluate((size) => localStorage.setItem("hypersync_player_state_v2:browser-admin", JSON.stringify({
-    trackId: "browser-audio", currentTime: 3, volume: 0.2, muted: false,
-    meta: { title: "Offline Fixture", artist: "Fixture", mediaVersion: "v1", mimeType: "audio/wav", fileSize: size, durationSeconds: 8 },
-  })), fileSize);
-  // Reconcile the intentionally stale startup cache against the account's
-  // database record before testing the offline-only cache path.
+  // Persistent player snapshots are no longer allowed in browser storage.
+  // The account playback endpoint is the sole restore source after reload.
   await page.reload();
   const player = page.getByRole("region", { name: "Player", exact: true });
   await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
-  const reconciledPosition = await page.evaluate(() => JSON.parse(
+  const legacyPlayerCache = await page.evaluate(() =>
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
-  )?.currentTime);
-  assert.equal(reconciledPosition, 0, "the database position must replace the stale browser hint");
+  );
+  assert.equal(legacyPlayerCache, null, "legacy browser playback state must be purged");
   await context.setOffline(true);
   await page.reload();
   await page.locator("main").waitFor({ state: "visible" });
