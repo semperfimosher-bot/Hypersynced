@@ -77,7 +77,7 @@ test(
 
     const values = new Map([
       [
-        "hypersync_player_state_v1",
+        "hypersync_player_state_v2:restore-test-user",
         JSON.stringify(savedState),
       ],
     ]);
@@ -121,6 +121,7 @@ test(
       player = await import(
         `./audioPlayer.js?restore-test=${Date.now()}-${Math.random()}`
       );
+      player.setPlaybackPersistenceOwner("restore-test-user");
 
       for (
         let attempt = 0;
