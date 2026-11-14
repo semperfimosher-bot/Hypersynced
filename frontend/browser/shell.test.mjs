@@ -370,23 +370,23 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     trackId: "browser-audio", currentTime: 3, volume: 0.2, muted: false,
     meta: { title: "Offline Fixture", artist: "Fixture", mediaVersion: "v1", mimeType: "audio/wav", fileSize: size, durationSeconds: 8 },
   })), fileSize);
+  // Reconcile the intentionally stale startup cache against the account's
+  // database record before testing the offline-only cache path.
+  await page.reload();
+  const player = page.getByRole("region", { name: "Player", exact: true });
+  await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
+  const reconciledPosition = await page.evaluate(() => JSON.parse(
+    localStorage.getItem("hypersync_player_state_v2:browser-admin"),
+  )?.currentTime);
+  assert.equal(reconciledPosition, 0, "the database position must replace the stale browser hint");
   await context.setOffline(true);
   await page.reload();
   await page.locator("main").waitFor({ state: "visible" });
-  // The auth overlay is lazy-loaded, so a synchronous count can miss it and
-  // leave its modal layer blocking navigation after reload. Wait for the guest
-  // action to mount before continuing the offline playback journey.
-  const guestButton = page.locator(".auth-overlay").getByRole("button", { name: "or use without account", exact: true });
-  await guestButton.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
-  if (await guestButton.isVisible().catch(() => false)) await guestButton.click();
-  await page.getByText("Loading page...", { exact: true }).waitFor({ state: "hidden" });
   const range = await page.evaluate(async () => {
     const response = await fetch("/__hypersync/media/browser-audio/v1", { headers: { Range: "bytes=10-19" } });
     return { status: response.status, range: response.headers.get("Content-Range"), bytes: (await response.arrayBuffer()).byteLength };
   });
   assert.deepEqual(range, { status: 206, range: `bytes 10-19/${fileSize}`, bytes: 10 });
-  const player = page.getByRole("region", { name: "Player", exact: true });
-  await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
   await player.getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => window.__appAudioInstances[0]?.currentTime > 0.05);
   const beforeNavigation = await page.evaluate(() => window.__appAudioInstances[0].currentTime);
