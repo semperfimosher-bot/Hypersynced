@@ -87,19 +87,7 @@ function resetStorage(
 test(
   "rejected refresh clears the stale remembered browser session",
   async () => {
-    resetStorage({
-      hypersync_session_active:
-        "true",
-      hypersync_remember_me:
-        "true",
-      hypersync_user_profile:
-        JSON.stringify({
-          id:
-            "user-1",
-          username:
-            "listener",
-        }),
-    });
+    resetStorage();
 
     const originalFetch =
       globalThis.fetch;
@@ -147,19 +135,8 @@ test(
         /Refresh session is no longer active/,
       );
 
-      assert.equal(
-        localStorage.getItem(
-          "hypersync_session_active",
-        ),
-        null,
-      );
-
-      assert.equal(
-        localStorage.getItem(
-          "hypersync_user_profile",
-        ),
-        null,
-      );
+      assert.equal(localStorage.getItem("hypersync_session_active"), null);
+      assert.equal(localStorage.getItem("hypersync_user_profile"), null);
 
       const callCountAfterRefresh =
         calls.length;
@@ -187,19 +164,7 @@ test(
 test(
   "429 refresh cooldown suppresses repeated protected requests",
   async () => {
-    resetStorage({
-      hypersync_session_active:
-        "true",
-      hypersync_remember_me:
-        "true",
-      hypersync_user_profile:
-        JSON.stringify({
-          id:
-            "user-1",
-          username:
-            "listener",
-        }),
-    });
+    resetStorage();
 
     const originalFetch =
       globalThis.fetch;
@@ -277,19 +242,8 @@ test(
         true,
       );
 
-      assert.equal(
-        localStorage.getItem(
-          "hypersync_session_active",
-        ),
-        "true",
-      );
-
-      assert.notEqual(
-        localStorage.getItem(
-          "hypersync_user_profile",
-        ),
-        null,
-      );
+      assert.equal(localStorage.getItem("hypersync_session_active"), null);
+      assert.equal(localStorage.getItem("hypersync_user_profile"), null);
     } finally {
       globalThis.fetch =
         originalFetch;
@@ -301,19 +255,7 @@ test(
 test(
   "concurrent refresh calls share one network request",
   async () => {
-    resetStorage({
-      hypersync_session_active:
-        "true",
-      hypersync_remember_me:
-        "true",
-      hypersync_user_profile:
-        JSON.stringify({
-          id:
-            "user-1",
-          username:
-            "listener",
-        }),
-    });
+    resetStorage();
 
     const originalFetch =
       globalThis.fetch;

@@ -23,11 +23,11 @@ test("app view is restored and persisted only through the account database API",
   assert.match(source, /method: "PATCH"/);
 });
 
-test("playback cache is account-scoped and is not restored before authentication", () => {
+test("playback state is restored only from Neon, never from persistent browser storage", () => {
   const player = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
   const persistence = readFileSync(new URL("./playerPersistence.js", import.meta.url), "utf8");
   assert.match(player, /setPlaybackPersistenceOwner/);
-  assert.match(player, /readPersistedPlayerState\(userId\)/);
+  assert.doesNotMatch(player, /restorePersistedPlayerState\(nextOwner\)/);
   assert.doesNotMatch(player, /attachEvents\(\);\s*restorePersistedPlayerState\(\);/);
   assert.match(persistence, /hypersync_player_state_v2:/);
   assert.match(persistence, /storageKey\(userId\)/);

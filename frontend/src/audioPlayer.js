@@ -2479,8 +2479,9 @@ export function setPlaybackPersistenceOwner(userId) {
     notify();
   }
 
+  // Playback restoration is exclusively driven by the account's Neon state.
+  // Never restore a competing snapshot from browser storage or an old runtime cache.
   playbackPersistenceOwnerId = nextOwner;
-  if (nextOwner) restorePersistedPlayerState(nextOwner);
 }
 
 

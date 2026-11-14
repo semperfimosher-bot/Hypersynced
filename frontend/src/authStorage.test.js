@@ -1,194 +1,87 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-
-function createStorage(
-  initial = {},
-) {
-  const values =
-    new Map(
-      Object.entries(
-        initial,
-      ),
-    );
-
+function createStorage(initial = {}) {
+  const values = new Map(Object.entries(initial));
   return {
-    getItem(
-      key,
-    ) {
-      return (
-        values.has(
-          key,
-        )
-          ? values.get(
-              key,
-            )
-          : null
-      );
-    },
-
-    setItem(
-      key,
-      value,
-    ) {
-      values.set(
-        key,
-        String(
-          value,
-        ),
-      );
-    },
-
-    removeItem(
-      key,
-    ) {
-      values.delete(
-        key,
-      );
-    },
-
-    clear() {
-      values.clear();
-    },
+    get length() { return values.size; },
+    key(index) { return [...values.keys()][index] ?? null; },
+    getItem(key) { return values.get(key) ?? null; },
+    setItem(key, value) { values.set(key, String(value)); },
+    removeItem(key) { values.delete(key); },
+    clear() { values.clear(); },
   };
 }
 
+test("auth tokens, session markers and cached profiles are memory-only", async () => {
+  globalThis.localStorage = createStorage({
+    hypersync_access_token: "old-token",
+    hypersync_session_active: "true",
+    hypersync_remember_me: "true",
+    hypersync_user_profile: JSON.stringify({ id: "old-user" }),
+    "hypersync-library-v1:old-user": "{}",
+    "hypersync_player_state_v2:old-user": "{}",
+    "hypersync-home-recent-v1:old-user": "[]",
+    "hypersync:playlist-pins-v1:old-user": "[]",
+  });
+  globalThis.sessionStorage = createStorage({
+    hypersync_access_token: "old-session-token",
+    hypersync_session_active: "true",
+  });
 
-test(
-  "access token remains memory-only while session marker persists",
-  async () => {
-    globalThis.localStorage =
-      createStorage({
-        hypersync_access_token:
-          "legacy-local-token",
-      });
+  const storage = await import(`./api/storage.js?memory-only=${Date.now()}`);
 
-    globalThis.sessionStorage =
-      createStorage({
-        hypersync_access_token:
-          "legacy-session-token",
-      });
+  for (const key of [
+    "hypersync_access_token",
+    "hypersync_session_active",
+    "hypersync_remember_me",
+    "hypersync_user_profile",
+    "hypersync-library-v1:old-user",
+    "hypersync_player_state_v2:old-user",
+    "hypersync-home-recent-v1:old-user",
+    "hypersync:playlist-pins-v1:old-user",
+  ]) assert.equal(localStorage.getItem(key), null, key);
+  assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
+  assert.equal(sessionStorage.getItem("hypersync_session_active"), null);
 
-    const storage =
-      await import(
-        `./api/storage.js?security=${Date.now()}`
-      );
+  storage.saveAuthSession("live-memory-token");
+  assert.equal(storage.getAccessToken(), "live-memory-token");
+  assert.equal(storage.hasStoredSession(), true);
+  assert.equal(localStorage.length, 0);
+  assert.equal(sessionStorage.length, 0);
 
-    assert.equal(
-      localStorage.getItem(
-        storage.ACCESS_TOKEN_KEY,
-      ),
-      null,
-    );
+  storage.cacheUserProfile({ id: "user-1", username: "listener" });
+  assert.equal(storage.readCachedUserProfile().id, "user-1");
+  assert.equal(localStorage.length, 0);
+  assert.equal(sessionStorage.length, 0);
 
-    assert.equal(
-      sessionStorage.getItem(
-        storage.ACCESS_TOKEN_KEY,
-      ),
-      null,
-    );
+  storage.clearAuthSession();
+  assert.equal(storage.getAccessToken(), null);
+  assert.equal(storage.hasStoredSession(), false);
+  assert.equal(storage.readCachedUserProfile(), null);
+});
 
-    storage.saveAuthSession(
-      "live-memory-token",
-      {
-        remember:
-          true,
-      },
-    );
-
-    assert.equal(
-      storage.getAccessToken(),
-      "live-memory-token",
-    );
-
-    assert.equal(
-      localStorage.getItem(
-        storage.ACCESS_TOKEN_KEY,
-      ),
-      null,
-    );
-
-    assert.equal(
-      sessionStorage.getItem(
-        storage.ACCESS_TOKEN_KEY,
-      ),
-      null,
-    );
-
-    assert.equal(
-      localStorage.getItem(
-        storage.SESSION_ACTIVE_KEY,
-      ),
-      "true",
-    );
-
-    storage.clearAuthSession();
-
-    assert.equal(
-      storage.getAccessToken(),
-      null,
-    );
-  },
-);
-
-
-test(
-  "remember-session preference is centralized in storage",
-  async () => {
-    globalThis.localStorage =
-      createStorage();
-
-    globalThis.sessionStorage =
-      createStorage();
-
-    const storage =
-      await import(
-        `./api/storage.js?remember=${Date.now()}`
-      );
-
-    assert.equal(
-      storage.shouldRememberSession(),
-      true,
-    );
-
-    localStorage.setItem(
-      storage.REMEMBER_ME_KEY,
-      "false",
-    );
-
-    assert.equal(
-      storage.shouldRememberSession(),
-      false,
-    );
-
-    localStorage.setItem(
-      storage.REMEMBER_ME_KEY,
-      "true",
-    );
-
-    assert.equal(
-      storage.shouldRememberSession(),
-      true,
-    );
-  },
-);
+test("session restoration always checks the HttpOnly refresh cookie", async () => {
+  globalThis.localStorage = createStorage();
+  globalThis.sessionStorage = createStorage();
+  const storage = await import(`./api/storage.js?restore=${Date.now()}`);
+  assert.equal(storage.shouldRestoreSession(), true);
+  assert.equal(storage.shouldRememberSession(), true);
+  assert.equal(storage.getActiveStorage(), null);
+});
 
 test("blocked browser storage does not crash authentication startup", async () => {
   const localDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const sessionDescriptor = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
-
   for (const name of ["localStorage", "sessionStorage"]) {
     Object.defineProperty(globalThis, name, {
       configurable: true,
-      get() {
-        throw new DOMException("Storage access denied", "SecurityError");
-      },
+      get() { throw new DOMException("Storage access denied", "SecurityError"); },
     });
   }
-
   try {
     const storage = await import(`./api/storage.js?blocked=${Date.now()}`);
-    assert.equal(storage.shouldRestoreSession(), false);
+    assert.equal(storage.shouldRestoreSession(), true);
     assert.doesNotThrow(() => storage.saveAuthSession("memory-token"));
     assert.equal(storage.getAccessToken(), "memory-token");
     assert.doesNotThrow(() => storage.cacheUserProfile({ id: "user-1" }));

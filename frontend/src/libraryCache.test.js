@@ -1,5 +1,3 @@
-import "fake-indexeddb/auto";
-
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -15,231 +13,55 @@ import {
   setCachedPlaylist,
 } from "./libraryCache.js";
 
-
-function ensureLocalStorage() {
-  if (typeof globalThis.localStorage !== "undefined") {
-    return;
-  }
-
-  const values = new Map();
+test("Library and playlist snapshots are memory-only and never touch browser storage", async () => {
+  const owner = "memory-library-" + Date.now();
+  let writes = 0;
+  const previous = globalThis.localStorage;
   globalThis.localStorage = {
-    getItem(key) {
-      return values.get(key) ?? null;
-    },
-    setItem(key, value) {
-      values.set(key, String(value));
-    },
-    removeItem(key) {
-      values.delete(key);
-    },
+    getItem() { return null; },
+    setItem() { writes += 1; },
+    removeItem() { writes += 1; },
   };
-}
+  try {
+    const tracks = Array.from({ length: 4000 }, (_, index) => ({ id: "track-" + index }));
+    await setCachedLibrary(owner, { owned: [], saved: [], tracks });
+    const immediate = getCachedLibrary(owner);
+    assert.equal(immediate.tracks.length, 4000);
+    assert.strictEqual(await getCachedLibraryAsync(owner), immediate);
 
-ensureLocalStorage();
-
-
-test(
-  "large Library and playlist snapshots use IndexedDB instead of overflowing localStorage",
-  async () => {
-    const owner = "large-library-cache-" + Date.now();
-
-    const tracks = Array.from(
-      { length: 4_000 },
-      (_, index) => ({
-        id: "large-track-" + index,
-        title: "Long track title ".repeat(8) + index,
-        artist: "Long artist name ".repeat(5),
-        album: "Long album name ".repeat(5),
-      }),
-    );
-
-    await setCachedLibrary(
-      owner,
-      {
-        owned: [],
-        saved: [],
-        tracks,
-      },
-    );
-
-    const localRaw =
-      globalThis.localStorage.getItem(
-        "hypersync-library-v1:" + owner,
-      );
-
-    assert.ok(localRaw);
-    assert.ok(localRaw.length < 1_000);
-
-    // Large snapshots stay out of localStorage, but the in-memory fast path
-    // must make the just-loaded Library available synchronously on re-entry.
-    const immediateLibrary = getCachedLibrary(owner);
-    assert.equal(immediateLibrary.tracks.length, 4_000);
-    assert.equal(
-      immediateLibrary.tracks[3_999].id,
-      "large-track-3999",
-    );
-
-    const cachedLibrary =
-      await getCachedLibraryAsync(owner);
-
-    assert.strictEqual(cachedLibrary, immediateLibrary);
-    assert.equal(cachedLibrary.tracks.length, 4_000);
-    assert.equal(
-      cachedLibrary.tracks[3_999].id,
-      "large-track-3999",
-    );
-
-    const playlist = {
-      id: "large-playlist-" + Date.now(),
-      title: "Big offline playlist",
-      tracks,
-    };
-
+    const playlist = { id: "playlist-1", tracks };
     await setCachedPlaylist(owner, playlist);
+    assert.equal((await getCachedPlaylistAsync(owner, playlist.id)).tracks.length, 4000);
+    assert.equal(getCachedPlaylist(owner, playlist.id).id, playlist.id);
 
-    const cachedPlaylist =
-      await getCachedPlaylistAsync(
-        owner,
-        playlist.id,
-      );
+    await setCachedLibraryPageAsync(owner, 1000, [{ id: "page-track" }]);
+    assert.deepEqual(await getCachedLibraryPageAsync(owner, 1000), [{ id: "page-track" }]);
+    assert.equal(writes, 0);
+  } finally {
+    if (previous === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previous;
+  }
+});
 
-    assert.equal(cachedPlaylist.tracks.length, 4_000);
-    assert.equal(
-      cachedPlaylist.tracks[0].id,
-      "large-track-0",
-    );
+test("memory Library and playlist caches are isolated by account and cleared on logout", async () => {
+  const suffix = Date.now().toString();
+  const ownerA = "owner-a-" + suffix;
+  const ownerB = "owner-b-" + suffix;
+  await setCachedLibrary(ownerA, { tracks: [{ id: "a" }] });
+  await setCachedLibrary(ownerB, { tracks: [{ id: "b" }] });
+  await setCachedPlaylist(ownerA, { id: "playlist-a", tracks: [] });
+  await setCachedPlaylist(ownerB, { id: "playlist-b", tracks: [] });
+  await setCachedLibraryPageAsync(ownerA, 1000, [{ id: "page-a" }]);
+  await setCachedLibraryPageAsync(ownerB, 1000, [{ id: "page-b" }]);
 
-    assert.equal(
-      getCachedPlaylist(owner, playlist.id),
-      null,
-    );
-  },
-);
-
-
-test(
-  "IndexedDB snapshots are isolated by account and removed by logout cleanup",
-  async () => {
-    const suffix = Date.now().toString();
-    const ownerA = "snapshot-owner-a-" + suffix;
-    const ownerB = "snapshot-owner-b-" + suffix;
-    const playlistA = "private-playlist-a-" + suffix;
-    const playlistB = "private-playlist-b-" + suffix;
-
-    await setCachedLibrary(
-      ownerA,
-      {
-        owned: [{ id: "owner-a-playlist" }],
-        saved: [],
-        tracks: [{ id: "owner-a-track" }],
-      },
-    );
-    await setCachedPlaylist(
-      ownerA,
-      {
-        id: playlistA,
-        title: "Owner A private playlist",
-        tracks: [{ id: "owner-a-private-track" }],
-      },
-    );
-
-    await setCachedLibrary(
-      ownerB,
-      {
-        owned: [],
-        saved: [],
-        tracks: [{ id: "owner-b-track" }],
-      },
-    );
-    await setCachedPlaylist(
-      ownerB,
-      {
-        id: playlistB,
-        title: "Owner B private playlist",
-        tracks: [{ id: "owner-b-private-track" }],
-      },
-    );
-
-    assert.equal(
-      getCachedLibrary(ownerA).tracks[0].id,
-      "owner-a-track",
-    );
-    assert.equal(
-      getCachedLibrary(ownerB).tracks[0].id,
-      "owner-b-track",
-    );
-    assert.equal(
-      (
-        await getCachedLibraryAsync(ownerB)
-      ).tracks[0].id,
-      "owner-b-track",
-    );
-    assert.equal(
-      await getCachedPlaylistAsync(ownerB, playlistA),
-      null,
-    );
-
-    await clearCachedLibraryScope(ownerA);
-
-    assert.equal(
-      getCachedLibrary(ownerA),
-      null,
-    );
-    assert.equal(
-      await getCachedLibraryAsync(ownerA),
-      null,
-    );
-    assert.equal(
-      await getCachedPlaylistAsync(ownerA, playlistA),
-      null,
-    );
-
-    assert.equal(
-      (
-        await getCachedLibraryAsync(ownerB)
-      ).tracks[0].id,
-      "owner-b-track",
-    );
-    assert.equal(
-      (
-        await getCachedPlaylistAsync(ownerB, playlistB)
-      ).tracks[0].id,
-      "owner-b-private-track",
-    );
-  },
-);
-
-
-test(
-  "library pages are cached separately, isolated by account, and cleared on logout",
-  async () => {
-    const suffix = Date.now().toString();
-    const ownerA = "page-cache-owner-a-" + suffix;
-    const ownerB = "page-cache-owner-b-" + suffix;
-    const pageA = [{ id: "owner-a-page-1000" }];
-    const pageB = [{ id: "owner-b-page-1000" }];
-
-    await setCachedLibraryPageAsync(ownerA, 1000, pageA);
-    await setCachedLibraryPageAsync(ownerB, 1000, pageB);
-
-    assert.deepEqual(
-      await getCachedLibraryPageAsync(ownerA, 1000),
-      pageA,
-    );
-    assert.deepEqual(
-      await getCachedLibraryPageAsync(ownerB, 1000),
-      pageB,
-    );
-
-    await clearCachedLibraryScope(ownerA);
-
-    assert.equal(
-      await getCachedLibraryPageAsync(ownerA, 1000),
-      null,
-    );
-    assert.deepEqual(
-      await getCachedLibraryPageAsync(ownerB, 1000),
-      pageB,
-    );
-  },
-);
+  assert.equal(getCachedLibrary(ownerA).tracks[0].id, "a");
+  assert.equal(getCachedLibrary(ownerB).tracks[0].id, "b");
+  assert.equal(await getCachedPlaylistAsync(ownerB, "playlist-a"), null);
+  await clearCachedLibraryScope(ownerA);
+  assert.equal(getCachedLibrary(ownerA), null);
+  assert.equal(await getCachedPlaylistAsync(ownerA, "playlist-a"), null);
+  assert.equal(await getCachedLibraryPageAsync(ownerA, 1000), null);
+  assert.equal(getCachedLibrary(ownerB).tracks[0].id, "b");
+  assert.equal((await getCachedPlaylistAsync(ownerB, "playlist-b")).id, "playlist-b");
+  assert.deepEqual(await getCachedLibraryPageAsync(ownerB, 1000), [{ id: "page-b" }]);
+});
