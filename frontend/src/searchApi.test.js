@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { cacheUserProfile } from "./api/storage.js";
 
 const localStorageValues =
   new Map();
@@ -22,14 +23,11 @@ if (typeof globalThis.localStorage === "undefined") {
 }
 
 function setCachedProfile(id, username = id) {
-  globalThis.localStorage.setItem(
-    "hypersync_user_profile",
-    JSON.stringify({
-      id,
-      username,
-      account_type: "registered",
-    }),
-  );
+  cacheUserProfile({
+    id,
+    username,
+    account_type: "registered",
+  });
 }
 
 async function loadSearchApi() {

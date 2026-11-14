@@ -1,7 +1,6 @@
 import {
   clearAuthSession,
   getAccessToken,
-  hasStoredSession,
   saveAuthSession,
   shouldRememberSession,
 } from "./storage.js";
@@ -409,28 +408,11 @@ export async function apiRequest(
     !authEndpoint &&
     requiresAuthentication
   ) {
-    if (
-      hasStoredSession()
-    ) {
-      const auth =
-        await refreshAccessToken();
+    const auth =
+      await refreshAccessToken();
 
-      token =
-        auth.access_token;
-    } else {
-      const error =
-        new Error(
-          "Authentication required.",
-        );
-
-      error.status =
-        401;
-
-      error.detail =
-        "Authentication required.";
-
-      throw error;
-    }
+    token =
+      auth.access_token;
   }
 
   if (canShareInFlightGet) {
