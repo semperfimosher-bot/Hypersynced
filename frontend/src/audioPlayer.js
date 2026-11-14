@@ -1456,6 +1456,9 @@ function attachEvents() {
   "pause",
   () => {
     sampleListeningProgress();
+    // A pause ends this listening session. Resuming the same track creates
+    // a fresh event, so play counts reflect each confirmed playback start.
+    finishListeningEvent("paused");
     if (
       currentTrackId ||
       audio.currentSrc
