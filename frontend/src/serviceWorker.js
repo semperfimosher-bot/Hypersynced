@@ -1097,9 +1097,16 @@ globalThis.self?.addEventListener?.(
                 return (await cachedShell()) ?? response;
               }
               if (cache) {
-                // Keep the previous offline entry point until the new bundles
-                // are stored. Cache work must not delay a working online page.
-                event.waitUntil(precacheAppShell(response.clone()).catch(() => {}));
+                // Never expose HTML from a new build until every required
+                // hashed JS/CSS asset is available in its matching shell cache.
+                // During rolling deploys, HTML and assets can briefly come from
+                // different frontend instances. Keep serving the last complete
+                // shell rather than handing the browser imports that will 404.
+                try {
+                  await precacheAppShell(response.clone());
+                } catch {
+                  return (await cachedShell()) ?? response;
+                }
               }
               return response;
             } catch {
