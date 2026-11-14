@@ -766,6 +766,10 @@ export default function App() {
   const [currentUser, setCurrentUser] =
     useState(null);
 
+  // Keep the account UI hidden until Neon app and playback state are restored.
+  const [accountStateReady, setAccountStateReady] =
+    useState(() => !shouldRestoreSession());
+
   const [activePage, setActivePage] =
     useState("home");
 
@@ -1379,6 +1383,15 @@ const restoreSavedAppView =
       }
       const requestId = ++appViewRestoreRequestRef.current;
 
+      // Establish the account owner before fetching so its DB version is
+      // retained even though the authenticated UI is not mounted yet.
+      if (activeAppStateOwnerRef.current !== user?.id) {
+        activeAppStateOwnerRef.current = user?.id ?? null;
+        appStateVersionRef.current = null;
+        appStateVersionLoadedRef.current = false;
+        appStateSaveQueueRef.current = Promise.resolve();
+      }
+
       const params =
         new URLSearchParams(
           window.location.search,
@@ -1530,8 +1543,14 @@ const persistAppView =
 ]);
 
   useEffect(() => {
-    if (!currentUser?.id || currentUser.offline_only) return undefined;
-    return bindAccountPlayback(currentUser.id);
+    if (!currentUser?.id || currentUser.offline_only) {
+      setAccountStateReady(true);
+      return undefined;
+    }
+    setAccountStateReady(false);
+    return bindAccountPlayback(currentUser.id, () => {
+      setAccountStateReady(true);
+    });
   }, [currentUser?.id, currentUser?.offline_only]);
 
   useEffect(() => {
@@ -1579,6 +1598,7 @@ const persistAppView =
   logoutSession();
 
   setCurrentUser(null);
+  setAccountStateReady(true);
   resetDownloadedPlaylistUpdates();
   setMessageToOpen("");
   setArtistToOpen("");
@@ -1651,15 +1671,13 @@ const persistAppView =
       navigationGenerationRef.current;
 
     const syncSession = () => {
+      setAccountStateReady(false);
       restoreSession().then(async (user) => {
         if (cancelled) {
           return;
         }
 
     if (user) {
-      setCurrentUser(user);
-      setAuthOpen(false);
-
       if (!user.offline_only) {
         await restoreSavedAppView(
           user,
@@ -1667,17 +1685,26 @@ const persistAppView =
         );
       }
 
+      if (cancelled) return;
+      // Mount account pages only after the saved database view is applied.
+      setCurrentUser(user);
+      setAuthOpen(false);
       return;
       }
 
+        setCurrentUser(null);
+        setAccountStateReady(true);
         if (!readCachedUserProfile()) {
-          setCurrentUser(null);
           setAuthOpen(true);
           return;
         }
 
-        setCurrentUser(null);
         setAuthOpen(true);
+      }).catch((error) => {
+        if (!cancelled) {
+          console.error("[HyperSynced] Unable to restore account session.", error);
+          setAccountStateReady(true);
+        }
       });
     };
 
@@ -2369,24 +2396,22 @@ const clearPlaylistToOpen =
 
   const handleAuthenticated =
   useCallback(
-    (user) => {
+    async (user) => {
       cancelPendingSearchSave();
+      setAccountStateReady(false);
 
       const restoreGeneration =
         navigationGenerationRef.current;
 
-      setCurrentUser(
-        user,
-      );
+      if (!user.offline_only) {
+        await restoreSavedAppView(
+          user,
+          restoreGeneration,
+        );
+      }
 
-      setAuthOpen(
-        false,
-      );
-
-      void restoreSavedAppView(
-        user,
-        restoreGeneration,
-      );
+      setCurrentUser(user);
+      setAuthOpen(false);
     },
     [
       cancelPendingSearchSave,
@@ -2470,6 +2495,11 @@ const clearPlaylistToOpen =
         />
 
         <main className="main-content">
+          {!accountStateReady ? (
+            <div className="page-stack" role="status" aria-live="polite" aria-busy="true">
+              Restoring your account from the database…
+            </div>
+          ) : (
           <MainPage
             activePage={activePage}
             currentUser={currentUser}
@@ -2552,6 +2582,7 @@ const clearPlaylistToOpen =
             }
 
           />
+          )}
         </main>
       </section>
 
@@ -2565,7 +2596,7 @@ const clearPlaylistToOpen =
 
 
       />
-      <PlayerBar
+      {accountStateReady ? <PlayerBar
         playlistUpdate={
           activePlaylistUpdate
         }
@@ -2616,7 +2647,7 @@ const clearPlaylistToOpen =
           setMobilePlayerDetailsLoaded(true);
           setMobilePlayerDetailsOpen(true);
         }}
-      />
+      /> : null}
 
       {mobilePlayerDetailsLoaded ? (
         <Suspense fallback={null}>
