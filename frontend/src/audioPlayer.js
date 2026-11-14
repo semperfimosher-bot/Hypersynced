@@ -2256,7 +2256,7 @@ export function setPlaybackPersistenceOwner(userId) {
   if (activePlaybackOwnerId === nextOwner) return;
 
   // Never let the previous account's in-memory player leak into the next
-  // account while its own cache/database state is being restored.
+  // account while its own database state is being restored.
   if (activePlaybackOwnerId !== nextOwner) {
     cancelActivePlaybackSession();
     audio.pause();
@@ -2274,7 +2274,6 @@ export function setPlaybackPersistenceOwner(userId) {
   }
 
   // Playback restoration is exclusively driven by the account's Neon state.
-  // Never restore a competing snapshot from browser storage or an old runtime cache.
   activePlaybackOwnerId = nextOwner;
 }
 
