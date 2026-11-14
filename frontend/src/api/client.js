@@ -408,6 +408,17 @@ export async function apiRequest(
     !authEndpoint &&
     requiresAuthentication
   ) {
+    const refreshError = refreshCooldownError();
+    if (refreshError?.status === 401 || refreshError?.status === 403) {
+      const error = new Error("Authentication required.");
+      error.status = 401;
+      error.detail = "Authentication required.";
+      throw error;
+    }
+    if (refreshError) {
+      throw refreshError;
+    }
+
     const auth =
       await refreshAccessToken();
 
