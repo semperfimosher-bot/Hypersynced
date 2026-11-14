@@ -6,8 +6,17 @@ export function getHomeRecentlyPlayed(profile, limit = 12) {
 export const LISTENING_HISTORY_CHANGED_EVENT = "hypersynced:listening-history-changed";
 
 export function notifyListeningHistoryChanged(detail = null, target = globalThis.window) {
+  // Preserve the original target-first call signature used by existing tests
+  // and any internal callers.
+  if (detail?.dispatchEvent && arguments.length === 1) {
+    target = detail;
+    detail = null;
+  }
   if (!target?.dispatchEvent) return false;
-  target.dispatchEvent(new CustomEvent(LISTENING_HISTORY_CHANGED_EVENT, { detail }));
+  const event = typeof CustomEvent === "function"
+    ? new CustomEvent(LISTENING_HISTORY_CHANGED_EVENT, { detail })
+    : Object.assign(new Event(LISTENING_HISTORY_CHANGED_EVENT), { detail });
+  target.dispatchEvent(event);
   return true;
 }
 
