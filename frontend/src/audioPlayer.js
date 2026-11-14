@@ -3055,7 +3055,7 @@ currentTrackArtist =
 restoredTimeSeconds =
   0;
 
-clearPersistedPlayerState();
+clearPersistedPlayerState(playbackPersistenceOwnerId);
 
 
   setPlaybackPhase(
