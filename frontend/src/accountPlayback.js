@@ -74,6 +74,11 @@ export function bindAccountPlayback(userId) {
 
     const task = (async () => {
       try {
+        // Let this device's pending write finish first so its own PUT response
+        // cannot be mistaken for a newer playback session from another device.
+        await writeChain.catch(() => {});
+        if (!active || localRevision !== revisionAtRequest) return;
+
         const saved = await apiRequest("/users/me/playback-state");
         if (!active) return;
 
