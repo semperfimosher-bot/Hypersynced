@@ -181,8 +181,6 @@ const [
   setRecentError,
 ] = useState("");
 
-const localRecentTracks = useRef([]);
-
 
 const loadRecentlyPlayed =
   useCallback(
