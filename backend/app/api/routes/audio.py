@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import threading
 import unicodedata
 from pathlib import Path
 from uuid import UUID
@@ -12,7 +14,7 @@ from starlette.types import Receive, Scope, Send
 from ...config import get_settings
 from ...database import get_session_factory
 from ...models.media import Track
-from ...services.b2 import get_b2_s3_client
+from ...services.b2 import get_b2_bucket, get_b2_s3_client
 from ...services.thread_work import run_blocking, run_blocking_resource
 
 router = APIRouter(
@@ -49,6 +51,70 @@ class S3StreamingResponse(StreamingResponse):
             finally:
                 # Also close when the client disconnects before iteration starts.
                 await run_blocking(close_s3_body, self.body)
+
+
+def close_b2_download(downloaded) -> None:
+    """Close a legacy B2 SDK download response."""
+    close = getattr(getattr(downloaded, "response", None), "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            logger.debug("B2 download response was already closed.", exc_info=True)
+
+
+class B2StreamingResponse(StreamingResponse):
+    """Compatibility response for remaining B2 SDK-backed media endpoints."""
+
+    def __init__(self, downloaded, **kwargs):
+        self.downloaded = downloaded
+        self.stream = stream_b2_file(downloaded)
+        super().__init__(self.stream, **kwargs)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            try:
+                await self.stream.aclose()
+            finally:
+                await run_blocking(close_b2_download, self.downloaded)
+
+
+async def stream_b2_file(downloaded):
+    """Stream legacy B2 SDK downloads through a bounded pipe, never a full buffer."""
+    read_fd, write_fd = os.pipe()
+    error: list[BaseException] = []
+
+    def download() -> None:
+        try:
+            with os.fdopen(write_fd, "wb", buffering=0) as output:
+                downloaded.save(output, allow_seeking=False)
+        except BaseException as exc:
+            error.append(exc)
+
+    thread = threading.Thread(target=download, daemon=True)
+    thread.start()
+
+    try:
+        while True:
+            chunk = await asyncio.to_thread(os.read, read_fd, STREAM_CHUNK_SIZE)
+            if not chunk:
+                break
+            yield chunk
+
+        await asyncio.to_thread(thread.join)
+        if error:
+            raise error[0]
+    finally:
+        try:
+            os.close(read_fd)
+        except OSError:
+            pass
+        try:
+            await run_blocking(close_b2_download, downloaded)
+        finally:
+            await run_blocking(thread.join)
 
 
 def range_error(
