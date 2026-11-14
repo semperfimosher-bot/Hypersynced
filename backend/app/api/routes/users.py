@@ -1235,6 +1235,7 @@ class PlaybackTrackSummary(BaseModel):
 class PlaybackStateResponse(BaseModel):
     track: PlaybackTrackSummary | None = None
     position_seconds: float = 0
+    paused: bool = True
     updated_at: datetime | None = None
 
 
@@ -1269,6 +1270,7 @@ async def get_my_playback_state(
             artwork_version=_track_artwork_version(track),
         ),
         position_seconds=state.playback_position_seconds,
+        paused=state.playback_paused,
         updated_at=state.playback_updated_at,
     )
 
@@ -1311,6 +1313,7 @@ async def update_my_playback_state(
     if track is None:
         return PlaybackStateResponse(
             position_seconds=payload.position_seconds,
+            paused=payload.paused,
             updated_at=state.playback_updated_at,
         )
     return PlaybackStateResponse(
@@ -1330,6 +1333,7 @@ async def update_my_playback_state(
             artwork_version=_track_artwork_version(track),
         ),
         position_seconds=payload.position_seconds,
+        paused=payload.paused,
         updated_at=state.playback_updated_at,
     )
 
