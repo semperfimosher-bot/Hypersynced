@@ -295,23 +295,29 @@ globalThis.self?.addEventListener?.(
           );
 
           const refreshedShells = [...new Set((await caches.keys()).filter((key) => key.startsWith("hypersync-app-shell-")))];
-          let previous = null;
-          let previousOrder = -1;
+          const completeShells = [];
           for (const [index, key] of refreshedShells.entries()) {
-            if (key === APP_SHELL_CACHE) continue;
             const cache = await caches.open(key);
             if (!await cache.match("/")) continue;
             const stamp = await cache.match(activationKey);
             const order = Number((await stamp?.json().catch(() => null))?.order) || index + 1;
-            if (order > previousOrder) {
-              previous = key;
-              previousOrder = order;
-            }
+            completeShells.push({ key, order });
           }
+
+          // Keep several complete generations, not just the immediately
+          // previous one. Long-lived tabs can request lazy-loaded hashed
+          // chunks after multiple deployments; pruning their build too early
+          // turns otherwise healthy navigation into chunk-load 404 errors.
+          const retainedShells = new Set(
+            completeShells
+              .sort((left, right) => right.order - left.order)
+              .slice(0, 4)
+              .map(({ key }) => key),
+          );
 
           await Promise.all(
             refreshedShells
-              .filter((key) => key !== APP_SHELL_CACHE && key !== previous)
+              .filter((key) => !retainedShells.has(key))
               .map((key) => caches.delete(key)),
           );
 
