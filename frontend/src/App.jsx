@@ -1483,6 +1483,12 @@ const persistAppView =
       const ownerId = currentUser.id;
       const navigationGeneration = navigationGenerationRef.current;
 
+      const signature = JSON.stringify({
+        active_page: savedState.active_page,
+        search_query: savedState.search_query ?? "",
+        profile_username: savedState.profile_username ?? null,
+      });
+
       appStateSaveQueueRef.current =
         appStateSaveQueueRef.current
           .catch(() => {})
@@ -1490,13 +1496,16 @@ const persistAppView =
             if (activeAppStateOwnerRef.current !== ownerId) {
               return null;
             }
+
+            // Read the current Neon version before the first write for this account.
             if (!appStateVersionLoadedRef.current) {
               const latest = await apiRequest("/users/me/app-state");
               if (activeAppStateOwnerRef.current !== ownerId) return null;
               appStateVersionRef.current = latest?.updated_at ?? null;
               appStateVersionLoadedRef.current = true;
             }
-            const saved = await apiRequest(
+
+            const save = () => apiRequest(
               "/users/me/app-state",
               {
                 method: "PATCH",
@@ -1506,30 +1515,52 @@ const persistAppView =
                 }),
               },
             );
-            if (activeAppStateOwnerRef.current === ownerId) {
-              appStateVersionRef.current = saved?.updated_at ?? null;
+
+            try {
+              const saved = await save();
+              if (activeAppStateOwnerRef.current === ownerId) {
+                appStateVersionRef.current = saved?.updated_at ?? null;
+                appStateVersionLoadedRef.current = true;
+              }
+              return saved;
+            } catch (error) {
+              // A 409 means another writer advanced the DB version. Retry this
+              // exact navigation only if it is still the newest local intent.
+              if (
+                error?.status !== 409 ||
+                activeAppStateOwnerRef.current !== ownerId ||
+                navigationGenerationRef.current !== navigationGeneration ||
+                appStateLastQueuedSignatureRef.current !== signature ||
+                searchStateTimerRef.current
+              ) {
+                throw error;
+              }
+
+              const latest = await apiRequest("/users/me/app-state");
+              if (
+                activeAppStateOwnerRef.current !== ownerId ||
+                navigationGenerationRef.current !== navigationGeneration ||
+                appStateLastQueuedSignatureRef.current !== signature
+              ) {
+                return null;
+              }
+
+              appStateVersionRef.current = latest?.updated_at ?? null;
               appStateVersionLoadedRef.current = true;
+
+              const saved = await save();
+              if (activeAppStateOwnerRef.current === ownerId) {
+                appStateVersionRef.current = saved?.updated_at ?? null;
+                appStateVersionLoadedRef.current = true;
+              }
+              return saved;
             }
-            return saved;
           })
           .catch((error) => {
-            if (error?.status === 409 && activeAppStateOwnerRef.current === ownerId) {
-              // Resolve a version conflict from Neon; never replay the stale page payload.
-              void apiRequest("/users/me/app-state").then((latest) => {
-                if (
-                  activeAppStateOwnerRef.current !== ownerId ||
-                  navigationGenerationRef.current !== navigationGeneration ||
-                  searchStateTimerRef.current
-                ) return;
-                appStateVersionRef.current = latest?.updated_at ?? null;
-                appStateVersionLoadedRef.current = true;
-                const restored = normalizeAppViewState(latest, currentUser.role);
-                setActivePage(restored.activePage);
-                setSearchQuery(restored.searchQuery);
-                setActiveProfileUsername(restored.profileUsername);
-              }).catch((refreshError) => {
-                console.error("[HyperSynced] Unable to reconcile app view state.", refreshError);
-              });
+            // Allow a later state change/click to retry if this write did not
+            // reach Neon; don't leave a failed payload marked as successfully handled.
+            if (appStateLastQueuedSignatureRef.current === signature) {
+              appStateLastQueuedSignatureRef.current = null;
             }
             console.error("[HyperSynced] Unable to save app view state.", error);
           });
