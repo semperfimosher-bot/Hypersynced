@@ -17,6 +17,22 @@ assert.ok(
 );
 
 assert.match(
+  worker,
+  /__hypersync_build/,
+  "Service-worker document requests must use a build-specific cache key",
+);
+assert.match(
+  worker,
+  /cache:\s*"no-store"/,
+  "Service-worker document requests must bypass the browser HTTP cache",
+);
+assert.doesNotMatch(
+  worker,
+  /event\.preloadResponse/,
+  "Navigation must not consume a potentially stale preloaded HTML response",
+);
+
+assert.match(
   nginx,
   /location = \/\s*\{[\s\S]*?no-cache, no-store, must-revalidate[\s\S]*?\}/,
   "The root app document must not be cached across deployments",
