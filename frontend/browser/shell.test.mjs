@@ -239,7 +239,7 @@ test("admin paging bounds DOM rows and preserves selection across pages and hidd
   assert.deepEqual(pageErrors, []);
 });
 
-test("worker updates retain one complete prior build for old tabs and prune older builds", { timeout: 60000 }, async (t) => {
+test("worker updates retain four complete builds for old tabs and prune older builds", { timeout: 60000 }, async (t) => {
   const { page, state } = await fixture(t);
   const baseCache = `hypersync-app-shell-${shellManifest.revision}`;
   await page.evaluate(async (name) => {
@@ -290,14 +290,16 @@ test("worker updates retain one complete prior build for old tabs and prune olde
   }));
   assert.equal(await page.evaluate(() => window.__legacyFixture), true);
   await update("rollback", [baseCache, `${baseCache}-b`], `${baseCache}-b`);
-  await update("c", [baseCache, `${baseCache}-c`], baseCache);
-  // controllerchange can fire before the worker's activate waitUntil cleanup settles.
+  await update("c", [baseCache, `${baseCache}-b`, `${baseCache}-c`], baseCache);
+  await update("d", [baseCache, `${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`], `${baseCache}-c`);
+  await update("e", [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], `${baseCache}-d`);
+  // The fifth distinct generation must prune the least-recently activated complete shell.
   await page.waitForFunction(async (expected) => {
     const names = (await caches.keys()).filter((name) => name.startsWith("hypersync-app-shell-")).sort();
     return JSON.stringify(names) === JSON.stringify([...expected].sort());
-  }, [baseCache, `${baseCache}-c`], { timeout: 10000 });
+  }, [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`], { timeout: 10000 });
   const names = (await page.evaluate(() => caches.keys())).filter((name) => name.startsWith("hypersync-app-shell-"));
-  assert.deepEqual(names.sort(), [baseCache, `${baseCache}-c`].sort());
+  assert.deepEqual(names.sort(), [`${baseCache}-b`, `${baseCache}-c`, `${baseCache}-d`, `${baseCache}-e`].sort());
 });
 
 test("cache quota exhaustion cannot break a successful online script", { timeout: 45000 }, async (t) => {
