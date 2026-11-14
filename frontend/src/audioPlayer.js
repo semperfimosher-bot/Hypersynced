@@ -312,6 +312,11 @@ function beginListeningEvent(
             data?.event_id ??
             null;
 
+          if (eventId) {
+            event.historyNotified = true;
+            notifyListeningHistoryChanged();
+          }
+
           return eventId;
         },
       )
@@ -2484,7 +2489,7 @@ export function setPlaybackPersistenceOwner(userId) {
 
   // Never let the previous account's in-memory player leak into the next
   // account while its own cache/database state is being restored.
-  if (playbackPersistenceOwnerId && playbackPersistenceOwnerId !== nextOwner) {
+  if (playbackPersistenceOwnerId !== nextOwner) {
     cancelActivePlaybackSession();
     audio.pause();
     clearQueue();
