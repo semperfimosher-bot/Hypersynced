@@ -12,6 +12,8 @@ test("app shell restores and persists account playback through the existing API"
   assert.match(source, /accountPlayback/);
   assert.match(sync, /\/users\/me\/playback-state/);
   assert.match(sync, /player\.setPlaybackPersistenceOwner/);
+  assert.match(sync, /expected_playback_updated_at/);
+  assert.doesNotMatch(sync, /pagehide|save\(true,\s*true\)/);
   assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
 });
 
@@ -20,6 +22,7 @@ test("app view is restored and persisted only through the account database API",
   assert.doesNotMatch(source, /persistedAppView|readPersistedAppView|writePersistedAppView|localStorage/);
   assert.match(source, /\/users\/me\/app-state/);
   assert.match(source, /method: "PATCH"/);
+  assert.match(source, /expected_updated_at/);
 });
 
 test("playback state is restored only from Neon, never from persistent browser storage", () => {
