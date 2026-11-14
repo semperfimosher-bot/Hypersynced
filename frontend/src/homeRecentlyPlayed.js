@@ -5,10 +5,34 @@ export function getHomeRecentlyPlayed(profile, limit = 12) {
 
 export const LISTENING_HISTORY_CHANGED_EVENT = "hypersynced:listening-history-changed";
 
-export function notifyListeningHistoryChanged(target = globalThis.window) {
+export function notifyListeningHistoryChanged(detail = null, target = globalThis.window) {
   if (!target?.dispatchEvent) return false;
-  target.dispatchEvent(new Event(LISTENING_HISTORY_CHANGED_EVENT));
+  target.dispatchEvent(new CustomEvent(LISTENING_HISTORY_CHANGED_EVENT, { detail }));
   return true;
+}
+
+export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12) {
+  if (!Array.isArray(tracks) || !playedTrack?.id) return tracks ?? [];
+  const id = String(playedTrack.id);
+  const existing = tracks.find((track) => String(track?.id) === id);
+  const nextTrack = {
+    ...existing,
+    id,
+    title: playedTrack.title ?? existing?.title ?? "",
+    artist: playedTrack.artist ?? existing?.artist ?? "",
+    album: playedTrack.album ?? existing?.album ?? null,
+    audio_url: playedTrack.audioUrl ?? existing?.audio_url ?? null,
+    artwork_url: playedTrack.artworkUrl ?? existing?.artwork_url ?? null,
+    mime_type: playedTrack.mimeType ?? existing?.mime_type ?? null,
+    file_size: playedTrack.fileSize ?? existing?.file_size ?? null,
+    media_version: playedTrack.mediaVersion ?? existing?.media_version ?? null,
+    play_count: Math.max(0, Number(existing?.play_count) || 0) + 1,
+    last_played_at: new Date().toISOString(),
+  };
+  return [
+    nextTrack,
+    ...tracks.filter((track) => String(track?.id) !== id),
+  ].slice(0, Math.max(0, limit));
 }
 
 export function subscribeListeningHistoryChanged(listener, target = globalThis.window) {
