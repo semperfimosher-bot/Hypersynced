@@ -143,6 +143,7 @@ class ListeningOutcomeRequest(
 ):
     outcome: Literal[
         "progress",
+        "paused",
         "completed",
         "skipped",
     ]
