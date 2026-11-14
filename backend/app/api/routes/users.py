@@ -26,7 +26,7 @@ from pydantic import (
     Field,
 )
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import flag_modified, selectinload
 
 from ...config import get_settings
 from ...database import get_session_factory
@@ -1316,9 +1316,9 @@ async def update_my_playback_state(
     state.playback_updated_at = next_playback_version
     # Playback writes must not invalidate the independent app-navigation version.
     if existing_state:
-        # Explicit SQL expression prevents TimestampMixin.onupdate from
-        # changing the independent app-navigation version on playback writes.
-        state.updated_at = UserAppState.updated_at
+        # Mark the existing value as explicitly written so TimestampMixin.onupdate
+        # cannot advance the independent app-navigation version.
+        flag_modified(state, "updated_at")
     await session.commit()
     await session.refresh(state)
 
