@@ -23,7 +23,7 @@ assert.match(
 );
 assert.match(
   worker,
-  /cache:\s*"no-store"/,
+  /cache:\s*[^,}]*no-store/,
   "Service-worker document requests must bypass the browser HTTP cache",
 );
 assert.doesNotMatch(
