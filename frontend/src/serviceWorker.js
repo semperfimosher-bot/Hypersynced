@@ -50,6 +50,16 @@ let lastMediaCleanupAt =
   Date.now();
 
 
+function buildScopedDocumentUrl(value) {
+  const url = new URL(value, self.location.origin);
+  if (BUILD_MANIFEST?.revision) {
+    // A deployment-specific cache key prevents Cloudflare/Varnish or an
+    // intermediary from returning HTML cached for a different worker build.
+    url.searchParams.set("__hypersync_build", BUILD_MANIFEST.revision);
+  }
+  return url.href;
+}
+
 async function fetchShellResource(url, consume) {
   const controller = new AbortController();
   let timeout;
@@ -57,7 +67,7 @@ async function fetchShellResource(url, consume) {
   try {
     return await Promise.race([
       (async () => {
-        const asset = await fetch(url, { cache: "no-cache", signal: controller.signal });
+        const asset = await fetch(buildScopedDocumentUrl(url), { cache: "no-store", signal: controller.signal });
         resource = asset;
         if (!asset.ok) throw new Error(`App shell asset unavailable: ${url}`);
         return consume(asset, controller.signal);
@@ -1095,11 +1105,23 @@ globalThis.self?.addEventListener?.(
               // Aborting fetch alone does not settle a stalled preload promise.
               const response = await Promise.race([
                 (async () => {
-                  const preloaded = await Promise.resolve(event.preloadResponse)
-                    .catch(() => undefined);
-                  const document = preloaded ?? await fetch(new Request(request, {
+                  // Do not consume navigationPreload here: it can be a
+                  // response already selected by an intermediary cache before
+                  // this worker can apply its build identity. Fetch a
+                  // build-scoped URL so every deployment gets its own document.
+                  const documentUrl = new URL(request.url);
+                  if (BUILD_MANIFEST?.revision) {
+                    documentUrl.searchParams.set(
+                      "__hypersync_build",
+                      BUILD_MANIFEST.revision,
+                    );
+                  }
+                  const document = await fetch(documentUrl.href, {
+                    cache: "no-store",
+                    credentials: "same-origin",
+                    redirect: "follow",
                     signal: controller.signal,
-                  }));
+                  });
                   if (!document.ok) return document;
                   const body = await readBoundedResponse(document, 1024 * 1024, { signal: controller.signal });
                   const headers = new Headers(document.headers);
