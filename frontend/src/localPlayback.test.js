@@ -8,9 +8,11 @@ import test from "node:test";
 // used only as an immediate startup hint.
 test("app shell restores and persists account playback through the existing API", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
   assert.match(source, /bindAccountPlayback/);
   assert.match(source, /accountPlayback/);
-  assert.match(source, /\/users\/me\/playback-state/);
+  assert.match(sync, /\/users\/me\/playback-state/);
+  assert.match(sync, /player\.setPlaybackPersistenceOwner/);
   assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
 });
 
