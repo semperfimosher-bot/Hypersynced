@@ -268,22 +268,13 @@ const loadRecentlyPlayed =
           await getMyProfile();
         if (!isCurrent()) return;
 
+        // Neon listening events are the single source of truth for both
+        // Home and Profile. Never prepend tracks merely selected in this tab.
         const serverTracks = getHomeRecentlyPlayed(profile);
-        const localTracks = localRecentTracks.current;
-        const mergedTracks = [
-          ...localTracks,
-          ...serverTracks.filter(
-            (track) =>
-              !localTracks.some(
-                (localTrack) =>
-                  String(localTrack.id) === String(track.id),
-              ),
-          ),
-        ].slice(0, 12);
-        setRecentlyPlayed(mergedTracks);
+        setRecentlyPlayed(serverTracks);
         writeCachedHomeRecentlyPlayed(
           currentUser?.id ?? currentUser?.username,
-          mergedTracks,
+          serverTracks,
         );
 
         setRecentError(
@@ -331,52 +322,11 @@ const loadRecentlyPlayed =
 
 
 useEffect(() => {
-  localRecentTracks.current = readCachedHomeRecentlyPlayed(recentOwner);
-  setRecentlyPlayed(localRecentTracks.current);
-
-  if (!recentOwner) {
-    localRecentTracks.current = [];
-    return undefined;
-  }
-
-  const recordPlayerTrack = (state) => {
-    if (!state?.trackId || !state?.title) return;
-
-    const track = {
-      id: String(state.trackId),
-      title: state.title,
-      artist: state.artist ?? "",
-      album: state.album ?? "",
-      artwork_url: state.artworkUrl ?? null,
-      audio_url: state.src ?? null,
-    };
-
-    localRecentTracks.current = [
-      track,
-      ...localRecentTracks.current.filter(
-        (existing) => String(existing.id) !== String(track.id),
-      ),
-    ].slice(0, 12);
-
-    setRecentlyPlayed((current) => {
-      const next = [
-        track,
-        ...current.filter(
-          (existing) => String(existing.id) !== String(track.id),
-        ),
-      ].slice(0, 12);
-      writeCachedHomeRecentlyPlayed(
-        currentUser?.id ?? currentUser?.username,
-        next,
-      );
-      return next;
-    });
-    setRecentError("");
-  };
-
-  recordPlayerTrack(player.getState());
-  return player.subscribe(recordPlayerTrack);
-}, [currentUser?.id, currentUser?.username]);
+  // Show only the last Neon-sourced history snapshot while refreshing it.
+  // Player selection itself is not a listening event.
+  const cached = readCachedHomeRecentlyPlayed(recentOwner);
+  setRecentlyPlayed(cached);
+}, [recentOwner]);
 
 
 useEffect(() => {
