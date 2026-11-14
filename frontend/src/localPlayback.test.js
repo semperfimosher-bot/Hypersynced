@@ -4,19 +4,32 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-// The browser is the only persistence source for startup playback state.
-test("app shell does not restore or save account playback state", () => {
+// Account state is restored from the database, with an account-scoped cache
+// used only as an immediate startup hint.
+test("app shell restores and persists account playback through the existing API", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /bindAccountPlayback|playback-state|accountPlayback/);
+  assert.match(source, /bindAccountPlayback/);
+  assert.match(source, /accountPlayback/);
+  assert.match(source, /\/users\/me\/playback-state/);
   assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
 });
 
-// The browser is the only persistence source for the last app view.
-test("app shell does not restore or save app view state through the API", () => {
+test("app view uses a warm cache and reconciles with the account database state", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   assert.match(source, /readPersistedAppView/);
   assert.match(source, /writePersistedAppView/);
-  assert.doesNotMatch(source, /\/users\/me\/app-state/);
+  assert.match(source, /\/users\/me\/app-state/);
+  assert.match(source, /server remains/);
+});
+
+test("playback cache is account-scoped and is not restored before authentication", () => {
+  const player = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
+  const persistence = readFileSync(new URL("./playerPersistence.js", import.meta.url), "utf8");
+  assert.match(player, /setPlaybackPersistenceOwner/);
+  assert.match(player, /readPersistedPlayerState\(userId\)/);
+  assert.doesNotMatch(player, /attachEvents\(\);\s*restorePersistedPlayerState\(\);/);
+  assert.match(persistence, /hypersync_player_state_v2:/);
+  assert.match(persistence, /storageKey\(userId\)/);
 });
 
 class TestAudio extends EventTarget {
