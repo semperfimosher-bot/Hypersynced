@@ -1390,42 +1390,6 @@ const restoreSavedAppView =
             ).trim()
           : "";
 
-      if (
-        linkedUsername &&
-        user?.account_type ===
-          "registered"
-      ) {
-        setMessageToOpen(
-          linkedUsername,
-        );
-
-        setActivePage(
-          "messages",
-        );
-
-        setSearchQuery(
-          "",
-        );
-
-        setActiveProfileUsername(
-          "",
-        );
-
-        window.history
-          .replaceState(
-            null,
-            "",
-            (
-              window.location
-                .pathname +
-              window.location
-                .hash
-            ),
-          );
-
-        return;
-      }
-
       try {
         const state =
           await apiRequest(
@@ -1456,6 +1420,20 @@ const restoreSavedAppView =
         setActiveProfileUsername(
           restored.profileUsername,
         );
+
+        // A message URL may select a conversation only after Neon confirms
+        // that Messages is the account's saved page. It never overrides it.
+        if (linkedUsername && restored.activePage === "messages") {
+          setMessageToOpen(linkedUsername);
+        }
+
+        if (linkedUsername) {
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.hash,
+          );
+        }
       } catch (error) {
         // Keep the current in-memory navigation unchanged if the database
         // is temporarily unavailable; never fall back to browser app state.
