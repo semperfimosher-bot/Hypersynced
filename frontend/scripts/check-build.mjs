@@ -9,10 +9,27 @@ const manifest = JSON.parse(
 );
 const html = await readFile(resolve(dist, "index.html"), "utf8");
 const worker = await readFile(resolve(dist, "sw.js"), "utf8");
+const nginx = await readFile(resolve(dist, "../nginx.conf"), "utf8");
 
 assert.ok(
   html.includes(manifest.revision) && worker.includes(manifest.revision),
   "HTML and service worker must share the same build identity",
+);
+
+assert.match(
+  nginx,
+  /location = \/\s*\{[\s\S]*?no-cache, no-store, must-revalidate[\s\S]*?\}/,
+  "The root app document must not be cached across deployments",
+);
+assert.match(
+  nginx,
+  /location = \/index\.html\s*\{[\s\S]*?no-cache, no-store, must-revalidate[\s\S]*?\}/,
+  "index.html must not be cached across deployments",
+);
+assert.match(
+  nginx,
+  /location @missing_asset\s*\{[\s\S]*?no-store, no-cache, must-revalidate[\s\S]*?return 404;/,
+  "Missing hashed assets must return an explicitly non-cacheable 404",
 );
 
 for (const path of manifest.assets) {
