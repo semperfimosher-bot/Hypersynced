@@ -504,6 +504,10 @@ async def build_dashboard(
                 "last_played_at",
             ),
         )
+        .join(
+            Track,
+            Track.id == ListeningEvent.track_id,
+        )
         .where(
             ListeningEvent.user_id == user.id,
             func.coalesce(ListeningEvent.progress_seconds, 0) > 0,
