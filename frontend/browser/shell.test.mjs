@@ -94,6 +94,16 @@ async function fixture(t, { admin = false } = {}) {
       note({ type: "delete-database", name: String(name) });
       return nativeDeleteDatabase.call(this, name);
     };
+    const nativeStoreDelete = IDBObjectStore.prototype.delete;
+    IDBObjectStore.prototype.delete = function(key) {
+      note({ type: "idb-delete", store: this.name, key: String(key) });
+      return nativeStoreDelete.call(this, key);
+    };
+    const nativeStoreClear = IDBObjectStore.prototype.clear;
+    IDBObjectStore.prototype.clear = function() {
+      note({ type: "idb-clear", store: this.name });
+      return nativeStoreClear.call(this);
+    };
     const nativePostMessage = ServiceWorker.prototype.postMessage;
     ServiceWorker.prototype.postMessage = function(message, transfer) {
       if (message?.type === "HYPERSYNC_CLEAR_ALL_CLIENT_DATA") {
