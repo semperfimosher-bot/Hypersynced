@@ -1213,6 +1213,7 @@ async def decline_follow_request(
 class PlaybackStateUpdateRequest(BaseModel):
     track_id: UUID | None = None
     position_seconds: float = Field(default=0, ge=0, le=86_400)
+    paused: bool = True
 
 
 class PlaybackTrackSummary(BaseModel):
@@ -1303,7 +1304,7 @@ async def update_my_playback_state(
 
     state.playback_track_id = track.id if track is not None else None
     state.playback_position_seconds = payload.position_seconds
-    state.playback_paused = True
+    state.playback_paused = payload.paused
     state.playback_updated_at = datetime.now(UTC)
     await session.commit()
 
