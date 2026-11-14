@@ -1216,11 +1216,23 @@ async def get_my_playback_state(
     session: DatabaseSession,
 ):
     state = await session.get(UserAppState, user.id)
-    if state is None or state.playback_track_id is None:
+    if state is None:
         return PlaybackStateResponse()
+
+    if state.playback_track_id is None:
+        return PlaybackStateResponse(
+            position_seconds=state.playback_position_seconds,
+            paused=state.playback_paused,
+            updated_at=state.playback_updated_at,
+        )
+
     track = await session.get(Track, state.playback_track_id)
     if track is None or not track.is_published:
-        return PlaybackStateResponse()
+        return PlaybackStateResponse(
+            position_seconds=state.playback_position_seconds,
+            paused=state.playback_paused,
+            updated_at=state.playback_updated_at,
+        )
     return PlaybackStateResponse(
         track=PlaybackTrackSummary(
             id=track.id,
