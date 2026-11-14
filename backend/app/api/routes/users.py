@@ -142,6 +142,7 @@ class ListeningOutcomeRequest(
     BaseModel,
 ):
     outcome: Literal[
+        "progress",
         "completed",
         "skipped",
     ]
@@ -458,31 +459,31 @@ async def build_dashboard(
         )
     )
 
+    # Count a play only after 30 seconds, or half of a shorter track.
+    minimum_play_seconds = func.least(
+        30,
+        func.coalesce(Track.duration_seconds, 60) / 2,
+    )
+    qualified_play = (
+        func.coalesce(ListeningEvent.progress_seconds, 0)
+        >= minimum_play_seconds
+    )
+
     plays_result = await session.execute(
-        select(
-            func.count(
-                ListeningEvent.id,
-            )
-        ).where(
+        select(func.count(ListeningEvent.id))
+        .select_from(ListeningEvent)
+        .join(Track, Track.id == ListeningEvent.track_id)
+        .where(
             ListeningEvent.user_id == user.id,
+            qualified_play,
         )
     )
 
+    # Sum measured audible time rather than full duration of selected tracks.
     hours_result = await session.execute(
         select(
-            func.coalesce(
-                func.sum(
-                    Track.duration_seconds,
-                ),
-                0,
-            )
-        )
-        .select_from(ListeningEvent)
-        .join(
-            Track,
-            Track.id == ListeningEvent.track_id,
-        )
-        .where(
+            func.coalesce(func.sum(ListeningEvent.progress_seconds), 0)
+        ).where(
             ListeningEvent.user_id == user.id,
         )
     )
@@ -492,8 +493,8 @@ async def build_dashboard(
             ListeningEvent.track_id.label(
                 "track_id",
             ),
-            func.count(
-                ListeningEvent.id,
+            func.count(ListeningEvent.id).filter(
+                qualified_play,
             ).label(
                 "play_count",
             ),
@@ -505,6 +506,7 @@ async def build_dashboard(
         )
         .where(
             ListeningEvent.user_id == user.id,
+            func.coalesce(ListeningEvent.progress_seconds, 0) > 0,
         )
         .group_by(
             ListeningEvent.track_id,
@@ -587,6 +589,7 @@ async def build_dashboard(
         )
         .where(
             ListeningEvent.user_id == user.id,
+            qualified_play,
         )
         .group_by(
             Track.artist,
@@ -832,78 +835,52 @@ async def finish_listening(
 
 
     duration = max(
-        int(
-            track.duration_seconds
-            or 0
-        ),
+        int(track.duration_seconds or 0),
         0,
     )
 
+    # progress_seconds is measured audible playback time, not media seek position.
     position = max(
-        int(
-            payload.position_seconds
-        ),
-        0,
+        int(event.progress_seconds or 0),
+        int(payload.position_seconds),
     )
 
-    if duration > 0:
-        position = min(
-            position,
-            duration,
-        )
+    if payload.outcome == "progress":
+        event.progress_seconds = position
+        await session.commit()
+        return {
+            "saved": True,
+            "counted": (
+                position >= min(30, duration / 2)
+                if duration > 0
+                else position >= 30
+            ),
+            "progress_seconds": position,
+        }
 
-        ratio = min(
-            position / duration,
-            1.0,
-        )
-    else:
-        ratio = None
+    if event.ended_at is not None:
+        return {
+            "completed": event.completed,
+            "skipped": event.skipped,
+            "completion_ratio": event.completion_ratio,
+            "progress_seconds": int(event.progress_seconds or 0),
+        }
 
-     # A user hitting Next at 98% should
-     # not be punished like someone
-     # skipping after 5 seconds.
-     
+    ratio = min(position / duration, 1.0) if duration > 0 else None
     completed = (
-        payload.outcome
-        == "completed"
-        and (
-            ratio is None
-            or ratio >= 0.85
-        )
+        payload.outcome == "completed"
+        and (ratio is None or ratio >= 0.85)
     )
-
     skipped = (
-        payload.outcome
-        == "skipped"
-        and (
-            ratio is None
-            or ratio < 0.90
-        )
+        payload.outcome == "skipped"
+        and (ratio is None or ratio < 0.90)
     )
 
-
-    event.progress_seconds = (
-        position
-    )
-
-    event.completion_ratio = (
-        ratio
-    )
-
-    event.completed = (
-        completed
-    )
-
-    event.skipped = (
-        skipped
-    )
-
-    event.ended_at = (
-        datetime.now(
-            UTC,
-        )
-    )
-
+    event.progress_seconds = position
+    event.completion_ratio = ratio
+    event.completed = completed
+    event.skipped = skipped
+    event.ended_at = datetime.now(UTC)
 
     await session.commit()
 
@@ -917,6 +894,9 @@ async def finish_listening(
 
         "completion_ratio":
             ratio,
+
+        "progress_seconds":
+            position,
     }
 
 @router.post(
