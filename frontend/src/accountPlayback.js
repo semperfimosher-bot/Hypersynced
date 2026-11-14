@@ -208,8 +208,12 @@ export function bindAccountPlayback(userId) {
   });
 
   const interval = window.setInterval(() => {
-    void save(false);
-    void refreshFromDatabase(false);
+    // Check Neon before writing this tab's cached playback position.
+    // Otherwise a stale tab can overwrite a newer session from another device
+    // immediately before it has a chance to read that newer state.
+    void refreshFromDatabase(false).finally(() => {
+      void save(false);
+    });
   }, 5_000);
 
   const onVisibilityChange = () => {
