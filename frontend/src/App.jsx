@@ -1443,9 +1443,8 @@ const restoreSavedAppView =
           restored.profileUsername,
         );
       } catch (error) {
-        // Keep the account-scoped warm cache visible when the API is
-        // temporarily unavailable. The database remains authoritative
-        // whenever its response is available.
+        // Keep the current in-memory navigation unchanged if the database
+        // is temporarily unavailable; never fall back to browser app state.
         console.error("[HyperSynced] Unable to load saved app view.", error);
       }
     },
