@@ -422,7 +422,7 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
   await page.reload();
   const player = page.getByRole("region", { name: "Player", exact: true });
   await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
-  const cachedMedia = await page.evaluate(async () => {
+  const { traceEvents, databases, ...cachedMedia } = await page.evaluate(async () => {
     const db = await new Promise((resolveOpen, reject) => {
       const request = indexedDB.open("hypersynced-media-v1", 2);
       request.onsuccess = () => resolveOpen(request.result);
@@ -457,7 +457,7 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     chunkFound: true,
     chunkLength: fileSize,
     resetGeneration: "0",
-  }, `the media record and audio chunk must survive the first application reload (reset endpoint requests: ${state.resetStateRequests ?? 0})`);
+  }, `the media record and audio chunk must survive the first application reload (reset endpoint requests: ${state.resetStateRequests ?? 0}; trace: ${JSON.stringify({ traceEvents, databases })})`);
   const reconciledPosition = await page.evaluate(() => JSON.parse(
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
   )?.currentTime);
