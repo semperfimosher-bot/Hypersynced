@@ -278,14 +278,15 @@ function beginListeningEvent(
   }
 
   const event = {
-    trackId:
-      String(trackId),
-
-    eventId:
-      null,
-
-    request:
-      null,
+    trackId: String(trackId),
+    eventId: null,
+    request: null,
+    listenedSeconds: 0,
+    lastMediaTime: getSafeCurrentTime(),
+    lastSampleAt: globalThis.performance?.now?.() ?? Date.now(),
+    lastProgressSentAt: 0,
+    progressPromise: null,
+    historyNotified: false,
   };
 
 
@@ -310,10 +311,6 @@ function beginListeningEvent(
           const eventId =
             data?.event_id ??
             null;
-
-          if (eventId) {
-            notifyListeningHistoryChanged();
-          }
 
           return eventId;
         },
@@ -346,64 +343,95 @@ function beginListeningEvent(
   );
 }
 
-function finishListeningEvent(
-  outcome,
-  positionSeconds =
-    getSafeCurrentTime(),
-) {
-  const event =
-    activeListeningEvent;
+function sampleListeningProgress() {
+  const event = activeListeningEvent;
+  if (!event) return;
 
-  if (!event) {
-    return;
+  const now = globalThis.performance?.now?.() ?? Date.now();
+  const mediaTime = getSafeCurrentTime();
+  const wallSeconds = Math.max(0, (now - event.lastSampleAt) / 1000);
+  const mediaSeconds = mediaTime - event.lastMediaTime;
+  event.lastSampleAt = now;
+  event.lastMediaTime = mediaTime;
+
+  if (
+    !audio.paused &&
+    playbackPhase === "playing" &&
+    mediaSeconds > 0 &&
+    mediaSeconds <= Math.max(1.25, wallSeconds * Math.max(audio.playbackRate || 1, 1) * 1.8)
+  ) {
+    event.listenedSeconds += Math.min(
+      mediaSeconds,
+      wallSeconds * Math.max(audio.playbackRate || 1, 1) * 1.8 + 0.25,
+    );
   }
 
-  activeListeningEvent =
-    null;
+  if (
+    event.listenedSeconds >= 2 &&
+    event.listenedSeconds - event.lastProgressSentAt >= 5
+  ) {
+    void saveListeningProgress();
+  }
+}
 
+function saveListeningProgress(keepalive = false) {
+  const event = activeListeningEvent;
+  if (!event || event.progressPromise) return event?.progressPromise ?? Promise.resolve();
+  sampleListeningProgress();
+  const elapsed = Math.floor(event.listenedSeconds);
+  if (elapsed <= event.lastProgressSentAt) return Promise.resolve();
 
-  void (
-    async () => {
-      const eventId =
-        event.eventId ??
-        await event.request;
-
-      if (!eventId) {
-        return;
-      }
-
-      await apiRequest(
-        `/users/me/listening/${encodeURIComponent(
-          eventId,
-        )}`,
-        {
-          method:
-            "PATCH",
-
-          body:
-            JSON.stringify({
-              outcome,
-
-              position_seconds:
-                Math.max(
-                  0,
-                  Math.round(
-                    positionSeconds ||
-                    0,
-                  ),
-                ),
-            }),
-        },
-      );
+  const request = (async () => {
+    const eventId = event.eventId ?? await event.request;
+    if (!eventId) return;
+    await apiRequest(
+      `/users/me/listening/${encodeURIComponent(eventId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ outcome: "progress", position_seconds: elapsed }),
+        ...(keepalive ? { keepalive: true } : {}),
+      },
+    );
+    event.lastProgressSentAt = elapsed;
+    if (!event.historyNotified && elapsed >= 2) {
+      event.historyNotified = true;
+      notifyListeningHistoryChanged();
     }
-  )().catch(
-    (error) => {
-      console.error(
-        "[HyperSynced] Listening history outcome was not saved.",
-        error,
-      );
-    },
-  );
+  })().catch((error) => {
+    console.error("[HyperSynced] Listening progress was not saved.", error);
+  }).finally(() => {
+    event.progressPromise = null;
+  });
+
+  event.progressPromise = request;
+  return request;
+}
+
+function finishListeningEvent(outcome) {
+  const event = activeListeningEvent;
+  if (!event) return;
+
+  sampleListeningProgress();
+  activeListeningEvent = null;
+
+  void (async () => {
+    const eventId = event.eventId ?? await event.request;
+    if (!eventId) return;
+    await apiRequest(
+      `/users/me/listening/${encodeURIComponent(eventId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          outcome,
+          position_seconds: Math.max(0, Math.floor(event.listenedSeconds)),
+        }),
+        keepalive: true,
+      },
+    );
+    notifyListeningHistoryChanged();
+  })().catch((error) => {
+    console.error("[HyperSynced] Listening history outcome was not saved.", error);
+  });
 }
 
 function normalizeTrackMeta(
@@ -1390,17 +1418,13 @@ function attachEvents() {
         "playing",
       );
 
-      // Only start automatic-cache retention after the browser confirms playback.
-      if (
-        currentTrackId &&
-        currentTrackMeta
-      ) {
-        void recordTrackPlayback(
-          currentTrackId,
-          currentTrackMeta,
-        ).catch(
-          () => {},
-        );
+      // Listening history starts only after the browser confirms audible playback.
+      if (currentTrackId && currentTrackMeta) {
+        if (activeListeningEvent?.trackId !== String(currentTrackId)) {
+          if (activeListeningEvent) finishListeningEvent("skipped");
+          beginListeningEvent(currentTrackId, currentTrackMeta);
+        }
+        void recordTrackPlayback(currentTrackId, currentTrackMeta).catch(() => {});
       }
 
       notify();
@@ -1519,6 +1543,7 @@ function attachEvents() {
     "timeupdate",
     () => {
       persistPlayerState();
+      sampleListeningProgress();
     },
   );
 
@@ -1582,6 +1607,7 @@ function handleBackgroundPlaybackLifecycle() {
     force:
       true,
   });
+  if (hidden) void saveListeningProgress(true);
 
   updateMediaSession(
     getState(),
@@ -2444,13 +2470,6 @@ persistPlayerState({
   force:
     true,
 });
-
-
-/* Start a backend listening session for the selected catalog track. */
-beginListeningEvent(
-  trackId,
-  playbackMeta,
-);
 
 
 return getState();
