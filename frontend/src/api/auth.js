@@ -286,6 +286,19 @@ if (isOffline) {
       );
     }
 
+    // A transient API outage must not hide downloads already saved for this
+    // account. This identity is only an offline UI scope, never an auth token.
+    const offlineProfile = await getOfflineIdentity().catch(() => null);
+    if (offlineProfile) {
+      return {
+        ...buildRestoredUser(
+          offlineProfile,
+          getAccessToken() ?? token,
+        ),
+        offline_only: true,
+      };
+    }
+
     return null;
   }
 }
