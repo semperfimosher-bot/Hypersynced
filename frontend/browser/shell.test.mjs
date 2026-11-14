@@ -317,7 +317,7 @@ test("cache quota exhaustion cannot break a successful online script", { timeout
 });
 
 test("IndexedDB media survives reload and supports offline range, decoding, playback and seek", { timeout: 45000 }, async (t) => {
-  const { page, context, pageErrors } = await fixture(t);
+  const { page, context, pageErrors } = await fixture(t, { admin: true });
   const fileSize = await page.evaluate(async () => {
     const samples = 64000;
     const data = new ArrayBuffer(44 + samples * 2);
@@ -356,7 +356,7 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       return audio;
     } });
   });
-  await page.evaluate((size) => localStorage.setItem("hypersync_player_state_v1", JSON.stringify({
+  await page.evaluate((size) => localStorage.setItem("hypersync_player_state_v2:browser-admin", JSON.stringify({
     trackId: "browser-audio", currentTime: 0, volume: 0.2, muted: false,
     meta: { title: "Offline Fixture", artist: "Fixture", mediaVersion: "v1", mimeType: "audio/wav", fileSize: size, durationSeconds: 8 },
   })), fileSize);
