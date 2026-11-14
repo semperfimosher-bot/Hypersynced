@@ -2,7 +2,6 @@
 
 import asyncio
 
-
 BUSY_DETAIL = "Media processing is busy. Please retry shortly."
 RETRY_AFTER_SECONDS = "1"
 
