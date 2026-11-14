@@ -40,12 +40,6 @@ import {
 } from "./player/mediaSessionState.js";
 
 import {
-  clearPersistedPlayerState,
-  readPersistedPlayerState,
-  writePersistedPlayerState,
-} from "./playerPersistence.js";
-
-import {
   notifyListeningHistoryChanged,
   canRecordListeningHistory,
 } from "./homeRecentlyPlayed.js";
@@ -119,14 +113,7 @@ let sourcePreparationTrackId =
   null;
 
 
-/*
- * timeupdate can fire many times per
- * second. Do not hammer localStorage.
- */
-let lastPersistenceWriteAt =
-  0;
-
-let playbackPersistenceOwnerId = null;
+let activePlaybackOwnerId = null;
 
 
 let currentQueue =
@@ -505,63 +492,6 @@ function getSafeCurrentTime() {
         0,
       )
     : 0;
-}
-
-
-function persistPlayerState({
-  force = false,
-  currentTime =
-    getSafeCurrentTime(),
-} = {}) {
-  if (
-    !currentTrackId ||
-    !currentTrackMeta
-  ) {
-    return;
-  }
-
-  const now =
-    Date.now();
-
-  if (
-    !force &&
-    now -
-      lastPersistenceWriteAt <
-      1000
-  ) {
-    return;
-  }
-
-  lastPersistenceWriteAt =
-    now;
-
-  writePersistedPlayerState(playbackPersistenceOwnerId, {
-    trackId:
-      currentTrackId,
-
-    meta:
-      currentTrackMeta,
-
-    currentTime:
-      Number.isFinite(
-        currentTime,
-      )
-        ? Math.max(
-            currentTime,
-            0,
-          )
-        : 0,
-
-    volume:
-      audio.volume,
-
-    muted:
-      audio.muted,
-
-    recentTrackIds: [
-      ...recentTrackIds,
-    ],
-  });
 }
 
 
@@ -1468,11 +1398,6 @@ function attachEvents() {
       );
     }
 
-    persistPlayerState({
-      force:
-        true,
-    });
-
     notify();
   },
 );
@@ -1549,7 +1474,7 @@ function attachEvents() {
     audio.addEventListener(
     "timeupdate",
     () => {
-      persistPlayerState();
+
       sampleListeningProgress();
     },
   );
@@ -1558,10 +1483,7 @@ function attachEvents() {
   audio.addEventListener(
     "volumechange",
     () => {
-      persistPlayerState({
-        force:
-          true,
-      });
+
     },
   );
 
@@ -1610,10 +1532,6 @@ function handleBackgroundPlaybackLifecycle() {
       ?.visibilityState ===
       "hidden";
 
-  persistPlayerState({
-    force:
-      true,
-  });
   if (hidden) {
     sampleListeningProgress();
     void saveListeningProgress(true);
@@ -2104,146 +2022,6 @@ async function ensureCurrentTrackSource() {
 }
 
 
-function restorePersistedPlayerState(userId) {
-  const saved =
-    readPersistedPlayerState(userId);
-
-  if (
-    !saved?.trackId
-  ) {
-    return;
-  }
-
-
-  const meta =
-    normalizeTrackMeta(
-      saved.meta,
-    );
-
-
-  recentTrackIds =
-    [];
-
-  for (
-    const trackId
-    of (
-      Array.isArray(
-        saved.recentTrackIds,
-      )
-        ? saved.recentTrackIds
-        : []
-    )
-  ) {
-    rememberAutoplayTrack(
-      trackId,
-    );
-  }
-
-
-  currentTrackId =
-    String(
-      saved.trackId,
-    );
-
-  currentTrackMeta =
-    meta;
-
-  currentArtworkUrl =
-    meta.artworkUrl;
-
-  currentTrackTitle =
-    meta.title;
-
-  currentTrackArtist =
-    meta.artist;
-
-  rememberAutoplayTrack(
-    currentTrackId,
-  );
-
-
-  const savedTime =
-    Number(
-      saved.currentTime,
-    );
-
-  restoredTimeSeconds =
-    Number.isFinite(
-      savedTime,
-    )
-      ? Math.max(
-          savedTime,
-          0,
-        )
-      : 0;
-
-
-  const savedVolume =
-    Number(
-      saved.volume,
-    );
-
-  if (
-    Number.isFinite(
-      savedVolume,
-    )
-  ) {
-    audio.volume =
-      Math.max(
-        0,
-        Math.min(
-          1,
-          savedVolume,
-        ),
-      );
-  }
-
-
-  if (
-    typeof saved.muted ===
-    "boolean"
-  ) {
-    audio.muted =
-      saved.muted;
-  }
-
-
-  /*
-   * A restored player is ALWAYS paused.
-   * Browsers should never auto-resume
-   * music after a refresh.
-   */
-  setPlaybackPhase(
-    "paused",
-  );
-
-  notify();
-
-
-  /*
-   * Start rebuilding/loading the media
-   * immediately, but do NOT call play().
-   */
-  void ensureCurrentTrackSource()
-    .catch(() => {
-      /*
-       * Keep the restored bar usable even
-       * if preload temporarily fails.
-       * togglePlay() will retry.
-       */
-      if (
-        currentTrackId
-      ) {
-        setPlaybackPhase(
-          "paused",
-        );
-
-        notify();
-      }
-    });
-}
-
-
 function applyTrackMetadata(
   trackId,
   meta,
@@ -2282,13 +2060,6 @@ function applyTrackMetadata(
    * This means even an immediate refresh
    * still restores the player bar.
    */
-  persistPlayerState({
-    force:
-      true,
-
-    currentTime:
-      0,
-  });
 
   notify();
 }
@@ -2476,23 +2247,17 @@ rememberAutoplayTrack(
   trackId,
 );
 
-persistPlayerState({
-  force:
-    true,
-});
-
-
 return getState();
 }
 
 
 export function setPlaybackPersistenceOwner(userId) {
   const nextOwner = String(userId ?? "").trim() || null;
-  if (playbackPersistenceOwnerId === nextOwner) return;
+  if (activePlaybackOwnerId === nextOwner) return;
 
   // Never let the previous account's in-memory player leak into the next
   // account while its own cache/database state is being restored.
-  if (playbackPersistenceOwnerId !== nextOwner) {
+  if (activePlaybackOwnerId !== nextOwner) {
     cancelActivePlaybackSession();
     audio.pause();
     clearQueue();
@@ -2510,7 +2275,7 @@ export function setPlaybackPersistenceOwner(userId) {
 
   // Playback restoration is exclusively driven by the account's Neon state.
   // Never restore a competing snapshot from browser storage or an old runtime cache.
-  playbackPersistenceOwnerId = nextOwner;
+  activePlaybackOwnerId = nextOwner;
 }
 
 
@@ -2521,500 +2286,6 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   clearQueue();
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
-  persistPlayerState({ force: true, currentTime: restoredTimeSeconds });
-  const state = await ensureCurrentTrackSource();
-
-  // A manual track selection made while the database restore was loading
-  // always wins; the delayed restore must not pause or seek that new track.
-  if (currentTrackId !== restoringTrackId) return getState();
-
-  if (audio.readyState >= 1) {
-    const maximum = Number.isFinite(audio.duration)
-      ? audio.duration
-      : restoredTimeSeconds;
-    try {
-      audio.currentTime = Math.max(0, Math.min(restoredTimeSeconds, maximum));
-    } catch {
-      // The next Play action will retry the saved seek.
-    }
-  }
-  if (!audio.paused) audio.pause();
-  setPlaybackPhase("paused");
-  notify();
-  return state ?? getState();
-}
-
-
-export async function playTrack(
-  trackId,
-  meta = {},
-) {
-
-
-  finishListeningEvent(
-  "skipped",
-  getSafeCurrentTime(),
-);
-  const state =
-    await playTrackInternal(
-      trackId,
-      meta,
-      false,
-    );
-
-
-  void ensureAutoplayQueue({
-    force:
-      true,
-  }).catch(
-    () => {},
-  );
-
-
-  return state;
-}
-
-export async function playQueueIndex(
-  index,
-) {
-  const track =
-    getQueueTrackAtIndex(
-      currentQueue,
-      index,
-    );
-
-  if (!track) {
-    return false;
-  }
-
-
-  finishListeningEvent(
-  "skipped",
-  getSafeCurrentTime(),
-);
-
-
-  currentQueueIndex =
-    index;
-
-
-  try {
-    const state =
-      await playTrackInternal(
-        track.id,
-        track.meta,
-        true,
-      );
-
-
-    notify();
-
-
-    void ensureAutoplayQueue()
-      .catch(
-        () => {},
-      );
-
-
-    return state ??
-      false;
-
-  } catch (error) {
-    notify();
-
-    throw error;
-  }
-}
-
-export async function playTrackQueue(
-  tracks,
-  startIndex = 0,
-) {
-  const queue =
-    buildTrackQueue(
-      tracks,
-    );
-
-
-  if (
-    queue.length ===
-    0
-  ) {
-    cancelActivePlaybackSession();
-
-    clearQueue();
-
-    return null;
-  }
-
-
-  const requestedIndex =
-    Number.isInteger(
-      startIndex,
-    )
-      ? startIndex
-      : 0;
-
-
-  const safeIndex =
-    Math.min(
-      Math.max(
-        requestedIndex,
-        0,
-      ),
-      queue.length - 1,
-    );
-
-
-  queueRevision +=
-    1;
-
-
-  currentQueue =
-    queue;
-
-  currentQueueIndex =
-    safeIndex;
-
-
-  const track =
-    currentQueue[
-      currentQueueIndex
-    ];
-
-
-  finishListeningEvent(
-    "skipped",
-    getSafeCurrentTime(),
-  );
-
-
-  const state =
-    await playTrackInternal(
-      track.id,
-      track.meta,
-      true,
-    );
-
-
-  void ensureAutoplayQueue()
-    .catch(
-      () => {},
-    );
-
-
-  return state;
-}
-
-export function playTrackNext(
-  track,
-) {
-  const entries =
-    buildTrackQueue([
-      track,
-    ]);
-
-  const entry =
-    entries[0];
-
-  if (!entry) {
-    return false;
-  }
-
-  /*
-   * Manual queue choices always win over
-   * autoplay. If the current song started
-   * outside a queue, materialize it first
-   * so "Play next" has a stable insertion
-   * point.
-   */
-  ensureCurrentTrackInQueue();
-
-  currentQueue =
-    insertQueueEntryAsNext(
-      currentQueue,
-      currentQueueIndex,
-      entry,
-    );
-
-  /*
-   * Any recommendation request that began
-   * before this manual edit is stale. Its
-   * response will be ignored by the
-   * revision guard in ensureAutoplayQueue.
-   */
-  queueRevision +=
-    1;
-
-  notify();
-
-  void Promise.resolve(
-    warmQueuedAudioEntry(
-      entry,
-    ),
-  ).catch(
-    () => {},
-  );
-
-  return true;
-}
-
-
-export function addTrackToQueue(
-  track,
-) {
-  const entries =
-    buildTrackQueue([
-      track,
-    ]);
-
-  const entry =
-    entries[0];
-
-  if (!entry) {
-    return false;
-  }
-
-  ensureCurrentTrackInQueue();
-
-  currentQueue =
-    appendQueueEntry(
-      currentQueue,
-      currentQueueIndex,
-      entry,
-    );
-
-  queueRevision +=
-    1;
-
-  notify();
-
-  void Promise.resolve(
-    warmQueuedAudioEntry(
-      entry,
-    ),
-  ).catch(
-    () => {},
-  );
-
-  return true;
-}
-
-export async function playUrl(
-  url,
-  meta = {},
-) {
-
-
-  if (!url) {
-    return null;
-  }
-
-
-  const session =
-    beginPlaybackSession(
-      null,
-    );
-
-
-  clearQueue();
-
-
-  const {
-    artworkUrl = null,
-    title = "",
-    artist = "",
-  } = meta;
-
-
-  currentTrackId =
-    null;
-
-  currentTrackMeta =
-  null;
-
-  restoredTimeSeconds =
-  0;
-
-  clearPersistedPlayerState(playbackPersistenceOwnerId);
-
-  currentArtworkUrl =
-    artworkUrl;
-
-  currentTrackTitle =
-    title;
-
-  currentTrackArtist =
-    artist;
-
-
-  setPlaybackPhase(
-    "loading",
-  );
-
-  notify();
-
-
-  const mediaUrl =
-    resolveMediaUrl(
-      url,
-    );
-
-
-  if (
-    !isPlaybackSessionCurrent(
-      session,
-    )
-  ) {
-    return null;
-  }
-
-
-  loadAudioSource(
-    mediaUrl,
-    null,
-  );
-
-  audio.load();
-
-
-  try {
-    await audio.play();
-  } catch (error) {
-    if (
-      !isPlaybackSessionCurrent(
-        session,
-      ) ||
-      isExpectedPlayInterruption(
-        error,
-      )
-    ) {
-      return null;
-    }
-
-    setPlaybackPhase(
-      "error",
-      error instanceof Error
-        ? error.message
-        : "Unable to start playback.",
-    );
-
-    notify();
-
-    throw error;
-  }
-
-
-  if (
-    !isPlaybackSessionCurrent(
-      session,
-    )
-  ) {
-    return null;
-  }
-
-
-  return getState();
-}
-
-
-export async function togglePlay() {
-
-
-  if (audio.paused) {
-    /*
-     * Normally this has already been
-     * preloaded during restoration.
-     *
-     * If the user clicks extremely fast,
-     * or preload previously failed,
-     * prepare it now.
-     */
-    await ensureCurrentTrackSource();
-
-
-    if (
-      !hasAudioSource()
-    ) {
-      return getState();
-    }
-
-
-    setPlaybackPhase(
-      "loading",
-    );
-
-    notify();
-
-    try {
-      await audio.play();
-    } catch (error) {
-      if (
-        !isExpectedPlayInterruption(
-          error,
-        )
-      ) {
-        throw error;
-      }
-
-      return getState();
-    }
-
-  } else {
-    audio.pause();
-
-    /*
-     * Do not make pause wait on network.
-     * Warm the resume window in the
-     * background for the next Play tap.
-     */
-    void warmCurrentTrackForResume();
-  }
-
-
-  return getState();
-}
-
-
-export function pausePlayback() {
-
-
-  return silenceLocalPlayback();
-}
-
-
-export function silenceLocalPlayback() {
-  if (
-    !audio.paused
-  ) {
-    audio.pause();
-  }
-
-  /*
-   * Keep this exact pause point hot for
-   * two hours. The Audio element remains
-   * attached, and the nearby media bytes
-   * are also persisted through the
-   * service worker cache.
-   */
-  void warmCurrentTrackForResume();
-
-
-  if (
-    currentTrackId ||
-    hasAudioSource()
-  ) {
-    setPlaybackPhase(
-      "paused",
-    );
-  }
-
-
-  persistPlayerState({
-    force:
-      true,
-  });
-
 
   notify();
 
@@ -3085,9 +2356,6 @@ currentTrackArtist =
 restoredTimeSeconds =
   0;
 
-clearPersistedPlayerState(playbackPersistenceOwnerId);
-
-
   setPlaybackPhase(
     "idle",
   );
@@ -3124,11 +2392,6 @@ export function seekTo(
       ),
     );
 
-  persistPlayerState({
-    force:
-      true,
-  });
-
   notify();
 }
 
@@ -3146,11 +2409,6 @@ export function setVolume(
         value,
       ),
     );
-
-  persistPlayerState({
-    force:
-      true,
-  });
 
   notify();
 }
