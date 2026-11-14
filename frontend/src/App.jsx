@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import * as player from "./audioPlayer.js";
+import { bindAccountPlayback } from "./accountPlayback.js";
 
 import {
   getGreetingName,
@@ -1336,6 +1337,11 @@ export default function App() {
   const searchStateTimerRef =
     useRef(null);
 
+  // Keep server writes ordered so an older navigation cannot overwrite the latest view.
+  const appStateSaveQueueRef = useRef(Promise.resolve());
+  const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
+  activeAppStateOwnerRef.current = currentUser?.id ?? null;
+
   const cancelPendingSearchSave =
   useCallback(() => {
     if (
@@ -1412,17 +1418,59 @@ const restoreSavedAppView =
         return;
       }
 
-      // Browser storage is the single source of truth for the last view.
-      // Restore synchronously; no delayed server response can replace it.
+      // Restore the last local view immediately. The server remains
+      // authoritative and will replace this state when its request succeeds.
       const localView = readPersistedAppView(user?.id);
-      if (
-        localView &&
-        navigationGenerationRef.current === restoreGeneration
-      ) {
-        const restored = normalizeAppViewState(localView, user?.role);
-        setActivePage(restored.activePage);
-        setSearchQuery(restored.searchQuery);
-        setActiveProfileUsername(restored.profileUsername);
+      if (localView) {
+        const restoredLocal = normalizeAppViewState(
+          localView,
+          user?.role,
+        );
+        if (
+          navigationGenerationRef.current ===
+          restoreGeneration
+        ) {
+          setActivePage(restoredLocal.activePage);
+          setSearchQuery(restoredLocal.searchQuery);
+          setActiveProfileUsername(restoredLocal.profileUsername);
+        }
+      }
+
+      try {
+        const state =
+          await apiRequest(
+            "/users/me/app-state",
+          );
+
+        const restored =
+          normalizeAppViewState(
+            state,
+            user?.role,
+          );
+
+        if (
+          navigationGenerationRef.current !==
+          restoreGeneration
+        ) {
+          return;
+        }
+
+        setActivePage(
+          restored.activePage,
+        );
+
+        setSearchQuery(
+          restored.searchQuery,
+        );
+
+        setActiveProfileUsername(
+          restored.profileUsername,
+        );
+      } catch (error) {
+        // Keep the account-scoped warm cache visible when the API is
+        // temporarily unavailable. The database remains authoritative
+        // whenever its response is available.
+        console.error("[HyperSynced] Unable to load saved app view.", error);
       }
     },
     [],
@@ -1436,8 +1484,27 @@ const persistAppView =
         return;
       }
 
-      // Keep navigation state local for immediate, single-source restoration.
       writePersistedAppView(currentUser.id, state);
+
+      const savedState = { ...state };
+      const ownerId = currentUser.id;
+
+      appStateSaveQueueRef.current =
+        appStateSaveQueueRef.current
+          .catch(() => {})
+          .then(() => {
+            if (activeAppStateOwnerRef.current !== ownerId) {
+              return null;
+            }
+            return apiRequest(
+              "/users/me/app-state",
+              {
+                method: "PATCH",
+                body: JSON.stringify(savedState),
+              },
+            );
+          })
+          .catch(() => {});
     },
     [currentUser],
   );
@@ -1450,10 +1517,14 @@ const persistAppView =
   cancelPendingSearchSave,
 ]);
 
+  useEffect(() => {
+    if (!currentUser?.id) return undefined;
+    return bindAccountPlayback(currentUser.id);
+  }, [currentUser?.id]);
+
   function handleLogout() {
   navigationGenerationRef.current += 1;
   cancelPendingSearchSave();
-  clearPersistedAppView(currentUser?.id);
 
   /*
    * Keep the song/source/player bar,
