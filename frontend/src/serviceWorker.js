@@ -73,8 +73,20 @@ async function fetchShellResource(url, consume) {
   } finally { clearTimeout(timeout); }
 }
 
+function cacheStorageFailure(error) {
+  const failure = error instanceof Error ? error : new Error(String(error));
+  failure.cacheStorageFailure = true;
+  return failure;
+}
+
 function cacheShellAsset(cache, url) {
-  return fetchShellResource(url, (asset) => cache.put(url, asset));
+  return fetchShellResource(url, async (asset) => {
+    try {
+      await cache.put(url, asset);
+    } catch (error) {
+      throw cacheStorageFailure(error);
+    }
+  });
 }
 
 async function matchRetainedShellAsset(cache, request) {
@@ -149,7 +161,11 @@ async function precacheAppShell(navigationResponse = null) {
     }
   }
   // Publish the entry point only after its required assets are safely stored.
-  await cache.put("/", response);
+  try {
+    await cache.put("/", response);
+  } catch (error) {
+    throw cacheStorageFailure(error);
+  }
 }
 
 globalThis.self?.addEventListener?.(
@@ -1104,7 +1120,10 @@ globalThis.self?.addEventListener?.(
                 // shell rather than handing the browser imports that will 404.
                 try {
                   await precacheAppShell(response.clone());
-                } catch {
+                } catch (error) {
+                  // Storage quota/private-mode failures do not mean the live
+                  // deployment is incomplete. Keep the online response usable.
+                  if (error?.cacheStorageFailure) return response;
                   return (await cachedShell()) ?? response;
                 }
               }
