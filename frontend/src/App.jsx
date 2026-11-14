@@ -1337,6 +1337,9 @@ export default function App() {
   const searchStateTimerRef =
     useRef(null);
 
+  // Keep server writes ordered so an older navigation cannot overwrite the latest view.
+  const appStateSaveQueueRef = useRef(Promise.resolve());
+
   const cancelPendingSearchSave =
   useCallback(() => {
     if (
@@ -1495,18 +1498,21 @@ const persistAppView =
 
       writePersistedAppView(currentUser.id, state);
 
-      void apiRequest(
-        "/users/me/app-state",
-        {
-          method:
-            "PATCH",
+      const savedState = { ...state };
 
-          body:
-            JSON.stringify(
-              state,
+      appStateSaveQueueRef.current =
+        appStateSaveQueueRef.current
+          .catch(() => {})
+          .then(() =>
+            apiRequest(
+              "/users/me/app-state",
+              {
+                method: "PATCH",
+                body: JSON.stringify(savedState),
+              },
             ),
-        },
-      ).catch(() => {});
+          )
+          .catch(() => {});
     },
     [currentUser],
   );
