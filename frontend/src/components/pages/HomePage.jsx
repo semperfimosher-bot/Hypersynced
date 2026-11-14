@@ -50,10 +50,6 @@ import {
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 
-import {
-  getDownloadedTracks,
-} from "../../offlineDownloads.js";
-
 function CachedArtwork({
   src,
   alt,
@@ -188,24 +184,6 @@ const [
 const localRecentTracks = useRef([]);
 
 
-const loadDownloadedFallback =
-  useCallback(
-    async () => {
-      try {
-        return (
-          await getDownloadedTracks()
-        ).slice(
-          0,
-          12,
-        );
-      } catch {
-        return [];
-      }
-    },
-    [],
-  );
-
-
 const loadRecentlyPlayed =
   useCallback(
     async ({
@@ -242,24 +220,9 @@ const loadRecentlyPlayed =
           false;
 
       if (offline) {
-        const localTracks =
-          await loadDownloadedFallback();
-        if (!isCurrent()) return;
-
-        setRecentlyPlayed(
-          localTracks,
-        );
-
-        if (!quiet) {
-          setRecentError(
-            localTracks.length > 0
-              ? ""
-              : "No downloaded tracks are available offline yet.",
-          );
-
-        }
+        // Keep the last Neon-sourced snapshot; downloaded files are not
+        // listening history and must never be mixed into Recently Played.
         setRecentLoading(false);
-
         return;
       }
 
@@ -281,25 +244,7 @@ const loadRecentlyPlayed =
           "",
         );
       } catch (error) {
-        const localTracks =
-          await loadDownloadedFallback();
-        if (!isCurrent()) return;
-
-        if (
-          localTracks.length > 0
-        ) {
-          setRecentlyPlayed(
-            localTracks,
-          );
-
-          setRecentError(
-            "",
-          );
-        } else if (!quiet) {
-          setRecentlyPlayed(
-            [],
-          );
-
+        if (!quiet) {
           setRecentError(
             error instanceof Error
               ? error.message
@@ -316,7 +261,6 @@ const loadRecentlyPlayed =
     },
     [
       currentUser,
-      loadDownloadedFallback,
     ],
   );
 
