@@ -1227,8 +1227,12 @@ async def get_my_playback_state(
             updated_at=state.playback_updated_at,
         )
 
+    # A saved playback reference belongs to the account, not the public
+    # catalog listing. A track can be unpublished after it was played while
+    # still being a valid saved player item. Only a genuinely missing row
+    # should produce an empty track in the restore response.
     track = await session.get(Track, state.playback_track_id)
-    if track is None or not track.is_published:
+    if track is None:
         return PlaybackStateResponse(
             position_seconds=state.playback_position_seconds,
             paused=state.playback_paused,
