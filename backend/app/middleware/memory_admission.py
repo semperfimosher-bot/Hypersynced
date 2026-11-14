@@ -1,9 +1,10 @@
 """Keep expensive uploads, exports and slow media consumers within fixed budgets."""
 
 import asyncio
-from urllib.parse import parse_qs
+import urllib.parse
 
-from starlette import responses, types
+import starlette.responses
+import starlette.types
 
 
 BUSY_DETAIL = "Media processing is busy. Please retry shortly."
@@ -13,7 +14,7 @@ RETRY_AFTER_SECONDS = "1"
 class MemoryAdmissionMiddleware:
     def __init__(
         self,
-        app: types.ASGIApp,
+        app: starlette.types.ASGIApp,
         *,
         upload_limit: int = 1,
         stream_limit: int = 4,
@@ -33,7 +34,7 @@ class MemoryAdmissionMiddleware:
         self._artwork = asyncio.Semaphore(artwork_limit)
         self._catalog = asyncio.Semaphore(catalog_limit)
 
-    def _permit(self, scope: types.Scope) -> asyncio.Semaphore | None:
+    def _permit(self, scope: starlette.types.Scope) -> asyncio.Semaphore | None:
         path = scope.get("path", "")
         method = scope.get("method", "")
         if method == "POST" and path.rstrip("/") in {
@@ -52,7 +53,7 @@ class MemoryAdmissionMiddleware:
             ):
                 return self._artwork
             if path.rstrip("/") == "/api/catalog/tracks":
-                query = parse_qs(
+                query = urllib.parse.parse_qs(
                     scope.get("query_string", b""),
                     keep_blank_values=True,
                 )
@@ -60,8 +61,8 @@ class MemoryAdmissionMiddleware:
                     return self._catalog
         return None
 
-    async def _reject(self, scope: types.Scope, receive: types.Receive, send: types.Send) -> None:
-        await responses.JSONResponse(
+    async def _reject(self, scope: types.Scope, receive: starlette.types.Receive, send: starlette.types.Send) -> None:
+        await starlette.responses.JSONResponse(
             {"detail": BUSY_DETAIL},
             status_code=503,
             headers={"Retry-After": RETRY_AFTER_SECONDS},
