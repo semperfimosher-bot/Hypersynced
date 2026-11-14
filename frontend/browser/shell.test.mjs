@@ -43,6 +43,8 @@ async function fixture(t, { admin = false } = {}) {
         } else if (admin && path === "/api/users/me") send(200, JSON.stringify(user), "application/json");
         else if (admin && path === "/api/users/me/playback-state") {
           send(200, JSON.stringify(state.playbackState ?? { track: null, position_seconds: 0 }), "application/json");
+        } else if (path === "/api/system/reset-state") {
+          send(200, JSON.stringify({ generation: 0 }), "application/json");
         } else if (admin && path === "/api/catalog/tracks") {
           state.catalogFetches += 1;
           const second = new URL(request.url, "http://127.0.0.1").searchParams.has("cursor");
@@ -375,6 +377,36 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
   await page.reload();
   const player = page.getByRole("region", { name: "Player", exact: true });
   await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
+  const cachedMedia = await page.evaluate(async () => {
+    const db = await new Promise((resolveOpen, reject) => {
+      const request = indexedDB.open("hypersynced-media-v1", 2);
+      request.onsuccess = () => resolveOpen(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const result = await new Promise((resolveRead, reject) => {
+      const tx = db.transaction(["media", "chunks"], "readonly");
+      const mediaRequest = tx.objectStore("media").get("browser-audio:v1");
+      const chunkRequest = tx.objectStore("chunks").get("browser-audio:v1:0");
+      tx.oncomplete = () => resolveRead({
+        record: mediaRequest.result ?? null,
+        chunk: chunkRequest.result ?? null,
+      });
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+    return {
+      recordFound: Boolean(result.record),
+      recordState: result.record?.state ?? null,
+      chunkFound: Boolean(result.chunk),
+      chunkLength: result.chunk?.data?.byteLength ?? null,
+    };
+  });
+  assert.deepEqual(cachedMedia, {
+    recordFound: true,
+    recordState: "PINNED",
+    chunkFound: true,
+    chunkLength: fileSize,
+  }, "the media record and audio chunk must survive the first application reload");
   const reconciledPosition = await page.evaluate(() => JSON.parse(
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
   )?.currentTime);
