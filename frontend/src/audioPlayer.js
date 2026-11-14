@@ -301,7 +301,10 @@ function beginListeningEvent(
 
           if (eventId) {
             event.historyNotified = true;
-            notifyListeningHistoryChanged();
+            notifyListeningHistoryChanged({
+              type: "confirmed-play",
+              trackId: String(trackId),
+            });
           }
 
           return eventId;
@@ -321,6 +324,12 @@ function beginListeningEvent(
   activeListeningEvent =
     event;
 
+  // Update mounted pages immediately on the confirmed audio "playing" event.
+  // The Neon write below remains authoritative and triggers a reconciliation.
+  notifyListeningHistoryChanged({
+    type: "optimistic-play",
+    track: { id: String(trackId), ...meta },
+  });
 
   void event.request.then(
     (eventId) => {
@@ -385,7 +394,7 @@ function saveListeningProgress(keepalive = false) {
     event.lastProgressSentAt = elapsed;
     if (!event.historyNotified && elapsed >= 2) {
       event.historyNotified = true;
-      notifyListeningHistoryChanged();
+      notifyListeningHistoryChanged({ type: "confirmed-progress" });
     }
   })().catch((error) => {
     console.error("[HyperSynced] Listening progress was not saved.", error);
@@ -418,7 +427,7 @@ function finishListeningEvent(outcome) {
         keepalive: true,
       },
     );
-    notifyListeningHistoryChanged();
+    notifyListeningHistoryChanged({ type: "confirmed-outcome" });
   })().catch((error) => {
     console.error("[HyperSynced] Listening history outcome was not saved.", error);
   });
