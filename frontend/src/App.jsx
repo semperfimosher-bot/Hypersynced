@@ -1343,7 +1343,12 @@ export default function App() {
   // Keep server writes ordered so an older navigation cannot overwrite the latest view.
   const appStateSaveQueueRef = useRef(Promise.resolve());
   const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
-  activeAppStateOwnerRef.current = currentUser?.id ?? null;
+  const appStateVersionRef = useRef(null);
+  if (activeAppStateOwnerRef.current !== (currentUser?.id ?? null)) {
+    activeAppStateOwnerRef.current = currentUser?.id ?? null;
+    appStateVersionRef.current = null;
+    appStateSaveQueueRef.current = Promise.resolve();
+  }
 
   const cancelPendingSearchSave =
   useCallback(() => {
@@ -1409,6 +1414,10 @@ const restoreSavedAppView =
           return;
         }
 
+        if (activeAppStateOwnerRef.current === user?.id) {
+          appStateVersionRef.current = state?.updated_at ?? null;
+        }
+
         setActivePage(
           restored.activePage,
         );
@@ -1461,13 +1470,20 @@ const persistAppView =
             if (activeAppStateOwnerRef.current !== ownerId) {
               return null;
             }
-            return apiRequest(
+            const saved = await apiRequest(
               "/users/me/app-state",
               {
                 method: "PATCH",
-                body: JSON.stringify(savedState),
+                body: JSON.stringify({
+                  ...savedState,
+                  expected_updated_at: appStateVersionRef.current,
+                }),
               },
             );
+            if (activeAppStateOwnerRef.current === ownerId) {
+              appStateVersionRef.current = saved?.updated_at ?? null;
+            }
+            return saved;
           })
           .catch((error) => {
             console.error("[HyperSynced] Unable to save app view state.", error);
@@ -1693,6 +1709,7 @@ const persistAppView =
           searchStateTimerRef.current
         ) return;
 
+        appStateVersionRef.current = state?.updated_at ?? null;
         const restored = normalizeAppViewState(state, currentUser.role);
         setActivePage((current) =>
           current === restored.activePage ? current : restored.activePage
