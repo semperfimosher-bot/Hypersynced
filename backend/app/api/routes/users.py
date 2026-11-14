@@ -279,11 +279,12 @@ async def get_user_by_username(
     return result.scalar_one_or_none()
 
 
-def default_app_state() -> AppStateResponse:
+def default_app_state(updated_at: datetime | None = None) -> AppStateResponse:
     return AppStateResponse(
         active_page="home",
         search_query="",
         profile_username=None,
+        updated_at=updated_at,
     )
 
 
@@ -300,7 +301,7 @@ async def build_app_state(
         return default_app_state()
 
     if state.active_page not in VALID_APP_PAGES:
-        return default_app_state()
+        return default_app_state(state.updated_at)
 
     active_page = cast(
         AppPage,
@@ -308,13 +309,13 @@ async def build_app_state(
     )
 
     if active_page in ADMIN_APP_PAGES and user.role != UserRole.ADMIN:
-        return default_app_state()
+        return default_app_state(state.updated_at)
 
     profile_username = state.profile_username
 
     if active_page == "public-profile":
         if not profile_username:
-            return default_app_state()
+            return default_app_state(state.updated_at)
 
         target = await get_user_by_username(
             session,
@@ -322,7 +323,7 @@ async def build_app_state(
         )
 
         if target is None:
-            return default_app_state()
+            return default_app_state(state.updated_at)
 
     else:
         profile_username = None
@@ -1304,14 +1305,16 @@ async def update_my_playback_state(
             detail="Playback state changed on another session. Refresh before saving.",
         )
 
-    previous_updated_at = state.updated_at if state in session else None
+    existing_state = state in session and state.updated_at is not None
     state.playback_track_id = track.id if track is not None else None
     state.playback_position_seconds = payload.position_seconds
     state.playback_paused = payload.paused
     state.playback_updated_at = datetime.now(UTC)
     # Playback writes must not invalidate the independent app-navigation version.
-    if previous_updated_at is not None:
-        state.updated_at = previous_updated_at
+    if existing_state:
+        # Explicit SQL expression prevents TimestampMixin.onupdate from
+        # changing the independent app-navigation version on playback writes.
+        state.updated_at = UserAppState.updated_at
     await session.commit()
 
     if track is None:
