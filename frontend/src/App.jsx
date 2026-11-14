@@ -1546,7 +1546,7 @@ const persistAppView =
 
     const state = {
       active_page: activePage,
-      search_query: activePage === "search" ? searchQuery : "",
+      search_query: searchQuery,
       profile_username: activePage === "public-profile" ? activeProfileUsername : null,
     };
     const signature = JSON.stringify(state);
