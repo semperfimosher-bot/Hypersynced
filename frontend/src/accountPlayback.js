@@ -19,6 +19,7 @@ export function bindAccountPlayback(userId) {
   let expectedRemoteTrackId = null;
   let localRevision = 0;
   let lastServerUpdatedAt = 0;
+  let lastServerUpdatedAtValue = null;
   let refreshPromise = null;
   let lastTrackId = player.getState()?.trackId ?? null;
   let lastSavedKey = "";
@@ -50,7 +51,12 @@ export function bindAccountPlayback(userId) {
     const key = `${trackId ?? "none"}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
     if (!force && (key === lastSavedKey || key === pendingKey)) return writeChain;
     pendingKey = key;
-    const payload = { track_id: trackId, position_seconds: position, paused };
+    const payload = {
+      track_id: trackId,
+      position_seconds: position,
+      paused,
+      expected_playback_updated_at: lastServerUpdatedAtValue,
+    };
     writeChain = writeChain.catch(() => {}).then(async () => {
       if (!active) return;
       try {
@@ -60,12 +66,21 @@ export function bindAccountPlayback(userId) {
           ...(keepalive ? { keepalive: true } : {}),
         });
         lastSavedKey = key;
+        lastServerUpdatedAtValue = saved?.updated_at ?? null;
         lastServerUpdatedAt = Math.max(
           lastServerUpdatedAt,
           timestampValue(saved?.updated_at),
         );
       } catch (error) {
-        console.error("[HyperSynced] Playback state was not saved.", error);
+        if (error?.status === 409) {
+          // Never retry the stale payload: read Neon and reconcile first.
+          lastSavedKey = "";
+          Promise.resolve().then(() => {
+            if (active) void refreshFromDatabase(false);
+          });
+        } else {
+          console.error("[HyperSynced] Playback state was not saved.", error);
+        }
       } finally {
         if (pendingKey === key) pendingKey = "";
       }
@@ -88,6 +103,7 @@ export function bindAccountPlayback(userId) {
         if (!active) return;
 
         const serverUpdatedAt = timestampValue(saved?.updated_at);
+        lastServerUpdatedAtValue = saved?.updated_at ?? null;
         if (localRevision !== revisionAtRequest) {
           if (serverUpdatedAt) {
             lastServerUpdatedAt = Math.max(lastServerUpdatedAt, serverUpdatedAt);
@@ -222,12 +238,11 @@ export function bindAccountPlayback(userId) {
   }, 2_000);
 
   const onVisibilityChange = () => {
-    if (document.visibilityState === "hidden") void save(true, true);
-    else void refreshFromDatabase(false);
+    if (document.visibilityState !== "hidden") {
+      void refreshFromDatabase(false);
+    }
   };
-  const onPageHide = () => void save(true, true);
   document.addEventListener("visibilitychange", onVisibilityChange);
-  window.addEventListener("pagehide", onPageHide);
 
   void refreshFromDatabase(true);
 
@@ -235,7 +250,6 @@ export function bindAccountPlayback(userId) {
     active = false;
     window.clearInterval(interval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
-    window.removeEventListener("pagehide", onPageHide);
     unsubscribe();
   };
 }
