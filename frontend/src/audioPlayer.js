@@ -2460,6 +2460,25 @@ return getState();
 export function setPlaybackPersistenceOwner(userId) {
   const nextOwner = String(userId ?? "").trim() || null;
   if (playbackPersistenceOwnerId === nextOwner) return;
+
+  // Never let the previous account's in-memory player leak into the next
+  // account while its own cache/database state is being restored.
+  if (playbackPersistenceOwnerId && playbackPersistenceOwnerId !== nextOwner) {
+    cancelActivePlaybackSession();
+    audio.pause();
+    clearQueue();
+    audio.removeAttribute("src");
+    audio.load();
+    currentTrackId = null;
+    currentTrackMeta = null;
+    currentArtworkUrl = null;
+    currentTrackTitle = "";
+    currentTrackArtist = "";
+    restoredTimeSeconds = 0;
+    setPlaybackPhase("idle");
+    notify();
+  }
+
   playbackPersistenceOwnerId = nextOwner;
   if (nextOwner) restorePersistedPlayerState(nextOwner);
 }
