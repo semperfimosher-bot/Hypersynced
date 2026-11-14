@@ -1320,6 +1320,7 @@ async def update_my_playback_state(
         # changing the independent app-navigation version on playback writes.
         state.updated_at = UserAppState.updated_at
     await session.commit()
+    await session.refresh(state)
 
     if track is None:
         return PlaybackStateResponse(
