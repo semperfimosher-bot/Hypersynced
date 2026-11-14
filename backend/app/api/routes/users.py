@@ -4,6 +4,7 @@ import mimetypes
 from datetime import (
     UTC,
     datetime,
+    timedelta,
 )
 from typing import (
     Annotated,
@@ -1309,7 +1310,10 @@ async def update_my_playback_state(
     state.playback_track_id = track.id if track is not None else None
     state.playback_position_seconds = payload.position_seconds
     state.playback_paused = payload.paused
-    state.playback_updated_at = datetime.now(UTC)
+    next_playback_version = datetime.now(UTC)
+    if current_playback_version is not None and next_playback_version <= current_playback_version:
+        next_playback_version = current_playback_version + timedelta(microseconds=1)
+    state.playback_updated_at = next_playback_version
     # Playback writes must not invalidate the independent app-navigation version.
     if existing_state:
         # Explicit SQL expression prevents TimestampMixin.onupdate from
@@ -1417,10 +1421,13 @@ async def update_my_app_state(
         session.add(app_state)
 
     app_state.active_page = payload.active_page
-
     app_state.search_query = payload.search_query
-
     app_state.profile_username = profile_username
+
+    next_app_version = datetime.now(UTC)
+    if current_app_version is not None and next_app_version <= current_app_version:
+        next_app_version = current_app_version + timedelta(microseconds=1)
+    app_state.updated_at = next_app_version
 
     await session.commit()
 
