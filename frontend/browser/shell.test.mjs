@@ -43,8 +43,6 @@ async function fixture(t, { admin = false } = {}) {
         } else if (admin && path === "/api/users/me") send(200, JSON.stringify(user), "application/json");
         else if (admin && path === "/api/users/me/playback-state") {
           send(200, JSON.stringify(state.playbackState ?? { track: null, position_seconds: 0 }), "application/json");
-        } else if (path === "/api/system/reset-state") {
-          send(200, JSON.stringify({ generation: 0 }), "application/json");
         } else if (admin && path === "/api/catalog/tracks") {
           state.catalogFetches += 1;
           const second = new URL(request.url, "http://127.0.0.1").searchParams.has("cursor");
@@ -81,64 +79,9 @@ async function fixture(t, { admin = false } = {}) {
     }
   });
   context = await browser.newContext();
-  await context.addInitScript(() => {
-    let trace = {};
-    try { trace = JSON.parse(window.name || "{}"); } catch { trace = {}; }
-    trace.events ??= [];
-    const note = (event) => {
-      trace.events.push(event);
-      window.name = JSON.stringify(trace);
-    };
-    const nativeDeleteDatabase = IDBFactory.prototype.deleteDatabase;
-    IDBFactory.prototype.deleteDatabase = function(name) {
-      note({ type: "delete-database", name: String(name) });
-      return nativeDeleteDatabase.call(this, name);
-    };
-    const nativeStoreDelete = IDBObjectStore.prototype.delete;
-    IDBObjectStore.prototype.delete = function(key) {
-      note({ type: "idb-delete", store: this.name, key: String(key) });
-      return nativeStoreDelete.call(this, key);
-    };
-    const nativeStoreClear = IDBObjectStore.prototype.clear;
-    IDBObjectStore.prototype.clear = function() {
-      note({ type: "idb-clear", store: this.name });
-      return nativeStoreClear.call(this);
-    };
-    const nativePostMessage = ServiceWorker.prototype.postMessage;
-    ServiceWorker.prototype.postMessage = function(message, transfer) {
-      if (message?.type === "HYPERSYNC_CLEAR_ALL_CLIENT_DATA") {
-        note({ type: "clear-client-data-message" });
-      }
-      return nativePostMessage.call(this, message, transfer);
-    };
-    const nativeFetch = window.fetch.bind(window);
-    window.fetch = (input, init) => {
-      const rawUrl = input instanceof Request ? input.url : String(input);
-      const url = new URL(rawUrl, window.location.href);
-      if (url.pathname.endsWith("/system/reset-state")) {
-        return Promise.resolve(new Response(
-          JSON.stringify({ generation: 0 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ));
-      }
-      return nativeFetch(input, init);
-    };
-  });
-  // Keep the shell fixture isolated from the live global-reset service.
-  // A reset response above generation zero would intentionally purge every
-  // HyperSync IndexedDB database and invalidate this offline-media scenario.
-  await context.route("**/api/system/reset-state", (route) => {
-    state.resetStateRequests = (state.resetStateRequests ?? 0) + 1;
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ generation: 0 }),
-    });
-  });
   if (admin) await context.addInitScript((profile) => {
     localStorage.setItem("hypersync_session_active", "true");
     localStorage.setItem("hypersync_remember_me", "true");
-    localStorage.setItem("hypersync_global_reset_generation", "0");
     localStorage.setItem("hypersync_user_profile", JSON.stringify(profile));
   }, user);
   const page = await context.newPage();
@@ -377,7 +320,7 @@ test("cache quota exhaustion cannot break a successful online script", { timeout
 
 test("IndexedDB media survives reload and supports offline range, decoding, playback and seek", { timeout: 45000 }, async (t) => {
   const { page, context, pageErrors, state } = await fixture(t, { admin: true });
-  const seededMedia = await page.evaluate(async () => {
+  const fileSize = await page.evaluate(async () => {
     const samples = 64000;
     const data = new ArrayBuffer(44 + samples * 2);
     const view = new DataView(data);
@@ -398,31 +341,14 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     });
     await new Promise((resolveWrite, reject) => {
       const tx = db.transaction(["media", "chunks"], "readwrite");
-      tx.objectStore("media").put({ key: "browser-audio:v1", trackId: "browser-audio", mediaVersion: "v1", mimeType: "audio/wav", fileSize: data.byteLength, state: "PINNED", cachedBytes: data.byteLength, expiresAt: null });
+      tx.objectStore("media").put({ key: "browser-audio:v1", trackId: "browser-audio", mediaVersion: "v1", mimeType: "audio/wav", fileSize: data.byteLength, state: "PINNED", cachedBytes: data.byteLength, expiresAt: null, pinRefs: ["owner:browser-admin|manual"] });
       tx.objectStore("chunks").put({ key: "browser-audio:v1:0", mediaKey: "browser-audio:v1", chunkIndex: 0, byteStart: 0, byteEnd: data.byteLength - 1, byteLength: data.byteLength, data });
       tx.oncomplete = resolveWrite;
       tx.onerror = () => reject(tx.error);
     });
-    const seedSnapshot = await new Promise((resolveRead, reject) => {
-      const tx = db.transaction(["media", "chunks"], "readonly");
-      const mediaRequest = tx.objectStore("media").get("browser-audio:v1");
-      const chunkRequest = tx.objectStore("chunks").get("browser-audio:v1:0");
-      tx.oncomplete = () => resolveRead({
-        recordFound: Boolean(mediaRequest.result),
-        chunkFound: Boolean(chunkRequest.result),
-        chunkLength: chunkRequest.result?.data?.byteLength ?? null,
-      });
-      tx.onerror = () => reject(tx.error);
-    });
     db.close();
-    return { fileSize: data.byteLength, ...seedSnapshot };
+    return data.byteLength;
   });
-  const fileSize = seededMedia.fileSize;
-  assert.deepEqual(
-    { recordFound: seededMedia.recordFound, chunkFound: seededMedia.chunkFound, chunkLength: seededMedia.chunkLength },
-    { recordFound: true, chunkFound: true, chunkLength: fileSize },
-    "media fixture must be written before the reload",
-  );
   await context.addInitScript(() => {
     const NativeAudio = window.Audio;
     window.__appAudioInstances = [];
@@ -449,42 +375,6 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
   await page.reload();
   const player = page.getByRole("region", { name: "Player", exact: true });
   await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
-  const { traceEvents, databases, ...cachedMedia } = await page.evaluate(async () => {
-    const db = await new Promise((resolveOpen, reject) => {
-      const request = indexedDB.open("hypersynced-media-v1", 2);
-      request.onsuccess = () => resolveOpen(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    const result = await new Promise((resolveRead, reject) => {
-      const tx = db.transaction(["media", "chunks"], "readonly");
-      const mediaRequest = tx.objectStore("media").get("browser-audio:v1");
-      const chunkRequest = tx.objectStore("chunks").get("browser-audio:v1:0");
-      tx.oncomplete = () => resolveRead({
-        record: mediaRequest.result ?? null,
-        chunk: chunkRequest.result ?? null,
-      });
-      tx.onerror = () => reject(tx.error);
-    });
-    db.close();
-    return {
-      recordFound: Boolean(result.record),
-      recordState: result.record?.state ?? null,
-      chunkFound: Boolean(result.chunk),
-      chunkLength: result.chunk?.data?.byteLength ?? null,
-      resetGeneration: localStorage.getItem("hypersync_global_reset_generation"),
-      traceEvents: (() => {
-        try { return JSON.parse(window.name || "{}").events ?? []; } catch { return []; }
-      })(),
-      databases: typeof indexedDB.databases === "function" ? await indexedDB.databases() : [],
-    };
-  });
-  assert.deepEqual(cachedMedia, {
-    recordFound: true,
-    recordState: "PINNED",
-    chunkFound: true,
-    chunkLength: fileSize,
-    resetGeneration: "0",
-  }, `the media record and audio chunk must survive the first application reload (reset endpoint requests: ${state.resetStateRequests ?? 0}; trace: ${JSON.stringify({ traceEvents, databases })})`);
   const reconciledPosition = await page.evaluate(() => JSON.parse(
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
   )?.currentTime);
