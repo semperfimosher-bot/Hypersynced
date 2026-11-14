@@ -1344,9 +1344,11 @@ export default function App() {
   const appStateSaveQueueRef = useRef(Promise.resolve());
   const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
   const appStateVersionRef = useRef(null);
+  const appStateVersionLoadedRef = useRef(false);
   if (activeAppStateOwnerRef.current !== (currentUser?.id ?? null)) {
     activeAppStateOwnerRef.current = currentUser?.id ?? null;
     appStateVersionRef.current = null;
+    appStateVersionLoadedRef.current = false;
     appStateSaveQueueRef.current = Promise.resolve();
   }
 
@@ -1416,6 +1418,7 @@ const restoreSavedAppView =
 
         if (activeAppStateOwnerRef.current === user?.id) {
           appStateVersionRef.current = state?.updated_at ?? null;
+          appStateVersionLoadedRef.current = true;
         }
 
         setActivePage(
@@ -1470,6 +1473,12 @@ const persistAppView =
             if (activeAppStateOwnerRef.current !== ownerId) {
               return null;
             }
+            if (!appStateVersionLoadedRef.current) {
+              const latest = await apiRequest("/users/me/app-state");
+              if (activeAppStateOwnerRef.current !== ownerId) return null;
+              appStateVersionRef.current = latest?.updated_at ?? null;
+              appStateVersionLoadedRef.current = true;
+            }
             const saved = await apiRequest(
               "/users/me/app-state",
               {
@@ -1482,6 +1491,7 @@ const persistAppView =
             );
             if (activeAppStateOwnerRef.current === ownerId) {
               appStateVersionRef.current = saved?.updated_at ?? null;
+              appStateVersionLoadedRef.current = true;
             }
             return saved;
           })
@@ -1710,6 +1720,7 @@ const persistAppView =
         ) return;
 
         appStateVersionRef.current = state?.updated_at ?? null;
+        appStateVersionLoadedRef.current = true;
         const restored = normalizeAppViewState(state, currentUser.role);
         setActivePage((current) =>
           current === restored.activePage ? current : restored.activePage
