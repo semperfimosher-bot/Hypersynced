@@ -81,6 +81,20 @@ async function fixture(t, { admin = false } = {}) {
     }
   });
   context = await browser.newContext();
+  await context.addInitScript(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const rawUrl = input instanceof Request ? input.url : String(input);
+      const url = new URL(rawUrl, window.location.href);
+      if (url.pathname.endsWith("/system/reset-state")) {
+        return Promise.resolve(new Response(
+          JSON.stringify({ generation: 0 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ));
+      }
+      return nativeFetch(input, init);
+    };
+  });
   // Keep the shell fixture isolated from the live global-reset service.
   // A reset response above generation zero would intentionally purge every
   // HyperSync IndexedDB database and invalidate this offline-media scenario.
