@@ -275,6 +275,18 @@ async def test_playback_state_rejects_stale_version_and_preserves_app_version() 
         app_before = await client.get("/api/users/me/app-state", headers=headers)
         app_version = app_before.json()["updated_at"]
 
+        second = await client.put(
+            "/api/users/me/playback-state",
+            headers=headers,
+            json={
+                "track_id": None,
+                "position_seconds": 18,
+                "paused": True,
+                "expected_playback_updated_at": first.json()["updated_at"],
+            },
+        )
+        assert second.status_code == 200, second.text
+
         stale = await client.put(
             "/api/users/me/playback-state",
             headers=headers,
@@ -282,7 +294,7 @@ async def test_playback_state_rejects_stale_version_and_preserves_app_version() 
                 "track_id": None,
                 "position_seconds": 2,
                 "paused": True,
-                "expected_playback_updated_at": None,
+                "expected_playback_updated_at": first.json()["updated_at"],
             },
         )
         assert stale.status_code == 409, stale.text
