@@ -84,11 +84,14 @@ async function fixture(t, { admin = false } = {}) {
   // Keep the shell fixture isolated from the live global-reset service.
   // A reset response above generation zero would intentionally purge every
   // HyperSync IndexedDB database and invalidate this offline-media scenario.
-  await context.route("**/api/system/reset-state", (route) => route.fulfill({
-    status:  200,
-    contentType: "application/json",
-    body: JSON.stringify({ generation: 0 }),
-  }));
+  await context.route("**/api/system/reset-state", (route) => {
+    state.resetStateRequests = (state.resetStateRequests ?? 0) + 1;
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ generation: 0 }),
+    });
+  });
   if (admin) await context.addInitScript((profile) => {
     localStorage.setItem("hypersync_session_active", "true");
     localStorage.setItem("hypersync_remember_me", "true");
@@ -408,6 +411,7 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       recordState: result.record?.state ?? null,
       chunkFound: Boolean(result.chunk),
       chunkLength: result.chunk?.data?.byteLength ?? null,
+      resetGeneration: localStorage.getItem("hypersync_global_reset_generation"),
     };
   });
   assert.deepEqual(cachedMedia, {
@@ -415,7 +419,8 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
     recordState: "PINNED",
     chunkFound: true,
     chunkLength: fileSize,
-  }, "the media record and audio chunk must survive the first application reload");
+    resetGeneration: "0",
+  }, `the media record and audio chunk must survive the first application reload (reset endpoint requests: ${state.resetStateRequests ?? 0})`);
   const reconciledPosition = await page.evaluate(() => JSON.parse(
     localStorage.getItem("hypersync_player_state_v2:browser-admin"),
   )?.currentTime);
