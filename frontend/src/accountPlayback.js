@@ -6,7 +6,7 @@ function timestampValue(value) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
-export function bindAccountPlayback(userId) {
+export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {}) {
   if (!userId) return () => {};
 
   player.setPlaybackPersistenceOwner(userId);
@@ -157,7 +157,14 @@ export function bindAccountPlayback(userId) {
           console.warn("[HyperSynced] Unable to refresh saved playback state.", error);
         }
       } finally {
-        if (initial && active) ready = true;
+        if (initial && active) {
+          ready = true;
+          try {
+            onInitialRestoreComplete();
+          } catch (callbackError) {
+            console.error("[HyperSynced] Account restore completion callback failed.", callbackError);
+          }
+        }
         applyingRemoteState = false;
         expectedRemoteTrackId = null;
         syncObservedState();
