@@ -1748,20 +1748,21 @@ const persistAppView =
         }
 
     if (user) {
+      if (cancelled) return;
+
+      // Render the authenticated app immediately. Neon app-view restoration
+      // runs in the background and applies only if navigation has not changed.
+      setCurrentUser(user);
+      setAuthOpen(false);
+
       if (!user.offline_only) {
-        await restoreSavedAppView(
+        void restoreSavedAppView(
           user,
           restoreGeneration,
         );
       }
-
-      if (cancelled) return;
-      // Mount account pages only after the saved database view is applied.
-      setCurrentUser(user);
-      setAuthOpen(false);
       return;
       }
-
         setCurrentUser(null);
         setAccountStateReady(true);
         if (!readCachedUserProfile()) {
