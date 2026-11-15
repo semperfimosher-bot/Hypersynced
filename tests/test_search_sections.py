@@ -24,6 +24,10 @@ from backend.app.services.search import (
     parse_search_query,
 )
 
+from backend.app.services.generated_playlists import (
+    direct_genre_search_aliases,
+)
+
 
 def test_new_release_cutoff_is_exactly_fourteen_days():
     now = datetime(
@@ -1347,3 +1351,49 @@ def test_artist_credit_resolution_expands_unique_prefix_but_not_ambiguous_prefix
         )
         is None
     )
+
+
+def test_direct_genre_search_aliases_match_existing_genre_families():
+    aliases = direct_genre_search_aliases("country")
+    assert "country" in aliases
+    assert "americana" in aliases
+    assert "bluegrass" in aliases
+
+
+@pytest.mark.asyncio
+async def test_direct_genre_search_filters_and_limits_candidates_in_database():
+    country_track = SimpleNamespace(
+        title="Example Country Song",
+        artist="Example Artist",
+        album=None,
+        genre="Country",
+    )
+    rock_track = SimpleNamespace(
+        title="Example Rock Song",
+        artist="Other Artist",
+        album=None,
+        genre="Rock",
+    )
+
+    class Session:
+        async def execute(self, statement):
+            compiled = statement.compile()
+            sql = str(compiled)
+            assert "tracks.genre" in sql
+            assert "LIMIT" in sql
+            assert any(
+                "%country%" in str(value)
+                for value in compiled.params.values()
+            )
+            return SimpleNamespace(
+                scalars=lambda: SimpleNamespace(
+                    all=lambda: [country_track, rock_track],
+                ),
+            )
+
+    result = await search_route._load_track_candidates(
+        cast(Any, Session()),
+        parse_search_query("country"),
+        None,
+    )
+    assert result == [country_track]
