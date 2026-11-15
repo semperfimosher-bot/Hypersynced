@@ -1274,14 +1274,14 @@ useEffect(() => {
         ),
       ]);
 
-    await reconcileDownloadedPlaylistMembership(
+    // Show the playlist as soon as its API response arrives. Offline
+    // membership reconciliation is follow-up work, not an opening prerequisite.
+    setOpenedPlaylist(playlist);
+
+    void reconcileDownloadedPlaylistMembership(
       playlist,
       offlineOwnerKey,
-    );
-
-    setOpenedPlaylist(
-      playlist,
-    );
+    ).catch(() => {});
 
     const downloaded =
       downloadedPlaylists.find(
