@@ -4,7 +4,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from backend.app.database import get_session_factory
-from backend.app.models.maintenance import MaintenanceJob
 from backend.app.main import app
 from backend.app.models.account import (
     User,
