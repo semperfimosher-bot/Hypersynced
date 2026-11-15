@@ -13,7 +13,7 @@ test("app shell renders page and player while database state restores", () => {
   assert.match(source, /<MainPage/);
   assert.match(source, /<PlayerBar/);
   assert.match(source, /void restoreSavedAppView/);
-  assert.match(source, /setCurrentUser\\(user\\);[\\s\\S]*?void restoreSavedAppView/);
+  assert.match(source, /setCurrentUser\(user\);[\s\S]*?void restoreSavedAppView/);
   assert.match(sync, /onInitialRestoreComplete/);
   assert.match(sync, /void player\.restoreTrackPaused/);
   assert.doesNotMatch(sync, /await player\.restoreTrackPaused/);
