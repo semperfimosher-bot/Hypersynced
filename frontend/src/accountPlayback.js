@@ -251,14 +251,20 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
     lastPaused = paused;
   });
 
-  const interval = window.setInterval(() => {
-    // Check Neon before writing this tab's cached playback position.
-    // Otherwise a stale tab can overwrite a newer session from another device
-    // immediately before it has a chance to read that newer state.
-    void refreshFromDatabase(false).finally(() => {
-      void save(false);
-    });
-  }, 2_000);
+  // The audio player's own clock updates the UI continuously. Persist only
+  // a compact checkpoint every few seconds, rather than writing to Neon every
+  // second. Discrete player actions above (track/pause/resume/seek) still save
+  // immediately.
+  const checkpointInterval = window.setInterval(() => {
+    void save(false);
+  }, 5_000);
+
+  // Cross-device changes are read separately at a lower frequency. This
+  // avoids coupling every checkpoint write to a database read while keeping
+  // another device's actions visible promptly.
+  const refreshInterval = window.setInterval(() => {
+    void refreshFromDatabase(false);
+  }, 12_000);
 
   const onVisibilityChange = () => {
     if (document.visibilityState !== "hidden") {
@@ -271,7 +277,8 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
 
   return () => {
     active = false;
-    window.clearInterval(interval);
+    window.clearInterval(checkpointInterval);
+    window.clearInterval(refreshInterval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     unsubscribe();
   };
