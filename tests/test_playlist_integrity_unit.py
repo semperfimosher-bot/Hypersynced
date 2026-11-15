@@ -145,7 +145,7 @@ async def test_artist_ranking_uses_database_top_n_and_preserves_popularity_order
     ranked_rows = [
         (track, 700 - index)
         for index, track in enumerate(
-            reversed(tracks)[ : generated.MAX_GENERATED_TRACKS]
+            list(reversed(tracks))[:generated.MAX_GENERATED_TRACKS]
         )
     ]
 
