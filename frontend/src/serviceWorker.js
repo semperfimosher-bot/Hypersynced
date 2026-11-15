@@ -43,6 +43,13 @@ const MAX_CACHED_ARTWORK_BYTES =
 const NAVIGATION_NETWORK_TIMEOUT_MS =
   3500;
 
+export class AppShellBuildMismatchError extends Error {
+  constructor() {
+    super("Navigation belongs to a different application build.");
+    this.name = "AppShellBuildMismatchError";
+  }
+}
+
 const MEDIA_CLEANUP_INTERVAL_MS =
   6 * 60 * 60 * 1000;
 
@@ -127,7 +134,7 @@ async function precacheAppShell(navigationResponse = null) {
     ? await readDocument(navigationResponse)
     : await fetchShellResource("/", readDocument);
   if (BUILD_MANIFEST && !html.includes(`content="${BUILD_MANIFEST.revision}"`)) {
-    throw new Error("Navigation belongs to a different application build.");
+    throw new AppShellBuildMismatchError();
   }
   const referencedUrls = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
     .map((match) => match[1]);
@@ -192,6 +199,15 @@ globalThis.self?.addEventListener?.(
               const cache = await caches.open(APP_SHELL_CACHE);
               if (!await cache.match("/")) await caches.delete?.(APP_SHELL_CACHE);
             } catch { /* Preserve the original install failure. */ }
+
+            // During a rolling deploy, the document can briefly belong to
+            // the previous frontend build. Do not cache it under this build,
+            // but let the worker install; online navigation retries precaching.
+            if (error instanceof AppShellBuildMismatchError) {
+              await self.skipWaiting();
+              return;
+            }
+
             throw error;
           }
         }
