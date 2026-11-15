@@ -14,6 +14,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import (
+    case,
     func,
     literal,
     or_,
