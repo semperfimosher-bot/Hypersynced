@@ -1131,6 +1131,10 @@ button.is-active strong {
 
 
 .hs-search-track {
+  /* Keep long search result lists cheap to paint without removing rows. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
+
   position: relative;
 
   display: grid;
@@ -1665,6 +1669,9 @@ button.is-active strong {
 
 
 .hs-search-person {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
+
   display: grid;
 
   grid-template-columns:
