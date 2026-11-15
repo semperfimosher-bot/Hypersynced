@@ -1792,7 +1792,7 @@ useEffect(() => {
         setError("This playlist is not available offline yet.");
       }
 
-      if (downloaded) {
+      if (downloaded && !activeDownload) {
         setPlaylistDownload({
           status: "downloaded",
           progress: 1,
@@ -1805,7 +1805,8 @@ useEffect(() => {
         });
       }
 
-      if (downloadJob?.state === "paused" || downloadJob?.state === "downloading") {
+      if (!activeDownload && !downloaded &&
+          (downloadJob?.state === "paused" || downloadJob?.state === "downloading")) {
         const totalBytes = Number(downloadJob.totalBytes ?? 0);
         const downloadedBytes = Number(downloadJob.downloadedBytes ?? 0);
         setPlaylistDownload({
