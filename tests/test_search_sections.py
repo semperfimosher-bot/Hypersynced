@@ -19,13 +19,12 @@ from backend.app.api.routes.search import (
 )
 from backend.app.models.account import User
 from backend.app.models.media import Track
+from backend.app.services.generated_playlists import (
+    direct_genre_search_aliases,
+)
 from backend.app.services.search import (
     ParsedSearch,
     parse_search_query,
-)
-
-from backend.app.services.generated_playlists import (
-    direct_genre_search_aliases,
 )
 
 
