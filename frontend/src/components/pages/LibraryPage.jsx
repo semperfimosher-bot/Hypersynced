@@ -1916,17 +1916,18 @@ if (offline) {
     if (playlistResult.error) throw playlistResult.error;
     const playlist = playlistResult.playlist;
 
+    // Render the server response immediately. Offline membership reconciliation
+    // and the in-memory cache are secondary work and must not delay opening.
+    setSelectedPlaylist(playlist);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     await reconcileDownloadedPlaylistMembership(
       playlist,
       offlineOwnerKey,
     );
 
     await setCachedPlaylist(
-  libraryCacheKey,
-  playlist,
-);
-
-    setSelectedPlaylist(
+      libraryCacheKey,
       playlist,
     );
 
