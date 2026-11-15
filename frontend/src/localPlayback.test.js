@@ -4,12 +4,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-// Account state and playback are restored exclusively from the database.
-test("app shell waits for database app and playback restore before showing account UI", () => {
+// The complete app shell renders immediately; Neon state hydrates it in the background.
+test("app shell renders page and player while database state restores", () => {
   const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
   assert.match(source, /accountStateReady/);
-  assert.match(source, /Restoring your account from the database/);
+  assert.doesNotMatch(source, /Restoring your account from the database/);
+  assert.match(source, /<MainPage/);
+  assert.match(source, /<PlayerBar/);
   assert.match(source, /await restoreSavedAppView/);
   assert.match(sync, /onInitialRestoreComplete/);
   assert.match(sync, /void player\.restoreTrackPaused/);
