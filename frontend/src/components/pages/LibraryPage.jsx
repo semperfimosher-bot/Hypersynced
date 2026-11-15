@@ -1921,15 +1921,16 @@ if (offline) {
     setSelectedPlaylist(playlist);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    await reconcileDownloadedPlaylistMembership(
-      playlist,
-      offlineOwnerKey,
-    );
-
-    await setCachedPlaylist(
-      libraryCacheKey,
-      playlist,
-    );
+    await Promise.allSettled([
+      reconcileDownloadedPlaylistMembership(
+        playlist,
+        offlineOwnerKey,
+      ),
+      setCachedPlaylist(
+        libraryCacheKey,
+        playlist,
+      ),
+    ]);
 
     if (downloaded) {
       const downloadedIds =
