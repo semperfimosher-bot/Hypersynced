@@ -46,7 +46,6 @@ from ...services.audio_metadata import (
     primary_artist_credit,
     split_artist_credits,
 )
-from ...services.maintenance_jobs import enqueue_track_maintenance
 from ...services.generated_playlists import (
     MIN_GENERATED_TRACKS,
     get_cached_artist_playlist,
@@ -54,6 +53,7 @@ from ...services.generated_playlists import (
     smart_query_has_semantic_signal,
     smart_track_score,
 )
+from ...services.maintenance_jobs import enqueue_track_maintenance
 from ...services.search import (
     SEARCH_SORT_MODES,
     MatchResult,
