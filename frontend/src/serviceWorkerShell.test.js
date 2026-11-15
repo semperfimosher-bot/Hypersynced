@@ -181,7 +181,9 @@ test("a worker never publishes navigation HTML from a different build", async (t
     network: async () => new Response('<meta name="hypersync-build" content="new">'),
     put: async (url) => { writes.push(url); },
   });
-  await assert.rejects(dispatch.install(), /different/i);
+  // A rolling deployment can serve the previous HTML briefly. The worker
+  // should still install, but must never publish that HTML into this build's cache.
+  await dispatch.install();
   assert.deepEqual(writes, []);
 });
 
