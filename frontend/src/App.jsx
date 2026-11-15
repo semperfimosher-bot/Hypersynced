@@ -2565,11 +2565,6 @@ const clearPlaylistToOpen =
         />
 
         <main className="main-content">
-          {!accountStateReady ? (
-            <div className="page-stack" role="status" aria-live="polite" aria-busy="true">
-              Restoring your account from the database…
-            </div>
-          ) : (
           <MainPage
             activePage={activePage}
             currentUser={currentUser}
@@ -2652,7 +2647,6 @@ const clearPlaylistToOpen =
             }
 
           />
-          )}
         </main>
       </section>
 
@@ -2666,7 +2660,7 @@ const clearPlaylistToOpen =
 
 
       />
-      {accountStateReady ? <PlayerBar
+      {<PlayerBar
         playlistUpdate={
           activePlaylistUpdate
         }
@@ -2717,7 +2711,7 @@ const clearPlaylistToOpen =
           setMobilePlayerDetailsLoaded(true);
           setMobilePlayerDetailsOpen(true);
         }}
-      /> : null}
+      />}
 
       {mobilePlayerDetailsLoaded ? (
         <Suspense fallback={null}>
