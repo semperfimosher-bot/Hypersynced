@@ -3857,6 +3857,7 @@ displayResults.tracks.length > 0 ? (
                             <img
                               src={artworkUrl}
                               alt=""
+                              decoding="async"
                               loading={
                                 trackIndex < 6
                                   ? "eager"
