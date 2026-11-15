@@ -508,6 +508,7 @@ const [
     );
 
   useEffect(() => {
+  selectedPlaylistIdRef.current = null;
   setSelectedPlaylist(
     null,
   );
@@ -1789,6 +1790,19 @@ useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         setError("This playlist is not available offline yet.");
+      }
+
+      if (downloaded) {
+        setPlaylistDownload({
+          status: "downloaded",
+          progress: 1,
+          trackProgress: Object.fromEntries(
+            downloaded.tracks.map((track) => [
+              String(track.id),
+              { status: "downloaded", progress: 1 },
+            ]),
+          ),
+        });
       }
 
       if (downloadJob?.state === "paused" || downloadJob?.state === "downloading") {
@@ -3287,6 +3301,7 @@ useEffect(() => {
             type="button"
             className="hs-search-playlist-back"
             onClick={() => {
+              selectedPlaylistIdRef.current = null;
               setPlaylistSearchQuery(
                 "",
               );
