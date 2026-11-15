@@ -375,6 +375,24 @@ def is_direct_genre_query(
     )
 
 
+def direct_genre_search_aliases(
+    query: str,
+) -> tuple[str, ...]:
+    """Return the canonical family aliases used by direct genre matching."""
+    normalized = _normalized_query(query)
+    stripped = " ".join(
+        word
+        for word in normalized.split()
+        if word not in SMART_FILLER_WORDS
+    )
+
+    for aliases in GENRE_FAMILIES.values():
+        if stripped in aliases:
+            return aliases
+
+    return (stripped,) if stripped else ()
+
+
 def smart_playlist_kind(
     query: str,
 ) -> str:
