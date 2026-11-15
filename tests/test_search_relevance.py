@@ -4,6 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from backend.app.database import get_session_factory
+from backend.app.models.maintenance import MaintenanceJob
 from backend.app.main import app
 from backend.app.models.account import (
     User,
@@ -228,15 +229,24 @@ async def test_artist_search_uses_cached_generated_playlist_without_generating(
     artist_name = f"Cached Artist {run_id}"
     session_factory = get_session_factory()
     cache_lookups: list[str] = []
+    queued_jobs: list[tuple[object, tuple[str, ...]]] = []
 
     async def cached_playlist(session, requested_artist):
         cache_lookups.append(requested_artist)
         return None
 
+    async def enqueue(session, track_id, *, kinds):
+        queued_jobs.append((track_id, kinds))
+
     monkeypatch.setattr(
         search_routes,
         "get_cached_artist_playlist",
         cached_playlist,
+    )
+    monkeypatch.setattr(
+        search_routes,
+        "enqueue_track_maintenance",
+        enqueue,
     )
 
     async with session_factory() as session:
@@ -268,4 +278,6 @@ async def test_artist_search_uses_cached_generated_playlist_without_generating(
     assert len(payload["tracks"]) == 2
     assert payload["playlists"] == []
     assert cache_lookups == [artist_name]
+    assert len(queued_jobs) == 1
+    assert queued_jobs[0][1] == ("playlists",)
 
