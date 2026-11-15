@@ -1606,28 +1606,24 @@ const [
           initialPlaylistId,
         );
 
-      await reconcileDownloadedPlaylistMembership(
-        playlist,
-        offlineOwnerKey,
-      );
-
       if (cancelled) {
         return;
       }
 
-      await setCachedPlaylist(
-        libraryCacheKey,
-        playlist,
-      );
+      // Do not hold initial navigation behind IndexedDB reconciliation.
+      setSelectedPlaylist(playlist);
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
-      setSelectedPlaylist(
-        playlist,
-      );
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      await Promise.allSettled([
+        reconcileDownloadedPlaylistMembership(
+          playlist,
+          offlineOwnerKey,
+        ),
+        setCachedPlaylist(
+          libraryCacheKey,
+          playlist,
+        ),
+      ]);
     } catch (requestError) {
       if (
         cancelled ||
