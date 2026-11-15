@@ -11,6 +11,14 @@ export async function getMyProfile() {
 }
 
 
+export function getMyRecentlyPlayed() {
+  return apiRequest(
+    "/users/me/recently-played",
+    { cache: "no-store" },
+  );
+}
+
+
 export async function updateMyProfile({
   displayName,
   bio,
