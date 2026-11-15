@@ -1614,7 +1614,7 @@ const [
       setSelectedPlaylist(playlist);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      await Promise.allSettled([
+      void Promise.allSettled([
         reconcileDownloadedPlaylistMembership(
           playlist,
           offlineOwnerKey,
