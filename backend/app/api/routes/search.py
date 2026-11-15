@@ -49,6 +49,7 @@ from ...services.audio_metadata import (
 )
 from ...services.generated_playlists import (
     MIN_GENERATED_TRACKS,
+    direct_genre_search_aliases,
     get_cached_artist_playlist,
     is_direct_genre_query,
     smart_query_has_semantic_signal,
