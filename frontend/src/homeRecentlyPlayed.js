@@ -1,5 +1,11 @@
-export function getHomeRecentlyPlayed(profile, limit = 12) {
-  const tracks = Array.isArray(profile?.recently_played) ? profile.recently_played : [];
+export function getHomeRecentlyPlayed(profileOrTracks, limit = 12) {
+  // The focused Home endpoint returns the track array directly; the profile
+  // dashboard still returns the legacy { recently_played } envelope.
+  const tracks = Array.isArray(profileOrTracks)
+    ? profileOrTracks
+    : Array.isArray(profileOrTracks?.recently_played)
+      ? profileOrTracks.recently_played
+      : [];
   return tracks.slice(0, limit);
 }
 
