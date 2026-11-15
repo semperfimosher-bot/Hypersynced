@@ -12,6 +12,8 @@ test("app shell waits for database app and playback restore before showing accou
   assert.match(source, /Restoring your account from the database/);
   assert.match(source, /await restoreSavedAppView/);
   assert.match(sync, /onInitialRestoreComplete/);
+  assert.match(sync, /void player\\.restoreTrackPaused/);
+  assert.doesNotMatch(sync, /await player\\.restoreTrackPaused/);
 });
 
 test("app shell restores and persists account playback through the existing API", () => {
