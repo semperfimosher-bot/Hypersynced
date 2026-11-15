@@ -38,7 +38,7 @@ import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 
 import {
-  getMyProfile,
+  getMyRecentlyPlayed,
 } from "../../profileApi.js";
 
 import {
@@ -227,7 +227,7 @@ const loadRecentlyPlayed =
 
       try {
         const profile =
-          await getMyProfile();
+          await getMyRecentlyPlayed();
         if (!isCurrent()) return;
 
         // Neon listening events are the single source of truth for both
