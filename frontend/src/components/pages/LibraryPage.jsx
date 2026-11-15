@@ -1724,8 +1724,11 @@ useEffect(() => {
   setError("");
   const onlinePlaylistPromise =
     typeof navigator !== "undefined" && navigator.onLine !== false
-      ? getPlaylist(playlistId)
-      : Promise.resolve(null);
+      ? getPlaylist(playlistId).then(
+          (playlist) => ({ playlist }),
+          (error) => ({ error }),
+        )
+      : Promise.resolve({ playlist: null });
 
   let downloaded =
     downloadedPlaylists.find(
@@ -1909,7 +1912,9 @@ if (offline) {
      * Still refresh from the server so
      * cached data never becomes permanently stale.
      */
-    const playlist = await onlinePlaylistPromise;
+    const playlistResult = await onlinePlaylistPromise;
+    if (playlistResult.error) throw playlistResult.error;
+    const playlist = playlistResult.playlist;
 
     await reconcileDownloadedPlaylistMembership(
       playlist,
