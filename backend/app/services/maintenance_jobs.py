@@ -189,8 +189,13 @@ async def run_maintenance_worker() -> None:
     while True:
         try:
             processed = await process_next_job()
-        except Exception:
-            logger.warning("Maintenance queue unavailable; worker will retry")
+        except Exception as exc:
+            # Keep diagnostics useful without exposing database URLs, credentials,
+            # provider URLs, or other exception message contents.
+            logger.warning(
+                "Maintenance queue unavailable; worker will retry (%s)",
+                type(exc).__name__,
+            )
             processed = False
         await asyncio.sleep(0 if processed else POLL_SECONDS)
 
