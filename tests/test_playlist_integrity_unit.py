@@ -133,46 +133,34 @@ async def test_smart_refresh_pages_targets_and_caps_ranking_batches(monkeypatch)
 
 
 @pytest.mark.asyncio
-async def test_artist_ranking_streams_closes_and_preserves_popularity_order():
+async def test_artist_ranking_uses_database_top_n_and_preserves_popularity_order():
     from types import SimpleNamespace
 
     from backend.app.models.media import Track
 
-    tracks = [Track(id=uuid4(), title=f"Song {i:04d}", artist="Artist feat. Guest")
-              for i in range(700)]
-    # An unrelated legacy row must never be included, even with a larger count.
-    unrelated = Track(id=uuid4(), title="Wrong", artist="Other")
-
-    class Stream:
-        closed = False
-
-        async def partitions(self, size):
-            for start in range(0, len(tracks), size):
-                yield [(track, i) for i, track in enumerate(tracks[start:start + size], start)]
-            yield [(unrelated, 99999)]
-
-        async def close(self):
-            self.closed = True
-
-    stream = Stream()
+    tracks = [
+        Track(id=uuid4(), title=f"Song {i:04d}", artist="Artist feat. Guest")
+        for i in range(700)
+    ]
+    ranked_rows = [
+        (track, 700 - index)
+        for index, track in enumerate(
+            reversed(tracks[:generated.MAX_GENERATED_TRACKS])
+        )
+    ]
 
     class Session:
-        async def stream(self, statement):
-            # Compile the real joined aggregate and correlated credit predicates.
-            assert "listening_events" in str(statement.compile())
-            return stream
-
         async def execute(self, statement):
-            assert stream.closed, "only bounded winner lookup may materialize rows"
-            ids = next(value for value in statement.compile().params.values()
-                       if isinstance(value, list))
-            assert len(ids) == generated.MAX_GENERATED_TRACKS
-            winners = [t for t in tracks if t.id in ids]
-            return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: winners))
+            sql = str(statement.compile())
+            # Ranking and bounded top-N selection now happen in PostgreSQL.
+            assert "listening_events" in sql
+            assert "ORDER BY" in sql
+            assert "LIMIT" in sql
+            return SimpleNamespace(all=lambda: ranked_rows)
 
     result = await generated._rank_artist_tracks(cast(Any, Session()), "Artist")
-    assert result == tracks[-generated.MAX_GENERATED_TRACKS:][::-1]
-    assert stream.closed
+    assert result == [track for track, _count in ranked_rows]
+    assert len(result) == generated.MAX_GENERATED_TRACKS
 
 
 @pytest.mark.asyncio
