@@ -302,3 +302,49 @@ async def test_profile_dashboard_populates_media_cache_metadata() -> None:
     assert recent.file_size == (5_000_000)
 
     assert recent.media_version is not None
+
+
+
+@pytest.mark.asyncio
+async def test_recently_played_endpoint_uses_one_focused_database_query() -> None:
+    track_id = uuid4()
+    now = datetime.now(UTC)
+    track = SimpleNamespace(
+        id=track_id,
+        title="Fast Song",
+        artist="HyperSync",
+        album="Direct B2",
+        genre="Electronic",
+        release_year=2026,
+        mime_type="audio/mpeg",
+        file_size=5_000_000,
+        b2_object_key="audio/demo.mp3",
+        artwork_object_key="artwork/demo.jpg",
+    )
+
+    class FakeResult:
+        def all(self):
+            return [(track, 3, now)]
+
+    class FakeSession:
+        def __init__(self):
+            self.statements = []
+
+        async def execute(self, statement):
+            self.statements.append(statement)
+            return FakeResult()
+
+    user = cast(User, SimpleNamespace(id=uuid4()))
+    fake_session = FakeSession()
+
+    result = await users_route.get_my_recently_played(
+        user,
+        cast(AsyncSession, fake_session),
+    )
+
+    assert len(fake_session.statements) == 1
+    assert len(result) == 1
+    assert result[0].id == track_id
+    assert result[0].play_count == 3
+    assert result[0].last_played_at == now
+    assert result[0].audio_url is not None
