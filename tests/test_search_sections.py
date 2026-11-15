@@ -691,11 +691,14 @@ async def test_recent_history_query_has_no_command_limit():
 
     statement = execute_mock.await_args.args[0]
 
-    assert getattr(
+    limit_clause = getattr(
         statement,
         "_limit_clause",
         None,
-    ) is None
+    )
+    assert limit_clause is not None
+    assert limit_clause.value == search_route.SMART_VIBE_CANDIDATE_LIMIT
+    assert search_route.SMART_VIBE_CANDIDATE_LIMIT == 500
 
     assert result == track_ids
 
@@ -908,7 +911,7 @@ async def test_direct_genre_rows_are_capped_at_500(
 
 
 @pytest.mark.asyncio
-async def test_direct_genre_candidate_query_has_no_limit():
+async def test_direct_genre_candidate_query_uses_bounded_limit():
     tracks = [
         SimpleNamespace(
             id=uuid4(),
