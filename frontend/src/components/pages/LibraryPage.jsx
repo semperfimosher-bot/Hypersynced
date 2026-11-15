@@ -1714,281 +1714,181 @@ useEffect(() => {
     return;
   }
 
-  // Mark the selected row immediately and start the server request before
-  // waiting on offline metadata/cache lookups.
   setOpeningPlaylistId(playlistId);
   setError("");
-  const onlinePlaylistPromise =
-    typeof navigator !== "undefined" && navigator.onLine !== false
-      ? getPlaylist(playlistId).then(
-          (playlist) => ({ playlist }),
-          (error) => ({ error }),
-        )
-      : Promise.resolve({ playlist: null });
-
-  let downloaded =
-    downloadedPlaylists.find(
-      (playlist) =>
-        String(
-          playlist.id,
-        ) ===
-        String(
-          playlistId,
-        ),
-    ) ??
-    null;
-
-  if (
-    !downloaded &&
-    offlineOwnerKey
-  ) {
-    const currentDownloads =
-      await getDownloadedPlaylists(
-        offlineOwnerKey,
-      ).catch(
-        () => [],
-      );
-
-    downloaded =
-      currentDownloads.find(
-        (playlist) =>
-          String(
-            playlist.id,
-          ) ===
-          String(
-            playlistId,
-          ),
-      ) ??
-      null;
-
-    if (downloaded) {
-      setDownloadedPlaylists(
-        currentDownloads,
-      );
-    }
-  }
-
-  const cached =
-    downloaded ??
-    await getCachedPlaylistAsync(
-      libraryCacheKey,
-      playlistId,
-    );
-
-  const downloadJob =
-    downloaded
-      ? null
-      : await getPlaylistDownloadJob(
-          offlineOwnerKey,
-          playlistId,
-        ).catch(
-          () => null,
-        );
-
-  const activeDownload =
-    activePlaylistDownloads.find(
-      (item) =>
-        String(
-          item.playlistId,
-        ) ===
-        String(
-          playlistId,
-        ),
-    ) ??
-    null;
-
-  if (activeDownload) {
-    setPlaylistDownload({
-      status:
-        "downloading",
-      progress:
-        activeDownload.progress,
-      trackProgress:
-        activeDownload.trackProgress ??
-        {},
-    });
-  } else if (downloaded) {
-    setPlaylistDownload({
-      status:
-        "downloaded",
-      progress:
-        1,
-      trackProgress:
-        Object.fromEntries(
-          downloaded.tracks.map(
-            (track) => [
-              String(
-                track.id,
-              ),
-              {
-                status:
-                  "downloaded",
-                progress:
-                  1,
-              },
-            ],
-          ),
-        ),
-    });
-  } else if (
-    downloadJob?.state ===
-      "paused" ||
-    downloadJob?.state ===
-      "downloading"
-  ) {
-    const totalBytes =
-      Number(
-        downloadJob.totalBytes ??
-        0,
-      );
-
-    const downloadedBytes =
-      Number(
-        downloadJob.downloadedBytes ??
-        0,
-      );
-
-    setPlaylistDownload({
-      status:
-        "paused",
-      progress:
-        totalBytes > 0
-          ? Math.max(
-              0,
-              Math.min(
-                1,
-                downloadedBytes /
-                  totalBytes,
-              ),
-            )
-          : 0,
-      trackProgress:
-        {},
-    });
-  } else {
-    setPlaylistDownload({
-      status:
-        "idle",
-      progress:
-        0,
-      trackProgress:
-        {},
-    });
-  }
-
-  /*
-   * If we've loaded this playlist before,
-   * show it immediately.
-   */
-  if (cached) {
-    setSelectedPlaylist(cached);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
 
   const offline =
     typeof navigator !== "undefined" &&
     navigator.onLine === false;
 
-if (offline) {
-  if (!cached) {
-    setError(
-      "This playlist is not available offline yet.",
-    );
+  const activeDownload =
+    activePlaylistDownloads.find(
+      (item) =>
+        String(item.playlistId) === String(playlistId),
+    ) ?? null;
+
+  const knownDownloaded =
+    downloadedPlaylists.find(
+      (item) => String(item.id) === String(playlistId),
+    ) ?? null;
+
+  if (activeDownload) {
+    setPlaylistDownload({
+      status: "downloading",
+      progress: activeDownload.progress,
+      trackProgress: activeDownload.trackProgress ?? {},
+    });
+  } else if (knownDownloaded) {
+    setPlaylistDownload({
+      status: "downloaded",
+      progress: 1,
+      trackProgress: Object.fromEntries(
+        knownDownloaded.tracks.map((track) => [
+          String(track.id),
+          { status: "downloaded", progress: 1 },
+        ]),
+      ),
+    });
+  } else {
+    setPlaylistDownload({
+      status: "idle",
+      progress: 0,
+      trackProgress: {},
+    });
   }
 
-  setOpeningPlaylistId(
-    null,
-  );
+  if (offline) {
+    try {
+      const currentDownloads =
+        knownDownloaded || !offlineOwnerKey
+          ? downloadedPlaylists
+          : await getDownloadedPlaylists(offlineOwnerKey).catch(() => []);
 
-  return;
-}
+      const downloaded =
+        currentDownloads.find(
+          (item) => String(item.id) === String(playlistId),
+        ) ?? null;
+
+      if (downloaded && currentDownloads !== downloadedPlaylists) {
+        setDownloadedPlaylists(currentDownloads);
+      }
+
+      const cached =
+        downloaded ??
+        await getCachedPlaylistAsync(libraryCacheKey, playlistId);
+
+      const downloadJob = downloaded
+        ? null
+        : await getPlaylistDownloadJob(offlineOwnerKey, playlistId).catch(() => null);
+
+      if (cached) {
+        setSelectedPlaylist(cached);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        setError("This playlist is not available offline yet.");
+      }
+
+      if (downloadJob?.state === "paused" || downloadJob?.state === "downloading") {
+        const totalBytes = Number(downloadJob.totalBytes ?? 0);
+        const downloadedBytes = Number(downloadJob.downloadedBytes ?? 0);
+        setPlaylistDownload({
+          status: "paused",
+          progress: totalBytes > 0
+            ? Math.max(0, Math.min(1, downloadedBytes / totalBytes))
+            : 0,
+          trackProgress: {},
+        });
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to open playlist.",
+      );
+    } finally {
+      setOpeningPlaylistId(null);
+    }
+    return;
+  }
 
   try {
-    /*
-     * Still refresh from the server so
-     * cached data never becomes permanently stale.
-     */
-    const playlistResult = await onlinePlaylistPromise;
-    if (playlistResult.error) throw playlistResult.error;
-    const playlist = playlistResult.playlist;
-
-    // Render the server response immediately. Offline membership reconciliation
-    // and the in-memory cache are secondary work and must not delay opening.
+    // The server playlist is the only opening prerequisite. Show it before
+    // looking up offline-download metadata or reconciling local membership.
+    const playlist = await getPlaylist(playlistId);
     setSelectedPlaylist(playlist);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    setOpeningPlaylistId(null);
 
+    // These tasks are deliberately detached from the opening path.
     void Promise.allSettled([
-      reconcileDownloadedPlaylistMembership(
-        playlist,
-        offlineOwnerKey,
-      ),
-      setCachedPlaylist(
-        libraryCacheKey,
-        playlist,
-      ),
+      reconcileDownloadedPlaylistMembership(playlist, offlineOwnerKey),
+      setCachedPlaylist(libraryCacheKey, playlist),
     ]);
 
-    if (downloaded) {
-      const downloadedIds =
-        new Set(
-          downloaded.tracks.map(
-            (track) =>
-              String(
-                track.id,
-              ),
-          ),
-        );
+    void (async () => {
+      const [currentDownloads, downloadJob] = await Promise.all([
+        getDownloadedPlaylists(offlineOwnerKey).catch(() => []),
+        getPlaylistDownloadJob(offlineOwnerKey, playlistId).catch(() => null),
+      ]);
 
-      const trackProgress =
-        Object.fromEntries(
-          downloaded.tracks.map(
-            (track) => [
-              String(
-                track.id,
-              ),
-              {
-                status:
-                  "downloaded",
-                progress:
-                  1,
-              },
-            ],
-          ),
-        );
+      const downloaded = currentDownloads.find(
+        (item) => String(item.id) === String(playlistId),
+      ) ?? null;
 
-      const allCurrentTracksDownloaded =
-        playlist.tracks.length > 0 &&
-        playlist.tracks.every(
-          (track) =>
-            downloadedIds.has(
-              String(
-                track.id,
-              ),
-            ),
-        );
+      setDownloadedPlaylists(currentDownloads);
 
-      setPlaylistDownload({
-        status:
-          allCurrentTracksDownloaded
-            ? "downloaded"
-            : "idle",
-        progress:
-          playlist.tracks.length > 0
-            ? Math.min(
-                1,
-                downloadedIds.size /
-                  playlist.tracks.length,
-              )
+      // Don't let a slower metadata lookup for an earlier playlist replace
+      // the download state after the user has opened a different playlist.
+      if (String(selectedPlaylist?.id ?? "") !== String(playlistId)) {
+        return;
+      }
+
+      if (activeDownload) {
+        setPlaylistDownload({
+          status: "downloading",
+          progress: activeDownload.progress,
+          trackProgress: activeDownload.trackProgress ?? {},
+        });
+      } else if (downloaded) {
+        const downloadedIds = new Set(
+          downloaded.tracks.map((track) => String(track.id)),
+        );
+        const trackProgress = Object.fromEntries(
+          downloaded.tracks.map((track) => [
+            String(track.id),
+            { status: "downloaded", progress: 1 },
+          ]),
+        );
+        const allCurrentTracksDownloaded =
+          playlist.tracks.length > 0 &&
+          playlist.tracks.every((track) => downloadedIds.has(String(track.id)));
+
+        setPlaylistDownload({
+          status: allCurrentTracksDownloaded ? "downloaded" : "idle",
+          progress: playlist.tracks.length > 0
+            ? Math.min(1, downloadedIds.size / playlist.tracks.length)
             : 0,
-        trackProgress,
-      });
-    }
+          trackProgress,
+        });
+      } else if (downloadJob?.state === "paused" || downloadJob?.state === "downloading") {
+        const totalBytes = Number(downloadJob.totalBytes ?? 0);
+        const downloadedBytes = Number(downloadJob.downloadedBytes ?? 0);
+        setPlaylistDownload({
+          status: "paused",
+          progress: totalBytes > 0
+            ? Math.max(0, Math.min(1, downloadedBytes / totalBytes))
+            : 0,
+          trackProgress: {},
+        });
+      }
+    })().catch(() => {});
   } catch (requestError) {
-    /*
-     * If cached data exists, don't destroy
-     * the working page because refresh failed.
-     */
-    if (!cached) {
+    // Preserve a cached copy as a fallback if the server is temporarily unavailable.
+    const cached = await getCachedPlaylistAsync(libraryCacheKey, playlistId).catch(() => null);
+    if (cached) {
+      setSelectedPlaylist(cached);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
       setError(
         requestError instanceof Error
           ? requestError.message
@@ -1996,9 +1896,7 @@ if (offline) {
       );
     }
   } finally {
-    setOpeningPlaylistId(
-      null,
-    );
+    setOpeningPlaylistId(null);
   }
 }
 
