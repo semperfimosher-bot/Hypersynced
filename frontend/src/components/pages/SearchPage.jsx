@@ -1251,37 +1251,23 @@ useEffect(() => {
   setPlaylistError("");
 
   try {
-        const [
-      playlist,
-      downloadedPlaylists,
-      downloadJob,
-    ] =
-      await Promise.all([
-        getPlaylist(
-          playlistId,
-        ),
-        getDownloadedPlaylists(
-              offlineOwnerKey,
-            )
-          .catch(
-            () => [],
-          ),
-        getPlaylistDownloadJob(
-          offlineOwnerKey,
-          playlistId,
-        ).catch(
-          () => null,
-        ),
-      ]);
-
-    // Show the playlist as soon as its API response arrives. Offline
-    // membership reconciliation is follow-up work, not an opening prerequisite.
+    // The playlist request is the critical path. Render it before waiting on
+    // offline-download metadata or membership reconciliation.
+    const playlist = await getPlaylist(playlistId);
     setOpenedPlaylist(playlist);
 
     void reconcileDownloadedPlaylistMembership(
       playlist,
       offlineOwnerKey,
     ).catch(() => {});
+
+    const [downloadedPlaylists, downloadJob] = await Promise.all([
+      getDownloadedPlaylists(offlineOwnerKey).catch(() => []),
+      getPlaylistDownloadJob(
+        offlineOwnerKey,
+        playlistId,
+      ).catch(() => null),
+    ]);
 
     const downloaded =
       downloadedPlaylists.find(
