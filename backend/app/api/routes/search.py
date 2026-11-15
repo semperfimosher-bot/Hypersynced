@@ -48,7 +48,7 @@ from ...services.audio_metadata import (
 )
 from ...services.generated_playlists import (
     MIN_GENERATED_TRACKS,
-    ensure_artist_playlist,
+    get_cached_artist_playlist,
     is_direct_genre_query,
     smart_query_has_semantic_signal,
     smart_track_score,
@@ -2727,11 +2727,12 @@ async def search_hypersync(
         )
 
         if generated_artist:
-            generated_playlist = (
-                await ensure_artist_playlist(
-                    session,
-                    generated_artist,
-                )
+            # Search is a latency-sensitive read path. Catalog maintenance
+            # creates and refreshes generated artist playlists after track
+            # ingestion, so never rank or write a playlist in this request.
+            generated_playlist = await get_cached_artist_playlist(
+                session,
+                generated_artist,
             )
 
             if (
