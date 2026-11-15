@@ -128,10 +128,16 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
           : null;
 
         if (saved?.track?.id) {
-          await player.restoreTrackPaused(
+          // Apply the database track metadata immediately, but do not make
+          // first paint wait for the audio URL/network request. The player
+          // restores the saved seek position as soon as media metadata loads.
+          // The UI can render the restored page and paused player meanwhile.
+          void player.restoreTrackPaused(
             saved.track,
             saved.position_seconds,
-          );
+          ).catch((error) => {
+            console.error("[HyperSynced] Unable to prepare restored audio in the background.", error);
+          });
           if (!active) return;
           if (localRevision !== revisionAtRequest) {
             lastServerUpdatedAtValue = saved?.updated_at ?? null;
