@@ -691,14 +691,11 @@ async def test_recent_history_query_has_no_command_limit():
 
     statement = execute_mock.await_args.args[0]
 
-    limit_clause = getattr(
+    assert getattr(
         statement,
         "_limit_clause",
         None,
-    )
-    assert limit_clause is not None
-    assert limit_clause.value == search_route.SMART_VIBE_CANDIDATE_LIMIT
-    assert search_route.SMART_VIBE_CANDIDATE_LIMIT == 500
+    ) is None
 
     assert result == track_ids
 
@@ -989,11 +986,14 @@ async def test_direct_genre_candidate_query_uses_bounded_limit():
     assert execute_mock.await_args is not None
     statement = execute_mock.await_args.args[0]
 
-    assert getattr(
+    limit_clause = getattr(
         statement,
         "_limit_clause",
         None,
-    ) is None
+    )
+    assert limit_clause is not None
+    assert limit_clause.value == search_route.SMART_VIBE_CANDIDATE_LIMIT
+    assert search_route.SMART_VIBE_CANDIDATE_LIMIT == 500
 
     assert [
         track.genre
