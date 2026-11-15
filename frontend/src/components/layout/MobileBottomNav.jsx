@@ -9,6 +9,7 @@ import Icon from
 export default function MobileBottomNav({
   activePage,
   onNavigate,
+  onPreloadPage,
   currentUser,
 }) {
   const mobileActivePage =
@@ -40,6 +41,8 @@ export default function MobileBottomNav({
           }
           type="button"
           key={item.id}
+          onPointerEnter={() => onPreloadPage?.(item.id)}
+          onFocus={() => onPreloadPage?.(item.id)}
           onClick={() => {
             onNavigate(item.id);
           }}
