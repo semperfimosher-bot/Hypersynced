@@ -1252,7 +1252,8 @@ async def refresh_smart_playlists_for_track(
 def _artist_catalog_conditions(artist_name: str):
     target = normalize_artist_name(artist_name)
     # EXISTS avoids duplicate tracks for multiple matching credits. Legacy rows
-    # without sidecars retain the original Python credit-matching semantics.
+    # without sidecars are narrowed to artist strings containing the requested
+    # credit, then checked with the canonical Python matcher below.
     has_credit = select(TrackArtistCredit.track_id).where(
         TrackArtistCredit.track_id == Track.id,
     ).exists()
@@ -1260,7 +1261,23 @@ def _artist_catalog_conditions(artist_name: str):
         TrackArtistCredit.track_id == Track.id,
         TrackArtistCredit.normalized_name == target,
     ).exists()
-    return Track.is_published.is_(True), or_(matching_credit, ~has_credit)
+    clean_artist = " ".join(str(artist_name or "").strip().split())
+    escaped_artist = (
+        clean_artist.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+    legacy_credit_match = Track.artist.ilike(
+        f"%{escaped_artist}%",
+        escape="\\",
+    )
+    return (
+        Track.is_published.is_(True),
+        or_(
+            matching_credit,
+            (~has_credit) & legacy_credit_match,
+        ),
+    )
 
 
 async def _rank_artist_tracks(
@@ -1269,44 +1286,39 @@ async def _rank_artist_tracks(
 ) -> list[Track]:
     if not normalize_artist_name(artist_name):
         return []
-    play_counts = select(
-        ListeningEvent.track_id.label("track_id"),
-        func.count(ListeningEvent.id).label("play_count"),
-    ).join(Track, Track.id == ListeningEvent.track_id).where(
-        *_artist_catalog_conditions(artist_name),
-    ).group_by(ListeningEvent.track_id).subquery()
-    result = await session.stream(
-        select(Track, func.coalesce(play_counts.c.play_count, 0))
-        .outerjoin(play_counts, play_counts.c.track_id == Track.id)
-        .where(*_artist_catalog_conditions(artist_name))
-        .execution_options(yield_per=256)
+
+    conditions = _artist_catalog_conditions(artist_name)
+    play_counts = (
+        select(
+            ListeningEvent.track_id.label("track_id"),
+            func.count(ListeningEvent.id).label("play_count"),
+        )
+        .join(Track, Track.id == ListeningEvent.track_id)
+        .where(*conditions)
+        .group_by(ListeningEvent.track_id)
+        .subquery()
     )
-    heap: list[_SmartCandidate] = []
-    try:
-        async for rows in result.partitions(256):
-            await asyncio.sleep(0)
-            for track, count in rows:
-                if not artist_credit_matches(track.artist, artist_name):
-                    continue
-                created = track.created_at.timestamp() if track.created_at is not None else 0.0
-                candidate = _SmartCandidate(
-                    (-int(count or 0), 0, -created, track.title.casefold(), str(track.id), 0),
-                    track.id,
-                )
-                if len(heap) < MAX_GENERATED_TRACKS:
-                    heapq.heappush(heap, candidate)
-                elif candidate.sort_key < heap[0].sort_key:
-                    heapq.heapreplace(heap, candidate)
-    finally:
-        await result.close()
-    track_ids = [candidate.track_id for candidate in sorted(heap, key=lambda item: item.sort_key)]
-    if not track_ids:
-        return []
-    result = await session.execute(select(Track).where(
-        Track.id.in_(track_ids), Track.is_published.is_(True),
-    ))
-    by_id = {track.id: track for track in result.scalars().all()}
-    return [by_id[track_id] for track_id in track_ids if track_id in by_id]
+    play_count = func.coalesce(play_counts.c.play_count, 0)
+    result = await session.execute(
+        select(Track, play_count)
+        .outerjoin(play_counts, play_counts.c.track_id == Track.id)
+        .where(*conditions)
+        .order_by(
+            play_count.desc(),
+            Track.created_at.desc().nullslast(),
+            func.lower(Track.title).asc(),
+            Track.id.asc(),
+        )
+        .limit(MAX_GENERATED_TRACKS)
+    )
+
+    # The database performs the expensive ranking and top-N selection. Keep
+    # the canonical matcher as a final guard for legacy combined artist fields.
+    return [
+        track
+        for track, _count in result.all()
+        if artist_credit_matches(track.artist, artist_name)
+    ]
 
 
 async def ensure_artist_playlist(
