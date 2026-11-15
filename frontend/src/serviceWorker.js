@@ -138,7 +138,7 @@ async function precacheAppShell(navigationResponse = null) {
         await readBoundedResponse(existingShell.clone(), 1024 * 1024),
       );
       if (
-        !BUILD_MANIFEST ||
+        BUILD_MANIFEST &&
         existingHtml.includes(`content="${BUILD_MANIFEST.revision}"`)
       ) {
         return;
