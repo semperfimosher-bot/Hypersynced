@@ -1079,35 +1079,50 @@ const [
 
       try {
         let changeToken = null;
-        try {
-          const changes = await getLibraryChanges();
+        let mine;
+        let saved;
+        let tracks;
+
+        if (!cached) {
+          // First visit has no snapshot to validate. Fetch the version and
+          // visible Library data together so startup pays only one network
+          // round trip instead of serializing the version check first.
+          const [changes, mineResult, savedResult, tracksResult] =
+            await Promise.all([
+              getLibraryChanges().catch(() => null),
+              getMyPlaylists(),
+              getSavedPlaylists(),
+              getLibraryTracks({
+                limit: LIBRARY_TRACKS_PAGE_SIZE,
+                offset: 0,
+              }),
+            ]);
           changeToken = changes?.version ?? null;
-        } catch {
-          // A failed background check must never blank or reload a usable cache.
-          if (quiet && cached) {
+          mine = mineResult;
+          saved = savedResult;
+          tracks = tracksResult;
+        } else {
+          try {
+            const changes = await getLibraryChanges();
+            changeToken = changes?.version ?? null;
+          } catch {
+            // A failed background check must never blank or reload a usable cache.
+            if (quiet) return;
+          }
+
+          if (
+            !force &&
+            changeToken &&
+            cached.changeToken === changeToken
+          ) {
             return;
           }
-        }
 
-        if (
-          cached &&
-          !force &&
-          changeToken &&
-          cached.changeToken === changeToken
-        ) {
-          return;
-        }
+          if (quiet && !changeToken) {
+            return;
+          }
 
-        if (quiet && cached && !changeToken) {
-          return;
-        }
-
-        const [
-          mine,
-          saved,
-          tracks,
-        ] =
-          await Promise.all([
+          [mine, saved, tracks] = await Promise.all([
             getMyPlaylists(),
             getSavedPlaylists(),
             getLibraryTracks({
@@ -1115,6 +1130,7 @@ const [
               offset: 0,
             }),
           ]);
+        }
 
         const nextOwned =
           Array.isArray(mine)
