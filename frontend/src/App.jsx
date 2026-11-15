@@ -145,6 +145,31 @@ const AppInstallModal = lazy(() => import("./components/ui/AppInstallModal.jsx")
 
 const loadHomePage = () => import("./components/pages/HomePage.jsx");
 const HomePage = lazy(loadHomePage);
+
+function preloadPage(page) {
+  switch (page) {
+    case "home":
+      return loadHomePage();
+    case "library":
+      return import("./components/pages/LibraryPage.jsx");
+    case "search":
+      return import("./components/pages/SearchPage.jsx");
+    case "messages":
+      return import("./components/pages/MessagesPage.jsx");
+    case "profile":
+      return import("./components/pages/ProfilePage.jsx");
+    case "public-profile":
+      return import("./components/pages/PublicProfilePage.jsx");
+    case "admin":
+      return import("./components/pages/AdminDashboardPage.jsx");
+    case "admin-uploads":
+      return import("./components/pages/AdminUploadsPage.jsx");
+    case "admin-catalog":
+      return import("./components/pages/AdminCatalogPage.jsx");
+    default:
+      return Promise.resolve();
+  }
+}
 // Start fetching the default page during app bootstrap while keeping its code
 // out of the main bundle's parse/evaluation path.
 void loadHomePage().catch(() => {});
@@ -2505,6 +2530,7 @@ const clearPlaylistToOpen =
 <DesktopSidebar
   activePage={activePage}
   currentUser={currentUser}
+  onPreloadPage={preloadPage}
   onNavigate={navigate}
   onOpenAuth={() => {
     openAuth("signin");
@@ -2727,6 +2753,7 @@ const clearPlaylistToOpen =
 
       <MobileBottomNav
         activePage={activePage}
+        onPreloadPage={preloadPage}
         onNavigate={navigate}
         currentUser={
           currentUser
