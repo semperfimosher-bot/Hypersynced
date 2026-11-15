@@ -1714,9 +1714,18 @@ useEffect(() => {
   async function openPlaylist(
   playlistId,
 ) {
-  if (openingPlaylistId) {
+  if (openingPlaylistId && String(openingPlaylistId) !== String(playlistId)) {
     return;
   }
+
+  // Mark the selected row immediately and start the server request before
+  // waiting on offline metadata/cache lookups.
+  setOpeningPlaylistId(playlistId);
+  setError("");
+  const onlinePlaylistPromise =
+    typeof navigator !== "undefined" && navigator.onLine !== false
+      ? getPlaylist(playlistId)
+      : Promise.resolve(null);
 
   let downloaded =
     downloadedPlaylists.find(
@@ -1873,27 +1882,13 @@ useEffect(() => {
    * show it immediately.
    */
   if (cached) {
-    setSelectedPlaylist(
-      cached,
-    );
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  } else {
-    setOpeningPlaylistId(
-      playlistId,
-    );
+    setSelectedPlaylist(cached);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  setError("");
-
   const offline =
-  typeof navigator !==
-    "undefined" &&
-  navigator.onLine ===
-    false;
+    typeof navigator !== "undefined" &&
+    navigator.onLine === false;
 
 if (offline) {
   if (!cached) {
@@ -1914,10 +1909,7 @@ if (offline) {
      * Still refresh from the server so
      * cached data never becomes permanently stale.
      */
-    const playlist =
-      await getPlaylist(
-        playlistId,
-      );
+    const playlist = await onlinePlaylistPromise;
 
     await reconcileDownloadedPlaylistMembership(
       playlist,
