@@ -644,6 +644,61 @@ async def get_me(
         user,
     )
 
+@router.get(
+    "/me/recently-played",
+    response_model=list[TrackSummary],
+)
+async def get_my_recently_played(
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> list[TrackSummary]:
+    """Return only recent listening history for the Home page."""
+    recent_summary = (
+        select(
+            ListeningEvent.track_id.label("track_id"),
+            func.count(ListeningEvent.id).label("play_count"),
+            func.max(ListeningEvent.listened_at).label("last_played_at"),
+        )
+        .join(Track, Track.id == ListeningEvent.track_id)
+        .where(ListeningEvent.user_id == user.id)
+        .group_by(ListeningEvent.track_id)
+        .subquery()
+    )
+
+    result = await session.execute(
+        select(
+            Track,
+            recent_summary.c.play_count,
+            recent_summary.c.last_played_at,
+        )
+        .join(
+            recent_summary,
+            recent_summary.c.track_id == Track.id,
+        )
+        .order_by(recent_summary.c.last_played_at.desc())
+        .limit(12)
+    )
+
+    return [
+        TrackSummary(
+            id=track.id,
+            title=track.title,
+            artist=track.artist,
+            album=track.album,
+            genre=getattr(track, "genre", None),
+            release_year=getattr(track, "release_year", None),
+            audio_url=audio_url(track),
+            artwork_url=artwork_url(track),
+            mime_type=track.mime_type,
+            file_size=track.file_size,
+            media_version=_track_media_version(track),
+            artwork_version=_track_artwork_version(track),
+            play_count=play_count,
+            last_played_at=last_played_at,
+        )
+        for track, play_count, last_played_at in result.all()
+    ]
+
 
 @router.patch(
     "/me/profile",
