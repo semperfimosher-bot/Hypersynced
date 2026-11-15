@@ -46,6 +46,7 @@ from ...services.audio_metadata import (
     primary_artist_credit,
     split_artist_credits,
 )
+from ...services.maintenance_jobs import enqueue_track_maintenance
 from ...services.generated_playlists import (
     MIN_GENERATED_TRACKS,
     get_cached_artist_playlist,
@@ -2734,6 +2735,28 @@ async def search_hypersync(
                 session,
                 generated_artist,
             )
+
+            if generated_playlist is None:
+                # Preserve lazy generation for older catalog entries, but hand
+                # it to the durable worker instead of ranking tracks in search.
+                artist_track = next(
+                    (
+                        row["track"]
+                        for row in track_rows
+                        if _track_credits_artist(
+                            row["track"],
+                            generated_artist,
+                        )
+                    ),
+                    None,
+                )
+                if artist_track is not None:
+                    await enqueue_track_maintenance(
+                        session,
+                        artist_track.id,
+                        kinds=("playlists",),
+                    )
+                    await session.commit()
 
             if (
                 generated_playlist
