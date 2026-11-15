@@ -217,3 +217,55 @@ async def test_music_specific_search_does_not_return_people() -> None:
     assert any(track["artist"] == artist_name for track in payload["tracks"])
 
     assert payload["people"] == []
+
+@pytest.mark.asyncio
+async def test_artist_search_uses_cached_generated_playlist_without_generating(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backend.app.api.routes import search as search_routes
+
+    run_id = uuid4().hex[:8]
+    artist_name = f"Cached Artist {run_id}"
+    session_factory = get_session_factory()
+    cache_lookups: list[str] = []
+
+    async def cached_playlist(session, requested_artist):
+        cache_lookups.append(requested_artist)
+        return None
+
+    monkeypatch.setattr(
+        search_routes,
+        "get_cached_artist_playlist",
+        cached_playlist,
+    )
+
+    async with session_factory() as session:
+        for index in range(2):
+            session.add(
+                Track(
+                    id=uuid4(),
+                    title=f"Cached Song {index} {run_id}",
+                    artist=artist_name,
+                    album="Cached Search Album",
+                    b2_object_key=f"audio/cached-search-{run_id}-{index}.mp3",
+                    mime_type="audio/mpeg",
+                    file_size=4096,
+                    duration_seconds=180,
+                    is_published=True,
+                )
+            )
+        await session.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/search",
+            params={"q": f"songs by {artist_name}", "sort": "smart"},
+        )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert len(payload["tracks"]) == 2
+    assert payload["playlists"] == []
+    assert cache_lookups == [artist_name]
+
