@@ -650,39 +650,67 @@ async def _load_track_candidates(
     if is_direct_genre_query(
         parsed.raw,
     ):
+        normalized_genre_query = normalize_text(
+            parsed.raw,
+        )
+        aliases = direct_genre_search_aliases(
+            parsed.raw,
+        )
+        if not aliases:
+            return []
+
+        genre_conditions = [
+            Track.genre.ilike(f"%{alias}%")
+            for alias in aliases
+            if alias
+        ]
+        if not genre_conditions:
+            return []
+
+        # Genre-family matching depends only on Track.genre. Filter and bound
+        # candidates in PostgreSQL instead of loading the entire published
+        # catalog into Python for every genre search.
+        genre_priority = case(
+            (
+                func.lower(func.trim(Track.genre))
+                == normalized_genre_query,
+                0,
+            ),
+            (
+                func.lower(Track.genre).contains(
+                    normalized_genre_query,
+                ),
+                1,
+            ),
+            else_=2,
+        )
         result = await session.execute(
-            select(
-                Track,
-            )
+            select(Track)
             .where(
-                Track.is_published.is_(
-                    True,
-                )
+                Track.is_published.is_(True),
+                Track.genre.is_not(None),
+                or_(*genre_conditions),
             )
+            .order_by(
+                genre_priority,
+                Track.artist.asc(),
+                Track.title.asc(),
+            )
+            .limit(SMART_VIBE_CANDIDATE_LIMIT)
         )
 
         genre_candidates = [
             track
-            for track
-            in result.scalars().all()
-            if smart_track_score(
-                track,
-                parsed.raw,
-            )
-            > 0
+            for track in result.scalars().all()
+            if smart_track_score(track, parsed.raw) > 0
         ]
-
         genre_candidates.sort(
             key=lambda track: (
-                -smart_track_score(
-                    track,
-                    parsed.raw,
-                ),
+                -smart_track_score(track, parsed.raw),
                 track.artist.casefold(),
                 track.title.casefold(),
             )
         )
-
         return genre_candidates
 
     prefix_pattern = f"{term}%"
