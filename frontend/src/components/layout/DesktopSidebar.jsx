@@ -12,6 +12,7 @@ function DesktopSidebar({
   activePage,
   currentUser,
   onNavigate,
+  onPreloadPage,
   onOpenAuth,
 }) {
   const isAdmin =
@@ -45,6 +46,8 @@ function DesktopSidebar({
             }
             type="button"
             key={item.id}
+            onPointerEnter={() => onPreloadPage?.(item.id)}
+            onFocus={() => onPreloadPage?.(item.id)}
             onClick={() => onNavigate(item.id)}
           >
             <Icon
@@ -75,6 +78,8 @@ function DesktopSidebar({
         }
         type="button"
         key={item.id}
+        onPointerEnter={() => onPreloadPage?.(item.id)}
+        onFocus={() => onPreloadPage?.(item.id)}
         onClick={() => {
           onNavigate(item.id);
         }}
