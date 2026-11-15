@@ -35,6 +35,14 @@ test(
   },
 );
 
+test("accepts the focused recently played endpoint array directly", () => {
+  const tracks = [
+    { id: "newest", title: "Newest", play_count: 3 },
+    { id: "older", title: "Older", play_count: 1 },
+  ];
+  assert.deepEqual(getHomeRecentlyPlayed(tracks), tracks);
+});
+
 
 test(
   "limits home recently played to twelve tracks",
