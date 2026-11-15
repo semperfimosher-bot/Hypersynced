@@ -446,6 +446,8 @@ const [
     null,
   );
 
+  const selectedPlaylistIdRef = useRef(null);
+
   const [
     playlistSearchQuery,
     setPlaylistSearchQuery,
@@ -1714,6 +1716,7 @@ useEffect(() => {
     return;
   }
 
+  selectedPlaylistIdRef.current = String(playlistId);
   setOpeningPlaylistId(playlistId);
   setError("");
 
@@ -1839,7 +1842,7 @@ useEffect(() => {
 
       // Don't let a slower metadata lookup for an earlier playlist replace
       // the download state after the user has opened a different playlist.
-      if (String(selectedPlaylist?.id ?? "") !== String(playlistId)) {
+      if (selectedPlaylistIdRef.current !== String(playlistId)) {
         return;
       }
 
