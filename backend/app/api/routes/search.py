@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import (
-    selectinload,
+    contains_eager,
 )
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -1517,15 +1517,14 @@ async def _search_people(
             ),
         )
         .outerjoin(
-            UserProfile,
-            UserProfile.user_id == User.id,
+            User.profile,
         )
         .outerjoin(
             follower_counts,
             follower_counts.c.user_id == User.id,
         )
         .options(
-            selectinload(
+            contains_eager(
                 User.profile,
             )
         )
