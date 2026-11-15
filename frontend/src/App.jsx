@@ -147,28 +147,43 @@ const loadHomePage = () => import("./components/pages/HomePage.jsx");
 const HomePage = lazy(loadHomePage);
 
 function preloadPage(page) {
+  let request;
+
   switch (page) {
     case "home":
-      return loadHomePage();
+      request = loadHomePage();
+      break;
     case "library":
-      return import("./components/pages/LibraryPage.jsx");
+      request = import("./components/pages/LibraryPage.jsx");
+      break;
     case "search":
-      return import("./components/pages/SearchPage.jsx");
+      request = import("./components/pages/SearchPage.jsx");
+      break;
     case "messages":
-      return import("./components/pages/MessagesPage.jsx");
+      request = import("./components/pages/MessagesPage.jsx");
+      break;
     case "profile":
-      return import("./components/pages/ProfilePage.jsx");
+      request = import("./components/pages/ProfilePage.jsx");
+      break;
     case "public-profile":
-      return import("./components/pages/PublicProfilePage.jsx");
+      request = import("./components/pages/PublicProfilePage.jsx");
+      break;
     case "admin":
-      return import("./components/pages/AdminDashboardPage.jsx");
+      request = import("./components/pages/AdminDashboardPage.jsx");
+      break;
     case "admin-uploads":
-      return import("./components/pages/AdminUploadsPage.jsx");
+      request = import("./components/pages/AdminUploadsPage.jsx");
+      break;
     case "admin-catalog":
-      return import("./components/pages/AdminCatalogPage.jsx");
+      request = import("./components/pages/AdminCatalogPage.jsx");
+      break;
     default:
       return Promise.resolve();
   }
+
+  // Hover/focus preloading is opportunistic. A failed speculative import
+  // must not create an unhandled rejection or interfere with real navigation.
+  return request.catch(() => undefined);
 }
 // Start fetching the default page during app bootstrap while keeping its code
 // out of the main bundle's parse/evaluation path.
@@ -1825,7 +1840,12 @@ const persistAppView =
     let refreshing = false;
 
     const refreshSavedView = async () => {
-      if (refreshing || searchStateTimerRef.current) return;
+      if (
+        refreshing ||
+        searchStateTimerRef.current ||
+        document.visibilityState === "hidden" ||
+        navigator.onLine === false
+      ) return;
       refreshing = true;
       const ownerId = currentUser.id;
       const navigationGeneration = navigationGenerationRef.current;
@@ -1866,13 +1886,26 @@ const persistAppView =
       }
     };
 
-    const initialSync = window.setTimeout(refreshSavedView, 1_500);
-    const interval = window.setInterval(refreshSavedView, 2_000);
+    // The initial Neon read is already performed by restoreSavedAppView.
+    // Poll less aggressively for cross-device changes, and only while this
+    // tab is visible. Returning to the tab still triggers an immediate sync.
+    const refreshWhenVisible = () => {
+      if (document.visibilityState !== "hidden" && navigator.onLine !== false) {
+        void refreshSavedView();
+      }
+    };
+    const interval = window.setInterval(refreshSavedView, 10_000);
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener("online", refreshWhenVisible);
 
     return () => {
       active = false;
-      window.clearTimeout(initialSync);
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener("online", refreshWhenVisible);
     };
   }, [currentUser?.id, currentUser?.offline_only, currentUser?.role]);
 

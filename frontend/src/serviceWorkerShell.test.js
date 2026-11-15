@@ -343,6 +343,45 @@ for (const failure of ["fetch", "storage"]) {
   });
 }
 
+test("navigation reuses a complete build shell without rescanning deferred page bundles", async (t) => {
+  const revision = "complete-shell-build";
+  let deferredAssetRequests = 0;
+  const dispatch = await worker(t, {
+    manifest: {
+      revision,
+      assets: ["/assets/library-page-a1b2.js", "/assets/profile-page-c3d4.js"],
+    },
+    cacheStorage: {
+      keys: async () => ["hypersync-app-shell-complete-shell-build"],
+      open: async () => ({
+        match: async (request) => {
+          const path = typeof request === "string"
+            ? request
+            : new URL(request.url).pathname;
+          return path === "/"
+            ? new Response(`<meta name="hypersync-build" content="${revision}">`)
+            : undefined;
+        },
+        put: async () => {},
+      }),
+    },
+    network: async (request) => {
+      if (requestPath(request) === "/library") {
+        return new Response(`<meta name="hypersync-build" content="${revision}">`);
+      }
+      if (requestPath(request).startsWith("/assets/")) {
+        deferredAssetRequests += 1;
+        return new Response("deferred module");
+      }
+      return new Response("live response");
+    },
+  });
+
+  const response = await dispatch(navigation());
+  assert.equal(response.status, 200);
+  assert.equal(deferredAssetRequests, 0);
+});
+
 test("navigation keeps the last complete shell when a new build has a missing required bundle", async (t) => {
   const writes = [];
   const html = '<script src="/assets/new.js"></script>';

@@ -126,6 +126,26 @@ async function matchRetainedShellAsset(cache, request) {
 
 async function precacheAppShell(navigationResponse = null) {
   const cache = await caches.open(APP_SHELL_CACHE);
+
+  // A build-scoped cache only receives its root document after every required
+  // script/style has been stored. Rechecking every lazy chunk on every SPA
+  // navigation adds work without improving the active shell. Keep the full
+  // inventory pass for install/offline preparation and incomplete new shells.
+  if (navigationResponse) {
+    const existingShell = await cache.match("/");
+    if (existingShell) {
+      const existingHtml = new TextDecoder().decode(
+        await readBoundedResponse(existingShell.clone(), 1024 * 1024),
+      );
+      if (
+        !BUILD_MANIFEST ||
+        existingHtml.includes(`content="${BUILD_MANIFEST.revision}"`)
+      ) {
+        return;
+      }
+    }
+  }
+
   const readDocument = async (response, signal) => {
     if (!response.ok) throw new Error("App shell is unavailable.");
     return { response, html: new TextDecoder().decode(await readBoundedResponse(response.clone(), 1024 * 1024, { signal })) };
