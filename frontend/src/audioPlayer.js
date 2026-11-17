@@ -2815,6 +2815,9 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
 
     if (currentTrackId === restoringTrackId) {
       setPlaybackPhase("paused");
+      // The restored position is known now. Warm only its nearby resume window
+      // in the background so the first Play action can reuse available chunks.
+      void Promise.resolve(warmCurrentTrackForResume()).catch(() => {});
     }
   } catch (error) {
     if (currentTrackId === restoringTrackId) {
