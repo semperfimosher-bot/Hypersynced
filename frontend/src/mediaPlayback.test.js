@@ -476,7 +476,7 @@ test(
         ),
     );
 
-    const expectedCenterChunk =
+    const expectedRefetchCenterChunk =
       Math.floor(
         (
           fileSize *
@@ -489,7 +489,7 @@ test(
       Math.max(
         0,
         (
-          expectedCenterChunk -
+          expectedRefetchCenterChunk -
           1
         ) *
         mediaStore.MEDIA_CHUNK_SIZE,
