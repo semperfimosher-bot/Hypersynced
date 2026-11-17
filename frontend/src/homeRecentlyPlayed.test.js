@@ -252,3 +252,25 @@ test("listening history notifications carry optimistic playback details", () => 
     track: { id: "song" },
   });
 });
+
+test("recently played snapshot survives a page-module reload and omits playable URLs", async () => {
+  const values = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+  try {
+    writeCachedHomeRecentlyPlayed("reload-user", [
+      { id: "track-1", title: "Saved", audio_url: "https://private.example/audio", src: "blob:temporary" },
+    ]);
+    const reloaded = await import("./homeRecentlyPlayed.js?reload=recent-cache");
+    const tracks = reloaded.readCachedHomeRecentlyPlayed("reload-user");
+    assert.equal(tracks[0].id, "track-1");
+    assert.equal("audio_url" in tracks[0], false);
+    assert.equal("src" in tracks[0], false);
+  } finally {
+    if (original === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = original;
+  }
+});
