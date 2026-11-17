@@ -64,13 +64,41 @@ export function isCurrentHistoryResponse(request, latestRequest, owner, currentO
   return request === latestRequest && owner === currentOwner;
 }
 
-// Recently played is fetched from Neon. This bounded Map only combines updates
-// during the current page runtime; it is not a persistent browser cache.
+// Recently played remains Neon-authoritative. A small owner-scoped snapshot
+// makes the last known list available on the next visit while the API refreshes.
+const RECENT_CACHE_PREFIX = "hypersynced.recently-played.v1:";
 const recentByOwner = new Map();
 
 function normalizeOwner(owner) {
   const value = String(owner ?? "").trim();
   return value || null;
+}
+
+function storageForRecentHistory() {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeRecentTracks(tracks, limit) {
+  const seen = new Set();
+  const normalized = [];
+  for (const track of tracks) {
+    if (!track || track.id === null || track.id === undefined) continue;
+    const id = String(track.id);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const cachedTrack = { ...track };
+    // Never persist playable URLs or transient object URLs in the history cache.
+    delete cachedTrack.audio_url;
+    delete cachedTrack.src;
+    delete cachedTrack.media_url;
+    normalized.push(cachedTrack);
+    if (normalized.length >= Math.max(0, limit)) break;
+  }
+  return normalized;
 }
 
 export function getHomeRecentlyPlayedForOwner(owner, stateOwner, tracks) {
@@ -83,25 +111,34 @@ export function getHomeRecentlyPlayedForOwner(owner, stateOwner, tracks) {
 export function readCachedHomeRecentlyPlayed(owner, limit = 12) {
   const key = normalizeOwner(owner);
   if (!key) return [];
-  return [...(recentByOwner.get(key) ?? [])].slice(0, Math.max(0, limit));
+  let tracks = recentByOwner.get(key);
+  if (!tracks) {
+    try {
+      const raw = storageForRecentHistory()?.getItem(RECENT_CACHE_PREFIX + encodeURIComponent(key));
+      const parsed = raw ? JSON.parse(raw) : null;
+      tracks = Array.isArray(parsed?.tracks)
+        ? normalizeRecentTracks(parsed.tracks, limit)
+        : [];
+      recentByOwner.set(key, tracks);
+    } catch {
+      tracks = [];
+    }
+  }
+  return tracks.slice(0, Math.max(0, limit));
 }
 
 export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12) {
   const key = normalizeOwner(owner);
   if (!key || !Array.isArray(tracks)) return false;
-  const seen = new Set();
-  const normalized = [];
-  for (const track of tracks) {
-    if (!track || track.id === null || track.id === undefined) continue;
-    const id = String(track.id);
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const cachedTrack = { ...track };
-    delete cachedTrack.audio_url;
-    delete cachedTrack.src;
-    normalized.push(cachedTrack);
-    if (normalized.length >= Math.max(0, limit)) break;
-  }
+  const normalized = normalizeRecentTracks(tracks, limit);
   recentByOwner.set(key, normalized);
+  try {
+    storageForRecentHistory()?.setItem(
+      RECENT_CACHE_PREFIX + encodeURIComponent(key),
+      JSON.stringify({ savedAt: Date.now(), tracks: normalized }),
+    );
+  } catch {
+    // Storage can be disabled or full; the in-memory snapshot still works.
+  }
   return true;
 }
