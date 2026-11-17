@@ -14,7 +14,6 @@ This README describes the **current deployment and code paths on `Semifinals`**.
 | Backend hosting | Contabo Ubuntu VPS, repository at `/opt/hypersynced` |
 | Backend process | Docker container `hypersynced-backend`, listening on port 8000 and bound locally to `127.0.0.1:8000` |
 | Database | Neon PostgreSQL |
-| Media and artwork storage | Backblaze B2 |
 | Lyrics lookup | LRCLIB integration |
 | DNS / edge | Cloudflare |
 
@@ -123,11 +122,10 @@ For a backend deployment, confirm the GitHub Actions workflow completed successf
 
 ## Security and media authorization
 
-- Keep database, JWT, and B2 credentials on the server.
+- Keep database, authentication, and storage credentials on the server.
 - Never commit `.env` files or expose private credentials through `VITE_*` variables.
 - Enforce playlist ownership, account permissions, and administrative access in the backend.
 - Keep request-size limits, admission controls, rate limits, and CORS restrictions enabled.
-- Media ingestion, storage, and streaming must be limited to content the project owner owns, licenses, or has explicit permission to use. Public metadata discovery does not grant permission to ingest media.
 
 ## Change-management rules
 
