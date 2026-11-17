@@ -296,6 +296,31 @@ test(
     const now =
       1_900_000_000_000;
 
+    // Simulate stale warm metadata left behind after the browser evicted
+    // the actual chunks. The warmup must verify and refill the bytes.
+    const expectedCenterChunk = Math.floor(
+      (fileSize * 0.5) / mediaStore.MEDIA_CHUNK_SIZE,
+    );
+    const expectedWarmStart = Math.max(
+      0,
+      (expectedCenterChunk - 1) * mediaStore.MEDIA_CHUNK_SIZE,
+    );
+    const expectedWarmEnd = Math.min(
+      fileSize - 1,
+      expectedWarmStart + mediaPlayback.PLAYBACK_WARM_BYTES - 1,
+    );
+    await mediaStore.ensureMediaRecord({
+      trackId,
+      mediaVersion,
+      mimeType: "audio/mpeg",
+      fileSize,
+    });
+    await mediaStore.markMediaWarm(trackId, mediaVersion, {
+      warmUntil: now + mediaPlayback.PLAYBACK_WARM_MS,
+      byteStart: expectedWarmStart,
+      byteEnd: expectedWarmEnd,
+    });
+
     let requestedUrl =
       null;
 
