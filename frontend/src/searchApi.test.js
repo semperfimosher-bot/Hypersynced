@@ -412,3 +412,21 @@ test(
     assert.equal(fetchCount, 2);
   },
 );
+
+test("search cache survives a module reload and returns the saved result immediately", async (t) => {
+  globalThis.localStorage.clear?.();
+  setCachedProfile("search-persistent-user");
+  const api = await loadSearchApi();
+  let fetchCount = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    fetchCount += 1;
+    return responseFor({ query: "persist me", tracks: [{ id: "cached-track" }] });
+  });
+
+  const first = await api.searchHypersync("persist me", "smart");
+  const reloadedApi = await loadSearchApi();
+  const second = await reloadedApi.searchHypersync("persist me", "smart");
+
+  assert.deepEqual(second, first);
+  assert.equal(fetchCount, 1, "a fresh persistent snapshot should not trigger another request");
+});
