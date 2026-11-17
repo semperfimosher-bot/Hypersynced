@@ -11,6 +11,9 @@ import {
 const SEARCH_CACHE_TTL_MS =
   6 * 60 * 60 * 1000;
 
+const SEARCH_REVALIDATE_AFTER_MS =
+  15 * 1000;
+
 const SEARCH_CACHE_MAX_ENTRIES =
   100;
 
@@ -94,13 +97,7 @@ function getCachedSearch(
   cacheKey,
   now = Date.now(),
 ) {
-  let cached = searchCache.get(cacheKey);
-
-  if (!cached) {
-    cached = null;
-    if (cached) searchCache.set(cacheKey, cached);
-  }
-
+  const cached = searchCache.get(cacheKey);
   if (!cached) return null;
 
   if (now - cached.savedAt > SEARCH_CACHE_TTL_MS) {
@@ -345,14 +342,17 @@ export function searchHypersync(
     }
 
     if (cached) {
-      // Return the snapshot immediately, then reconcile it with the API.
-      void apiRequest(url, { signal: options.signal })
-        .then((fresh) => {
-          if (options.signal?.aborted) return;
-          cacheSearchResult(cacheKey, fresh, Date.now(), persistentKey);
-          options.onRefresh?.(fresh);
-        })
-        .catch(() => {});
+      // Recent results are already accurate enough to reuse. Older snapshots
+      // render immediately and refresh in the background without blocking UI.
+      if (Date.now() - cached.savedAt >= SEARCH_REVALIDATE_AFTER_MS) {
+        void apiRequest(url, { signal: options.signal })
+          .then((fresh) => {
+            if (options.signal?.aborted) return;
+            cacheSearchResult(cacheKey, fresh, Date.now(), persistentKey);
+            options.onRefresh?.(fresh);
+          })
+          .catch(() => {});
+      }
       return Promise.resolve(cached.value);
     }
   }
