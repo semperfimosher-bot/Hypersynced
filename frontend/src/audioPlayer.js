@@ -1599,7 +1599,7 @@ if (
 }
 
 
-function warmCurrentTrackForResume() {
+function warmCurrentTrackForResume(positionOverride = null) {
   if (
     !currentTrackId ||
     !currentTrackMeta
@@ -1619,7 +1619,9 @@ function warmCurrentTrackForResume() {
   }
 
   const position =
-    getSafeCurrentTime();
+    positionOverride === null || positionOverride === undefined
+      ? getSafeCurrentTime()
+      : Math.max(0, Number(positionOverride) || 0);
 
   const duration =
     Number.isFinite(
@@ -2806,6 +2808,12 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
 
+  // Start fetching the saved-position audio window immediately, in parallel
+  // with source setup. This gives the cache a head start before the user taps Play.
+  void Promise.resolve(
+    warmCurrentTrackForResume(positionSeconds),
+  ).catch(() => {});
+
   try {
     await ensureCurrentTrackSource();
     await applyRestoredPlaybackPosition(
@@ -2815,9 +2823,9 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
 
     if (currentTrackId === restoringTrackId) {
       setPlaybackPhase("paused");
-      // The restored position is known now. Warm only its nearby resume window
-      // in the background so the first Play action can reuse available chunks.
-      void Promise.resolve(warmCurrentTrackForResume()).catch(() => {});
+      // Recheck after source setup; this is cheap when the requested chunks
+      // were already persisted by the parallel warmup.
+      void Promise.resolve(warmCurrentTrackForResume(positionSeconds)).catch(() => {});
     }
   } catch (error) {
     if (currentTrackId === restoringTrackId) {
