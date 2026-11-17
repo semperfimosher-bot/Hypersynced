@@ -775,6 +775,24 @@ useEffect(() => {
                     controller.signal,
                   bypassCache:
                     quietRefresh,
+                  onRefresh: (freshData) => {
+                    if (controller.signal.aborted) return;
+                    setResults({
+                      ...EMPTY_RESULTS,
+                      ...(freshData || {}),
+                      counts: {
+                        ...EMPTY_RESULTS.counts,
+                        ...(freshData?.counts || {}),
+                      },
+                      tracks: freshData?.tracks || [],
+                      artists: freshData?.artists || [],
+                      collaborations: freshData?.collaborations || [],
+                      albums: freshData?.albums || [],
+                      people: freshData?.people || [],
+                      playlists: freshData?.playlists || [],
+                    });
+                    setSearchError("");
+                  },
                 },
               );
 
