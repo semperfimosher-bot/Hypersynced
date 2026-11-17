@@ -306,44 +306,31 @@ export async function warmTrackPlayback(
     PLAYBACK_WARM_MS;
 
   const existingWarmCoversRange =
-    Number.isSafeInteger(
-      record?.warmUntil,
-    ) &&
-    record.warmUntil >
-      now &&
-    Number.isSafeInteger(
-      record?.warmByteStart,
-    ) &&
-    Number.isSafeInteger(
-      record?.warmByteEnd,
-    ) &&
-    record.warmByteStart <=
-      byteStart &&
-    record.warmByteEnd >=
-      byteEnd;
+    Number.isSafeInteger(record?.warmUntil) &&
+    record.warmUntil > now &&
+    Number.isSafeInteger(record?.warmByteStart) &&
+    Number.isSafeInteger(record?.warmByteEnd) &&
+    record.warmByteStart <= byteStart &&
+    record.warmByteEnd >= byteEnd;
 
-  if (existingWarmCoversRange) {
+  // Warm metadata can outlive individual chunks after browser storage
+  // eviction. Verify the actual bytes before treating a range as ready.
+  let cached = await isMediaRangeCached(
+    trackId,
+    mediaVersion,
+    byteStart,
+    byteEnd,
+  );
+
+  if (cached && existingWarmCoversRange) {
     return {
-      warmed:
-        true,
-
-      cached:
-        true,
-
+      warmed: true,
+      cached: true,
       byteStart,
       byteEnd,
-      warmUntil:
-        record.warmUntil,
+      warmUntil: record.warmUntil,
     };
   }
-
-  let cached =
-    await isMediaRangeCached(
-      trackId,
-      mediaVersion,
-      byteStart,
-      byteEnd,
-    );
 
   if (
     !cached &&
