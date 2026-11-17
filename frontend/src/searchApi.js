@@ -20,8 +20,14 @@ const SEARCH_CACHE_MAX_ENTRIES =
 const SEARCH_STORAGE_PREFIX =
   "hypersynced.search-cache.v1:";
 
+const SEARCH_STORAGE_INDEX_KEY =
+  SEARCH_STORAGE_PREFIX + "index";
+
+const SEARCH_STORAGE_MAX_ENTRIES =
+  30;
+
 const SEARCH_CACHE_MAX_BYTES =
-  180_000;
+  100_000;
 
 const searchCache =
   new Map();
@@ -83,10 +89,26 @@ function readPersistentSearch(cacheKey, now = Date.now()) {
 function writePersistentSearch(cacheKey, cached) {
   if (!cacheKey) return;
   try {
+    const storage = globalThis.localStorage;
     const serialized = JSON.stringify(cached);
-    if (serialized.length <= SEARCH_CACHE_MAX_BYTES) {
-      globalThis.localStorage?.setItem(cacheKey, serialized);
+    if (!storage || serialized.length > SEARCH_CACHE_MAX_BYTES) return;
+
+    storage.setItem(cacheKey, serialized);
+    let keys = [];
+    try {
+      const parsed = JSON.parse(storage.getItem(SEARCH_STORAGE_INDEX_KEY) || "[]");
+      if (Array.isArray(parsed)) keys = parsed.filter((key) => typeof key === "string");
+    } catch {
+      keys = [];
     }
+
+    keys = keys.filter((key) => key !== cacheKey);
+    keys.push(cacheKey);
+    while (keys.length > SEARCH_STORAGE_MAX_ENTRIES) {
+      const expiredKey = keys.shift();
+      if (expiredKey) storage.removeItem(expiredKey);
+    }
+    storage.setItem(SEARCH_STORAGE_INDEX_KEY, JSON.stringify(keys));
   } catch {
     // Storage is an optimization only; network search must remain unaffected.
   }
