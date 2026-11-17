@@ -1,90 +1,108 @@
 # HyperSynced
 
-HyperSynced is a mobile-first music streaming application with a React/Vite frontend, a FastAPI backend, Neon PostgreSQL persistence, and object storage.
+HyperSynced is a mobile-first music streaming application. Its codebase is organized as a web frontend, an API backend, persistent data storage, and supporting background and offline features.
 
-This README describes the **current deployment and code paths on `Semifinals`**. It is not a list of every planned feature. The implementation in the repository is authoritative; where a feature is still being developed, it is identified as such.
+This README explains how the application is structured and how its main parts work. It focuses on the codebase rather than hosting vendors, infrastructure providers, or server addresses.
 
-## Current deployment
+## Technology stack
 
-| Layer | Current location / responsibility |
-|---|---|
-| Production web app | `https://hypersynced.app/` |
-| Frontend hosting | Northflank frontend service |
-| API | `https://api.hypersynced.app/` |
-| Backend hosting | Contabo Ubuntu VPS, repository at `/opt/hypersynced` |
-| Backend process | Docker container `hypersynced-backend`, listening on port 8000 and bound locally to `127.0.0.1:8000` |
-| Database | Neon PostgreSQL |
-| Lyrics lookup | LRCLIB integration |
-| DNS / edge | Cloudflare |
+- **Frontend:** React and Vite
+- **Backend:** Python and FastAPI
+- **Database access:** SQLAlchemy and database migrations
+- **Frontend testing:** Node-based tests and build checks
+- **Backend testing:** pytest and Ruff
+- **Application delivery:** Progressive Web App (PWA) support
 
-The frontend and backend deploy independently. The GitHub Actions workflow `.github/workflows/deploy-contabo-vps.yml` runs on pushes to `Semifinals`: it builds the backend image, connects to the VPS using pinned SSH host verification, deploys the triggering commit, checks database readiness and a playlist API route, and attempts to restore the previous backend container if deployment fails.
+## Application architecture
 
-The frontend is built by the Northflank frontend service. A successful GitHub status/build check is not, by itself, proof that the live site has completed a release or that every browser path works.
+The application is divided into two main code areas:
 
-## Source of truth and client-side storage
+- `frontend/` contains the user interface, page components, API clients, player modules, and browser-side utilities.
+- `backend/` contains API routes, database models, and shared application services.
 
-- Neon PostgreSQL is the persistent source of truth for accounts, catalog records, playlists, library records, listening history, and account app state.
-- The browser may keep short-lived, same-runtime in-memory data to avoid repeating work during the current page session. This is an optimization, not persistent account storage.
-- IndexedDB is reserved for explicit offline media/download data and related offline job records. It is not the authoritative store for account navigation, playback state, or playlist ownership.
-- The service worker manages the versioned PWA application shell and static assets. It must not turn account state or playback state into a stale browser-persisted source of truth.
-- The player is a browser audio experience. Account playback state is synchronized through the backend and database; do not describe the current system as a shared local-only player or assume a persistent cross-device WebSocket player unless the implementation is changed and verified.
+The frontend communicates with the backend through API requests. The backend validates requests, applies application rules, reads or updates persistent records, and returns structured responses for the frontend.
 
-When changing state ownership, preserve the existing database models, API contracts, and migration history. Do not add a second persistent state system or new tables to solve a frontend cache problem.
+## Frontend
 
-## Main application areas
+The main frontend application is under `frontend/src/`.
 
-The current frontend is organized under `frontend/src`, with the main application shell in `App.jsx` and page components under `components/pages/`. Major user-facing areas include:
+- `App.jsx` provides the main application shell.
+- `components/pages/` contains the main application pages.
+- `api/` contains frontend API clients.
+- `player/` contains player-related modules.
+- Shared JavaScript modules support application state, caching, and common utilities.
+
+Major application areas include:
 
 - Home and recently played
-- Search across tracks, artists, albums, playlists, and people
+- Search for tracks, artists, albums, playlists, and people
 - Library, liked tracks, owned playlists, and saved playlists
-- Playlist detail, editing, ordering, and offline-download actions
-- Artist, album, and profile views
+- Playlist details, editing, ordering, and offline-download actions
+- Artist, album, and profile pages
 - Player controls and synchronized lyrics
 - Administrative catalog and upload tools
 
-The backend is under `backend/app/`, with FastAPI routes in `backend/app/api/routes/`, SQLAlchemy models in `backend/app/models/`, and shared services in `backend/app/services/`.
+## Backend
 
-## Search behavior and performance
+The backend application is under `backend/app/`.
 
-Search is served by the backend search route and its search service. It supports normalized query interpretation, intent-aware results, PostgreSQL-assisted candidate selection and similarity matching where available, bounded candidate/result sets, and separate result construction for tracks, artists, albums, and people.
+- `api/routes/` contains FastAPI route handlers.
+- `models/` contains SQLAlchemy database models.
+- `services/` contains shared business logic used by API routes and background tasks.
 
-Artist playlist generation is not supposed to rank and build a playlist inside the latency-sensitive search request. Search returns an existing generated artist playlist when available; missing playlist maintenance is queued through the existing maintenance-job path.
+The backend is responsible for authentication and authorization, validating input, enforcing ownership rules, coordinating database operations, and returning API responses.
 
-Performance changes should preserve:
-- Existing query meaning, ranking tiers, and stable ordering
-- Published-track visibility and account authorization
-- Existing result response schemas and frontend API contracts
-- Bounded database work and predictable memory use
-- The existing background maintenance mechanism
+## Database and application state
 
-Do not optimize search by silently removing fuzzy matching, changing result visibility, or returning stale account-specific data.
+Persistent account and application records are stored in the database. This includes catalog records, playlists, library information, listening history, and account application state.
 
-## Playlist behavior
+The browser may use short-lived in-memory data to avoid repeating work during the current page session. This is a performance optimization, not a replacement for persistent storage.
 
-Playlist records and membership are stored in PostgreSQL. The backend exposes playlist summary/detail and mutation routes through `backend/app/api/routes/playlists.py`. Playlist detail supports `limit` and `offset` pagination; the frontend API helper preserves the legacy full-playlist behavior when a caller requests the complete collection.
+IndexedDB is used for explicit offline media/download data and related offline job records. It is not the authoritative store for account navigation, playback state, or playlist ownership.
 
-The frontend uses a bounded, same-runtime in-memory cache for recently visited library and playlist data. It is not a durable database substitute. Offline playlist downloads are a separate explicit feature and use the offline storage/job system.
+The service worker manages the versioned PWA application shell and static assets. Account and playback state should continue to be resolved through the application backend rather than becoming dependent on stale browser-persisted state.
 
-When improving playlist opening:
-1. Start the playlist API request immediately.
-2. Display a usable cached playlist immediately when one exists.
-3. Display the fresh server response as soon as it arrives.
-4. Run offline membership reconciliation and cache updates after the visible playlist is rendered.
-5. Preserve track order, complete-playlist behavior for playback/download operations, and safe error handling.
+## Search
 
-Avoid making a user click twice, waiting for unrelated offline metadata, or forcing a full-library download just to resolve a single track.
+Search is handled by backend search routes and shared search services. The implementation supports normalized query interpretation, intent-aware results, database-assisted candidate selection and similarity matching where available, bounded candidate/result sets, and separate result construction for tracks, artists, albums, and people.
+
+Artist playlist generation is kept out of the latency-sensitive search request. Search can return an existing generated artist playlist, while missing playlist maintenance is handled through the background maintenance-job path.
+
+Search changes should preserve query meaning, ranking behavior, stable ordering, published-track visibility, authorization, response schemas, and bounded database work.
+
+## Playlists
+
+Playlist records and membership are stored persistently. Backend routes provide playlist summaries, details, and mutations.
+
+Playlist detail supports pagination through `limit` and `offset`. The frontend API helper also preserves full-playlist behavior for operations that need the complete collection.
+
+The frontend may use a bounded, same-session in-memory cache for recently visited library and playlist data. Offline playlist downloads are handled separately through the offline storage and job system.
+
+When a playlist is opened, the frontend can display usable cached data while requesting the latest server response. Offline membership reconciliation and cache updates should not delay the initial visible playlist.
+
+## Player and playback state
+
+The player is a browser audio experience. Account playback state is synchronized through the backend and persistent database records.
+
+The player, account state, and offline-download system have separate responsibilities. Changes should preserve existing playback behavior, track ordering, authorization, and synchronization contracts.
+
+## Offline and PWA support
+
+The application includes PWA support for its application shell and static assets. Offline media/download data and related job records are handled separately from normal account state.
+
+The service worker should serve the correct versioned application assets without allowing outdated cached assets to override a newer application release.
 
 ## Local development
 
-The repository is designed for Windows, VS Code, and PowerShell, with Python backend tooling and Node/Vite frontend tooling.
+The project can be developed with VS Code, PowerShell, Python, and Node.js.
 
 Typical setup:
 
 ```powershell
+# Open the project directory
 cd C:\Users\<you>\Desktop\Hypersynced
 
-# Activate the project virtual environment
+# Activate the Python virtual environment
 .\.venv\Scripts\Activate.ps1
 
 # Backend checks
@@ -92,18 +110,18 @@ python -m ruff check backend tests
 python -m pytest -q
 python -m compileall -q backend
 
-# Frontend build and PWA/offline tests
+# Frontend build and offline/PWA tests
 cd frontend
 npm ci
 npm run build
 npm run test:offline
 ```
 
-Use the repository's provided launcher scripts for local startup. `go` is the update-oriented launcher and may fetch/switch to a selected remote commit according to its installed version. `go-local` is intended to run the current working tree without updating or discarding local edits. Read the current `go.ps1`, `go-local`, and installer scripts before changing launcher behavior; do not assume older README instructions about a special branch still apply.
+Use the repository's provided launcher scripts for local startup. The `go` launcher is update-oriented; `go-local` is intended to run the current working tree without updating or discarding local edits. Check the current launcher scripts for their exact behavior.
 
-## Verification and deployment safety
+## Testing and code quality
 
-Useful checks before pushing:
+Useful backend and repository checks include:
 
 ```powershell
 python -m ruff check backend tests
@@ -114,36 +132,24 @@ git diff --check
 git status
 ```
 
-Run the frontend build and offline/PWA tests using the scripts in `frontend/package.json`. Run database-backed tests only with the configured isolated test database and required test services.
+Run frontend build and offline/PWA tests using the scripts defined in `frontend/package.json`. Run database-backed tests only with the configured isolated test database and required test services.
 
-The load-test scripts under `load/` are guarded against production targets. Keep those safeguards. Load testing must use an explicitly identified staging host; never point load tests at the live production application.
+Load-test scenarios under `load/` are guarded against production targets and should only be run against an explicitly designated test environment.
 
-For a backend deployment, confirm the GitHub Actions workflow completed successfully and then verify the live API readiness endpoint and critical routes. For a frontend deployment, separately confirm the Northflank release and test the live site. Do not infer a completed production deployment from a commit or build status alone.
+## Security principles
 
-## Security and media authorization
-
-- Keep database, authentication, and storage credentials on the server.
+- Keep database, authentication, and storage credentials out of frontend code.
 - Never commit `.env` files or expose private credentials through `VITE_*` variables.
 - Enforce playlist ownership, account permissions, and administrative access in the backend.
-- Keep request-size limits, admission controls, rate limits, and CORS restrictions enabled.
+- Keep request-size limits, admission controls, rate limits, and cross-origin restrictions enabled.
 
-## Change-management rules
-
-- Make changes on `Semifinals` unless the project owner explicitly asks otherwise.
-- Do not create a new branch, rewrite `main`, or deploy to an unapproved environment.
-- Preserve working playback, authentication, navigation, database, PWA, and offline-download behavior.
-- Prefer small, coherent changes over broad rewrites or duplicated state systems.
-- Do not add migrations or tables unless the existing schema cannot support the requirement and the change is explicitly approved.
-- Update this README when the actual architecture, deployment topology, commands, or behavior changes.
-- State exactly which checks and deployments were verified. A passing test suite is useful evidence, not a guarantee that every production user path is flawless.
-
-## Repository map
+## Repository structure
 
 ```text
 backend/
   app/
-    api/routes/       FastAPI route handlers
-    models/           SQLAlchemy models
+    api/routes/       API route handlers
+    models/           Database models
     services/         Shared backend business logic
 frontend/
   src/
@@ -153,9 +159,9 @@ frontend/
     *.js              Shared state, cache, and utility modules
 tests/                Backend tests
 frontend/src/*.test.js  Frontend Node tests
-load/                 Guarded staging-only load scenarios
+load/                 Guarded test load scenarios
 scripts/              Verification and development utilities
-.github/workflows/    CI and deployment workflows
+.github/workflows/    Automation workflows
 ```
 
-For the current implementation, inspect the source files and workflows on the checked-out branch rather than relying on older milestone descriptions or speculative architecture notes.
+The checked-out source code is the authoritative description of current behavior. Treat planned features and architectural proposals as unimplemented until they are present in the code and verified.
