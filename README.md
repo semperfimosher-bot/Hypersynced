@@ -1,6 +1,6 @@
 # HyperSynced
 
-HyperSynced is a mobile-first music streaming application with a React/Vite frontend, a FastAPI backend, Neon PostgreSQL persistence, and Backblaze B2 media storage.
+HyperSynced is a mobile-first music streaming application with a React/Vite frontend, a FastAPI backend, Neon PostgreSQL persistence, and object storage.
 
 This README describes the **current deployment and code paths on `Semifinals`**. It is not a list of every planned feature. The implementation in the repository is authoritative; where a feature is still being developed, it is identified as such.
 
