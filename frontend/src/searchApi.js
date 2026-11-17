@@ -9,10 +9,16 @@ import {
 
 
 const SEARCH_CACHE_TTL_MS =
-  10_000;
+  6 * 60 * 60 * 1000;
 
 const SEARCH_CACHE_MAX_ENTRIES =
   100;
+
+const SEARCH_STORAGE_PREFIX =
+  "hypersynced.search-cache.v1:";
+
+const SEARCH_CACHE_MAX_BYTES =
+  180_000;
 
 const searchCache =
   new Map();
@@ -22,33 +28,65 @@ const inFlightSearches =
 
 
 function getSearchCacheScopeKey() {
-  const token =
-    getAccessToken();
+  const token = getAccessToken();
+  const profile = readCachedUserProfile();
 
-  if (token) {
-    return "token:" + token;
-  }
-
-  const profile =
-    readCachedUserProfile();
-
-  if (
-    profile?.id !== null &&
-    profile?.id !== undefined &&
-    String(profile.id).trim()
-  ) {
+  if (profile?.id !== null && profile?.id !== undefined && String(profile.id).trim()) {
     return "user:" + String(profile.id);
   }
 
-  if (
-    typeof profile?.username === "string" &&
-    profile.username.trim()
-  ) {
-    return "username:" +
-      profile.username.trim().toLocaleLowerCase();
+  if (typeof profile?.username === "string" && profile.username.trim()) {
+    return "username:" + profile.username.trim().toLocaleLowerCase();
   }
 
-  return "anonymous";
+  return token ? "token:" + token : "anonymous";
+}
+
+function getPersistentSearchCacheKey(params) {
+  const profile = readCachedUserProfile();
+  let owner = null;
+
+  if (profile?.id !== null && profile?.id !== undefined && String(profile.id).trim()) {
+    owner = "user:" + String(profile.id);
+  } else if (typeof profile?.username === "string" && profile.username.trim()) {
+    owner = "username:" + profile.username.trim().toLocaleLowerCase();
+  } else if (!getAccessToken()) {
+    owner = "anonymous";
+  }
+
+  // Never persist results under a raw access token or an ambiguous signed-in owner.
+  return owner
+    ? SEARCH_STORAGE_PREFIX + encodeURIComponent(owner + "|" + params.toString())
+    : null;
+}
+
+function readPersistentSearch(cacheKey, now = Date.now()) {
+  if (!cacheKey) return null;
+  try {
+    const raw = globalThis.localStorage?.getItem(cacheKey);
+    if (!raw || raw.length > SEARCH_CACHE_MAX_BYTES) return null;
+    const cached = JSON.parse(raw);
+    if (!cached || !cached.value || !Number.isFinite(cached.savedAt)) return null;
+    if (now - cached.savedAt > SEARCH_CACHE_TTL_MS) {
+      globalThis.localStorage?.removeItem(cacheKey);
+      return null;
+    }
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistentSearch(cacheKey, cached) {
+  if (!cacheKey) return;
+  try {
+    const serialized = JSON.stringify(cached);
+    if (serialized.length <= SEARCH_CACHE_MAX_BYTES) {
+      globalThis.localStorage?.setItem(cacheKey, serialized);
+    }
+  } catch {
+    // Storage is an optimization only; network search must remain unaffected.
+  }
 }
 
 
@@ -56,23 +94,17 @@ function getCachedSearch(
   cacheKey,
   now = Date.now(),
 ) {
-  const cached =
-    searchCache.get(
-      cacheKey,
-    );
+  let cached = searchCache.get(cacheKey);
 
   if (!cached) {
-    return null;
+    cached = null;
+    if (cached) searchCache.set(cacheKey, cached);
   }
 
-  if (
-    now - cached.savedAt >
-    SEARCH_CACHE_TTL_MS
-  ) {
-    searchCache.delete(
-      cacheKey,
-    );
+  if (!cached) return null;
 
+  if (now - cached.savedAt > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(cacheKey);
     return null;
   }
 
@@ -97,18 +129,15 @@ function cacheSearchResult(
   cacheKey,
   value,
   now = Date.now(),
+  persistentKey = null,
 ) {
   searchCache.delete(
     cacheKey,
   );
 
-  searchCache.set(
-    cacheKey,
-    {
-      savedAt: now,
-      value,
-    },
-  );
+  const cached = { savedAt: now, value };
+  searchCache.set(cacheKey, cached);
+  writePersistentSearch(persistentKey, cached);
 
   for (
     const [
@@ -300,21 +329,31 @@ export function searchHypersync(
     "|" +
     params.toString();
 
+  const persistentKey = getPersistentSearchCacheKey(params);
   const url =
     `/search?${params.toString()}`;
 
   if (
     !options.bypassCache
   ) {
-    const cached =
-      getCachedSearch(
-        cacheKey,
-      );
+    let cached = getCachedSearch(cacheKey);
+    if (!cached) {
+      cached = readPersistentSearch(persistentKey);
+      if (cached) {
+        searchCache.set(cacheKey, cached);
+      }
+    }
 
     if (cached) {
-      return Promise.resolve(
-        cached.value,
-      );
+      // Return the snapshot immediately, then reconcile it with the API.
+      void apiRequest(url, { signal: options.signal })
+        .then((fresh) => {
+          if (options.signal?.aborted) return;
+          cacheSearchResult(cacheKey, fresh, Date.now(), persistentKey);
+          options.onRefresh?.(fresh);
+        })
+        .catch(() => {});
+      return Promise.resolve(cached.value);
     }
   }
 
@@ -340,6 +379,8 @@ export function searchHypersync(
           cacheSearchResult(
             cacheKey,
             value,
+            Date.now(),
+            persistentKey,
           );
         }
 
@@ -381,6 +422,8 @@ export function searchHypersync(
               cacheSearchResult(
                 cacheKey,
                 value,
+                Date.now(),
+                persistentKey,
               );
             }
 
