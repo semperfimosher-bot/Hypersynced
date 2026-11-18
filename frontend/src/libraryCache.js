@@ -147,7 +147,7 @@ async function writeRecord(userKey, kind, itemId, value) {
       ownerKey: ownerKey(userKey),
       kind,
       cachedAt: Date.now(),
-      value,
+      value: stripTransientAudioUrls(value),
     });
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error ?? new Error("Unable to save Library cache."));

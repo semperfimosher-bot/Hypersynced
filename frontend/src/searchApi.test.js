@@ -427,6 +427,9 @@ test("search cache survives a module reload and returns the saved result immedia
   const reloadedApi = await loadSearchApi();
   const second = await reloadedApi.searchHypersync("persist me", "smart");
 
-  assert.deepEqual(second, first);
+  assert.equal(second.query, first.query);
+  assert.equal(second.tracks[0].id, first.tracks[0].id);
+  assert.equal(first.tracks[0].audio_url, "https://media.example.test/temporary-signed-link");
+  assert.equal(second.tracks[0].audio_url, undefined, "persistent snapshots must not retain expiring signed audio URLs");
   assert.equal(fetchCount, 1, "a fresh persistent snapshot should not trigger another request");
 });

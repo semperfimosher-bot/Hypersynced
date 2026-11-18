@@ -3,7 +3,7 @@ import test from "node:test";
 import "fake-indexeddb/auto";
 import {
   clearCachedLibraryScope, getCachedLibrary, getCachedLibraryAsync,
-  getCachedLibraryPageAsync, getCachedPlaylist, getCachedPlaylistAsync,
+  getCachedLibraryPageAsync, getCachedPlaylistAsync,
   setCachedLibrary, setCachedLibraryPageAsync, setCachedPlaylist,
 } from "./libraryCache.js";
 
@@ -17,7 +17,8 @@ test("Library and playlist snapshots persist in IndexedDB without using localSto
     removeItem() { writes += 1; },
   };
   try {
-    const tracks = Array.from({ length: 4000 }, (_, index) => ({ id: "track-" + index }));\n    tracks[0].audio_url = "https://media.example.test/temporary-signed-link";
+    const tracks = Array.from({ length: 4000 }, (_, index) => ({ id: "track-" + index }));
+    tracks[0].audio_url = "https://media.example.test/temporary-signed-link";
     await setCachedLibrary(owner, { owned: [], saved: [], tracks });
     assert.equal(getCachedLibrary(owner).tracks.length, 4000);
     const playlist = { id: "playlist-1", tracks };
@@ -25,8 +26,12 @@ test("Library and playlist snapshots persist in IndexedDB without using localSto
     await setCachedLibraryPageAsync(owner, 1000, [{ id: "page-track" }]);
     assert.equal(writes, 0);
     const reopened = await import("./libraryCache.js?persistent-reopen-" + Date.now());
-    const reopenedLibrary = await reopened.getCachedLibraryAsync(owner);\n    assert.equal(reopenedLibrary.tracks.length, 4000);\n    assert.equal(reopenedLibrary.tracks[0].audio_url, undefined);
-    const reopenedPlaylist = await reopened.getCachedPlaylistAsync(owner, playlist.id);\n    assert.equal(reopenedPlaylist.tracks.length, 4000);\n    assert.equal(reopenedPlaylist.tracks[0].audio_url, undefined);
+    const reopenedLibrary = await reopened.getCachedLibraryAsync(owner);
+    assert.equal(reopenedLibrary.tracks.length, 4000);
+    assert.equal(reopenedLibrary.tracks[0].audio_url, undefined);
+    const reopenedPlaylist = await reopened.getCachedPlaylistAsync(owner, playlist.id);
+    assert.equal(reopenedPlaylist.tracks.length, 4000);
+    assert.equal(reopenedPlaylist.tracks[0].audio_url, undefined);
     assert.deepEqual(await reopened.getCachedLibraryPageAsync(owner, 1000), [{ id: "page-track" }]);
   } finally {
     if (previous === undefined) delete globalThis.localStorage;
