@@ -255,6 +255,8 @@ export default function MessagesPage({
       resetToken,
     );
 
+  const conversationRequestRef = useRef(0);
+
 
   const loadConversations =
     useCallback(
@@ -317,6 +319,8 @@ export default function MessagesPage({
           return;
         }
 
+        const request = ++conversationRequestRef.current;
+
         setSelectedUsername(
           normalized,
         );
@@ -339,6 +343,8 @@ export default function MessagesPage({
               normalized,
             );
 
+          if (request !== conversationRequestRef.current) return;
+
           setConversation(
             result,
           );
@@ -351,10 +357,13 @@ export default function MessagesPage({
             [],
           );
 
-          await loadConversations();
+          // Do not make opening a conversation wait for an unrelated
+          // conversations-list refresh to finish.
+          void loadConversations({ quiet: true });
 
           onUnreadChange?.();
         } catch (requestError) {
+          if (request !== conversationRequestRef.current) return;
           setError(
             requestError
               instanceof Error
@@ -362,9 +371,11 @@ export default function MessagesPage({
               : "Unable to open conversation.",
           );
         } finally {
-          setConversationLoading(
-            false,
-          );
+          if (request === conversationRequestRef.current) {
+            setConversationLoading(
+              false,
+            );
+          }
         }
       },
       [
@@ -377,6 +388,7 @@ export default function MessagesPage({
   const closeConversation =
     useCallback(
       () => {
+        conversationRequestRef.current += 1;
         setSelectedUsername(
           "",
         );
