@@ -88,6 +88,7 @@ function TrackArtwork({
   src,
   alt,
   variant = 1,
+  priority = false,
 }) {
   const artworkUrl =
     resolveArtworkUrl(src);
@@ -107,7 +108,8 @@ function TrackArtwork({
         className="track-artwork"
         src={artworkUrl}
         alt={alt || "Track artwork"}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         decoding="async"
         onLoad={(event) => {
           resetArtworkRetry(event.currentTarget);
