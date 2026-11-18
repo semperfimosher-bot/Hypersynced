@@ -69,15 +69,36 @@ export function writePlayerQueueSnapshot(ownerId, queue, queueIndex, now = Date.
   if (!key || !globalThis.localStorage) return false;
 
   try {
-    const safeQueue = sanitizeQueue(queue);
+    const source = Array.isArray(queue) ? queue : [];
+    if (!source.length) {
+      globalThis.localStorage.removeItem(key);
+      return true;
+    }
+
+    const requestedIndex = Number.isInteger(queueIndex)
+      ? Math.min(Math.max(queueIndex, 0), source.length - 1)
+      : 0;
+    // Keep the active row and the next tracks when the in-memory queue grows
+    // beyond the snapshot cap, rather than accidentally saving only old songs.
+    const startIndex = Math.max(
+      0,
+      Math.min(
+        source.length - QUEUE_CACHE_LIMIT,
+        requestedIndex - Math.floor(QUEUE_CACHE_LIMIT / 4),
+      ),
+    );
+    const safeQueue = sanitizeQueue(
+      source.slice(startIndex, startIndex + QUEUE_CACHE_LIMIT),
+    );
     if (!safeQueue.length) {
       globalThis.localStorage.removeItem(key);
       return true;
     }
 
-    const safeIndex = Number.isInteger(queueIndex)
-      ? Math.min(Math.max(queueIndex, 0), safeQueue.length - 1)
-      : 0;
+    const safeIndex = Math.min(
+      Math.max(requestedIndex - startIndex, 0),
+      safeQueue.length - 1,
+    );
 
     globalThis.localStorage.setItem(key, JSON.stringify({
       savedAt: now,
