@@ -2894,6 +2894,10 @@ export function stopTrack(
     null;
 
 
+  // Explicit Stop ends the current play; a later selection of the same
+  // track is a new start and should create a fresh listening event.
+  finishListeningEvent("paused");
+
   audio.pause();
 
 
