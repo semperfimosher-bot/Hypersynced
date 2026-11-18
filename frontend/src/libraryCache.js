@@ -71,6 +71,22 @@ function requestResult(request) {
     request.onerror = () => reject(request.error ?? new Error("Library cache request failed."));
   });
 }
+
+// Signed audio URLs are short-lived bearer links. Never persist them; the
+// player can resolve a fresh source from the stable track ID when needed.
+function stripTransientAudioUrls(value) {
+  if (Array.isArray(value)) return value.map(stripTransientAudioUrls);
+  if (!value || typeof value !== "object") return value;
+  const transientKeys = new Set([
+    "audio_url", "audiourl", "media_url", "mediaurl",
+    "signed_url", "signedurl", "stream_url", "streamurl",
+  ]);
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !transientKeys.has(key.toLowerCase()))
+      .map(([key, nested]) => [key, stripTransientAudioUrls(nested)]),
+  );
+}
 async function deleteRecord(userKey, kind, itemId = "root") {
   if (!canPersist(userKey)) return false;
   const database = await openDatabase();

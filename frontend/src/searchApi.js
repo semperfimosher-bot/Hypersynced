@@ -86,11 +86,29 @@ function readPersistentSearch(cacheKey, now = Date.now()) {
   }
 }
 
+function stripTransientAudioUrls(value) {
+  if (Array.isArray(value)) return value.map(stripTransientAudioUrls);
+  if (!value || typeof value !== "object") return value;
+  const transientKeys = new Set([
+    "audio_url", "audiourl", "media_url", "mediaurl",
+    "signed_url", "signedurl", "stream_url", "streamurl",
+  ]);
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !transientKeys.has(key.toLowerCase()))
+      .map(([key, nested]) => [key, stripTransientAudioUrls(nested)]),
+  );
+}
+
 function writePersistentSearch(cacheKey, cached) {
   if (!cacheKey) return;
   try {
     const storage = globalThis.localStorage;
-    const serialized = JSON.stringify(cached);
+    const persistentSnapshot = {
+      ...cached,
+      value: stripTransientAudioUrls(cached.value),
+    };
+    const serialized = JSON.stringify(persistentSnapshot);
     if (!storage || serialized.length > SEARCH_CACHE_MAX_BYTES) return;
 
     storage.setItem(cacheKey, serialized);

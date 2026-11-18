@@ -420,7 +420,7 @@ test("search cache survives a module reload and returns the saved result immedia
   let fetchCount = 0;
   t.mock.method(globalThis, "fetch", async () => {
     fetchCount += 1;
-    return responseFor({ query: "persist me", tracks: [{ id: "cached-track" }] });
+    return responseFor({ query: "persist me", tracks: [{ id: "cached-track", audio_url: "https://media.example.test/temporary-signed-link" }] });
   });
 
   const first = await api.searchHypersync("persist me", "smart");
