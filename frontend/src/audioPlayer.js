@@ -141,6 +141,7 @@ function persistQueueSnapshot() {
 }
 
 function restoreQueueForTrack(trackId, meta = {}) {
+  queueRevision += 1;
   const id = String(trackId);
   const existingIndex = currentQueue.findIndex(
     (entry) => String(entry?.id ?? "") === id,
@@ -2910,6 +2911,10 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   // Keep the cached upcoming queue when it contains the authoritative track.
   // A different remote track rebases the queue without showing stale entries.
   restoreQueueForTrack(restoringTrackId, track);
+
+  // Refill a short or newly rebased queue in the background. The current
+  // track is already visible and this request never delays paused restore.
+  void ensureAutoplayQueue({ force: true }).catch(() => {});
 
   // A database restore is authoritative even when this tab already has the
   // same track loaded. Pause first so a remote restore can never keep playing.
