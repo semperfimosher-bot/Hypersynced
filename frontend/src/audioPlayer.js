@@ -2796,6 +2796,24 @@ async function applyRestoredPlaybackPosition(trackId, positionSeconds) {
   return true;
 }
 
+export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
+  if (!track?.id) return null;
+
+  const restoringTrackId = String(track.id);
+  audio.pause();
+  cancelActivePlaybackSession();
+  clearQueue();
+
+  // Restore only display metadata and the saved position. No stale or
+  // expiring audio URL is persisted in the browser snapshot.
+  applyTrackMetadata(restoringTrackId, track);
+  restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
+  setPlaybackPhase("paused");
+  notify();
+  return getState();
+}
+
+
 export async function restoreTrackPaused(track, positionSeconds = 0) {
   if (!track?.id) return null;
   const restoringTrackId = String(track.id);
