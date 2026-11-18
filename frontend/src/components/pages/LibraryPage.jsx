@@ -1829,10 +1829,24 @@ useEffect(() => {
     return;
   }
 
+  let cachedPlaylist = null;
+  const cachedPlaylistPromise = getCachedPlaylistAsync(
+    libraryCacheKey,
+    playlistId,
+  ).catch(() => null);
+  const serverPlaylistPromise = getPlaylist(playlistId);
+
   try {
-    // The server playlist is the only opening prerequisite. Show it before
-    // looking up offline-download metadata or reconciling local membership.
-    const playlist = await getPlaylist(playlistId);
+    // Start the server refresh immediately, but render a local snapshot as
+    // soon as IndexedDB returns it. The network never gates a warm playlist.
+    cachedPlaylist = await cachedPlaylistPromise;
+    if (cachedPlaylist) {
+      setSelectedPlaylist(cachedPlaylist);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setOpeningPlaylistId(null);
+    }
+
+    const playlist = await serverPlaylistPromise;
     setSelectedPlaylist(playlist);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setOpeningPlaylistId(null);
@@ -1901,8 +1915,9 @@ useEffect(() => {
       }
     })().catch(() => {});
   } catch (requestError) {
-    // Preserve a cached copy as a fallback if the server is temporarily unavailable.
-    const cached = await getCachedPlaylistAsync(libraryCacheKey, playlistId).catch(() => null);
+    // Preserve the local snapshot if the server is temporarily unavailable.
+    const cached = cachedPlaylist ??
+      await cachedPlaylistPromise.catch(() => null);
     if (cached) {
       setSelectedPlaylist(cached);
       window.scrollTo({ top: 0, behavior: "smooth" });

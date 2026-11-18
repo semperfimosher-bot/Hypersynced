@@ -79,7 +79,7 @@ test(
 
 
 test(
-  "warm pages survive until twelve hours after leaving",
+  "warm pages survive for thirty days after leaving",
   () => {
     const ownerKey =
       "user:1";
