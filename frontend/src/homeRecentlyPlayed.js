@@ -26,6 +26,13 @@ export function notifyListeningHistoryChanged(detail = null, target = globalThis
   return true;
 }
 
+// A listening event belongs to a distinct track start, not a pause/resume
+// or a buffering recovery for the same track.
+export function shouldBeginListeningEvent(activeTrackId, nextTrackId) {
+  if (nextTrackId === null || nextTrackId === undefined || nextTrackId === "") return false;
+  return String(activeTrackId ?? "") !== String(nextTrackId);
+}
+
 export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12) {
   if (!Array.isArray(tracks) || !playedTrack?.id) return tracks ?? [];
   const id = String(playedTrack.id);
