@@ -2432,6 +2432,7 @@ export async function playTrackQueue(
     cancelActivePlaybackSession();
 
     clearQueue();
+    persistQueueSnapshot();
 
     return null;
   }
@@ -2912,15 +2913,15 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   // A different remote track rebases the queue without showing stale entries.
   restoreQueueForTrack(restoringTrackId, track);
 
-  // Refill a short or newly rebased queue in the background. The current
-  // track is already visible and this request never delays paused restore.
-  void ensureAutoplayQueue({ force: true }).catch(() => {});
-
   // A database restore is authoritative even when this tab already has the
   // same track loaded. Pause first so a remote restore can never keep playing.
   audio.pause();
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
+
+  // Refill a short or newly rebased queue in the background. The current
+  // track is already visible and this request never delays paused restore.
+  void ensureAutoplayQueue({ force: true }).catch(() => {});
 
   // Start fetching the saved-position audio window immediately, in parallel
   // with source setup. This gives the cache a head start before the user taps Play.
