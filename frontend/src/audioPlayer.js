@@ -8,6 +8,10 @@ import {
 } from "./api/storage.js";
 
 import {
+  waitForServiceWorkerController,
+} from "./serviceWorkerController.js";
+
+import {
   resolveMediaUrl,
 } from "./mediaCache.js";
 
@@ -180,21 +184,13 @@ export function warmTrackForPlayback(
       null,
     );
 
-  const useStableMediaRoute =
-    Boolean(
-      globalThis.navigator
-        ?.serviceWorker
-        ?.controller,
-    );
-
   if (
     !trackId ||
     !mediaVersion ||
     !Number.isSafeInteger(
       fileSize,
     ) ||
-    fileSize <= 0 ||
-    !useStableMediaRoute
+    fileSize <= 0
   ) {
     return null;
   }
@@ -214,20 +210,27 @@ export function warmTrackForPlayback(
   }
 
   const task =
-    warmTrackPlayback(
-      trackId,
-      meta,
-      {
-        positionSeconds:
-          0,
-        durationSeconds:
-          meta.durationSeconds ??
-          meta.duration_seconds ??
-          null,
-        useStableMediaRoute:
-          true,
-      },
-    )
+    waitForServiceWorkerController()
+      .then((controllerReady) => {
+        if (!controllerReady) {
+          return false;
+        }
+
+        return warmTrackPlayback(
+          trackId,
+          meta,
+          {
+            positionSeconds:
+              0,
+            durationSeconds:
+              meta.durationSeconds ??
+              meta.duration_seconds ??
+              null,
+            useStableMediaRoute:
+              true,
+          },
+        );
+      })
       .catch(
         () => false,
       )
