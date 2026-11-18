@@ -46,6 +46,7 @@ import {
 import {
   notifyListeningHistoryChanged,
   canRecordListeningHistory,
+  shouldBeginListeningEvent,
 } from "./homeRecentlyPlayed.js";
 
 
@@ -319,6 +320,8 @@ function beginListeningEvent(
             "[HyperSynced] Listening history event was not saved.",
             error,
           );
+          // Reconcile any optimistic UI update if the authoritative write failed.
+          notifyListeningHistoryChanged({ type: "write-failed" });
           return null;
         },
       );
@@ -1365,11 +1368,13 @@ function attachEvents() {
       );
 
       // Listening history starts only after the browser confirms audible playback.
-      if (currentTrackId && currentTrackMeta) {
-        if (activeListeningEvent?.trackId !== String(currentTrackId)) {
-          if (activeListeningEvent) finishListeningEvent("skipped");
-          beginListeningEvent(currentTrackId, currentTrackMeta);
-        }
+      if (
+        currentTrackId &&
+        currentTrackMeta &&
+        shouldBeginListeningEvent(activeListeningEvent?.trackId, currentTrackId)
+      ) {
+        if (activeListeningEvent) finishListeningEvent("skipped");
+        beginListeningEvent(currentTrackId, currentTrackMeta);
         void recordTrackPlayback(currentTrackId, currentTrackMeta).catch(() => {});
       }
 
@@ -1399,9 +1404,9 @@ function attachEvents() {
   "pause",
   () => {
     sampleListeningProgress();
-    // A pause ends this listening session. Resuming the same track creates
-    // a fresh event, so play counts reflect each confirmed playback start.
-    finishListeningEvent("paused");
+    // Pause is not a new play. Keep the current event open so resuming this
+    // same track does not create another Recently Played or play-count entry.
+    void saveListeningProgress(true);
     if (
       currentTrackId ||
       audio.currentSrc
