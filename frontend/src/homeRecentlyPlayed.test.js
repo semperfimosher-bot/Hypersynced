@@ -8,6 +8,7 @@ import {
   notifyListeningHistoryChanged,
   subscribeListeningHistoryChanged,
   canRecordListeningHistory,
+  shouldBeginListeningEvent,
 } from "./homeRecentlyPlayed.js";
 
 test("remembered sessions record history while their access token is refreshing", () => {
@@ -215,6 +216,14 @@ test("recently played immediately uses the active account cache without leaking 
   }
 });
 
+
+test("listening history counts a distinct track start, not pause/resume or buffering", () => {
+  assert.equal(shouldBeginListeningEvent(null, "track-a"), true);
+  assert.equal(shouldBeginListeningEvent("track-a", "track-a"), false);
+  assert.equal(shouldBeginListeningEvent("track-a", "track-b"), true);
+  assert.equal(shouldBeginListeningEvent("track-a", null), false);
+  assert.equal(shouldBeginListeningEvent(42, "42"), false);
+});
 
 test("optimistic playback moves a track to the front and increments its play count", async () => {
   const { applyOptimisticRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
