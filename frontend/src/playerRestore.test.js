@@ -50,6 +50,30 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     assert.equal(state.volume, 1);
     assert.equal(state.paused, true);
     assert.equal(player._getAudioElement().currentSrc, "");
+
+    const cached = player.restoreCachedTrackMetadata(
+      {
+        id: "cached-track",
+        title: "Cached Song",
+        artist: "Cached Artist",
+        album: "Cached Album",
+        artwork_url: "/api/catalog/tracks/cached-track/artwork",
+        media_version: "cached-v1",
+        mime_type: "audio/mpeg",
+        file_size: 4096,
+      },
+      38.5,
+    );
+    assert.equal(cached.trackId, "cached-track");
+    assert.equal(cached.title, "Cached Song");
+    assert.equal(cached.artist, "Cached Artist");
+    assert.equal(cached.album, "Cached Album");
+    assert.equal(cached.currentTime, 0);
+    assert.equal(cached.paused, true);
+    assert.equal(cached.src, null);
+    assert.equal(player._getAudioElement().currentSrc, "");
+    assert.equal(player.getState().mediaVersion, "cached-v1");
+
   } finally {
     player?.stopTrack();
     if (originalAudioDescriptor) Object.defineProperty(globalThis, "Audio", originalAudioDescriptor);
