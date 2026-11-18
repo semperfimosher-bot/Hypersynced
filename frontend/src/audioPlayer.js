@@ -1211,9 +1211,9 @@ export function getState() {
       playbackError,
 
     currentTime:
-      audio.currentTime ||
-      restoredTimeSeconds ||
-      0,
+      currentTrackId && loadedAudioTrackId !== currentTrackId
+        ? Math.max(0, Number(restoredTimeSeconds) || 0)
+        : getSafeCurrentTime(),
 
     duration:
       Number.isFinite(
