@@ -1162,14 +1162,15 @@ export function getState() {
 
     currentTime:
       audio.currentTime ||
+      restoredTimeSeconds ||
       0,
 
     duration:
       Number.isFinite(
         audio.duration,
-      )
+      ) && audio.duration > 0
         ? audio.duration
-        : 0,
+        : Number(currentTrackMeta?.durationSeconds) || 0,
 
     volume:
       audio.volume,
