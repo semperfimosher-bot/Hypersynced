@@ -6,6 +6,78 @@ function timestampValue(value) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
+const PLAYBACK_SNAPSHOT_PREFIX = "hypersynced.playback-snapshot.v1:";
+const PLAYBACK_SNAPSHOT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function playbackSnapshotKey(userId) {
+  return PLAYBACK_SNAPSHOT_PREFIX + encodeURIComponent(String(userId));
+}
+
+function normalizeSnapshotTrack(track) {
+  if (!track?.id) return null;
+  return {
+    id: String(track.id),
+    title: String(track.title ?? ""),
+    artist: String(track.artist ?? ""),
+    album: String(track.album ?? ""),
+    artworkUrl: track.artworkUrl ?? track.artwork_url ?? null,
+    mimeType: track.mimeType ?? track.mime_type ?? null,
+    fileSize: track.fileSize ?? track.file_size ?? null,
+    mediaVersion: track.mediaVersion ?? track.media_version ?? null,
+    artworkVersion: track.artworkVersion ?? track.artwork_version ?? null,
+    durationSeconds: track.durationSeconds ?? track.duration_seconds ?? null,
+    catalogTrackId: track.catalogTrackId ?? track.catalog_track_id ?? null,
+  };
+}
+
+function readPlaybackSnapshot(userId) {
+  try {
+    const raw = globalThis.localStorage?.getItem(playbackSnapshotKey(userId));
+    const snapshot = raw ? JSON.parse(raw) : null;
+    const savedAt = Number(snapshot?.savedAt) || 0;
+    const track = normalizeSnapshotTrack(snapshot?.track);
+    if (
+      !track ||
+      !savedAt ||
+      Date.now() - savedAt > PLAYBACK_SNAPSHOT_MAX_AGE_MS
+    ) return null;
+    return {
+      track,
+      positionSeconds: Math.max(0, Number(snapshot.positionSeconds) || 0),
+      paused: snapshot.paused !== false,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePlaybackSnapshot(userId, track, positionSeconds, paused) {
+  const normalizedTrack = normalizeSnapshotTrack(track);
+  if (!userId || !normalizedTrack) return false;
+  try {
+    globalThis.localStorage?.setItem(
+      playbackSnapshotKey(userId),
+      JSON.stringify({
+        savedAt: Date.now(),
+        track: normalizedTrack,
+        positionSeconds: Math.max(0, Number(positionSeconds) || 0),
+        paused: Boolean(paused),
+      }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearPlaybackSnapshot(userId) {
+  try {
+    globalThis.localStorage?.removeItem(playbackSnapshotKey(userId));
+  } catch {
+    // Local storage is optional; Neon remains authoritative.
+  }
+}
+
 export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {}) {
   if (!userId) return () => {};
 
@@ -48,6 +120,24 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
 
     const position = Math.max(0, Number(state.currentTime) || 0);
     const paused = Boolean(state.paused);
+    writePlaybackSnapshot(
+      userId,
+      {
+        id: trackId,
+        title: state.title,
+        artist: state.artist,
+        album: state.album,
+        artworkUrl: state.artworkUrl,
+        mimeType: state.mimeType,
+        fileSize: state.fileSize,
+        mediaVersion: state.mediaVersion,
+        artworkVersion: state.artworkVersion,
+        durationSeconds: state.durationSeconds,
+        catalogTrackId: state.catalogTrackId,
+      },
+      position,
+      paused,
+    );
     const key = `${trackId ?? "none"}:${Math.floor(position)}:${paused ? "paused" : "playing"}`;
     if (!force && (key === lastSavedKey || key === pendingKey)) return writeChain;
     pendingKey = key;
@@ -128,6 +218,7 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
           : null;
 
         if (saved?.track?.id) {
+          writePlaybackSnapshot(userId, saved.track, saved.position_seconds, saved.paused);
           // Apply the database track metadata immediately, but do not make
           // first paint wait for the audio URL/network request. The player
           // restores the saved seek position as soon as media metadata loads.
@@ -149,6 +240,7 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
           awaitingResume = saved.paused === false;
           lastSavedKey = `${saved.track.id}:${Math.floor(Number(saved.position_seconds) || 0)}:${saved.paused === false ? "playing" : "paused"}`;
         } else {
+          clearPlaybackSnapshot(userId);
           if (player.getState()?.trackId) player.stopTrack();
           awaitingResume = false;
           lastSavedKey = "none:0:paused";
@@ -272,6 +364,22 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
     }
   };
   document.addEventListener("visibilitychange", onVisibilityChange);
+
+  // Paint the last known song metadata from this account's local snapshot
+  // before the network round-trip. The database response remains authoritative.
+  const cachedSnapshot = readPlaybackSnapshot(userId);
+  if (cachedSnapshot?.track?.id) {
+    applyingRemoteState = true;
+    expectedRemoteTrackId = String(cachedSnapshot.track.id);
+    player.restoreCachedTrackMetadata(
+      cachedSnapshot.track,
+      cachedSnapshot.positionSeconds,
+    );
+    applyingRemoteState = false;
+    expectedRemoteTrackId = null;
+    lastSavedKey = `${cachedSnapshot.track.id}:${Math.floor(cachedSnapshot.positionSeconds)}:${cachedSnapshot.paused ? "paused" : "playing"}`;
+    syncObservedState();
+  }
 
   void refreshFromDatabase(true);
 
