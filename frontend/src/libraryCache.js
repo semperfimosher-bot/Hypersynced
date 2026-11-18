@@ -96,20 +96,25 @@ async function readRecord(userKey, kind, itemId = "root") {
   }
   return record.value ?? null;
 }
-async function pruneOwnerRecords(database, userKey, kind, maxCount) {
-  const transaction = database.transaction(STORE_NAME, "readwrite");
-  const store = transaction.objectStore(STORE_NAME);
-  const records = await requestResult(store.index("ownerKey").getAll(ownerKey(userKey)));
-  const now = Date.now();
-  const selected = records.filter((record) => record.kind === kind);
-  for (const record of selected) {
-    if (!Number.isFinite(record.cachedAt) || now - record.cachedAt > CACHE_MAX_AGE_MS) store.delete(record.key);
-  }
-  const fresh = selected
-    .filter((record) => Number.isFinite(record.cachedAt) && now - record.cachedAt <= CACHE_MAX_AGE_MS)
-    .sort((left, right) => right.cachedAt - left.cachedAt);
-  for (const record of fresh.slice(maxCount)) store.delete(record.key);
-  await new Promise((resolve, reject) => {
+function pruneOwnerRecords(database, userKey, kind, maxCount) {
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.index("ownerKey").getAll(ownerKey(userKey));
+    request.onsuccess = () => {
+      const now = Date.now();
+      const selected = (request.result ?? []).filter((record) => record.kind === kind);
+      for (const record of selected) {
+        if (!Number.isFinite(record.cachedAt) || now - record.cachedAt > CACHE_MAX_AGE_MS) {
+          store.delete(record.key);
+        }
+      }
+      const fresh = selected
+        .filter((record) => Number.isFinite(record.cachedAt) && now - record.cachedAt <= CACHE_MAX_AGE_MS)
+        .sort((left, right) => right.cachedAt - left.cachedAt);
+      for (const record of fresh.slice(maxCount)) store.delete(record.key);
+    };
+    request.onerror = () => transaction.abort();
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error ?? new Error("Library cache cleanup failed."));
     transaction.onabort = () => reject(transaction.error ?? new Error("Library cache cleanup was aborted."));
