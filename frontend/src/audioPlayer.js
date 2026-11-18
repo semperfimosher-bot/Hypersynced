@@ -2178,10 +2178,6 @@ async function playTrackInternal(
   // recommendation requests have completed.
   notify();
 
-  // Start recommendations while the selected track's media source is
-  // preparing. New tracks are appended without blocking playback or display.
-  void ensureAutoplayQueue({ force: !keepQueue }).catch(() => {});
-
   let playbackMeta =
     normalizeTrackMeta(
       meta,
@@ -2935,6 +2931,10 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
       restoringTrackId,
       positionSeconds,
     );
+
+    // Audio source restoration gets priority; queue recommendations refresh
+    // only after the saved track is ready.
+    void ensureAutoplayQueue({ force: true }).catch(() => {});
 
     if (currentTrackId === restoringTrackId) {
       setPlaybackPhase("paused");
