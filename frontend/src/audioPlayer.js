@@ -26,6 +26,11 @@ import {
 } from "./playerQueue.js";
 
 import {
+  readPlayerQueueSnapshot,
+  writePlayerQueueSnapshot,
+} from "./playerQueueCache.js";
+
+import {
   prepareTrackAudioSource,
   recordTrackPlayback,
   warmTrackPlayback,
@@ -126,6 +131,41 @@ let currentQueue =
 
 let currentQueueIndex =
   -1;
+
+function persistQueueSnapshot() {
+  return writePlayerQueueSnapshot(
+    activePlaybackOwnerId,
+    currentQueue,
+    currentQueueIndex,
+  );
+}
+
+function restoreQueueForTrack(trackId, meta = {}) {
+  const id = String(trackId);
+  const existingIndex = currentQueue.findIndex(
+    (entry) => String(entry?.id ?? "") === id,
+  );
+
+  if (existingIndex >= 0) {
+    const existing = currentQueue[existingIndex];
+    currentQueue[existingIndex] = {
+      id,
+      meta: {
+        ...(existing?.meta ?? {}),
+        ...normalizeTrackMeta(meta),
+      },
+    };
+    currentQueueIndex = existingIndex;
+  } else {
+    currentQueue = [{
+      id,
+      meta: normalizeTrackMeta(meta),
+    }];
+    currentQueueIndex = 0;
+  }
+
+  persistQueueSnapshot();
+}
 
 let recentTrackIds =
   [];
@@ -677,6 +717,8 @@ function ensureCurrentTrackInQueue() {
 
   currentQueueIndex =
     0;
+
+  persistQueueSnapshot();
 }
 
 
@@ -738,6 +780,7 @@ function appendAutoplayTracks(
     ...unique,
   ];
 
+  persistQueueSnapshot();
   notify();
 
   return unique.length;
@@ -2120,6 +2163,21 @@ async function playTrackInternal(
     meta,
   );
 
+  if (!keepQueue) {
+    ensureCurrentTrackInQueue();
+  } else if (currentQueue[currentQueueIndex]) {
+    currentQueue[currentQueueIndex] = {
+      ...currentQueue[currentQueueIndex],
+      meta: normalizeTrackMeta(meta),
+    };
+    persistQueueSnapshot();
+  }
+
+  // Start recommendations while the selected track's media source is
+  // preparing. The current track is already visible in the queue; new
+  // recommendations are appended when the background request completes.
+  void ensureAutoplayQueue({ force: !keepQueue }).catch(() => {});
+
   let playbackMeta =
     normalizeTrackMeta(
       meta,
@@ -2323,6 +2381,7 @@ export async function playQueueIndex(
   currentQueueIndex =
     index;
 
+  persistQueueSnapshot();
 
   try {
     const state =
@@ -2402,6 +2461,7 @@ export async function playTrackQueue(
   currentQueueIndex =
     safeIndex;
 
+  persistQueueSnapshot();
 
   const track =
     currentQueue[
@@ -2463,6 +2523,8 @@ export function playTrackNext(
       entry,
     );
 
+  persistQueueSnapshot();
+
   /*
    * Any recommendation request that began
    * before this manual edit is stale. Its
@@ -2510,6 +2572,8 @@ export function addTrackToQueue(
       entry,
     );
 
+  persistQueueSnapshot();
+
   queueRevision +=
     1;
 
@@ -2544,6 +2608,7 @@ export async function playUrl(
 
 
   clearQueue();
+  persistQueueSnapshot();
 
 
   const {
@@ -2763,6 +2828,14 @@ export function setPlaybackPersistenceOwner(userId) {
 
   // Playback restoration is exclusively driven by the account's Neon state.
   activePlaybackOwnerId = nextOwner;
+
+  const cachedQueue = readPlayerQueueSnapshot(nextOwner);
+  if (cachedQueue) {
+    currentQueue = cachedQueue.queue;
+    currentQueueIndex = cachedQueue.queueIndex;
+  }
+
+  notify();
 }
 
 
@@ -2811,7 +2884,10 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   const restoringTrackId = String(track.id);
   audio.pause();
   cancelActivePlaybackSession();
-  clearQueue();
+
+  // Restore the cached queue immediately when it belongs to this track.
+  // Otherwise start with the current track and refill recommendations quietly.
+  restoreQueueForTrack(restoringTrackId, track);
 
   // Restore only display metadata and the saved position. No stale or
   // expiring audio URL is persisted in the browser snapshot.
@@ -2827,7 +2903,10 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   if (!track?.id) return null;
   const restoringTrackId = String(track.id);
   cancelActivePlaybackSession();
-  clearQueue();
+
+  // Keep the cached upcoming queue when it contains the authoritative track.
+  // A different remote track rebases the queue without showing stale entries.
+  restoreQueueForTrack(restoringTrackId, track);
 
   // A database restore is authoritative even when this tab already has the
   // same track loaded. Pause first so a remote restore can never keep playing.
@@ -2902,6 +2981,7 @@ export function stopTrack(
 
 
   clearQueue();
+  persistQueueSnapshot();
 
 
   audio.removeAttribute(
