@@ -289,12 +289,14 @@ function MainPage({
 
 
   /*
-   * Keep visited pages alive for twelve hours.
+   * Keep visited pages warm for up to thirty days.
    *
    * React Activity preserves their UI and
    * component state while hidden, but cleans
    * up Effects so inactive pages do not keep
-   * polling or holding subscriptions.
+   * polling or holding subscriptions. Persistent
+   * data caches separately restore eligible data
+   * after a full app restart.
    */
   useLayoutEffect(() => {
     const now =
