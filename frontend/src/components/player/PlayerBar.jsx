@@ -181,7 +181,7 @@ export default function PlayerBar({
     ? [displayArtist, displayAlbum].filter(Boolean).join(" • ")
     : displayTrackId ? "Now playing" : "Select a track to start listening";
   const effectivePaused = Boolean(state.paused);
-  const canControl = Boolean(state.src);
+  const canControl = Boolean(state.trackId || state.src);
   const effectiveDuration = state.duration > 0 ? state.duration : 0;
 
   const progressMax =
@@ -463,6 +463,7 @@ export default function PlayerBar({
           src={displayArtworkUrl}
           alt={titleText}
           variant={1}
+          priority
         />
 
         <span>
