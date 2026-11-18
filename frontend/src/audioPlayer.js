@@ -2173,9 +2173,12 @@ async function playTrackInternal(
     persistQueueSnapshot();
   }
 
+  // Publish the current row immediately, before media preparation or
+  // recommendation requests have completed.
+  notify();
+
   // Start recommendations while the selected track's media source is
-  // preparing. The current track is already visible in the queue; new
-  // recommendations are appended when the background request completes.
+  // preparing. New tracks are appended without blocking playback or display.
   void ensureAutoplayQueue({ force: !keepQueue }).catch(() => {});
 
   let playbackMeta =
