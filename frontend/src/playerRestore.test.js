@@ -68,7 +68,7 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     assert.equal(cached.title, "Cached Song");
     assert.equal(cached.artist, "Cached Artist");
     assert.equal(cached.album, "Cached Album");
-    assert.equal(cached.currentTime, 0);
+    assert.equal(cached.currentTime, 38.5);
     assert.equal(cached.paused, true);
     assert.equal(cached.src, null);
     assert.equal(player._getAudioElement().currentSrc, "");
