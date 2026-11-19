@@ -846,7 +846,7 @@ export default function App() {
     setActiveProfileUsername,
   ] = useState(() => startupAppView?.profileUsername ?? "");
 
-  const [searchQuery, setSearchQuery =
+  const [searchQuery, setSearchQuery] =
     useState("");
 
   const [
