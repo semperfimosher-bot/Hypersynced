@@ -283,3 +283,26 @@ test("recently played snapshot survives a page-module reload and omits playable 
     else globalThis.localStorage = original;
   }
 });
+
+
+test("recently played cache expires after seven days and rejects future timestamps", async () => {
+  const { readCachedHomeRecentlyPlayed, writeCachedHomeRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
+  const original = globalThis.localStorage;
+  const values = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: (key) => values.delete(key),
+  };
+  const savedAt = 1_000_000;
+  try {
+    writeCachedHomeRecentlyPlayed("cache-expiry-user", [{ id: "old" }], 12, savedAt);
+    assert.equal(readCachedHomeRecentlyPlayed("cache-expiry-user", 12, savedAt + 1)[0].id, "old");
+    assert.deepEqual(readCachedHomeRecentlyPlayed("cache-expiry-user", 12, savedAt + 7 * 24 * 60 * 60 * 1000 + 1), []);
+    writeCachedHomeRecentlyPlayed("cache-future-user", [{ id: "future" }], 12, savedAt + 120_000);
+    assert.deepEqual(readCachedHomeRecentlyPlayed("cache-future-user", 12, savedAt), []);
+  } finally {
+    if (original === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = original;
+  }
+});
