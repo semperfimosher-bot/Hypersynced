@@ -138,6 +138,8 @@ import {
 import {
   notifyListeningHistoryChanged,
 } from "./homeRecentlyPlayed.js";
+import { clearProfileSnapshot } from "./profileSnapshotCache.js";
+import { clearMessagesListSnapshot } from "./messagesListCache.js";
 
 import useMessageNotifications from
   "./hooks/useMessageNotifications.js";
@@ -1722,6 +1724,8 @@ const persistAppView =
   ]);
 
   function handleLogout() {
+  clearProfileSnapshot(currentUser?.id);
+  clearMessagesListSnapshot(currentUser?.id);
   navigationGenerationRef.current += 1;
   cancelPendingSearchSave();
 
