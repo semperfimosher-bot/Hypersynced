@@ -268,10 +268,12 @@ export default function ProfilePage({
             if (!current) return current;
             return {
               ...current,
-              tracks_played: (Number(current.tracks_played) || 0) + 1,
+              // Counts are server-authoritative; optimistic state only reorders.
               recently_played: applyOptimisticRecentlyPlayed(
                 current.recently_played,
                 event.detail.track,
+                12,
+                { incrementPlayCount: false },
               ),
             };
           });
