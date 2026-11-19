@@ -1,4 +1,5 @@
 const PREFIX = "hypersynced.profile-snapshot.v1:";
+export const PROFILE_SNAPSHOT_CHANGED_EVENT = "hypersynced:profile-snapshot-changed";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function storage() {
@@ -69,6 +70,13 @@ export function writeProfileSnapshot(owner, profile, now = Date.now()) {
     const store = storage();
     if (!store) return false;
     store.setItem(key, JSON.stringify({ savedAt: now, profile: sanitized }));
+    const target = globalThis.window;
+    if (target?.dispatchEvent) {
+      const event = typeof CustomEvent === "function"
+        ? new CustomEvent(PROFILE_SNAPSHOT_CHANGED_EVENT, { detail: { owner: String(owner) } })
+        : Object.assign(new Event(PROFILE_SNAPSHOT_CHANGED_EVENT), { detail: { owner: String(owner) } });
+      target.dispatchEvent(event);
+    }
     return true;
   } catch {
     return false;
@@ -79,4 +87,30 @@ export function clearProfileSnapshot(owner) {
   const key = keyFor(owner);
   if (!key) return;
   try { storage()?.removeItem(key); } catch {}
+}
+
+
+export function subscribeProfileSnapshotChanged(owner, listener, target = globalThis.window) {
+  const normalizedOwner = String(owner ?? "").trim();
+  if (!normalizedOwner || !target?.addEventListener || !target?.removeEventListener) return () => {};
+  const notify = (changedOwner) => {
+    if (String(changedOwner ?? "") === normalizedOwner) listener();
+  };
+  const onCustom = (event) => notify(event.detail?.owner);
+  const onStorage = (event) => {
+    if (typeof event?.key !== "string" || !event.key.startsWith(PREFIX)) return;
+    let changedOwner = null;
+    try {
+      changedOwner = decodeURIComponent(event.key.slice(PREFIX.length));
+    } catch {
+      return;
+    }
+    notify(changedOwner);
+  };
+  target.addEventListener(PROFILE_SNAPSHOT_CHANGED_EVENT, onCustom);
+  target.addEventListener("storage", onStorage);
+  return () => {
+    target.removeEventListener(PROFILE_SNAPSHOT_CHANGED_EVENT, onCustom);
+    target.removeEventListener("storage", onStorage);
+  };
 }
