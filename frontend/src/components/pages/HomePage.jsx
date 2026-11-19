@@ -293,7 +293,7 @@ useEffect(
         }
         if (event.detail?.type === "optimistic-play" && event.detail.track) {
           setRecentlyPlayed((current) =>
-            applyOptimisticRecentlyPlayed(current, event.detail.track),
+            applyOptimisticRecentlyPlayed(current, event.detail.track, 12, { incrementPlayCount: false }),
           );
           return;
         }
