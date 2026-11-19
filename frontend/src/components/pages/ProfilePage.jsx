@@ -42,6 +42,7 @@ import {
   applyOptimisticRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
+import { readProfileSnapshot, writeProfileSnapshot } from "../../profileSnapshotCache.js";
 
 
 function memberFor(value) {
@@ -152,12 +153,10 @@ export default function ProfilePage({
   profileOwner.current = currentUser?.id ?? null;
 
   const [profile, setProfile] =
-    useState(null);
+    useState(() => readProfileSnapshot(currentUser?.id));
 
   const [loading, setLoading] =
-    useState(
-      Boolean(currentUser),
-    );
+    useState(() => Boolean(currentUser && !readProfileSnapshot(currentUser?.id)));
 
   const [error, setError] =
     useState("");
@@ -232,10 +231,16 @@ export default function ProfilePage({
 
 
   useEffect(() => {
-    void loadProfile();
+    void loadProfile({ quiet: Boolean(profile) });
   }, [
     loadProfile,
   ]);
+
+  useEffect(() => {
+    if (currentUser?.id && profile) {
+      writeProfileSnapshot(currentUser.id, profile);
+    }
+  }, [currentUser?.id, profile]);
 
 
   useEffect(() => {
