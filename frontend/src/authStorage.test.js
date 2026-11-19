@@ -63,7 +63,8 @@ test("legacy auth tokens are cleared but account playback caches and identity pe
   assert.equal(storage.getAccessToken(), null);
   assert.equal(storage.hasStoredSession(), false);
   assert.equal(storage.readCachedUserProfile(), null);
-  assert.equal(localStorage.getItem("hypersync_user_profile"), null);\n  assert.equal(localStorage.length, 4);
+  assert.equal(localStorage.getItem("hypersync_user_profile"), null);
+  assert.equal(localStorage.length, 4);
 });
 
 test("session restoration always checks the HttpOnly refresh cookie", async () => {
