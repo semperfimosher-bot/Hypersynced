@@ -13,7 +13,7 @@ function createStorage(initial = {}) {
   };
 }
 
-test("auth tokens, session markers and cached profiles are memory-only", async () => {
+test("auth tokens stay memory-only while cached display identity persists", async () => {
   globalThis.localStorage = createStorage({
     hypersync_access_token: "old-token",
     hypersync_session_active: "true",
