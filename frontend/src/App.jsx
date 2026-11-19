@@ -139,6 +139,8 @@ import {
   notifyListeningHistoryChanged,
 } from "./homeRecentlyPlayed.js";
 import { clearProfileSnapshot } from "./profileSnapshotCache.js";
+import { writeProfileSnapshot } from "./profileSnapshotCache.js";
+import { getMyProfile } from "./profileApi.js";
 import { clearMessagesListSnapshot } from "./messagesListCache.js";
 import { writeMessagesListSnapshot } from "./messagesListCache.js";
 import { getConversations } from "./messageApi.js";
@@ -985,6 +987,20 @@ export default function App() {
       },
     );
   }, []);
+
+  // Refresh profile snapshot quietly after authenticated startup. Cached profile
+  // data is presentation-only and never replaces session authorization.
+  useEffect(() => {
+    const owner = currentUser?.id;
+    if (!owner || currentUser?.offline_only) return undefined;
+    let cancelled = false;
+    void getMyProfile().then((profile) => {
+      if (!cancelled && currentUser?.id === owner) {
+        writeProfileSnapshot(owner, profile);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUser?.id, currentUser?.offline_only]);
 
   // Warm the private conversation directory in the background so the
   // Messages page can render its last snapshot before its first visible visit.
