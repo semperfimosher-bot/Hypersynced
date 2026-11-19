@@ -308,18 +308,32 @@ test("recently played cache expires after seven days and rejects future timestam
 });
 
 
-test("recent-history cache changes from another tab notify owner-scoped listeners", async () => {
-  const { RECENT_CACHE_PREFIX, subscribeListeningHistoryChanged } = await import("./homeRecentlyPlayed.js");
+test("recent-history cache changes from another tab notify and invalidate stale owner snapshots", async () => {
+  const { RECENT_CACHE_PREFIX, subscribeListeningHistoryChanged, writeCachedHomeRecentlyPlayed, readCachedHomeRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
   const target = new EventTarget();
+  const originalStorage = globalThis.localStorage;
+  const values = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: (key) => values.delete(key),
+  };
   let received = null;
+  const owner = "owner-z";
+  const key = RECENT_CACHE_PREFIX + encodeURIComponent(owner);
   const unsubscribe = subscribeListeningHistoryChanged((event) => { received = event.detail; }, target);
   try {
+    writeCachedHomeRecentlyPlayed(owner, [{ id: "stale" }]);
+    values.set(key, JSON.stringify({ savedAt: Date.now(), tracks: [{ id: "fresh" }] }));
     const storageEvent = new Event("storage");
-    Object.defineProperty(storageEvent, "key", { value: RECENT_CACHE_PREFIX + encodeURIComponent("owner-z") });
+    Object.defineProperty(storageEvent, "key", { value: key });
     target.dispatchEvent(storageEvent);
-    assert.deepEqual(received, { type: "cache-updated", owner: "owner-z" });
+    assert.deepEqual(received, { type: "cache-updated", owner });
+    assert.deepEqual(readCachedHomeRecentlyPlayed(owner).map((track) => track.id), ["fresh"]);
   } finally {
     unsubscribe();
+    if (originalStorage === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = originalStorage;
   }
 });
 
