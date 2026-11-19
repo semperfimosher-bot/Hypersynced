@@ -306,3 +306,36 @@ test("recently played cache expires after seven days and rejects future timestam
     else globalThis.localStorage = original;
   }
 });
+
+
+test("recent-history cache writes notify mounted same-tab listeners", async () => {
+  const { subscribeListeningHistoryChanged, writeCachedHomeRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
+  const originalWindow = globalThis.window;
+  const target = new EventTarget();
+  globalThis.window = target;
+  let received = null;
+  const unsubscribe = subscribeListeningHistoryChanged((event) => { received = event.detail; }, target);
+  try {
+    writeCachedHomeRecentlyPlayed("cache-event-owner", [{ id: "track" }]);
+    assert.deepEqual(received, { type: "cache-updated", owner: "cache-event-owner" });
+  } finally {
+    unsubscribe();
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
+});
+
+test("recent-history cache changes from another tab notify owner-scoped listeners", async () => {
+  const { RECENT_CACHE_PREFIX, subscribeListeningHistoryChanged } = await import("./homeRecentlyPlayed.js");
+  const target = new EventTarget();
+  let received = null;
+  const unsubscribe = subscribeListeningHistoryChanged((event) => { received = event.detail; }, target);
+  try {
+    const storageEvent = new Event("storage");
+    Object.defineProperty(storageEvent, "key", { value: RECENT_CACHE_PREFIX + encodeURIComponent("owner-z") });
+    target.dispatchEvent(storageEvent);
+    assert.deepEqual(received, { type: "cache-updated", owner: "owner-z" });
+  } finally {
+    unsubscribe();
+  }
+});
