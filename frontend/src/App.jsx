@@ -32,6 +32,10 @@ import { apiRequest } from "./api/client.js";
 
 import { normalizeAppViewState } from "./appViewState.js";
 import {
+  readCachedAppView,
+  writeCachedAppView,
+} from "./appViewCache.js";
+import {
   PAGE_WARM_SWEEP_MS,
   pruneWarmPages,
   touchWarmPage,
@@ -1431,6 +1435,20 @@ const restoreSavedAppView =
       }
       const requestId = ++appViewRestoreRequestRef.current;
 
+      // Apply the account-scoped local view before the remote sync, avoiding
+      // a several-second default-home flash after a full app refresh.
+      const cachedView = readCachedAppView(user?.id, user?.role);
+      if (cachedView) {
+        setActivePage(cachedView.activePage);
+        setSearchQuery("");
+        setActiveProfileUsername(cachedView.profileUsername);
+        appViewLastQueuedSignatureRef.current = JSON.stringify({
+          active_page: cachedView.activePage,
+          search_query: "",
+          profile_username: cachedView.profileUsername || null,
+        });
+      }
+
       const params =
         new URLSearchParams(
           window.location.search,
@@ -1521,6 +1539,7 @@ const persistAppView =
       }
 
       const savedState = { ...state };
+      writeCachedAppView(currentUser.id, savedState, currentUser.role);
       appStateLastQueuedSignatureRef.current = JSON.stringify({
         active_page: savedState.active_page,
         search_query: savedState.search_query ?? "",
