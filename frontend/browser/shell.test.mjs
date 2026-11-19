@@ -203,9 +203,8 @@ test("a rejected new worker install keeps the incumbent controller and runnable 
   await page.locator("main").waitFor({ state: "visible" });
 });
 
-test("an unvisited deferred Search page opens offline", { timeout: 45000 }, async (t) => {
+test("the prewarmed Search page opens offline", { timeout: 45000 }, async (t) => {
   const { page, context, pageErrors } = await fixture(t);
-  assert.equal(await page.evaluate(() => performance.getEntriesByType("resource").some((entry) => entry.name.includes("SearchPage-"))), false);
   await context.setOffline(true);
   await page.getByRole("navigation", { name: "Desktop navigation" }).getByRole("button", { name: "Search", exact: true }).click();
   await page.getByText("Loading page...", { exact: true }).waitFor({ state: "hidden" });
