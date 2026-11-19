@@ -726,12 +726,14 @@ function MainPage({
                 <Suspense
                   fallback={
                     <div
-                      className="page-stack"
+                      className="hs-profile-page page-stack"
                       role="status"
                       aria-live="polite"
                       aria-busy="true"
                     >
-                      Loading page…
+                      <div className="hs-profile-skeleton" />
+                      <div className="hs-profile-skeleton" />
+                      <div className="hs-profile-skeleton" />
                     </div>
                   }
                 >
@@ -805,8 +807,10 @@ function shouldIgnorePlaybackShortcut(
 
 
 export default function App() {
+  // Render the last saved account immediately. Cached profile is display context
+  // only; protected requests still require server session validation.
   const [currentUser, setCurrentUser] =
-    useState(null);
+    useState(() => readCachedUserProfile());
 
   // Keep the account UI hidden until Neon app and playback state are restored.
   const [accountStateReady, setAccountStateReady] =
@@ -1914,6 +1918,8 @@ const persistAppView =
   const navigate =
   useCallback(
     (page) => {
+      // Fetch the page bundle while switching views to avoid cold lazy imports.
+      void preloadPage(page);
       navigationGenerationRef.current += 1;
       cancelPendingSearchSave();
 
