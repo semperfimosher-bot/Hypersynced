@@ -138,11 +138,9 @@ import {
 import {
   notifyListeningHistoryChanged,
 } from "./homeRecentlyPlayed.js";
-import { clearProfileSnapshot } from "./profileSnapshotCache.js";
-import { writeProfileSnapshot } from "./profileSnapshotCache.js";
+import { clearProfileSnapshot, writeProfileSnapshot } from "./profileSnapshotCache.js";
 import { getMyProfile } from "./profileApi.js";
-import { clearMessagesListSnapshot } from "./messagesListCache.js";
-import { writeMessagesListSnapshot } from "./messagesListCache.js";
+import { clearMessagesListSnapshot, writeMessagesListSnapshot } from "./messagesListCache.js";
 import { getConversations } from "./messageApi.js";
 
 import useMessageNotifications from
