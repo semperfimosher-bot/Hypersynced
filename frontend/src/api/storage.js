@@ -1,8 +1,9 @@
 /*
- * Authentication state is intentionally memory-only in the frontend.
+ * Authentication state is intentionally token-memory-only in the frontend.
  * The HttpOnly refresh cookie and server-side session are authoritative.
- * No profile, token, remember-me flag, or session marker is written to
- * localStorage or sessionStorage.
+ * A minimal cached profile is stored only to avoid falsely presenting the
+ * account as logged out during temporary refresh/network failures. It is
+ * never accepted as proof of authentication by the backend.
  */
 
 export const ACCESS_TOKEN_KEY = "hypersync_access_token";
@@ -14,24 +15,42 @@ let memoryAccessToken = null;
 let memorySessionActive = false;
 let memoryUserProfile = null;
 
+function safeStorage(name) {
+  try {
+    return globalThis[name] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeProfile(user) {
+  if (!user || typeof user !== "object") return null;
+  const allowed = ["id", "username", "display_name", "role", "account_type", "is_active"];
+  const profile = {};
+  for (const key of allowed) {
+    const value = user[key];
+    if (typeof value === "string" || typeof value === "boolean" || typeof value === "number") {
+      profile[key] = value;
+    }
+  }
+  return profile.id ? profile : null;
+}
+
 function removeLegacyBrowserState() {
-  const fixedKeys = [ACCESS_TOKEN_KEY, SESSION_ACTIVE_KEY, REMEMBER_ME_KEY, CACHED_USER_KEY];
+  const fixedKeys = [ACCESS_TOKEN_KEY, SESSION_ACTIVE_KEY, REMEMBER_ME_KEY];
   const prefixes = [
     "hypersync-library-v1:",
     "hypersync_player_state_v2:",
     "hypersync-home-recent-v1:",
     "hypersync:playlist-pins-v1:",
   ];
-  for (const storageName of ["localStorage", "sessionStorage"]) {
+  for (const storage of [safeStorage("localStorage"), safeStorage("sessionStorage")]) {
+    if (!storage) continue;
     try {
-      const storage = globalThis[storageName];
-      if (!storage) continue;
       for (const key of fixedKeys) storage.removeItem(key);
       for (let index = storage.length - 1; index >= 0; index -= 1) {
         const key = storage.key(index);
-        if (key && prefixes.some((prefix) => key.startsWith(prefix))) {
-          storage.removeItem(key);
-        }
+        if (key && prefixes.some((prefix) => key.startsWith(prefix))) storage.removeItem(key);
       }
     } catch {
       // Browser storage may be unavailable or blocked.
@@ -41,8 +60,21 @@ function removeLegacyBrowserState() {
 
 removeLegacyBrowserState();
 
+function loadCachedProfile() {
+  const storage = safeStorage("localStorage");
+  try {
+    const profile = sanitizeProfile(JSON.parse(storage?.getItem(CACHED_USER_KEY) ?? "null"));
+    memoryUserProfile = profile;
+  } catch {
+    memoryUserProfile = null;
+    try { storage?.removeItem(CACHED_USER_KEY); } catch {}
+  }
+}
+
+loadCachedProfile();
+
 export function shouldRememberSession() {
-  // Refresh-cookie lifetime is controlled by the server.
+  // Refresh-cookie lifetime and revocation are controlled by the server.
   return true;
 }
 
@@ -63,15 +95,27 @@ export function readCachedUserProfile() {
 }
 
 export function cacheUserProfile(user) {
-  if (user && typeof user === "object") memoryUserProfile = { ...user };
+  const profile = sanitizeProfile(user);
+  if (!profile) return;
+  memoryUserProfile = profile;
+  try {
+    safeStorage("localStorage")?.setItem(CACHED_USER_KEY, JSON.stringify(profile));
+  } catch {
+    // Cached identity is an optimization, not required for authentication.
+  }
 }
 
 export function clearCachedUserProfile() {
   memoryUserProfile = null;
+  try {
+    safeStorage("localStorage")?.removeItem(CACHED_USER_KEY);
+  } catch {
+    // Browser storage may be unavailable or blocked.
+  }
 }
 
 export function shouldRestoreSession() {
-  // Always check the HttpOnly refresh cookie on app startup.
+  // Always validate/refresh using the HttpOnly refresh cookie at startup.
   return true;
 }
 
@@ -83,5 +127,5 @@ export function saveAuthSession(accessToken) {
 export function clearAuthSession() {
   memoryAccessToken = null;
   memorySessionActive = false;
-  memoryUserProfile = null;
+  clearCachedUserProfile();
 }
