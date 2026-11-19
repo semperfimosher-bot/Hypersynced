@@ -1986,6 +1986,7 @@ const persistAppView =
     document.addEventListener("visibilitychange", refreshWhenVisible);
     window.addEventListener("focus", refreshWhenVisible);
     window.addEventListener("online", refreshWhenVisible);
+    window.addEventListener("pageshow", refreshWhenVisible);
 
     return () => {
       active = false;
@@ -1993,6 +1994,7 @@ const persistAppView =
       document.removeEventListener("visibilitychange", refreshWhenVisible);
       window.removeEventListener("focus", refreshWhenVisible);
       window.removeEventListener("online", refreshWhenVisible);
+      window.removeEventListener("pageshow", refreshWhenVisible);
     };
   }, [currentUser?.id, currentUser?.offline_only, currentUser?.role]);
 
