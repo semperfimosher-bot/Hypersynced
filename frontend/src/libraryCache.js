@@ -191,6 +191,38 @@ export function setCachedLibrary(userKey, library) {
   libraryByOwner.set(ownerKey(userKey), snapshot);
   return writeRecord(userKey, "library", "root", snapshot);
 }
+export async function clearCachedLibraryPages(userKey) {
+  const owner = ownerKey(userKey);
+  const prefix = owner + "|page|";
+  let removed = 0;
+  for (const key of playlistPages.keys()) {
+    if (key.startsWith(prefix)) {
+      playlistPages.delete(key);
+      removed += 1;
+    }
+  }
+  if (!canPersist(userKey)) return removed;
+  const database = await openDatabase();
+  if (!database) return removed;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.index("ownerKey").getAll(owner);
+    request.onsuccess = () => {
+      for (const record of request.result ?? []) {
+        if (record.kind === "page") {
+          store.delete(record.key);
+          removed += 1;
+        }
+      }
+    };
+    request.onerror = () => transaction.abort();
+    transaction.oncomplete = () => resolve(removed);
+    transaction.onerror = () => reject(transaction.error ?? new Error("Unable to clear cached Library pages."));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Clearing cached Library pages was aborted."));
+  });
+}
+
 export function clearCachedLibraryScope(userKey) {
   const owner = ownerKey(userKey);
   libraryByOwner.delete(owner);
