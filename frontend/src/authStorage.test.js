@@ -35,11 +35,13 @@ test("legacy auth tokens are cleared but account playback caches and identity pe
     "hypersync_access_token",
     "hypersync_session_active",
     "hypersync_remember_me",
+  ]) assert.equal(localStorage.getItem(key), null, key);
+  for (const key of [
     "hypersync-library-v1:old-user",
     "hypersync_player_state_v2:old-user",
     "hypersync-home-recent-v1:old-user",
     "hypersync:playlist-pins-v1:old-user",
-  ]) assert.equal(localStorage.getItem(key), null, key);
+  ]) assert.notEqual(localStorage.getItem(key), null, key);
   assert.notEqual(localStorage.getItem("hypersync_user_profile"), null);
   assert.equal(storage.readCachedUserProfile().id, "old-user");
   assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
@@ -53,7 +55,7 @@ test("legacy auth tokens are cleared but account playback caches and identity pe
 
   storage.cacheUserProfile({ id: "user-1", username: "listener", display_name: "Listener", access_token: "must-not-save" });
   assert.equal(storage.readCachedUserProfile().id, "user-1");
-  assert.equal(localStorage.length, 1);
+  assert.equal(localStorage.length, 5);
   assert.equal(sessionStorage.length, 0);
   assert.equal(localStorage.getItem("hypersync_user_profile").includes("must-not-save"), false);
 
@@ -61,7 +63,7 @@ test("legacy auth tokens are cleared but account playback caches and identity pe
   assert.equal(storage.getAccessToken(), null);
   assert.equal(storage.hasStoredSession(), false);
   assert.equal(storage.readCachedUserProfile(), null);
-  assert.equal(localStorage.getItem("hypersync_user_profile"), null);
+  assert.equal(localStorage.getItem("hypersync_user_profile"), null);\n  assert.equal(localStorage.length, 4);
 });
 
 test("session restoration always checks the HttpOnly refresh cookie", async () => {
