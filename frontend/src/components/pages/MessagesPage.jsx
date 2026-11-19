@@ -29,6 +29,8 @@ import Icon from
 import useQuietRefresh from
   "../../hooks/useQuietRefresh.js";
 
+import { readMessagesListSnapshot, writeMessagesListSnapshot } from "../../messagesListCache.js";
+
 
 function formatMessageTime(
   value,
@@ -187,15 +189,16 @@ export default function MessagesPage({
   onBackToSearch,
   resetToken = 0,
 }) {
+  const cachedMessagesSnapshot = readMessagesListSnapshot(currentUser?.id);
   const [
     conversations,
     setConversations,
-  ] = useState([]);
+  ] = useState(() => cachedMessagesSnapshot?.conversations ?? []);
 
   const [
     unreadCount,
     setUnreadCount,
-  ] = useState(0);
+  ] = useState(() => cachedMessagesSnapshot?.unread_count ?? 0);
 
   const [
     selectedUsername,
@@ -225,7 +228,7 @@ export default function MessagesPage({
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] = useState(() => !cachedMessagesSnapshot);
 
   const [
     conversationLoading,
@@ -282,6 +285,7 @@ export default function MessagesPage({
             ) || 0,
           );
 
+          writeMessagesListSnapshot(currentUser?.id, result);
           onUnreadChange?.();
         } catch (requestError) {
           if (!quiet) {
@@ -432,7 +436,7 @@ export default function MessagesPage({
 
 
   useEffect(() => {
-    void loadConversations();
+    void loadConversations({ quiet: Boolean(cachedMessagesSnapshot) });
   }, [
     loadConversations,
   ]);
