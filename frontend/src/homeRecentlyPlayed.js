@@ -68,6 +68,10 @@ export function subscribeListeningHistoryChanged(listener, target = globalThis.w
     } catch {
       return;
     }
+    // The storage event carries the other tab's write; discard this tab's
+    // memory snapshot so the next read uses the newly persisted value.
+    recentByOwner.delete(owner);
+    recentSavedAtByOwner.delete(owner);
     listener({
       type: LISTENING_HISTORY_CHANGED_EVENT,
       detail: { type: "cache-updated", owner },
