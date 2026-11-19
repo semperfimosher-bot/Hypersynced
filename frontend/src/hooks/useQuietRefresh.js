@@ -91,6 +91,11 @@ export default function useQuietRefresh(
         void run();
       };
 
+    const handlePageShow =
+      () => {
+        void run();
+      };
+
     const handleVisibility =
       () => {
         if (
@@ -125,6 +130,12 @@ export default function useQuietRefresh(
         handleOnline,
       );
 
+    globalThis.window
+      ?.addEventListener(
+        "pageshow",
+        handlePageShow,
+      );
+
     globalThis.document
       ?.addEventListener(
         "visibilitychange",
@@ -154,6 +165,12 @@ export default function useQuietRefresh(
         ?.removeEventListener(
           "online",
           handleOnline,
+        );
+
+      globalThis.window
+        ?.removeEventListener(
+          "pageshow",
+          handlePageShow,
         );
 
       globalThis.document
