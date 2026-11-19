@@ -33,7 +33,7 @@ export function shouldBeginListeningEvent(activeTrackId, nextTrackId) {
   return String(activeTrackId ?? "") !== String(nextTrackId);
 }
 
-export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12) {
+export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12, { incrementPlayCount = true } = {}) {
   if (!Array.isArray(tracks) || !playedTrack?.id) return tracks ?? [];
   const id = String(playedTrack.id);
   const existing = tracks.find((track) => String(track?.id) === id);
@@ -48,7 +48,7 @@ export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12) {
     mime_type: playedTrack.mimeType ?? existing?.mime_type ?? null,
     file_size: playedTrack.fileSize ?? existing?.file_size ?? null,
     media_version: playedTrack.mediaVersion ?? existing?.media_version ?? null,
-    play_count: Math.max(0, Number(existing?.play_count) || 0) + 1,
+    play_count: Math.max(0, Number(existing?.play_count) || 0) + (incrementPlayCount ? 1 : 0),
     last_played_at: new Date().toISOString(),
   };
   return [
