@@ -60,7 +60,24 @@ export function applyOptimisticRecentlyPlayed(tracks, playedTrack, limit = 12) {
 export function subscribeListeningHistoryChanged(listener, target = globalThis.window) {
   if (!target?.addEventListener || !target?.removeEventListener) return () => {};
   target.addEventListener(LISTENING_HISTORY_CHANGED_EVENT, listener);
-  return () => target.removeEventListener(LISTENING_HISTORY_CHANGED_EVENT, listener);
+  const onStorage = (event) => {
+    if (typeof event?.key !== "string" || !event.key.startsWith(RECENT_CACHE_PREFIX)) return;
+    let owner = null;
+    try {
+      owner = decodeURIComponent(event.key.slice(RECENT_CACHE_PREFIX.length));
+    } catch {
+      return;
+    }
+    listener({
+      type: LISTENING_HISTORY_CHANGED_EVENT,
+      detail: { type: "cache-updated", owner },
+    });
+  };
+  target.addEventListener("storage", onStorage);
+  return () => {
+    target.removeEventListener(LISTENING_HISTORY_CHANGED_EVENT, listener);
+    target.removeEventListener("storage", onStorage);
+  };
 }
 
 export function canRecordListeningHistory(accessToken, storedSession) {
@@ -73,7 +90,7 @@ export function isCurrentHistoryResponse(request, latestRequest, owner, currentO
 
 // Recently played remains Neon-authoritative. A small owner-scoped snapshot
 // makes the last known list available on the next visit while the API refreshes.
-const RECENT_CACHE_PREFIX = "hypersynced.recently-played.v1:";
+export const RECENT_CACHE_PREFIX = "hypersynced.recently-played.v1:";
 const RECENT_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const recentByOwner = new Map();
 const recentSavedAtByOwner = new Map();
@@ -166,5 +183,6 @@ export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12, now = D
   } catch {
     // Storage can be disabled or full; the in-memory snapshot still works.
   }
+  notifyListeningHistoryChanged({ type: "cache-updated", owner: key });
   return true;
 }
