@@ -18,7 +18,7 @@ test("auth tokens stay memory-only while cached display identity persists", asyn
     hypersync_access_token: "old-token",
     hypersync_session_active: "true",
     hypersync_remember_me: "true",
-    hypersync_user_profile: JSON.stringify({ id: "old-user" }),
+    hypersync_user_profile: JSON.stringify({ id: "old-user", username: "listener" }),
     "hypersync-library-v1:old-user": "{}",
     "hypersync_player_state_v2:old-user": "{}",
     "hypersync-home-recent-v1:old-user": "[]",
@@ -29,36 +29,39 @@ test("auth tokens stay memory-only while cached display identity persists", asyn
     hypersync_session_active: "true",
   });
 
-  const storage = await import(`./api/storage.js?memory-only=${Date.now()}`);
+  const storage = await import(`./api/storage.js?cache-safe=${Date.now()}`);
 
   for (const key of [
     "hypersync_access_token",
     "hypersync_session_active",
     "hypersync_remember_me",
-    "hypersync_user_profile",
     "hypersync-library-v1:old-user",
     "hypersync_player_state_v2:old-user",
     "hypersync-home-recent-v1:old-user",
     "hypersync:playlist-pins-v1:old-user",
   ]) assert.equal(localStorage.getItem(key), null, key);
-  assert.notEqual(localStorage.getItem("hypersync_user_profile"), null);\n  assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
+  assert.notEqual(localStorage.getItem("hypersync_user_profile"), null);
+  assert.equal(storage.readCachedUserProfile().id, "old-user");
+  assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
   assert.equal(sessionStorage.getItem("hypersync_session_active"), null);
 
   storage.saveAuthSession("live-memory-token");
   assert.equal(storage.getAccessToken(), "live-memory-token");
   assert.equal(storage.hasStoredSession(), true);
-  assert.equal(localStorage.length, 0);
+  assert.equal(localStorage.length, 1);
   assert.equal(sessionStorage.length, 0);
 
-  storage.cacheUserProfile({ id: "user-1", username: "listener" });
+  storage.cacheUserProfile({ id: "user-1", username: "listener", display_name: "Listener", access_token: "must-not-save" });
   assert.equal(storage.readCachedUserProfile().id, "user-1");
-  assert.equal(localStorage.length, 0);
+  assert.equal(localStorage.length, 1);
   assert.equal(sessionStorage.length, 0);
+  assert.equal(localStorage.getItem("hypersync_user_profile").includes("must-not-save"), false);
 
   storage.clearAuthSession();
   assert.equal(storage.getAccessToken(), null);
   assert.equal(storage.hasStoredSession(), false);
   assert.equal(storage.readCachedUserProfile(), null);
+  assert.equal(localStorage.getItem("hypersync_user_profile"), null);
 });
 
 test("session restoration always checks the HttpOnly refresh cookie", async () => {
