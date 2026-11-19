@@ -37,3 +37,23 @@ test("profile snapshot expires and can be cleared", () => {
     assert.equal(readProfileSnapshot("u", 21), null);
   } finally { mock.restore(); }
 });
+
+
+test("profile snapshot updates are broadcast to same-tab and other-tab subscribers", async () => {
+  const { PROFILE_SNAPSHOT_CHANGED_EVENT, subscribeProfileSnapshotChanged } = await import("./profileSnapshotCache.js");
+  const target = new EventTarget();
+  let calls = 0;
+  const unsubscribe = subscribeProfileSnapshotChanged("owner-1", () => { calls += 1; }, target);
+  try {
+    const sameTabEvent = new CustomEvent(PROFILE_SNAPSHOT_CHANGED_EVENT, { detail: { owner: "owner-1" } });
+    target.dispatchEvent(sameTabEvent);
+    const storageEvent = new Event("storage");
+    Object.defineProperty(storageEvent, "key", { value: "hypersynced.profile-snapshot.v1:owner-1" });
+    target.dispatchEvent(storageEvent);
+    const wrongOwnerEvent = new CustomEvent(PROFILE_SNAPSHOT_CHANGED_EVENT, { detail: { owner: "owner-2" } });
+    target.dispatchEvent(wrongOwnerEvent);
+    assert.equal(calls, 2);
+  } finally {
+    unsubscribe();
+  }
+});
