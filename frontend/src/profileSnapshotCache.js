@@ -70,13 +70,6 @@ export function writeProfileSnapshot(owner, profile, now = Date.now()) {
     const store = storage();
     if (!store) return false;
     store.setItem(key, JSON.stringify({ savedAt: now, profile: sanitized }));
-    const target = globalThis.window;
-    if (target?.dispatchEvent) {
-      const event = typeof CustomEvent === "function"
-        ? new CustomEvent(PROFILE_SNAPSHOT_CHANGED_EVENT, { detail: { owner: String(owner) } })
-        : Object.assign(new Event(PROFILE_SNAPSHOT_CHANGED_EVENT), { detail: { owner: String(owner) } });
-      target.dispatchEvent(event);
-    }
     return true;
   } catch {
     return false;
