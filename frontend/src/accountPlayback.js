@@ -93,6 +93,9 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
   let lastServerUpdatedAt = 0;
   let lastServerUpdatedAtValue = null;
   let refreshPromise = null;
+  let refreshStartedAt = 0;
+  let refreshQueued = false;
+  let lastLifecycleRefreshAt = 0;
   let lastTrackId = player.getState()?.trackId ?? null;
   let lastSavedKey = "";
   let pendingKey = "";
@@ -180,7 +183,16 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
   };
 
   const refreshFromDatabase = (initial = false) => {
-    if (!active || refreshPromise) return refreshPromise ?? Promise.resolve();
+    if (!active) return Promise.resolve();
+    if (refreshPromise) {
+      // If a refresh has been in flight long enough to predate a resume/focus
+      // event, run one more authoritative read after it completes.
+      if (!initial && Date.now() - refreshStartedAt > 1_500) {
+        refreshQueued = true;
+      }
+      return refreshPromise;
+    }
+    refreshStartedAt = Date.now();
     const revisionAtRequest = localRevision;
 
     const task = (async () => {
@@ -275,6 +287,10 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
     refreshPromise = task;
     return task.finally(() => {
       if (refreshPromise === task) refreshPromise = null;
+      if (active && refreshQueued) {
+        refreshQueued = false;
+        void refreshFromDatabase(false);
+      }
     });
   };
 
@@ -358,12 +374,21 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
     void refreshFromDatabase(false);
   }, 12_000);
 
+  const refreshOnLifecycle = () => {
+    const now = Date.now();
+    // Focus, pageshow, online, and visibility can fire together on resume.
+    // Collapse those into one refresh, but never suppress a later resume.
+    if (now - lastLifecycleRefreshAt < 1_000) return;
+    lastLifecycleRefreshAt = now;
+    void refreshFromDatabase(false);
+  };
   const onVisibilityChange = () => {
-    if (document.visibilityState !== "hidden") {
-      void refreshFromDatabase(false);
-    }
+    if (document.visibilityState !== "hidden") refreshOnLifecycle();
   };
   document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("focus", refreshOnLifecycle);
+  window.addEventListener("pageshow", refreshOnLifecycle);
+  window.addEventListener("online", refreshOnLifecycle);
 
   // Paint the last known song metadata from this account's local snapshot
   // before the network round-trip. The database response remains authoritative.
@@ -388,6 +413,9 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
     window.clearInterval(checkpointInterval);
     window.clearInterval(refreshInterval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("focus", refreshOnLifecycle);
+    window.removeEventListener("pageshow", refreshOnLifecycle);
+    window.removeEventListener("online", refreshOnLifecycle);
     unsubscribe();
   };
 }
