@@ -1456,7 +1456,7 @@ const restoreSavedAppView =
         setActivePage(cachedView.activePage);
         setSearchQuery("");
         setActiveProfileUsername(cachedView.profileUsername);
-        appViewLastQueuedSignatureRef.current = JSON.stringify({
+        appStateLastQueuedSignatureRef.current = JSON.stringify({
           active_page: cachedView.activePage,
           search_query: "",
           profile_username: cachedView.profileUsername || null,
