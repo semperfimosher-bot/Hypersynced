@@ -101,6 +101,7 @@ import {
   getCachedLibraryAsync,
   getCachedLibraryPageAsync,
   getCachedPlaylistAsync,
+  clearCachedLibraryPages,
   setCachedLibrary,
   setCachedLibraryPageAsync,
   setCachedPlaylist,
@@ -1125,6 +1126,16 @@ const [
             return;
           }
 
+          const serverVersionChanged = Boolean(
+            changeToken && cached.changeToken !== changeToken,
+          );
+          if (serverVersionChanged) {
+            // Loaded pages beyond page zero belong to the old account-library
+            // version. Drop them instead of merging stale membership into the
+            // refreshed first page after another device changes the Library.
+            await clearCachedLibraryPages(libraryCacheKey);
+          }
+
           [mine, saved, tracks] = await Promise.all([
             getMyPlaylists(),
             getSavedPlaylists(),
@@ -1149,8 +1160,11 @@ const [
           ? tracks
           : [];
         const existingTracks = libraryTracksRef.current;
+        const serverVersionChanged = Boolean(
+          cached && changeToken && cached.changeToken !== changeToken,
+        );
         let nextTracks = fetchedTracks;
-        if (quiet && existingTracks.length) {
+        if (quiet && existingTracks.length && !serverVersionChanged) {
           const fetchedIds = new Set(
             fetchedTracks.map((track) => String(track.id)),
           );
@@ -1167,12 +1181,12 @@ const [
             ),
           ].map((track) => byId.get(String(track.id)) ?? track);
         }
-        if (!quiet) {
+        if (!quiet || serverVersionChanged) {
           libraryNextOffsetRef.current = fetchedTracks.length;
         }
         const nextHasMore =
           fetchedTracks.length >= LIBRARY_TRACKS_PAGE_SIZE ||
-          (quiet && existingTracks.length > fetchedTracks.length);
+          (!serverVersionChanged && quiet && existingTracks.length > fetchedTracks.length);
 
         setOwnedPlaylists(
           nextOwned,
