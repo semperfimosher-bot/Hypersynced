@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import "fake-indexeddb/auto";
 import {
-  clearCachedLibraryScope, getCachedLibrary, getCachedLibraryAsync,
+  clearCachedLibraryScope, clearCachedLibraryPages, getCachedLibrary, getCachedLibraryAsync,
   getCachedLibraryPageAsync, getCachedPlaylistAsync,
   setCachedLibrary, setCachedLibraryPageAsync, setCachedPlaylist,
 } from "./libraryCache.js";
@@ -66,4 +66,20 @@ test("anonymous Library snapshots are not written to persistent storage", async 
   await setCachedLibrary("anonymous", { tracks: [{ id: "guest" }] });
   const reopened = await import("./libraryCache.js?anonymous-reopen-" + Date.now());
   assert.equal(await reopened.getCachedLibraryAsync("anonymous"), null);
+});
+
+
+test("invalidating changed-library pages clears stale pages only for that account", async () => {
+  const suffix = Date.now().toString();
+  const ownerA = "page-owner-a-" + suffix;
+  const ownerB = "page-owner-b-" + suffix;
+  await setCachedLibraryPageAsync(ownerA, 0, [{ id: "old-a-0" }]);
+  await setCachedLibraryPageAsync(ownerA, 1000, [{ id: "old-a-1" }]);
+  await setCachedLibraryPageAsync(ownerB, 0, [{ id: "keep-b-0" }]);
+  await setCachedLibraryPageAsync(ownerB, 1000, [{ id: "keep-b-1" }]);
+  await clearCachedLibraryPages(ownerA);
+  assert.equal(await getCachedLibraryPageAsync(ownerA, 0), null);
+  assert.equal(await getCachedLibraryPageAsync(ownerA, 1000), null);
+  assert.deepEqual(await getCachedLibraryPageAsync(ownerB, 0), [{ id: "keep-b-0" }]);
+  assert.deepEqual(await getCachedLibraryPageAsync(ownerB, 1000), [{ id: "keep-b-1" }]);
 });
