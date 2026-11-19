@@ -37,21 +37,15 @@ function sanitizeProfile(user) {
 }
 
 function removeLegacyBrowserState() {
-  const fixedKeys = [ACCESS_TOKEN_KEY, SESSION_ACTIVE_KEY, REMEMBER_ME_KEY];
-  const prefixes = [
-    "hypersync-library-v1:",
-    "hypersync_player_state_v2:",
-    "hypersync-home-recent-v1:",
-    "hypersync:playlist-pins-v1:",
-  ];
+  // Remove only legacy persisted auth credentials. Account-scoped playback,
+  // library, queue and recent-listening caches must survive reloads: deleting
+  // them forces startup to wait for remote state and causes the guest flash.
   for (const storage of [safeStorage("localStorage"), safeStorage("sessionStorage")]) {
     if (!storage) continue;
     try {
-      for (const key of fixedKeys) storage.removeItem(key);
-      for (let index = storage.length - 1; index >= 0; index -= 1) {
-        const key = storage.key(index);
-        if (key && prefixes.some((prefix) => key.startsWith(prefix))) storage.removeItem(key);
-      }
+      storage.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(SESSION_ACTIVE_KEY);
+      storage.removeItem(REMEMBER_ME_KEY);
     } catch {
       // Browser storage may be unavailable or blocked.
     }
