@@ -42,7 +42,8 @@ import {
   applyOptimisticRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
-import { readProfileSnapshot, writeProfileSnapshot } from "../../profileSnapshotCache.js";
+import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
+import { readCachedHomeRecentlyPlayed } from "../../homeRecentlyPlayed.js";
 
 
 function memberFor(value) {
@@ -241,15 +242,27 @@ export default function ProfilePage({
 
 
   useEffect(() => {
-    if (
-      !currentUser ||
-      !online
-    ) {
+    if (!currentUser) {
       return undefined;
     }
 
-    return subscribeListeningHistoryChanged(
+    const owner = String(currentUser.id ?? currentUser.username ?? "");
+    const unsubscribeCache = subscribeProfileSnapshotChanged(currentUser.id, () => {
+      const cachedProfile = readProfileSnapshot(currentUser.id);
+      if (cachedProfile) setProfile(cachedProfile);
+    });
+
+    const unsubscribeHistory = subscribeListeningHistoryChanged(
       (event) => {
+        if (event.detail?.type === "cache-updated") {
+          if (String(event.detail.owner ?? "") === owner) {
+            const cachedRecent = readCachedHomeRecentlyPlayed(owner);
+            setProfile((current) => current
+              ? { ...current, recently_played: cachedRecent }
+              : current);
+          }
+          return;
+        }
         if (event.detail?.type === "optimistic-play" && event.detail.track) {
           setProfile((current) => {
             if (!current) return current;
@@ -267,10 +280,13 @@ export default function ProfilePage({
         void loadProfile({ quiet: true });
       },
     );
+    return () => {
+      unsubscribeCache();
+      unsubscribeHistory();
+    };
   }, [
     currentUser,
     loadProfile,
-    online,
   ]);
 
 
