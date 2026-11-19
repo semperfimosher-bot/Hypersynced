@@ -284,6 +284,13 @@ useEffect(
   () =>
     subscribeListeningHistoryChanged(
       (event) => {
+        if (event.detail?.type === "cache-updated") {
+          const owner = String(currentUser?.id ?? currentUser?.username ?? "");
+          if (String(event.detail.owner ?? "") === owner) {
+            setRecentlyPlayed(readCachedHomeRecentlyPlayed(owner));
+          }
+          return;
+        }
         if (event.detail?.type === "optimistic-play" && event.detail.track) {
           setRecentlyPlayed((current) =>
             applyOptimisticRecentlyPlayed(current, event.detail.track),
