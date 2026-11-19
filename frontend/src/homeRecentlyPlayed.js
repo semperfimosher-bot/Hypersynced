@@ -183,6 +183,5 @@ export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12, now = D
   } catch {
     // Storage can be disabled or full; the in-memory snapshot still works.
   }
-  notifyListeningHistoryChanged({ type: "cache-updated", owner: key });
   return true;
 }
