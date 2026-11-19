@@ -815,6 +815,15 @@ function shouldIgnorePlaybackShortcut(
 
 
 export default function App() {
+  // Resolve the account-scoped saved page synchronously before the first render.
+  // This prevents Home from flashing while session restoration runs.
+  const [startupAppView] = useState(() => {
+    const cachedUser = readCachedUserProfile();
+    return cachedUser
+      ? readCachedAppView(cachedUser.id, cachedUser.role)
+      : null;
+  });
+
   // Render the last saved account immediately. Cached profile is display context
   // only; protected requests still require server session validation.
   const [currentUser, setCurrentUser] =
@@ -825,7 +834,7 @@ export default function App() {
     useState(() => !shouldRestoreSession());
 
   const [activePage, setActivePage] =
-    useState("home");
+    useState(() => startupAppView?.activePage ?? "home");
 
   // Invalidates asynchronous saved-view/session restores after user navigation.
   const navigationGenerationRef = useRef(0);
@@ -835,9 +844,9 @@ export default function App() {
     const [
     activeProfileUsername,
     setActiveProfileUsername,
-  ] = useState("");
+  ] = useState(() => startupAppView?.profileUsername ?? "");
 
-  const [searchQuery, setSearchQuery] =
+  const [searchQuery, setSearchQuery =
     useState("");
 
   const [
