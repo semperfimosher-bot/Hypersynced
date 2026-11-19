@@ -47,7 +47,9 @@ export function writeCachedAppView(ownerId, state, role = "user", now = Date.now
     profile_username: state?.profile_username,
   }, role);
   try {
-    storage()?.setItem(key, JSON.stringify({
+    const store = storage();
+    if (!store) return false;
+    store.setItem(key, JSON.stringify({
       active_page: normalized.activePage,
       profile_username: normalized.profileUsername,
       savedAt: now,
