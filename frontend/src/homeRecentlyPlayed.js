@@ -74,7 +74,9 @@ export function isCurrentHistoryResponse(request, latestRequest, owner, currentO
 // Recently played remains Neon-authoritative. A small owner-scoped snapshot
 // makes the last known list available on the next visit while the API refreshes.
 const RECENT_CACHE_PREFIX = "hypersynced.recently-played.v1:";
+const RECENT_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const recentByOwner = new Map();
+const recentSavedAtByOwner = new Map();
 
 function normalizeOwner(owner) {
   const value = String(owner ?? "").trim();
@@ -115,34 +117,51 @@ export function getHomeRecentlyPlayedForOwner(owner, stateOwner, tracks) {
   return readCachedHomeRecentlyPlayed(key);
 }
 
-export function readCachedHomeRecentlyPlayed(owner, limit = 12) {
+export function readCachedHomeRecentlyPlayed(owner, limit = 12, now = Date.now()) {
   const key = normalizeOwner(owner);
   if (!key) return [];
   let tracks = recentByOwner.get(key);
+  let savedAt = recentSavedAtByOwner.get(key) ?? 0;
   if (!tracks) {
     try {
       const raw = storageForRecentHistory()?.getItem(RECENT_CACHE_PREFIX + encodeURIComponent(key));
       const parsed = raw ? JSON.parse(raw) : null;
+      savedAt = Number(parsed?.savedAt) || 0;
       tracks = Array.isArray(parsed?.tracks)
         ? normalizeRecentTracks(parsed.tracks, limit)
         : [];
       recentByOwner.set(key, tracks);
+      recentSavedAtByOwner.set(key, savedAt);
     } catch {
       tracks = [];
+      savedAt = 0;
     }
+  }
+  if (
+    !savedAt ||
+    savedAt > now + 60_000 ||
+    now - savedAt > RECENT_CACHE_MAX_AGE_MS
+  ) {
+    recentByOwner.delete(key);
+    recentSavedAtByOwner.delete(key);
+    try {
+      storageForRecentHistory()?.removeItem(RECENT_CACHE_PREFIX + encodeURIComponent(key));
+    } catch {}
+    return [];
   }
   return tracks.slice(0, Math.max(0, limit));
 }
 
-export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12) {
+export function writeCachedHomeRecentlyPlayed(owner, tracks, limit = 12, now = Date.now()) {
   const key = normalizeOwner(owner);
   if (!key || !Array.isArray(tracks)) return false;
   const normalized = normalizeRecentTracks(tracks, limit);
   recentByOwner.set(key, normalized);
+  recentSavedAtByOwner.set(key, now);
   try {
     storageForRecentHistory()?.setItem(
       RECENT_CACHE_PREFIX + encodeURIComponent(key),
-      JSON.stringify({ savedAt: Date.now(), tracks: normalized }),
+      JSON.stringify({ savedAt: now, tracks: normalized }),
     );
   } catch {
     // Storage can be disabled or full; the in-memory snapshot still works.
