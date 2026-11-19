@@ -205,6 +205,7 @@ export default function ProfilePage({
 
           if (!isCurrent()) return;
           setProfile(data);
+          writeProfileSnapshot(owner, data);
           setError("");
 
         } catch (loadError) {
@@ -236,11 +237,7 @@ export default function ProfilePage({
     loadProfile,
   ]);
 
-  useEffect(() => {
-    if (currentUser?.id && profile) {
-      writeProfileSnapshot(currentUser.id, profile);
-    }
-  }, [currentUser?.id, profile]);
+
 
 
   useEffect(() => {
@@ -906,6 +903,7 @@ export default function ProfilePage({
           }}
           onSaved={(updated) => {
   setProfile(updated);
+  writeProfileSnapshot(currentUser?.id, updated);
 
   setAvatarVersion(
     Date.now(),
