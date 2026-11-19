@@ -41,7 +41,7 @@ test("auth tokens stay memory-only while cached display identity persists", asyn
     "hypersync-home-recent-v1:old-user",
     "hypersync:playlist-pins-v1:old-user",
   ]) assert.equal(localStorage.getItem(key), null, key);
-  assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
+  assert.notEqual(localStorage.getItem("hypersync_user_profile"), null);\n  assert.equal(sessionStorage.getItem("hypersync_access_token"), null);
   assert.equal(sessionStorage.getItem("hypersync_session_active"), null);
 
   storage.saveAuthSession("live-memory-token");
