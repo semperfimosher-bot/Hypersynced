@@ -322,3 +322,12 @@ test("recent-history cache changes from another tab notify owner-scoped listener
     unsubscribe();
   }
 });
+
+
+test("optimistic history updates reorder tracks without changing authoritative play counts", async () => {
+  const { applyOptimisticRecentlyPlayed } = await import("./homeRecentlyPlayed.js");
+  const current = [{ id: "song-a", play_count: 8 }, { id: "song-b", play_count: 2 }];
+  const next = applyOptimisticRecentlyPlayed(current, { id: "song-b", title: "B" }, 12, { incrementPlayCount: false });
+  assert.deepEqual(next.map((track) => track.id), ["song-b", "song-a"]);
+  assert.equal(next[0].play_count, 2);
+});
