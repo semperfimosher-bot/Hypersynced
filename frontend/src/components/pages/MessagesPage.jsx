@@ -304,6 +304,7 @@ export default function MessagesPage({
       },
       [
         onUnreadChange,
+        currentUser?.id,
       ],
     );
 
