@@ -124,7 +124,7 @@ async def drop_owned_database(
             )
         await admin.execute(
             f'DROP DATABASE "{name}" WITH (FORCE)',
-            timeout=10,
+            timeout=45,
         )
     finally:
         await admin.close(timeout=5)
