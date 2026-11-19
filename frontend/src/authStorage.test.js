@@ -13,7 +13,7 @@ function createStorage(initial = {}) {
   };
 }
 
-test("auth tokens stay memory-only while cached display identity persists", async () => {
+test("legacy auth tokens are cleared but account playback caches and identity persist", async () => {
   globalThis.localStorage = createStorage({
     hypersync_access_token: "old-token",
     hypersync_session_active: "true",
@@ -48,7 +48,7 @@ test("auth tokens stay memory-only while cached display identity persists", asyn
   storage.saveAuthSession("live-memory-token");
   assert.equal(storage.getAccessToken(), "live-memory-token");
   assert.equal(storage.hasStoredSession(), true);
-  assert.equal(localStorage.length, 1);
+  assert.equal(localStorage.length, 5);
   assert.equal(sessionStorage.length, 0);
 
   storage.cacheUserProfile({ id: "user-1", username: "listener", display_name: "Listener", access_token: "must-not-save" });
