@@ -140,6 +140,8 @@ import {
 } from "./homeRecentlyPlayed.js";
 import { clearProfileSnapshot } from "./profileSnapshotCache.js";
 import { clearMessagesListSnapshot } from "./messagesListCache.js";
+import { writeMessagesListSnapshot } from "./messagesListCache.js";
+import { getConversations } from "./messageApi.js";
 
 import useMessageNotifications from
   "./hooks/useMessageNotifications.js";
@@ -983,6 +985,20 @@ export default function App() {
       },
     );
   }, []);
+
+  // Warm the private conversation directory in the background so the
+  // Messages page can render its last snapshot before its first visible visit.
+  useEffect(() => {
+    const owner = currentUser?.id;
+    if (!owner || currentUser?.account_type !== "registered") return undefined;
+    let cancelled = false;
+    void getConversations().then((snapshot) => {
+      if (!cancelled && currentUser?.id === owner) {
+        writeMessagesListSnapshot(owner, snapshot);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUser?.id, currentUser?.account_type]);
 
   // Warm common page chunks after the initial shell paint. This makes the
   // first navigation to Library/Search/Profile/Messages largely cache-backed.
