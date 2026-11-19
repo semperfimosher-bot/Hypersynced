@@ -982,6 +982,20 @@ export default function App() {
     );
   }, []);
 
+  // Warm common page chunks after the initial shell paint. This makes the
+  // first navigation to Library/Search/Profile/Messages largely cache-backed.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void Promise.all([
+        preloadPage("library"),
+        preloadPage("search"),
+        preloadPage("profile"),
+        preloadPage("messages"),
+      ]);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
 
   useEffect(() => {
     let releaseTimer =
@@ -1478,6 +1492,11 @@ const restoreSavedAppView =
             state,
             user?.role,
           );
+        writeCachedAppView(user?.id, {
+          active_page: restored.activePage,
+          search_query: "",
+          profile_username: restored.profileUsername,
+        }, user?.role);
 
         if (
           navigationGenerationRef.current !== restoreGeneration ||
