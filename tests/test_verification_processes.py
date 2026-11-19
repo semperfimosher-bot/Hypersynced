@@ -81,9 +81,14 @@ def test_descendants_stop_even_after_leader_exits(tmp_path):
     try:
         parent.wait(timeout=5)
         deadline = time.monotonic() + 5
-        while not marker.exists() and time.monotonic() < deadline:
+        while time.monotonic() < deadline:
+            try:
+                if marker.read_text() == 'ready':
+                    break
+            except FileNotFoundError:
+                pass
             time.sleep(.02)
-        assert marker.exists()
+        assert marker.read_text() == 'ready'
     finally:
         stop_process(parent)
     time.sleep(1.1)
