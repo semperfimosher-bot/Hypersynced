@@ -23,9 +23,9 @@ function deferred() {
   return { promise, resolve };
 }
 
-test("unused catalog releases its rows and reloads, but live subscribers retain shared data", async () => {
+test("unused catalog keeps its completed cache for later subscribers", async () => {
   let calls = 0;
-  const store = await loadStore(async () => { calls += 1; return [{ id: `track-${calls}` }]; });
+  const store = await loadStore(async (path) => { if (path === "/catalog/status") return { count: 1, updated_at: "2026-01-01" }; calls += 1; return [{ id: `track-${calls}` }]; });
   const unsubscribe = store.subscribeToCatalog(() => {});
   await store.loadCatalog();
   assert.equal(store.releaseUnusedCatalog(), false);
@@ -52,7 +52,7 @@ test("unused catalog cancels in-flight assembly and cannot publish stale rows", 
   assert.deepEqual(seen, [[]]);
 });
 
-test("a failed deletion after the final viewer leaves cannot retain or reload the catalog", async () => {
+test("a failed deletion after the final viewer leaves preserves cached catalog", async () => {
   let rejectDelete;
   let reads = 0;
   const store = await loadStore(async (_path, options) => {
