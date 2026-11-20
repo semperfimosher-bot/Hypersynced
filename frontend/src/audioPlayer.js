@@ -1285,7 +1285,10 @@ export function getState() {
       playbackError,
 
     currentTime:
-      currentTrackId && loadedAudioTrackId !== currentTrackId
+      currentTrackId && (
+        loadedAudioTrackId !== currentTrackId ||
+        restoredTimeSeconds > 0
+      )
         ? Math.max(0, Number(restoredTimeSeconds) || 0)
         : getSafeCurrentTime(),
 
@@ -3167,6 +3170,9 @@ export function seekTo(
           timeSeconds,
       ),
     );
+
+  // A user seek supersedes any pending restored-position fallback.
+  restoredTimeSeconds = 0;
 
   notify();
 }
