@@ -35,7 +35,8 @@ test("unused catalog keeps its completed cache for later subscribers", async () 
   const seen = [];
   const stop = store.subscribeToCatalog((rows) => seen.push(rows));
   assert.deepEqual(seen, [[{ id: "track-1" }]]);
-  assert.deepEqual(await store.loadCatalog(), [{ id: "track-1" }]);\n  assert.equal(calls, 1);
+  assert.deepEqual(await store.loadCatalog(), [{ id: "track-1" }]);
+  assert.equal(calls, 1);
   stop();
 });
 
