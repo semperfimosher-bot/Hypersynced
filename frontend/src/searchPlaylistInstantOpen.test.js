@@ -16,7 +16,7 @@ test("search playlist navigation renders the shell before awaiting playlist data
     openHandler.indexOf("setOpenedPlaylist(shell)") < openHandler.indexOf("getPlaylist(playlistId"),
     "The playlist shell must be committed before the playlist request starts.",
   );
-  assert.match(openHandler, /searchPlaylistCache\.get\(key\)/);
+  assert.match(openHandler, /searchPlaylistCache\.get\(cacheKey\)/);
 });
 
 test("search playlist hydration fetches the first page and progressively appends ordered pages", () => {
