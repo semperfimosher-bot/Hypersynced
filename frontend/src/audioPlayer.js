@@ -202,20 +202,56 @@ let playbackError =
 const queuedAudioWarmups =
   new Map();
 
+let nextTrackFirstChunkWarmKey = null;
+
 
 function warmQueuedAudioEntry(
   entry,
+  options = {},
 ) {
   return warmTrackForPlayback(
     entry?.id,
     entry?.meta ?? {},
+    options,
   );
 }
+
+function warmNextTrackFirstChunk() {
+  if (
+    !currentTrackId ||
+    !Number.isFinite(audio.duration) ||
+    audio.duration <= 0 ||
+    !Number.isFinite(audio.currentTime) ||
+    audio.paused ||
+    globalThis.navigator?.onLine === false
+  ) {
+    return;
+  }
+
+  const nextIndex = getNextQueueIndex(currentQueue, currentQueueIndex);
+  if (nextIndex < 0) return;
+
+  const entry = currentQueue[nextIndex];
+  const meta = entry?.meta ?? {};
+  const mediaVersion = meta.mediaVersion ?? meta.media_version ?? null;
+  if (!entry?.id || !mediaVersion) return;
+
+  const remaining = audio.duration - audio.currentTime;
+  if (remaining > 5 || remaining < 0) return;
+
+  const key = `${String(entry.id)}|${String(mediaVersion)}`;
+  if (nextTrackFirstChunkWarmKey === key) return;
+  nextTrackFirstChunkWarmKey = key;
+
+  void warmQueuedAudioEntry(entry, { warmBytes: 256 * 1024 }).catch(() => {});
+}
+
 
 
 export function warmTrackForPlayback(
   trackId,
   meta = {},
+  options = {},
 ) {
   const mediaVersion =
     meta.mediaVersion ??
@@ -273,6 +309,8 @@ export function warmTrackForPlayback(
               null,
             useStableMediaRoute:
               true,
+            warmBytes:
+              options.warmBytes,
           },
         );
       })
@@ -1549,8 +1587,8 @@ function attachEvents() {
     audio.addEventListener(
     "timeupdate",
     () => {
-
       sampleListeningProgress();
+      warmNextTrackFirstChunk();
     },
   );
 

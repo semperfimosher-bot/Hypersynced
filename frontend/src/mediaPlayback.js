@@ -195,6 +195,7 @@ export async function warmTrackPlayback(
       globalThis.fetch,
     now =
       Date.now(),
+    warmBytes = PLAYBACK_WARM_BYTES,
   } = {},
 ) {
   const mediaVersion =
@@ -297,7 +298,7 @@ export async function warmTrackPlayback(
     Math.min(
       fileSize - 1,
       byteStart +
-        PLAYBACK_WARM_BYTES -
+        Math.max(MEDIA_CHUNK_SIZE, Number(warmBytes) || PLAYBACK_WARM_BYTES) -
         1,
     );
 
