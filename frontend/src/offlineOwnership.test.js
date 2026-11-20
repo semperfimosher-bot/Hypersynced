@@ -1619,6 +1619,9 @@ test(
       pinRef,
     ];
 
+    incomplete.artworkValidatedAt =
+      Date.now();
+
     await mediaStore.saveMediaRecord(
       incomplete,
     );
@@ -1658,6 +1661,9 @@ test(
     complete.pinRefs = [
       pinRef,
     ];
+
+    complete.artworkValidatedAt =
+      Date.now();
 
     await mediaStore.saveMediaRecord(
       complete,
