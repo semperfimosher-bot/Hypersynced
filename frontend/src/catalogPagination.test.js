@@ -56,7 +56,8 @@ test("unused catalog cancels in-flight assembly and cannot publish stale rows", 
 test("a failed deletion after the final viewer leaves preserves cached catalog", async () => {
   let rejectDelete;
   let reads = 0;
-  const store = await loadStore(async (_path, options) => {
+  const store = await loadStore(async (path, options) => {
+    if (path === "/catalog/status") return { count: 1, updated_at: "2026-01-01" };
     if (options.method === "DELETE") return new Promise((_, reject) => { rejectDelete = reject; });
     reads += 1;
     return [{ id: "saved" }];
@@ -77,6 +78,7 @@ test("a failed deletion after the final viewer leaves preserves cached catalog",
 test("catalog walks all pages, deduplicates IDs, publishes only the completed array", async () => {
   const calls = [];
   const store = await loadStore(async (path) => {
+    if (path === "/catalog/status") return { count: 3, updated_at: "2026-01-01" };
     calls.push(path);
     return calls.length === 1
       ? { items: [{ id: "a", title: "old" }, { id: "b" }], next_cursor: "next token" }
