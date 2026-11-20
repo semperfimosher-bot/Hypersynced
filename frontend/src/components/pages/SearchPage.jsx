@@ -123,6 +123,11 @@ import {
   downloadPlaylistByIdForOffline,
 } from "../../playlistOfflineAction.js";
 
+import {
+  getCachedPlaylistAsync,
+  setCachedPlaylist,
+} from "../../libraryCache.js";
+
 
 // Search playlist data is kept warm for this page-module lifetime.
 const searchPlaylistCache = new Map();
@@ -458,6 +463,29 @@ useEffect(() => {
   ] = useState(
     EMPTY_RESULTS,
   );
+
+  // Warm persistent playlist caches while search results are visible, so a
+  // previously opened playlist can render its tracks without waiting on network.
+  useEffect(() => {
+    const playlistResults = Array.isArray(results?.playlists)
+      ? results.playlists
+      : [];
+    for (const seed of playlistResults) {
+      const playlistId = seed?.id;
+      if (!playlistId) continue;
+      const cacheKey = `${offlineOwnerKey ?? "guest"}::${String(playlistId)}`;
+      if (searchPlaylistCache.has(cacheKey)) continue;
+      void getCachedPlaylistAsync(offlineOwnerKey, playlistId)
+        .then((cachedPlaylist) => {
+          if (!cachedPlaylist?.tracks?.length) return;
+          searchPlaylistCache.set(cacheKey, {
+            ...cachedPlaylist,
+            complete: Boolean(cachedPlaylist.complete),
+          });
+        })
+        .catch(() => {});
+    }
+  }, [results?.playlists, offlineOwnerKey]);
 
   const [
     loading,
@@ -1265,7 +1293,8 @@ useEffect(() => {
     if (!playlistId) return;
 
     const key = String(playlistId);
-    const cached = searchPlaylistCache.get(key);
+    const cacheKey = `${offlineOwnerKey ?? "guest"}::${key}`;
+    const cached = searchPlaylistCache.get(cacheKey);
     const seed = typeof playlistSeed === "object" ? playlistSeed : null;
     const shell = {
       ...(seed ?? {}),
@@ -1291,7 +1320,7 @@ useEffect(() => {
       let playlist = cached?.complete ? cached : null;
 
       if (!playlist) {
-        let request = searchPlaylistRequests.get(key);
+        let request = searchPlaylistRequests.get(cacheKey);
         if (!request) {
           request = (async () => {
             // Fetch the first page only, then reveal tracks immediately.
@@ -1305,7 +1334,8 @@ useEffect(() => {
               tracks: Array.isArray(firstPage?.tracks) ? firstPage.tracks : [],
               complete: false,
             };
-            searchPlaylistCache.set(key, hydrated);
+            searchPlaylistCache.set(cacheKey, hydrated);
+            void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
 
             if (openedPlaylistIdRef.current === key) {
               setOpenedPlaylist({
@@ -1329,7 +1359,8 @@ useEffect(() => {
                 });
                 const rows = Array.isArray(page?.tracks) ? page.tracks : [];
                 hydrated = { ...hydrated, tracks: [...hydrated.tracks, ...rows] };
-                searchPlaylistCache.set(key, hydrated);
+                searchPlaylistCache.set(cacheKey, hydrated);
+                void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
                 if (rows.length < 1000) break;
               }
             }
@@ -1353,7 +1384,8 @@ useEffect(() => {
                   ),
                 ],
               };
-              searchPlaylistCache.set(key, hydrated);
+              searchPlaylistCache.set(cacheKey, hydrated);
+              void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
               if (openedPlaylistIdRef.current === key) {
                 setOpenedPlaylist({
                   ...hydrated,
@@ -1363,10 +1395,11 @@ useEffect(() => {
             }
 
             hydrated.complete = true;
-            searchPlaylistCache.set(key, hydrated);
+            searchPlaylistCache.set(cacheKey, hydrated);
+            void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
             return hydrated;
-          })().finally(() => searchPlaylistRequests.delete(key));
-          searchPlaylistRequests.set(key, request);
+          })().finally(() => searchPlaylistRequests.delete(cacheKey));
+          searchPlaylistRequests.set(cacheKey, request);
         }
         playlist = await request;
       }
