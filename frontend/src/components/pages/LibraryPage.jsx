@@ -120,6 +120,11 @@ import {
 } from "../../libraryEntities.js";
 
 import {
+  filterOfflinePlayableTracks,
+  isOfflineUnavailableTrack,
+} from "../../offlinePlayability.js";
+
+import {
   getLibraryRenderItems,
   getNextLibraryRenderCount,
   LIBRARY_RENDER_BATCH_SIZE,
@@ -2501,10 +2506,32 @@ useEffect(() => {
       return;
     }
 
-    const playbackTracks = [...tracks].sort(
-      (left, right) =>
-        Number(left?.position ?? 0) - Number(right?.position ?? 0),
-    );
+    const onlineNow =
+      typeof navigator === "undefined" ||
+      navigator.onLine !== false;
+
+    const playbackTracks =
+      filterOfflinePlayableTracks(
+        [...tracks].sort(
+          (left, right) =>
+            Number(left?.position ?? 0) - Number(right?.position ?? 0),
+        ),
+        onlineNow,
+        downloadedTrackIds,
+      );
+
+    if (!playbackTracks.length) {
+      return;
+    }
+
+    const safeStartIndex = onlineNow
+      ? Math.min(Math.max(0, startIndex), playbackTracks.length - 1)
+      : Math.max(
+          0,
+          playbackTracks.findIndex(
+            (track) => String(track.id) === String(tracks[startIndex]?.id),
+          ),
+        );
 
     const queue =
       playbackTracks.map(
@@ -2553,7 +2580,7 @@ useEffect(() => {
         }),
       );
 
-    void player.playTrackQueue(queue, startIndex).catch(() => {});
+    void player.playTrackQueue(queue, safeStartIndex).catch(() => {});
   }
 
 
@@ -2561,10 +2588,16 @@ useEffect(() => {
     tracks,
     startIndex = 0,
   ) {
+    const onlineNow =
+      typeof navigator === "undefined" ||
+      navigator.onLine !== false;
+
     const playableTracks =
-      Array.isArray(tracks)
-        ? tracks
-        : [];
+      filterOfflinePlayableTracks(
+        Array.isArray(tracks) ? tracks : [],
+        onlineNow,
+        downloadedTrackIds,
+      );
 
     if (
       playableTracks.length ===
@@ -2572,6 +2605,15 @@ useEffect(() => {
     ) {
       return;
     }
+
+    const safeStartIndex = onlineNow
+      ? Math.min(Math.max(0, startIndex), playableTracks.length - 1)
+      : Math.max(
+          0,
+          playableTracks.findIndex(
+            (track) => String(track.id) === String(tracks[startIndex]?.id),
+          ),
+        );
 
     const queue =
       playableTracks.map(
@@ -2626,7 +2668,7 @@ useEffect(() => {
     void player
       .playTrackQueue(
         queue,
-        startIndex,
+        safeStartIndex,
       )
       .catch(() => {});
   }
@@ -2792,24 +2834,31 @@ useEffect(() => {
                   isCurrentTrack
                     ? "is-current-track"
                     : "",
+                  isOfflineUnavailableTrack(
+                    track,
+                    offlineMode,
+                    downloadedTrackIds,
+                  )
+                    ? "is-offline-unavailable"
+                    : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
                 onMouseEnter={() => {
-                  void player.warmTrackForPlayback(
-                    track.id,
-                    track,
-                  );
+                  if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                    void player.warmTrackForPlayback(track.id, track);
+                  }
                 }}
                 onFocus={() => {
-                  void player.warmTrackForPlayback(
-                    track.id,
-                    track,
-                  );
+                  if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                    void player.warmTrackForPlayback(track.id, track);
+                  }
                 }}
-                onClick={
-                  playTrack
-                }
+                onClick={() => {
+                  if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                    playTrack();
+                  }
+                }}
                 onKeyDown={(
                   event,
                 ) => {
@@ -3897,14 +3946,20 @@ useEffect(() => {
                         isCurrentTrack
                           ? "is-current-track"
                           : "",
+                        isOfflineUnavailableTrack(
+                          track,
+                          offlineMode,
+                          downloadedTrackIds,
+                        )
+                          ? "is-offline-unavailable"
+                          : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                       onClick={() => {
-                        playPlaylist(
-                          trackIndex,
-                          filteredSelectedPlaylistTracks,
-                        );
+                        if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                          playPlaylist(trackIndex, filteredSelectedPlaylistTracks);
+                        }
                       }}
                       onKeyDown={(
                         event,
@@ -3917,10 +3972,9 @@ useEffect(() => {
                         ) {
                           event.preventDefault();
 
-                          playPlaylist(
-                            trackIndex,
-                            filteredSelectedPlaylistTracks,
-                          );
+                          if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                            playPlaylist(trackIndex, filteredSelectedPlaylistTracks);
+                          }
                         }
                       }}
                     >
