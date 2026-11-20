@@ -4489,9 +4489,9 @@ useEffect(() => {
                     }
                     role="button"
                     tabIndex={offlineMode && !downloadedTrackIds.has(String(track.id)) ? -1 : 0}
-                    {...trackActionMenu.getTriggerProps(
-                      track,
-                    )}
+                    {...(!offlineMode || downloadedTrackIds.has(String(track.id))
+                      ? trackActionMenu.getTriggerProps(track)
+                      : {})}
                     className={[
                       "hs-search-track",
                       "hs-library-track-row",

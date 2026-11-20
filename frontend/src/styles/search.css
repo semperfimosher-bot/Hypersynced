@@ -8461,8 +8461,10 @@ button:disabled {
 
 /* Offline Library tracks retain their artwork and metadata, but unavailable audio is dimmed and inert. */
 .hs-library-track-row.is-offline-unavailable {
-  opacity: 0.68;
+  opacity: 0.48;
+  filter: grayscale(0.75);
   cursor: default;
+  pointer-events: none;
 }
 .hs-library-track-row.is-offline-unavailable .hs-search-track__art img {
   filter: grayscale(0.35);
