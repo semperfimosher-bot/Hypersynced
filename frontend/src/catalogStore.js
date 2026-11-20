@@ -49,8 +49,8 @@ export function releaseUnusedCatalog() {
   if (listeners.size > 0) return false;
   catalogRequest?.controller.abort();
   catalogRequest = null;
-  catalogTracks = [];
-  catalogLoaded = false;
+  // Keep the completed catalog in memory between Admin page visits.
+  // A later mount renders instantly and checks revision before reloading.
   return true;
 }
 
@@ -72,6 +72,16 @@ function waitForCatalog(request, signal) {
   });
 }
 
+
+let catalogRevision = null;
+
+export async function checkCatalogStatus() {
+  const status = await apiRequest("/catalog/status", { method: "GET", cache: "no-store" });
+  const revision = String(status?.count ?? 0) + ":" + String(status?.updated_at ?? "");
+  const changed = catalogRevision !== null && revision !== catalogRevision;
+  catalogRevision = revision;
+  return { changed, revision };
+}
 
 export async function loadCatalog({
   force = false,
@@ -138,6 +148,7 @@ export async function loadCatalog({
     );
     setCatalogTracks(nextTracks);
     catalogLoaded = true;
+    checkCatalogStatus().catch(() => {});
     return catalogTracks;
   })();
 
@@ -481,9 +492,18 @@ export function useCatalogTracks() {
 
   useEffect(() => {
     refreshCatalog();
-  }, [
-    refreshCatalog,
-  ]);
+    const poll = async () => {
+      if (!active.current || !catalogLoaded) return;
+      try {
+        const status = await checkCatalogStatus();
+        if (status.changed && active.current) await refreshCatalog({ force: true });
+      } catch {
+        // Opportunistic checks never replace the last good catalog.
+      }
+    };
+    const timer = setInterval(poll, 60000);
+    return () => clearInterval(timer);
+  }, [refreshCatalog]);
 
 
   return {

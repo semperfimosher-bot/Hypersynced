@@ -23,7 +23,7 @@ from fastapi import (
     Response,
 )
 from pydantic import BaseModel
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 
 from ...config import get_settings
 from ...database import get_session_factory
@@ -222,6 +222,21 @@ def _decode_catalog_cursor(cursor: str, query: str) -> tuple[UUID, UUID]:
         return last_id, highwater_id
     except (ValueError, TypeError, binascii.Error, UnicodeDecodeError) as exc:
         raise HTTPException(status_code=400, detail="Invalid catalog cursor.") from exc
+
+
+@router.get("/status")
+async def catalog_status() -> dict[str, int | str | None]:
+    """Cheap catalog revision for clients to check before reloading all metadata."""
+    async with get_session_factory()() as session:
+        count, latest_update = (await session.execute(
+            select(func.count(Track.id), func.max(Track.updated_at)).where(
+                Track.is_published.is_(True),
+            )
+        )).one()
+    return {
+        "count": int(count or 0),
+        "updated_at": latest_update.isoformat() if latest_update else None,
+    }
 
 
 @router.get(
