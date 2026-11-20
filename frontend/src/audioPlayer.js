@@ -49,6 +49,14 @@ import {
 } from "./player/mediaSessionState.js";
 
 import {
+  fetchTrackLyrics,
+} from "./lyricsPrefetch.js";
+
+import {
+  catalogLyricsTrackId,
+} from "./lyricsSync.js";
+
+import {
   notifyListeningHistoryChanged,
   canRecordListeningHistory,
   shouldBeginListeningEvent,
@@ -214,6 +222,21 @@ function warmQueuedAudioEntry(
     entry?.meta ?? {},
     options,
   );
+}
+
+let nextLyricsPrefetchKey = null;
+
+function prefetchNextTrackLyrics() {
+  if (!currentTrackId || audio.paused || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+  const nextIndex = getNextQueueIndex(currentQueue, currentQueueIndex);
+  if (nextIndex < 0) return;
+  const entry = currentQueue[nextIndex];
+  const lyricsId = catalogLyricsTrackId(entry?.meta?.catalogTrackId ?? entry?.id);
+  if (!lyricsId) return;
+  if (audio.duration - audio.currentTime > 5 || audio.currentTime > audio.duration) return;
+  if (nextLyricsPrefetchKey === String(lyricsId)) return;
+  nextLyricsPrefetchKey = String(lyricsId);
+  void fetchTrackLyrics(lyricsId).catch(() => {});
 }
 
 function warmNextTrackFirstChunk() {
@@ -1588,6 +1611,7 @@ function attachEvents() {
     "timeupdate",
     () => {
       sampleListeningProgress();
+      prefetchNextTrackLyrics();
       warmNextTrackFirstChunk();
     },
   );

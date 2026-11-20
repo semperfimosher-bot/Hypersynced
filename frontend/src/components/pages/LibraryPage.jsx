@@ -3327,6 +3327,40 @@ useEffect(() => {
       100,
   );
 
+  if (openingPlaylistId) {
+    return (
+      <div className="page-stack hs-search-page hs-library-page hs-playlist-loading-view" aria-busy="true" aria-label="Loading playlist">
+        <div className="hs-search-playlist-view__nav">
+          <button type="button" className="hs-search-playlist-back" onClick={() => { setOpeningPlaylistId(null); selectedPlaylistIdRef.current = null; }}>
+            <Icon name="chevron" size={15} /> Back to Library
+          </button>
+        </div>
+        <section className="hs-playlist-loading-hero">
+          <div className="hs-playlist-loading-art hs-playlist-shimmer" />
+          <div className="hs-playlist-loading-copy">
+            <span className="hs-playlist-shimmer hs-playlist-loading-label" />
+            <span className="hs-playlist-shimmer hs-playlist-loading-title" />
+            <span className="hs-playlist-shimmer hs-playlist-loading-meta" />
+            <span className="hs-playlist-shimmer hs-playlist-loading-action" />
+          </div>
+        </section>
+        <section className="hs-playlist-loading-rows" aria-label="Songs loading">
+          {Array.from({ length: 7 }, (_, index) => (
+            <div className="hs-playlist-loading-row" key={index}>
+              <span className="hs-playlist-shimmer hs-playlist-loading-rank" />
+              <span className="hs-playlist-shimmer hs-playlist-loading-thumb" />
+              <span className="hs-playlist-loading-row-copy">
+                <span className="hs-playlist-shimmer hs-playlist-loading-song" />
+                <span className="hs-playlist-shimmer hs-playlist-loading-artist" />
+              </span>
+              <span className="hs-playlist-shimmer hs-playlist-loading-duration" />
+            </div>
+          ))}
+        </section>
+      </div>
+    );
+  }
+
   if (selectedPlaylist) {
   const presentation =
     playlistPresentation(

@@ -2554,6 +2554,14 @@ async function downloadOpenedPlaylist() {
 </section>
 
 
+      {!openedPlaylist && normalizedQuery && !loading && !searchError && resultTotal === 0 ? (
+        <div className="hs-search-no-results-banner" role="status" aria-live="polite">
+          <span className="hs-search-no-results-banner__icon"><Icon name="search" size={16} /></span>
+          <span><strong>No results found</strong><small>Try a different song, artist, album, or search phrase.</small></span>
+        </div>
+      ) : null}
+
+
       {openedPlaylist ? (
         <>
   <section className="hs-search-playlist-view">

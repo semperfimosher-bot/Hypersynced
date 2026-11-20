@@ -339,9 +339,11 @@ export default function ProfilePage({
 
           <button
             type="button"
-            className="hs-avatar-edit-button"
+            className={"hs-avatar-edit-button" + (!online ? " is-offline-disabled" : "")}
+            disabled={!online}
+            title={!online ? "Profile editing is unavailable offline" : undefined}
             onClick={() => {
-              setEditing(true);
+              if (online) setEditing(true);
             }}
           >
             <Icon
@@ -785,8 +787,11 @@ export default function ProfilePage({
 
           <button
             type="button"
+            disabled={!online}
+            className={!online ? "is-offline-disabled" : ""}
+            title={!online ? "Profile editing is unavailable offline" : undefined}
             onClick={() => {
-              setEditing(true);
+              if (online) setEditing(true);
             }}
           >
             <Icon

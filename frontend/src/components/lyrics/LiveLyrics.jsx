@@ -6,8 +6,8 @@ import {
 } from "react";
 
 import {
-  apiRequest,
-} from "../../api/client.js";
+  fetchTrackLyrics,
+} from "../../lyricsPrefetch.js";
 
 import * as player
   from "../../audioPlayer.js";
@@ -187,20 +187,7 @@ function LiveLyrics() {
       }
 
       try {
-        const result =
-          await apiRequest(
-            (
-              "/catalog/tracks/" +
-              `${encodeURIComponent(
-                lyricsTrackId,
-              )}/lyrics`
-            ),
-            {
-              method: "GET",
-              signal:
-                controller.signal,
-            },
-          );
+        const result = await fetchTrackLyrics(lyricsTrackId);
 
         if (cancelled) {
           return;

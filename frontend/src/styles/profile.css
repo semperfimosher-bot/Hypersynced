@@ -3228,3 +3228,7 @@ button.hs-profile-stat:hover,
     font-size: 34px;
   }
 }
+
+/* Offline profile edit controls are disabled with a clear visual affordance. */
+.hs-account-actions > button.is-offline-disabled, .hs-avatar-edit-button.is-offline-disabled { opacity:.42; filter:grayscale(.75); cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+.hs-account-actions > button.is-offline-disabled:hover { border-color:rgba(71,183,225,.09); background:rgba(5,24,35,.55); }
