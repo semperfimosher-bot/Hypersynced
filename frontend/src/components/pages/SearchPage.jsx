@@ -128,6 +128,10 @@ import {
   setCachedPlaylist,
 } from "../../libraryCache.js";
 
+import {
+  warmTrackArtwork,
+} from "../../artworkWarmCache.js";
+
 
 // Search playlist data is kept warm for this page-module lifetime.
 const searchPlaylistCache = new Map();
@@ -478,6 +482,7 @@ useEffect(() => {
       void getCachedPlaylistAsync(offlineOwnerKey, playlistId)
         .then((cachedPlaylist) => {
           if (!cachedPlaylist?.tracks?.length) return;
+          warmTrackArtwork(cachedPlaylist.tracks);
           searchPlaylistCache.set(cacheKey, {
             ...cachedPlaylist,
             complete: Boolean(cachedPlaylist.complete),
@@ -1296,6 +1301,8 @@ useEffect(() => {
     const cacheKey = `${offlineOwnerKey ?? "guest"}::${key}`;
     const cached = searchPlaylistCache.get(cacheKey);
     const seed = typeof playlistSeed === "object" ? playlistSeed : null;
+    if (cached?.tracks?.length) warmTrackArtwork(cached.tracks);
+    if (seed?.tracks?.length) warmTrackArtwork(seed.tracks);
     const shell = {
       ...(seed ?? {}),
       ...(cached ?? {}),
@@ -1335,6 +1342,7 @@ useEffect(() => {
               complete: false,
             };
             searchPlaylistCache.set(cacheKey, hydrated);
+            warmTrackArtwork(hydrated.tracks);
             void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
 
             if (openedPlaylistIdRef.current === key) {
@@ -1360,6 +1368,7 @@ useEffect(() => {
                 const rows = Array.isArray(page?.tracks) ? page.tracks : [];
                 hydrated = { ...hydrated, tracks: [...hydrated.tracks, ...rows] };
                 searchPlaylistCache.set(cacheKey, hydrated);
+                warmTrackArtwork(rows);
                 void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
                 if (rows.length < 1000) break;
               }
@@ -1385,6 +1394,7 @@ useEffect(() => {
                 ],
               };
               searchPlaylistCache.set(cacheKey, hydrated);
+              warmTrackArtwork(pages.flatMap((page) => Array.isArray(page?.tracks) ? page.tracks : []));
               void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
               if (openedPlaylistIdRef.current === key) {
                 setOpenedPlaylist({

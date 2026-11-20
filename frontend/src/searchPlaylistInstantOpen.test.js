@@ -39,3 +39,11 @@ test("search playlist cache is persistent and warmed before opening", () => {
   assert.match(searchPageSource, /searchPlaylistCache\.set\(cacheKey/);
   assert.match(searchPageSource, /setCachedPlaylist\(offlineOwnerKey, hydrated\)/);
 });
+
+
+test("search playlist prewarms artwork from cached and hydrated tracks", () => {
+  assert.match(searchPageSource, /warmTrackArtwork\(cachedPlaylist\.tracks\)/);
+  assert.match(searchPageSource, /warmTrackArtwork\(cached\.tracks\)/);
+  assert.match(searchPageSource, /warmTrackArtwork\(hydrated\.tracks\)/);
+  assert.match(searchPageSource, /warmTrackArtwork\(rows\)/);
+});
