@@ -466,11 +466,12 @@ export function useCatalogTracks() {
     useCallback(
       async ({
         force = false,
+        quiet = false,
       } = {}) => {
         if (!active.current) return;
         const generation = ++refreshGeneration.current;
-        setLoading(true);
-        setError("");
+        if (!quiet) setLoading(!catalogLoaded);
+        if (!quiet) setError("");
 
         try {
           await loadCatalog({
@@ -496,7 +497,7 @@ export function useCatalogTracks() {
       if (!active.current || !catalogLoaded) return;
       try {
         const status = await checkCatalogStatus();
-        if (status.changed && active.current) await refreshCatalog({ force: true });
+        if (status.changed && active.current) await refreshCatalog({ force: true, quiet: true });
       } catch {
         // Opportunistic checks never replace the last good catalog.
       }
