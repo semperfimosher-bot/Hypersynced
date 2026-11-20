@@ -1700,14 +1700,14 @@ test(
       ),
       [
         [
-          incomplete.trackId,
-          false,
-          true,
-        ],
-        [
           complete.trackId,
           true,
           false,
+        ],
+        [
+          incomplete.trackId,
+          false,
+          true,
         ],
       ],
     );
