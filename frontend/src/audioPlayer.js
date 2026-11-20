@@ -1484,6 +1484,8 @@ function attachEvents() {
   audio.addEventListener(
     "playing",
     () => {
+      // On refresh, use the saved position until the browser is actually playing.
+      restoredTimeSeconds = 0;
       setPlaybackPhase(
         "playing",
       );
@@ -2983,7 +2985,9 @@ async function applyRestoredPlaybackPosition(trackId, positionSeconds) {
 
   if (currentTrackId !== trackId || loadedAudioTrackId !== trackId) return false;
   if (Math.abs((Number(audio.currentTime) || 0) - targetTime) > 1) return false;
-  restoredTimeSeconds = 0;
+  // Keep the restored position authoritative while paused. Some browsers can
+  // report a stale/end currentTime again after a successful seek during refresh.
+  // The live audio clock becomes authoritative only after playback resumes.
   return true;
 }
 
