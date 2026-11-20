@@ -124,6 +124,10 @@ import {
 } from "../../playlistOfflineAction.js";
 
 
+// Search playlist data is kept warm for this page-module lifetime.
+const searchPlaylistCache = new Map();
+const searchPlaylistRequests = new Map();
+
 function SearchPage({
   query,
   onQueryChange,
@@ -162,6 +166,8 @@ function SearchPage({
   openedPlaylist,
   setOpenedPlaylist,
 ] = useState(null);
+
+  const openedPlaylistIdRef = useRef(null);
 
   const [
     openedArtistName,
@@ -360,9 +366,8 @@ useEffect(() => {
 
 
 useEffect(() => {
-  setOpenedPlaylist(
-    null,
-  );
+  openedPlaylistIdRef.current = null;
+  setOpenedPlaylist(null);
 
   setOpenedArtistName(
     "",
@@ -391,9 +396,8 @@ useEffect(() => {
     return;
   }
 
-  setOpenedPlaylist(
-    null,
-  );
+  openedPlaylistIdRef.current = null;
+  setOpenedPlaylist(null);
 
   setOpenedArtistName(
     initialArtistName,
@@ -1252,181 +1256,195 @@ useEffect(() => {
       });
   }
 
-  async function openSearchPlaylist(
-  playlistId,
-) {
-  if (
-    !playlistId ||
-    playlistOpeningId
-  ) {
-    return;
-  }
+  function openSearchPlaylist(playlistSeed) {
+    const playlistId =
+      typeof playlistSeed === "object"
+        ? playlistSeed?.id
+        : playlistSeed;
 
-  setPlaylistOpeningId(
-    String(playlistId),
-  );
+    if (!playlistId) return;
 
-  setPlaylistError("");
+    const key = String(playlistId);
+    const cached = searchPlaylistCache.get(key);
+    const seed = typeof playlistSeed === "object" ? playlistSeed : null;
+    const shell = {
+      ...(seed ?? {}),
+      ...(cached ?? {}),
+      id: playlistId,
+      tracks: cached?.tracks ?? seed?.tracks ?? [],
+      transient: !cached?.complete,
+    };
 
-  try {
-    // The playlist request is the critical path. Render it before waiting on
-    // offline-download metadata or membership reconciliation.
-    const playlist = await getPlaylist(playlistId);
-    setOpenedPlaylist(playlist);
+    openedPlaylistIdRef.current = key;
+    setOpenedPlaylist(shell);
+    setOpenedArtistName("");
+    setPlaylistSearchQuery("");
+    setPlaylistError("");
+    setPlaylistOpeningId(key);
+    setPlaylistDownload({
+      status: "idle",
+      progress: 0,
+      trackProgress: {},
+    });
 
-    void reconcileDownloadedPlaylistMembership(
-      playlist,
-      offlineOwnerKey,
-    ).catch(() => {});
+    const hydrate = async () => {
+      let playlist = cached?.complete ? cached : null;
 
-    const [downloadedPlaylists, downloadJob] = await Promise.all([
-      getDownloadedPlaylists(offlineOwnerKey).catch(() => []),
-      getPlaylistDownloadJob(
-        offlineOwnerKey,
-        playlistId,
-      ).catch(() => null),
-    ]);
+      if (!playlist) {
+        let request = searchPlaylistRequests.get(key);
+        if (!request) {
+          request = (async () => {
+            // Fetch the first page only, then reveal tracks immediately.
+            // Larger playlist pages are appended asynchronously in order.
+            const firstPage = await getPlaylist(playlistId, {
+              limit: 1000,
+              offset: 0,
+            });
+            let hydrated = {
+              ...firstPage,
+              tracks: Array.isArray(firstPage?.tracks) ? firstPage.tracks : [],
+              complete: false,
+            };
+            searchPlaylistCache.set(key, hydrated);
 
-    const downloaded =
-      downloadedPlaylists.find(
-        (item) =>
-          String(
-            item.id,
-          ) ===
-          String(
-            playlistId,
-          ),
-      ) ??
-      null;
+            if (openedPlaylistIdRef.current === key) {
+              setOpenedPlaylist({
+                ...hydrated,
+                transient: true,
+              });
+            }
 
-    const activeDownload =
-      activePlaylistDownloads.find(
-        (item) =>
-          String(
-            item.playlistId,
-          ) ===
-          String(
-            playlistId,
-          ),
-      ) ??
-      null;
+            const expectedCount = Number(firstPage?.track_count);
+            const pageOffsets = [];
+            if (Number.isInteger(expectedCount) && expectedCount > hydrated.tracks.length) {
+              for (let offset = hydrated.tracks.length; offset < expectedCount; offset += 1000) {
+                pageOffsets.push(offset);
+              }
+            } else if (hydrated.tracks.length === 1000 && !Number.isFinite(expectedCount)) {
+              // Unknown legacy total: continue until a short page is returned.
+              for (let offset = 1000; ; offset += 1000) {
+                const page = await getPlaylist(playlistId, {
+                  limit: 1000,
+                  offset,
+                });
+                const rows = Array.isArray(page?.tracks) ? page.tracks : [];
+                hydrated = { ...hydrated, tracks: [...hydrated.tracks, ...rows] };
+                searchPlaylistCache.set(key, hydrated);
+                if (rows.length < 1000) break;
+              }
+            }
 
-    if (activeDownload) {
-      setPlaylistDownload({
-        status:
-          "downloading",
-        progress:
-          activeDownload.progress,
-        trackProgress:
-          activeDownload.trackProgress ??
-          {},
-      });
-    } else if (downloaded) {
-      const downloadedIds =
-        new Set(
-          downloaded.tracks.map(
-            (track) =>
-              String(
-                track.id,
-              ),
-          ),
-        );
-
-      const trackProgress =
-        Object.fromEntries(
-          downloaded.tracks.map(
-            (track) => [
-              String(
-                track.id,
-              ),
-              {
-                status:
-                  "downloaded",
-                progress:
-                  1,
-              },
-            ],
-          ),
-        );
-
-      const allCurrentTracksDownloaded =
-        playlist.tracks.length > 0 &&
-        playlist.tracks.every(
-          (track) =>
-            downloadedIds.has(
-              String(
-                track.id,
-              ),
-            ),
-        );
-
-      setPlaylistDownload({
-        status:
-          allCurrentTracksDownloaded
-            ? "downloaded"
-            : "idle",
-        progress:
-          playlist.tracks.length > 0
-            ? Math.min(
-                1,
-                downloadedIds.size /
-                  playlist.tracks.length,
-              )
-            : 0,
-        trackProgress,
-      });
-    } else if (
-      downloadJob?.state ===
-        "paused" ||
-      downloadJob?.state ===
-        "downloading"
-    ) {
-      const totalBytes =
-        Number(
-          downloadJob.totalBytes ??
-          0,
-        );
-
-      const downloadedBytes =
-        Number(
-          downloadJob.downloadedBytes ??
-          0,
-        );
-
-      setPlaylistDownload({
-        status: "paused",
-        progress:
-          totalBytes > 0
-            ? Math.max(
-                0,
-                Math.min(
-                  1,
-                  downloadedBytes /
-                    totalBytes,
+            for (let index = 0; index < pageOffsets.length; index += 3) {
+              const batch = pageOffsets.slice(index, index + 3);
+              const pages = await Promise.all(
+                batch.map((offset) =>
+                  getPlaylist(playlistId, {
+                    limit: 1000,
+                    offset,
+                  }),
                 ),
-              )
+              );
+              hydrated = {
+                ...hydrated,
+                tracks: [
+                  ...hydrated.tracks,
+                  ...pages.flatMap((page) =>
+                    Array.isArray(page?.tracks) ? page.tracks : [],
+                  ),
+                ],
+              };
+              searchPlaylistCache.set(key, hydrated);
+              if (openedPlaylistIdRef.current === key) {
+                setOpenedPlaylist({
+                  ...hydrated,
+                  transient: true,
+                });
+              }
+            }
+
+            hydrated.complete = true;
+            searchPlaylistCache.set(key, hydrated);
+            return hydrated;
+          })().finally(() => searchPlaylistRequests.delete(key));
+          searchPlaylistRequests.set(key, request);
+        }
+        playlist = await request;
+      }
+
+      if (openedPlaylistIdRef.current === key) {
+        setOpenedPlaylist({ ...playlist, transient: false });
+      }
+
+      void reconcileDownloadedPlaylistMembership(
+        playlist,
+        offlineOwnerKey,
+      ).catch(() => {});
+
+      const [downloadedPlaylists, downloadJob] = await Promise.all([
+        getDownloadedPlaylists(offlineOwnerKey).catch(() => []),
+        getPlaylistDownloadJob(offlineOwnerKey, playlistId).catch(() => null),
+      ]);
+      if (openedPlaylistIdRef.current !== key) return;
+
+      const downloaded = downloadedPlaylists.find((item) => String(item.id) === key) ?? null;
+      const activeDownload = activePlaylistDownloads.find((item) => String(item.playlistId) === key) ?? null;
+
+      if (activeDownload) {
+        setPlaylistDownload({
+          status: "downloading",
+          progress: activeDownload.progress,
+          trackProgress: activeDownload.trackProgress ?? {},
+        });
+      } else if (downloaded) {
+        const downloadedIds = new Set(downloaded.tracks.map((track) => String(track.id)));
+        const trackProgress = Object.fromEntries(
+          downloaded.tracks.map((track) => [
+            String(track.id),
+            { status: "downloaded", progress: 1 },
+          ]),
+        );
+        const allCurrentTracksDownloaded =
+          playlist.tracks.length > 0 &&
+          playlist.tracks.every((track) => downloadedIds.has(String(track.id)));
+        setPlaylistDownload({
+          status: allCurrentTracksDownloaded ? "downloaded" : "idle",
+          progress: playlist.tracks.length
+            ? Math.min(1, downloadedIds.size / playlist.tracks.length)
             : 0,
-        trackProgress: {},
-      });
-    } else {
-      setPlaylistDownload({
-        status: "idle",
-        progress: 0,
-        trackProgress: {},
-      });
-    }
-  } catch (error) {
-    setPlaylistError(
-      error instanceof Error
-        ? error.message
-        : "Unable to open playlist.",
-    );
-  } finally {
-    setPlaylistOpeningId(
-      null,
-    );
+          trackProgress,
+        });
+      } else if (downloadJob?.state === "paused" || downloadJob?.state === "downloading") {
+        const totalBytes = Number(downloadJob.totalBytes ?? 0);
+        const downloadedBytes = Number(downloadJob.downloadedBytes ?? 0);
+        setPlaylistDownload({
+          status: "paused",
+          progress: totalBytes > 0
+            ? Math.max(0, Math.min(1, downloadedBytes / totalBytes))
+            : 0,
+          trackProgress: {},
+        });
+      } else {
+        setPlaylistDownload({
+          status: "idle",
+          progress: 0,
+          trackProgress: {},
+        });
+      }
+    };
+
+    void hydrate().catch((error) => {
+      if (
+        openedPlaylistIdRef.current === key &&
+        !shell.tracks.length
+      ) {
+        setPlaylistError(
+          error instanceof Error ? error.message : "Unable to load playlist tracks.",
+        );
+      }
+    }).finally(() => {
+      setPlaylistOpeningId((current) => current === key ? null : current);
+    });
   }
-}
 
 
 function closeSearchPlaylist() {
@@ -1434,9 +1452,8 @@ function closeSearchPlaylist() {
     "",
   );
 
-  setOpenedPlaylist(
-    null,
-  );
+  openedPlaylistIdRef.current = null;
+  setOpenedPlaylist(null);
 
   setPlaylistError("");
   setRemoveDownloadOpen(
@@ -3531,9 +3548,7 @@ async function downloadOpenedPlaylist() {
                                 "playlist",
                               onSelect:
                                 () => {
-                                  void openSearchPlaylist(
-                                    playlist.id,
-                                  );
+                                  void openSearchPlaylist(playlist);
                                 },
                             },
                             {
@@ -3600,9 +3615,7 @@ async function downloadOpenedPlaylist() {
                           ],
                         })}
                         onClick={() => {
-                        void openSearchPlaylist(
-                        playlist.id,
-                        );
+                        void openSearchPlaylist(playlist);
                       }}
                         onKeyDown={(
                           event,
@@ -3615,9 +3628,7 @@ async function downloadOpenedPlaylist() {
                           ) {
                             event.preventDefault();
 
-                            void openSearchPlaylist(
-                            playlist.id,
-                            );
+                            void openSearchPlaylist(playlist);
                           }
                         }}
                       >
