@@ -4227,12 +4227,12 @@ displayResults.tracks.length > 0 ? (
         </section>
       )}
 
-      {!normalizedQuery && !online ? null : (!online ? (
+      {typeof navigator !== "undefined" && navigator.onLine === false ? (
         <OfflineNotice
-          title={localResults?.length ? "Offline search is limited to downloaded music" : "Go back online to search music"}
-          description={localResults?.length ? "Search only finds music you have downloaded to your Library." : "There are no downloaded matches available to search offline."}
+          title={displayResults.tracks.length ? "Offline search is limited to downloaded music" : "Go back online to search music"}
+          description={displayResults.tracks.length ? "Search only finds music you have downloaded to your Library." : "No downloaded matches are available offline. Reconnect to search music."}
         />
-      ) : null)}
+      ) : null}
 
       <TrackActionMenu
         menu={

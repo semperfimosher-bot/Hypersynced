@@ -4468,7 +4468,7 @@ useEffect(() => {
                       )
                     }
                     role="button"
-                    tabIndex={0}
+                    tabIndex={offlineMode && !downloadedTrackIds.has(String(track.id)) ? -1 : 0}
                     {...trackActionMenu.getTriggerProps(
                       track,
                     )}

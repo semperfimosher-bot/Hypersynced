@@ -8457,3 +8457,16 @@ button:disabled {
   padding: 0 18px;
   font-size: 8px;
 }
+
+
+/* Offline Library tracks retain their artwork and metadata, but unavailable audio is dimmed and inert. */
+.hs-library-track-row.is-offline-unavailable {
+  opacity: 0.48;
+  cursor: default;
+}
+.hs-library-track-row.is-offline-unavailable .hs-search-track__art img {
+  filter: grayscale(0.35);
+}
+.hs-library-track-row.is-offline-unavailable .hs-search-track__art i {
+  display: none;
+}
