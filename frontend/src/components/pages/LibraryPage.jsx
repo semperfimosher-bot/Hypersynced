@@ -38,6 +38,9 @@ import {
 import Icon from
   "../ui/Icon.jsx";
 
+import useOnlineStatus from
+  "../../hooks/useOnlineStatus.js";
+
 import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 
@@ -2997,9 +3000,11 @@ useEffect(() => {
       ],
     );
 
+  const online =
+    useOnlineStatus();
+
   const offlineMode =
-    typeof navigator !== "undefined" &&
-    navigator.onLine === false;
+    !online;
 
   const visibleSongTracks =
     focusedLibraryTrack

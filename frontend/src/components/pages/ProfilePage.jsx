@@ -276,14 +276,6 @@ export default function ProfilePage({
   }
 
 
-  if (!online) {
-    return (
-      <div className="hs-profile-page">
-        <OfflineNotice title="Go back online" description="Your profile is available when you reconnect." />
-      </div>
-    );
-  }
-
 
   if (
     loading &&
@@ -488,7 +480,7 @@ export default function ProfilePage({
           <OfflineNotice
             compact
             title="Go back online to see Recently Played"
-            description="Listening history is synced to your account and is not replaced by downloaded-library activity."
+            description="Your listening history will appear here once you reconnect."
           />
         ) : profile?.recently_played?.length ? (
           <div className="hs-recent-grid">

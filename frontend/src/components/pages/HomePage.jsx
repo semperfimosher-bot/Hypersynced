@@ -335,14 +335,6 @@ useEffect(() => {
     }
   };
 
-  if (!online) {
-    return (
-      <div className="page-stack home-page">
-        <OfflineNotice title="Go back online" description="Home requires an internet connection. Your downloaded music remains available in Library." />
-      </div>
-    );
-  }
-
   return (
     <div className="page-stack home-page">
 
@@ -397,15 +389,13 @@ useEffect(() => {
 }}
         />
 
-          {!online && currentUser ? (
-  <OfflineNotice
-    compact
-    title="Go back online to sync Recently Played"
-    description="Showing saved history when available. Downloaded music is still available in Library."
-  />
-) : null}
-
-          {recentlyPlayed.length > 0 ? (
+          {!online ? (
+            <OfflineNotice
+              compact
+              title="Go back online to see Recently Played"
+              description="Recently Played updates from your account when connected."
+            />
+          ) : recentlyPlayed.length > 0 ? (
   <div
     className="home-track-grid"
     aria-busy={recentLoading}
