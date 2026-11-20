@@ -76,7 +76,7 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
 
     // A deliberate seek must replace the saved-position fallback shown by the UI.
     player.seekTo(12);
-    assert.equal(player.getState().currentTime, 12);
+    assert.equal(player._getAudioElement().currentTime, 12);
 
   } finally {
     player?.stopTrack();
