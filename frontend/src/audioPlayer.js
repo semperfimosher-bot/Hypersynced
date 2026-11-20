@@ -2873,8 +2873,38 @@ async function applyRestoredPlaybackPosition(trackId, positionSeconds) {
   const maximum = Number.isFinite(audio.duration) && audio.duration > 0
     ? audio.duration
     : requestedTime;
+  const targetTime = Math.max(0, Math.min(requestedTime, maximum));
 
-  audio.currentTime = Math.max(0, Math.min(requestedTime, maximum));
+  // Keep the saved position authoritative in the UI until the browser has
+  // completed the seek. Some browsers briefly expose the previous/end position
+  // after metadata loads, even though the seek assignment is accepted.
+  if (Math.abs((Number(audio.currentTime) || 0) - targetTime) > 0.25) {
+    try {
+      audio.currentTime = targetTime;
+    } catch {
+      return false;
+    }
+
+    if (audio.seeking) {
+      await new Promise((resolve) => {
+        let timeoutId;
+        const finish = () => {
+          if (timeoutId) globalThis.clearTimeout(timeoutId);
+          audio.removeEventListener("seeked", finish);
+          audio.removeEventListener("error", finish);
+          resolve();
+        };
+        audio.addEventListener("seeked", finish, { once: true });
+        audio.addEventListener("error", finish, { once: true });
+        timeoutId = globalThis.setTimeout(finish, 1500);
+        // Close the race where the seek finishes between the check and listener.
+        if (!audio.seeking || Math.abs((Number(audio.currentTime) || 0) - targetTime) <= 0.25) finish();
+      });
+    }
+  }
+
+  if (currentTrackId !== trackId || loadedAudioTrackId !== trackId) return false;
+  if (Math.abs((Number(audio.currentTime) || 0) - targetTime) > 1) return false;
   restoredTimeSeconds = 0;
   return true;
 }
