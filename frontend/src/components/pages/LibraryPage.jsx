@@ -1864,6 +1864,7 @@ useEffect(() => {
     // Start the server refresh immediately, but render a local snapshot as
     // soon as IndexedDB returns it. The network never gates a warm playlist.
     cachedPlaylist = await cachedPlaylistPromise;
+    if (selectedPlaylistIdRef.current !== String(playlistId)) return;
     if (cachedPlaylist) {
       setSelectedPlaylist(cachedPlaylist);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1871,6 +1872,7 @@ useEffect(() => {
     }
 
     const playlist = await serverPlaylistPromise;
+    if (selectedPlaylistIdRef.current !== String(playlistId)) return;
     setSelectedPlaylist(playlist);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setOpeningPlaylistId(null);
