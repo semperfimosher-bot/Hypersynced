@@ -44,6 +44,7 @@ import {
 import {
   getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
+  mergeRecentlyPlayedWithOptimisticCache,
   applyOptimisticRecentlyPlayed,
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
@@ -233,10 +234,14 @@ const loadRecentlyPlayed =
         // Neon listening events are the single source of truth for both
         // Home and Profile. Never prepend tracks merely selected in this tab.
         const serverTracks = getHomeRecentlyPlayed(profile);
-        setRecentlyPlayed(serverTracks);
+        const mergedTracks = mergeRecentlyPlayedWithOptimisticCache(
+          serverTracks,
+          readCachedHomeRecentlyPlayed(currentUser?.id ?? currentUser?.username),
+        );
+        setRecentlyPlayed(mergedTracks);
         writeCachedHomeRecentlyPlayed(
           currentUser?.id ?? currentUser?.username,
-          serverTracks,
+          mergedTracks,
         );
 
         setRecentError(

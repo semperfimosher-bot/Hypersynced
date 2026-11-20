@@ -40,6 +40,7 @@ import OfflineNotice from
 
 import {
   applyOptimisticRecentlyPlayed,
+  mergeRecentlyPlayedWithOptimisticCache,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
@@ -205,8 +206,16 @@ export default function ProfilePage({
             await getMyProfile();
 
           if (!isCurrent()) return;
-          setProfile(data);
-          writeProfileSnapshot(owner, data);
+          const cachedRecent = readCachedHomeRecentlyPlayed(owner);
+          const mergedProfile = {
+            ...data,
+            recently_played: mergeRecentlyPlayedWithOptimisticCache(
+              data?.recently_played,
+              cachedRecent,
+            ),
+          };
+          setProfile(mergedProfile);
+          writeProfileSnapshot(owner, mergedProfile);
           setError("");
 
         } catch (loadError) {

@@ -9,6 +9,25 @@ export function getHomeRecentlyPlayed(profileOrTracks, limit = 12) {
   return tracks.slice(0, limit);
 }
 
+export function mergeRecentlyPlayedWithOptimisticCache(serverTracks, cachedTracks, limit = 12) {
+  const server = Array.isArray(serverTracks) ? serverTracks : [];
+  const cached = Array.isArray(cachedTracks) ? cachedTracks : [];
+  if (!server.length || !cached.length) return server.slice(0, limit);
+  const serverIds = new Set(server.map((track) => String(track?.id ?? "")));
+  const serverLatest = Math.max(
+    0,
+    ...server.map((track) => Date.parse(track?.last_played_at ?? "") || 0),
+  );
+  // Preserve only cache-only tracks with a timestamp newer than server history.
+  // This prevents a stale in-flight server response from undoing a just-started song.
+  const optimistic = cached.filter((track) => {
+    const id = String(track?.id ?? "");
+    const playedAt = Date.parse(track?.last_played_at ?? "") || 0;
+    return id && !serverIds.has(id) && playedAt > serverLatest;
+  });
+  return [...optimistic, ...server].slice(0, Math.max(0, limit));
+}
+
 export const LISTENING_HISTORY_CHANGED_EVENT = "hypersynced:listening-history-changed";
 
 export function notifyListeningHistoryChanged(detail = null, target = globalThis.window) {
