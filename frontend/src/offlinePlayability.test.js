@@ -1,3 +1,6 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
 import {
   filterOfflinePlayableTracks,
   isOfflineUnavailableTrack,
@@ -10,28 +13,37 @@ const tracks = [
 ];
 const downloaded = new Set(["a", "c"]);
 
-describe("offline playability", () => {
-  it("keeps the full collection playable online", () => {
-    expect(filterOfflinePlayableTracks(tracks, true, downloaded)).toEqual(tracks);
-  });
+test("keeps the full collection playable online", () => {
+  assert.deepEqual(filterOfflinePlayableTracks(tracks, true, downloaded), tracks);
+});
 
-  it("only queues downloaded tracks offline", () => {
-    expect(filterOfflinePlayableTracks(tracks, false, downloaded)).toEqual([
-      tracks[0],
-      tracks[2],
-    ]);
-  });
+test("only queues downloaded tracks offline", () => {
+  assert.deepEqual(filterOfflinePlayableTracks(tracks, false, downloaded), [
+    tracks[0],
+    tracks[2],
+  ]);
+});
 
-  it("does not treat downloaded status as unavailable online", () => {
-    expect(isOfflineUnavailableTrack(tracks[1], false, downloaded)).toBe(false);
-  });
+test("does not treat downloaded status as unavailable online", () => {
+  assert.equal(isOfflineUnavailableTrack(tracks[1], false, downloaded), false);
+});
 
-  it("marks only un-downloaded tracks unavailable offline", () => {
-    expect(isOfflineUnavailableTrack(tracks[0], true, downloaded)).toBe(false);
-    expect(isOfflineUnavailableTrack(tracks[1], true, downloaded)).toBe(true);
-  });
+test("marks only un-downloaded tracks unavailable offline", () => {
+  assert.equal(isOfflineUnavailableTrack(tracks[0], true, downloaded), false);
+  assert.equal(isOfflineUnavailableTrack(tracks[1], true, downloaded), true);
+});
 
-  it("returns no tracks offline when nothing is downloaded", () => {
-    expect(filterOfflinePlayableTracks(tracks, false, new Set())).toEqual([]);
-  });
+test("returns no tracks offline when nothing is downloaded", () => {
+  assert.deepEqual(filterOfflinePlayableTracks(tracks, false, new Set()), []);
+});
+
+test("supports string ids and stringifies downloaded ids", () => {
+  assert.deepEqual(
+    filterOfflinePlayableTracks(
+      [{ id: 5 }, { id: "6" }],
+      false,
+      new Set(["5"]),
+    ),
+    [{ id: 5 }],
+  );
 });
