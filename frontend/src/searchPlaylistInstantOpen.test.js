@@ -32,3 +32,10 @@ test("playlist fetches are deduplicated and stale responses are guarded", () => 
   assert.match(openHandler, /openedPlaylistIdRef\.current === key/);
   assert.match(searchPageSource, /openSearchPlaylist\(playlist\)/);
 });
+
+
+test("search playlist cache is persistent and warmed before opening", () => {
+  assert.match(searchPageSource, /getCachedPlaylistAsync/);
+  assert.match(searchPageSource, /searchPlaylistCache\.set\(cacheKey/);
+  assert.match(searchPageSource, /setCachedPlaylist\(offlineOwnerKey, hydrated\)/);
+});
