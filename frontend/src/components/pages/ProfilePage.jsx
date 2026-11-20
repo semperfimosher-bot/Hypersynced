@@ -265,18 +265,19 @@ export default function ProfilePage({
         }
         if (event.detail?.type === "optimistic-play" && event.detail.track) {
           setProfile((current) => {
-            if (!current) return current;
+            const base = current ?? {};
             return {
-              ...current,
+              ...base,
               // Counts are server-authoritative; optimistic state only reorders.
               recently_played: applyOptimisticRecentlyPlayed(
-                current.recently_played,
+                base.recently_played ?? readCachedHomeRecentlyPlayed(owner),
                 event.detail.track,
                 12,
                 { incrementPlayCount: false },
               ),
             };
           });
+          setLoading(false);
           return;
         }
         void loadProfile({ quiet: true });

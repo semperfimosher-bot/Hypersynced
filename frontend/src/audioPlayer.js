@@ -52,6 +52,9 @@ import {
   notifyListeningHistoryChanged,
   canRecordListeningHistory,
   shouldBeginListeningEvent,
+  applyOptimisticRecentlyPlayed,
+  readCachedHomeRecentlyPlayed,
+  writeCachedHomeRecentlyPlayed,
 } from "./homeRecentlyPlayed.js";
 
 
@@ -371,8 +374,18 @@ function beginListeningEvent(
   activeListeningEvent =
     event;
 
-  // Update mounted pages immediately on the confirmed audio "playing" event.
-  // The Neon write below remains authoritative and triggers a reconciliation.
+  // Add the track to the shared owner-scoped recent cache immediately,
+  // then notify mounted Home/Profile pages. The Neon write remains authoritative.
+  const owner = activePlaybackOwnerId;
+  if (owner) {
+    const cachedRecent = readCachedHomeRecentlyPlayed(owner);
+    writeCachedHomeRecentlyPlayed(
+      owner,
+      applyOptimisticRecentlyPlayed(cachedRecent, { id: String(trackId), ...meta }, 12, {
+        incrementPlayCount: false,
+      }),
+    );
+  }
   notifyListeningHistoryChanged({
     type: "optimistic-play",
     track: { id: String(trackId), ...meta },
