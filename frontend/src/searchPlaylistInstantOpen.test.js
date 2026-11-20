@@ -23,12 +23,12 @@ test("search playlist hydration fetches the first page and progressively appends
   assert.match(openHandler, /limit:\s*1000,\s*offset:\s*0/);
   assert.match(openHandler, /pageOffsets\.slice\(index,\s*index\s*\+\s*3\)/);
   assert.match(openHandler, /tracks:\s*\[\s*\.\.\.hydrated\.tracks,[\s\S]*?pages\.flatMap/);
-  assert.match(openHandler, /searchPlaylistCache\.set\(key,\s*hydrated\)/);
+  assert.match(openHandler, /searchPlaylistCache\.set\(cacheKey,\s*hydrated\)/);
 });
 
 test("playlist fetches are deduplicated and stale responses are guarded", () => {
-  assert.match(openHandler, /searchPlaylistRequests\.get\(key\)/);
-  assert.match(openHandler, /searchPlaylistRequests\.set\(key,\s*request\)/);
+  assert.match(openHandler, /searchPlaylistRequests\.get\(cacheKey\)/);
+  assert.match(openHandler, /searchPlaylistRequests\.set\(cacheKey,\s*request\)/);
   assert.match(openHandler, /openedPlaylistIdRef\.current === key/);
   assert.match(searchPageSource, /openSearchPlaylist\(playlist\)/);
 });
