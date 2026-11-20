@@ -38,6 +38,9 @@ import {
 import Icon from
   "../ui/Icon.jsx";
 
+import OfflineNotice from
+  "../ui/OfflineNotice.jsx";
+
 import PlaylistArtwork from
   "../ui/PlaylistArtwork.jsx";
 
