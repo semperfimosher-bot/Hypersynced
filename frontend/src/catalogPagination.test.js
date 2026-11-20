@@ -34,8 +34,8 @@ test("unused catalog keeps its completed cache for later subscribers", async () 
   assert.equal(store.releaseUnusedCatalog(), true);
   const seen = [];
   const stop = store.subscribeToCatalog((rows) => seen.push(rows));
-  assert.deepEqual(seen, [[]]);
-  assert.deepEqual(await store.loadCatalog(), [{ id: "track-2" }]);
+  assert.deepEqual(seen, [[{ id: "track-1" }]]);
+  assert.deepEqual(await store.loadCatalog(), [{ id: "track-1" }]);\n  assert.equal(calls, 1);
   stop();
 });
 
@@ -69,7 +69,7 @@ test("a failed deletion after the final viewer leaves preserves cached catalog",
   await rejected;
   const updates = [];
   store.subscribeToCatalog((rows) => updates.push(rows));
-  assert.deepEqual(updates, [[]]);
+  assert.deepEqual(updates, [[{ id: "saved" }]]);
   assert.equal(reads, 1);
 });
 
