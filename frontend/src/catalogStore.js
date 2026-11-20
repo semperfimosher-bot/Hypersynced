@@ -219,7 +219,10 @@ export function removeCatalogTracks(
 
 async function resyncCatalogAfterMutation(previousTracks) {
   if (previousTracks) setCatalogTracks(previousTracks);
-  if (listeners.size === 0) { releaseUnusedCatalog(); return;
+  if (listeners.size === 0) {
+    releaseUnusedCatalog();
+    return;
+  }
   await loadCatalog({ force: true }).catch(() => {});
 }
 
