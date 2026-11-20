@@ -335,6 +335,14 @@ useEffect(() => {
     }
   };
 
+  if (!online) {
+    return (
+      <div className="page-stack home-page">
+        <OfflineNotice title="Go back online" description="Home requires an internet connection. Your downloaded music remains available in Library." />
+      </div>
+    );
+  }
+
   return (
     <div className="page-stack home-page">
 

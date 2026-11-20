@@ -276,16 +276,10 @@ export default function ProfilePage({
   }
 
 
-  if (
-    !online &&
-    !profile
-  ) {
+  if (!online) {
     return (
       <div className="hs-profile-page">
-        <OfflineNotice
-          title="Go back online to see your profile"
-          description="Your profile stats, followers, Recently Played, and Top Artists sync from HyperSynced."
-        />
+        <OfflineNotice title="Go back online" description="Your profile is available when you reconnect." />
       </div>
     );
   }
@@ -313,13 +307,7 @@ export default function ProfilePage({
 
   return (
     <div className="hs-profile-page">
-      {!online ? (
-        <OfflineNotice
-          compact
-          title="You’re offline"
-          description="Profile activity shown below may be from your last online session. Go back online to refresh it."
-        />
-      ) : null}
+
 
       <section className="hs-profile-hero">
         <div className="hs-profile-hero__ambient" />

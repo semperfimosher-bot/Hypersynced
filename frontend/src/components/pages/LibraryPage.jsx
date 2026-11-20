@@ -4323,7 +4323,7 @@ useEffect(() => {
     </section>
 
 
-    {error ? (
+    {error && online ? (
       <section className="hs-search-message hs-search-message--error">
 
         <div>
@@ -4377,12 +4377,11 @@ useEffect(() => {
 
             <div>
               <strong>
-                No downloaded songs yet
+                Go online to download music
               </strong>
 
               <p>
-                Download a song or playlist and its
-                offline tracks will appear here.
+                Connect to HyperSynced to add songs to your library and download them for offline listening.
               </p>
             </div>
 

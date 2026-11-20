@@ -78,6 +78,9 @@ import ArtistProfilePage from
 import Icon from
   "../ui/Icon.jsx";
 
+import OfflineNotice from
+  "../ui/OfflineNotice.jsx";
+
 import PlaylistArtwork from
   "../ui/PlaylistArtwork.jsx";
 
@@ -775,7 +778,7 @@ useEffect(() => {
               setSearchError(
                 localTracks.length > 0
                   ? ""
-                  : "No downloaded matches are available offline.",
+                  : "Go back online to search music.",
               );
             } catch {
               if (
