@@ -471,16 +471,23 @@ export async function apiRequest(
      * without risking duplicate POST/PUT/PATCH/DELETE operations.
      */
 
+  const isCriticalStateEndpoint =
+    path === "/users/me/playback-state" ||
+    path === "/users/me/app-state";
+
   const canRetryTransient =
     requestMethod === "GET" ||
     requestMethod === "HEAD" ||
-    requestMethod === "OPTIONS";
+    requestMethod === "OPTIONS" ||
+    (isCriticalStateEndpoint &&
+      (requestMethod === "PUT" || requestMethod === "PATCH"));
 
-  // Keep overload recovery bounded: multiple rapid retries from every
-  // browser can amplify a backend that is already returning 503s.
+  // State writes use server-side optimistic concurrency fields, so retrying
+  // the exact payload after a pre-handler 503 is safe and bounded. Keep all
+  // recovery short to avoid amplifying an overloaded service.
   const transientRetryLimit =
     canRetryTransient
-      ? 1
+      ? (isCriticalStateEndpoint ? 2 : 1)
       : 0;
 
   const requestPromise = (async () => {
