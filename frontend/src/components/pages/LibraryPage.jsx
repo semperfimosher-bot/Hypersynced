@@ -4333,6 +4333,18 @@ useEffect(() => {
     </section>
 
 
+    {offlineMode &&
+      downloadedPlaylists.length === 0 &&
+      allDownloadedTracks.length === 0 &&
+      libraryTracks.length === 0 &&
+      ownedPlaylists.length === 0 &&
+      savedPlaylists.length === 0 ? (
+        <OfflineNotice
+          title="Go online to download music"
+          description="Your Library is empty. Reconnect to HyperSynced to add music and download it for offline listening."
+        />
+      ) : null}
+
     {error && online ? (
       <section className="hs-search-message hs-search-message--error">
 
