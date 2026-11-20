@@ -44,7 +44,11 @@ import {
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
+  subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
+
+import useQuietRefresh from
+  "../../hooks/useQuietRefresh.js";
 
 function CachedArtwork({
   src,
@@ -273,6 +277,23 @@ useEffect(() => {
 }, [
   loadRecentlyPlayed,
 ]);
+
+// Update on same-device history events and quietly check for cross-device changes.
+useEffect(() => {
+  return subscribeListeningHistoryChanged((event) => {
+    const eventOwner = event?.detail?.owner;
+    if (eventOwner && String(eventOwner) !== String(recentOwner ?? "")) return;
+    void loadRecentlyPlayed({ quiet: true });
+  });
+}, [loadRecentlyPlayed, recentOwner]);
+
+useQuietRefresh(
+  () => loadRecentlyPlayed({ quiet: true }),
+  {
+    enabled: Boolean(currentUser),
+    intervalMs: 30_000,
+  },
+);
 
 
 

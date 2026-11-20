@@ -1380,7 +1380,7 @@ const [
       enabled:
         isRegistered,
       intervalMs:
-        60_000,
+        30_000,
     },
   );
 
