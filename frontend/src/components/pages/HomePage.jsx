@@ -41,6 +41,7 @@ import {
 import {
   getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
+  applyOptimisticRecentlyPlayed,
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
@@ -281,8 +282,22 @@ useEffect(() => {
 // Update on same-device history events and quietly check for cross-device changes.
 useEffect(() => {
   return subscribeListeningHistoryChanged((event) => {
-    const eventOwner = event?.detail?.owner;
+    const detail = event?.detail ?? {};
+    const eventOwner = detail.owner;
     if (eventOwner && String(eventOwner) !== String(recentOwner ?? "")) return;
+
+    // Render a just-started track from the shared cache immediately, then
+    // reconcile with the server after the listening-history write completes.
+    if (detail.type === "optimistic-play" && detail.track?.id) {
+      const cached = readCachedHomeRecentlyPlayed(recentOwner);
+      const instant = applyOptimisticRecentlyPlayed(cached, detail.track, 12, {
+        incrementPlayCount: false,
+      });
+      writeCachedHomeRecentlyPlayed(recentOwner, instant);
+      setRecentlyPlayed(instant);
+      setRecentError("");
+      return;
+    }
     void loadRecentlyPlayed({ quiet: true });
   });
 }, [loadRecentlyPlayed, recentOwner]);

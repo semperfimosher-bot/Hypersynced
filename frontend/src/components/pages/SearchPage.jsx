@@ -18,6 +18,7 @@ import * as player from
 
 import {
   getDownloadedPlaylists,
+  getDownloadedTracks,
   getOfflineOwnerKey,
   getPlaylistDownloadJob,
   getPlaylistDownloadJobId,
@@ -471,6 +472,27 @@ useEffect(() => {
     EMPTY_RESULTS,
   );
 
+  const [downloadedMusicCount, setDownloadedMusicCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshDownloadedMusicCount = async () => {
+      try {
+        const tracks = await getDownloadedTracks(offlineOwnerKey);
+        if (!cancelled) setDownloadedMusicCount(Array.isArray(tracks) ? tracks.length : 0);
+      } catch {
+        if (!cancelled) setDownloadedMusicCount(0);
+      }
+    };
+    void refreshDownloadedMusicCount();
+    const handleDownloadsChanged = () => { void refreshDownloadedMusicCount(); };
+    window.addEventListener("hypersync:offline-downloads-changed", handleDownloadsChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("hypersync:offline-downloads-changed", handleDownloadsChanged);
+    };
+  }, [offlineOwnerKey, resetToken]);
+
   // Warm persistent playlist caches while search results are visible, so a
   // previously opened playlist can render its tracks without waiting on network.
   useEffect(() => {
@@ -775,11 +797,7 @@ useEffect(() => {
                 localTracks,
               );
 
-              setSearchError(
-                localTracks.length > 0
-                  ? ""
-                  : "Go back online to search music.",
-              );
+              setSearchError("");
             } catch {
               if (
                 !controller.signal
@@ -4227,10 +4245,10 @@ displayResults.tracks.length > 0 ? (
         </section>
       )}
 
-      {typeof navigator !== "undefined" && navigator.onLine === false ? (
+      {typeof navigator !== "undefined" && navigator.onLine === false && downloadedMusicCount === 0 ? (
         <OfflineNotice
-          title={displayResults.tracks.length ? "Offline search is limited to downloaded music" : "Go back online to search music"}
-          description={displayResults.tracks.length ? "Search only finds music you have downloaded to your Library." : "No downloaded matches are available offline. Reconnect to search music."}
+          title="Go back online to search music"
+          description="No downloaded music is available on this device. Reconnect to search music."
         />
       ) : null}
 

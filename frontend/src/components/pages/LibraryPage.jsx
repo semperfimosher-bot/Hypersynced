@@ -1061,7 +1061,9 @@ const [
           setHasMoreLibraryTracks(false);
 
           setError(
-            "This Library has not been cached on this device yet.",
+            allDownloadedTracks.length > 0 || downloadedPlaylists.length > 0
+              ? ""
+              : "This Library has not been cached on this device yet.",
           );
         }
 
@@ -1291,6 +1293,8 @@ const [
     [
       isRegistered,
       libraryCacheKey,
+      allDownloadedTracks.length,
+      downloadedPlaylists.length,
     ],
   );
 
