@@ -8504,3 +8504,9 @@ button:disabled {
 @media (max-width:600px) { .hs-playlist-loading-hero { grid-template-columns:100px minmax(0,1fr); gap:12px; padding:12px; } .hs-playlist-loading-title { height:22px; } .hs-playlist-loading-row { grid-template-columns:18px 42px minmax(0,1fr) 28px; gap:8px; padding:7px; } .hs-playlist-loading-thumb { width:42px; height:42px; } }
 @media (prefers-reduced-motion:reduce) { .hs-playlist-shimmer,.hs-search-no-results-banner { animation:none; }
 }
+
+
+/* Incomplete offline audio is distinct from ordinary library-only tracks. */
+.hs-search-track__signals em.is-download-incomplete {
+  color: #e6b56c;
+}

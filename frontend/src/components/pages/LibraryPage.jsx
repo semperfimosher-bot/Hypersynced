@@ -2938,7 +2938,13 @@ useEffect(() => {
                 </span>
 
                 <span className="hs-search-track__signals">
-                  <em>
+                  <em
+                    className={
+                      track.offlineDownloadIncomplete
+                        ? "is-download-incomplete"
+                        : ""
+                    }
+                  >
                     {downloadedTrackIds.has(
                       String(
                         track.id,
