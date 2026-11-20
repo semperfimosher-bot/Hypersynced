@@ -29,22 +29,14 @@ import useTrackActionMenu from
 import useCollectionActionMenu from
   "../../hooks/useCollectionActionMenu.js";
 
-import useQuietRefresh from
-  "../../hooks/useQuietRefresh.js";
-
 import useOnlineStatus from
   "../../hooks/useOnlineStatus.js";
 
 import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 
-import {
-  applyOptimisticRecentlyPlayed,
-  mergeRecentlyPlayedWithOptimisticCache,
-  subscribeListeningHistoryChanged,
-} from "../../homeRecentlyPlayed.js";
+
 import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
-import { readCachedHomeRecentlyPlayed } from "../../homeRecentlyPlayed.js";
 
 
 function memberFor(value) {
@@ -206,16 +198,8 @@ export default function ProfilePage({
             await getMyProfile();
 
           if (!isCurrent()) return;
-          const cachedRecent = readCachedHomeRecentlyPlayed(owner);
-          const mergedProfile = {
-            ...data,
-            recently_played: mergeRecentlyPlayedWithOptimisticCache(
-              data?.recently_played,
-              cachedRecent,
-            ),
-          };
-          setProfile(mergedProfile);
-          writeProfileSnapshot(owner, mergedProfile);
+          setProfile(data);
+          writeProfileSnapshot(owner, data);
           setError("");
 
         } catch (loadError) {
@@ -251,73 +235,12 @@ export default function ProfilePage({
 
 
   useEffect(() => {
-    if (!currentUser) {
-      return undefined;
-    }
-
-    const owner = String(currentUser.id ?? currentUser.username ?? "");
-    const unsubscribeCache = subscribeProfileSnapshotChanged(currentUser.id, () => {
+    if (!currentUser) return undefined;
+    return subscribeProfileSnapshotChanged(currentUser.id, () => {
       const cachedProfile = readProfileSnapshot(currentUser.id);
       if (cachedProfile) setProfile(cachedProfile);
     });
-
-    const unsubscribeHistory = subscribeListeningHistoryChanged(
-      (event) => {
-        if (event.detail?.type === "cache-updated") {
-          if (String(event.detail.owner ?? "") === owner) {
-            const cachedRecent = readCachedHomeRecentlyPlayed(owner);
-            setProfile((current) => current
-              ? { ...current, recently_played: cachedRecent }
-              : current);
-          }
-          return;
-        }
-        if (event.detail?.type === "optimistic-play" && event.detail.track) {
-          setProfile((current) => {
-            const base = current ?? {};
-            return {
-              ...base,
-              // Counts are server-authoritative; optimistic state only reorders.
-              recently_played: applyOptimisticRecentlyPlayed(
-                base.recently_played ?? readCachedHomeRecentlyPlayed(owner),
-                event.detail.track,
-                12,
-                { incrementPlayCount: false },
-              ),
-            };
-          });
-          setLoading(false);
-          return;
-        }
-        void loadProfile({ quiet: true });
-      },
-    );
-    return () => {
-      unsubscribeCache();
-      unsubscribeHistory();
-    };
-  }, [
-    currentUser,
-    loadProfile,
-  ]);
-
-
-  useQuietRefresh(
-    () =>
-      loadProfile({
-        quiet:
-          true,
-      }),
-    {
-      enabled:
-        Boolean(
-          currentUser
-          && online,
-        ),
-      intervalMs:
-        30_000,
-    },
-  );
+  }, [currentUser?.id]);
 
 
   if (!currentUser) {

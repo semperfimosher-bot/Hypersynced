@@ -28,9 +28,6 @@ import TrackActionMenu from
 import useTrackActionMenu from
   "../../hooks/useTrackActionMenu.js";
 
-import useQuietRefresh from
-  "../../hooks/useQuietRefresh.js";
-
 import useOnlineStatus from
   "../../hooks/useOnlineStatus.js";
 
@@ -44,12 +41,9 @@ import {
 import {
   getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
-  mergeRecentlyPlayedWithOptimisticCache,
-  applyOptimisticRecentlyPlayed,
   isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
-  subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 
 function CachedArtwork({
@@ -234,14 +228,10 @@ const loadRecentlyPlayed =
         // Neon listening events are the single source of truth for both
         // Home and Profile. Never prepend tracks merely selected in this tab.
         const serverTracks = getHomeRecentlyPlayed(profile);
-        const mergedTracks = mergeRecentlyPlayedWithOptimisticCache(
-          serverTracks,
-          readCachedHomeRecentlyPlayed(currentUser?.id ?? currentUser?.username),
-        );
-        setRecentlyPlayed(mergedTracks);
+        setRecentlyPlayed(serverTracks);
         writeCachedHomeRecentlyPlayed(
           currentUser?.id ?? currentUser?.username,
-          mergedTracks,
+          serverTracks,
         );
 
         setRecentError(
@@ -285,47 +275,7 @@ useEffect(() => {
 ]);
 
 
-useEffect(
-  () =>
-    subscribeListeningHistoryChanged(
-      (event) => {
-        if (event.detail?.type === "cache-updated") {
-          const owner = String(currentUser?.id ?? currentUser?.username ?? "");
-          if (String(event.detail.owner ?? "") === owner) {
-            setRecentlyPlayed(readCachedHomeRecentlyPlayed(owner));
-          }
-          return;
-        }
-        if (event.detail?.type === "optimistic-play" && event.detail.track) {
-          setRecentlyPlayed((current) =>
-            applyOptimisticRecentlyPlayed(current, event.detail.track, 12, { incrementPlayCount: false }),
-          );
-          return;
-        }
-        void loadRecentlyPlayed({ quiet: true });
-      },
-    ),
-  [
-    loadRecentlyPlayed,
-  ],
-);
 
-
-useQuietRefresh(
-  () =>
-    loadRecentlyPlayed({
-      quiet:
-        true,
-    }),
-  {
-    enabled:
-      Boolean(
-        currentUser,
-      ),
-    intervalMs:
-      30_000,
-  },
-);
 
   const playTrack = async (
     trackId,
