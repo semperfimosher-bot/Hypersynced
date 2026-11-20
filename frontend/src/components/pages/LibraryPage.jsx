@@ -2704,12 +2704,17 @@ useEffect(() => {
     useMemo(
       () =>
         new Set(
-          allDownloadedTracks.map(
-            (track) =>
-              String(
-                track.id,
-              ),
-          ),
+          allDownloadedTracks
+            .filter(
+              (track) =>
+                track.offlineComplete,
+            )
+            .map(
+              (track) =>
+                String(
+                  track.id,
+                ),
+            ),
         ),
       [
         allDownloadedTracks,
@@ -2940,7 +2945,9 @@ useEffect(() => {
                       ),
                     )
                       ? "OFFLINE"
-                      : "IN LIBRARY"}
+                      : track.offlineDownloadIncomplete
+                        ? "DOWNLOAD INCOMPLETE"
+                        : "IN LIBRARY"}
                   </em>
 
                   <small>

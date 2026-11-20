@@ -1618,6 +1618,14 @@ async function downloadedTrackFromRecord(
       null,
     downloaded:
       true,
+    offlineComplete:
+      isCompletePinnedRecord(
+        record,
+      ),
+    offlineDownloadIncomplete:
+      !isCompletePinnedRecord(
+        record,
+      ),
   };
 }
 
@@ -1652,9 +1660,6 @@ export async function getDownloadedTracks(
         recordBelongsToOwner(
           record,
           normalizedOwnerKey,
-        ) &&
-        isCompletePinnedRecord(
-          record,
         ) &&
         (
           !manualOnly ||
@@ -1724,9 +1729,6 @@ export async function getDownloadedPlaylists(
         recordBelongsToOwner(
           record,
           normalizedOwnerKey,
-        ) &&
-        isCompletePinnedRecord(
-          record,
         ),
     );
 
@@ -1963,6 +1965,16 @@ export async function getDownloadedPlaylists(
               null,
             downloaded:
               true,
+            offlineComplete:
+              tracks.every(
+                (track) =>
+                  track.offlineComplete,
+              ),
+            offlineDownloadIncomplete:
+              tracks.some(
+                (track) =>
+                  !track.offlineComplete,
+              ),
             is_offline_download:
               true,
           };

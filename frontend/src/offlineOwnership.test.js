@@ -1686,10 +1686,23 @@ test(
     assert.deepEqual(
       listed.map(
         (track) =>
-          track.id,
+          [
+            track.id,
+            track.offlineComplete,
+            track.offlineDownloadIncomplete,
+          ],
       ),
       [
-        complete.trackId,
+        [
+          incomplete.trackId,
+          false,
+          true,
+        ],
+        [
+          complete.trackId,
+          true,
+          false,
+        ],
       ],
     );
   },
