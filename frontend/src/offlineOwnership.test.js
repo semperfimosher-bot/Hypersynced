@@ -1576,3 +1576,121 @@ test(
   },
 );
 
+
+
+
+test(
+  "downloaded status requires a pinned record with all audio bytes cached",
+  async () => {
+    const mediaStore =
+      await import(
+        "./mediaStore.js"
+      );
+
+    const offline =
+      await loadOfflineDownloads();
+
+    const ownerKey =
+      "complete-download-owner";
+
+    const pinRef =
+      offline.getLikedSongsDownloadPinRef(
+        ownerKey,
+      );
+
+    const incomplete =
+      mediaStore.createMediaRecord({
+        trackId:
+          "incomplete-download-track",
+        mediaVersion:
+          "v1",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          100,
+        state:
+          "PINNED",
+      });
+
+    incomplete.cachedBytes =
+      75;
+
+    incomplete.pinRefs = [
+      pinRef,
+    ];
+
+    await mediaStore.saveMediaRecord(
+      incomplete,
+    );
+
+    assert.equal(
+      await offline.isTrackDownloaded(
+        {
+          id:
+            incomplete.trackId,
+          media_version:
+            incomplete.mediaVersion,
+        },
+        {
+          pinRef,
+        },
+      ),
+      false,
+    );
+
+    const complete =
+      mediaStore.createMediaRecord({
+        trackId:
+          "complete-download-track",
+        mediaVersion:
+          "v1",
+        mimeType:
+          "audio/mpeg",
+        fileSize:
+          100,
+        state:
+          "PINNED",
+      });
+
+    complete.cachedBytes =
+      100;
+
+    complete.pinRefs = [
+      pinRef,
+    ];
+
+    await mediaStore.saveMediaRecord(
+      complete,
+    );
+
+    assert.equal(
+      await offline.isTrackDownloaded(
+        {
+          id:
+            complete.trackId,
+          media_version:
+            complete.mediaVersion,
+        },
+        {
+          pinRef,
+        },
+      ),
+      true,
+    );
+
+    const listed =
+      await offline.getDownloadedTracks(
+        ownerKey,
+      );
+
+    assert.deepEqual(
+      listed.map(
+        (track) =>
+          track.id,
+      ),
+      [
+        complete.trackId,
+      ],
+    );
+  },
+);

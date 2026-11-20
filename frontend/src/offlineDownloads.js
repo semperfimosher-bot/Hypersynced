@@ -813,6 +813,20 @@ function trackIdentity(
 }
 
 
+function isCompletePinnedRecord(record) {
+  const fileSize = Number(record?.fileSize);
+  const cachedBytes = Number(record?.cachedBytes);
+
+  return (
+    record?.state === "PINNED" &&
+    Number.isSafeInteger(fileSize) &&
+    fileSize > 0 &&
+    Number.isSafeInteger(cachedBytes) &&
+    cachedBytes >= fileSize
+  );
+}
+
+
 function trackFileSize(
   track,
 ) {
@@ -1639,6 +1653,9 @@ export async function getDownloadedTracks(
           record,
           normalizedOwnerKey,
         ) &&
+        isCompletePinnedRecord(
+          record,
+        ) &&
         (
           !manualOnly ||
           getMediaPinReferences(
@@ -1707,6 +1724,9 @@ export async function getDownloadedPlaylists(
         recordBelongsToOwner(
           record,
           normalizedOwnerKey,
+        ) &&
+        isCompletePinnedRecord(
+          record,
         ),
     );
 
@@ -4119,8 +4139,9 @@ export async function isTrackDownloaded(
     );
 
   if (
-    record?.state !==
-      "PINNED"
+    !isCompletePinnedRecord(
+      record,
+    )
   ) {
     return false;
   }
