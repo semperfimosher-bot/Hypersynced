@@ -2994,12 +2994,22 @@ useEffect(() => {
       ],
     );
 
+  const offlineMode =
+    typeof navigator !== "undefined" &&
+    navigator.onLine === false;
+
   const visibleSongTracks =
     focusedLibraryTrack
-      ? [
-          focusedLibraryTrack,
-        ]
-      : sortedDownloadedTracks;
+      ? [focusedLibraryTrack]
+      : offlineMode
+        ? sortResultItems(
+            mergeLibraryTracks(
+              libraryTracks,
+              allDownloadedTracks,
+            ),
+            sortMode,
+          )
+        : sortedDownloadedTracks;
 
   const renderedSongTracks =
     getLibraryRenderItems(
@@ -4465,24 +4475,27 @@ useEffect(() => {
                     className={[
                       "hs-search-track",
                       "hs-library-track-row",
-
+                      !downloadedTrackIds.has(String(track.id)) && offlineMode
+                        ? "is-offline-unavailable"
+                        : "",
                       isCurrentTrack
                         ? "is-current-track"
                         : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
+                    aria-disabled={offlineMode && !downloadedTrackIds.has(String(track.id))}
                     onClick={
-                      playDownloadedTrack
+                      offlineMode && !downloadedTrackIds.has(String(track.id))
+                        ? undefined
+                        : playDownloadedTrack
                     }
                     onKeyDown={(
                       event,
                     ) => {
                       if (
-                        event.key ===
-                          "Enter" ||
-                        event.key ===
-                          " "
+                        (event.key === "Enter" || event.key === " ") &&
+                        !(offlineMode && !downloadedTrackIds.has(String(track.id)))
                       ) {
                         event.preventDefault();
                         playDownloadedTrack();
