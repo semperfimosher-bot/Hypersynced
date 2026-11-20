@@ -472,7 +472,7 @@ useEffect(() => {
     EMPTY_RESULTS,
   );
 
-  const [downloadedMusicCount, setDownloadedMusicCount] = useState(0);
+  const [downloadedMusicCount, setDownloadedMusicCount] = useState(null);
 
   useEffect(() => {
     let cancelled = false;

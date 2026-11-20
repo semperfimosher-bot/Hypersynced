@@ -37,6 +37,11 @@ import OfflineNotice from
 
 
 import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
+import {
+  applyOptimisticRecentlyPlayed,
+  readCachedHomeRecentlyPlayed,
+  subscribeListeningHistoryChanged,
+} from "../../homeRecentlyPlayed.js";
 
 
 function memberFor(value) {
@@ -241,6 +246,23 @@ export default function ProfilePage({
       if (cachedProfile) setProfile(cachedProfile);
     });
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    return subscribeListeningHistoryChanged((event) => {
+      const detail = event?.detail ?? {};
+      if (detail.owner && String(detail.owner) !== String(currentUser.id)) return;
+      if (detail.type === "optimistic-play" && detail.track?.id) {
+        const cachedTracks = readCachedHomeRecentlyPlayed(currentUser.id);
+        const nextTracks = applyOptimisticRecentlyPlayed(cachedTracks, detail.track, 12, {
+          incrementPlayCount: false,
+        });
+        setProfile((current) => current ? { ...current, recently_played: nextTracks } : current);
+        return;
+      }
+      if (online) void loadProfile({ quiet: true });
+    });
+  }, [currentUser?.id, loadProfile, online]);
 
 
   if (!currentUser) {
