@@ -2823,7 +2823,7 @@ useEffect(() => {
                   )
                 }
                 role="button"
-                tabIndex={0}
+                tabIndex={isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds) ? -1 : 0}
                 {...trackActionMenu.getTriggerProps(
                   track,
                 )}
@@ -2869,7 +2869,9 @@ useEffect(() => {
                       " "
                   ) {
                     event.preventDefault();
-                    playTrack();
+                    if (!isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds)) {
+                      playTrack();
+                    }
                   }
                 }}
               >
@@ -3904,7 +3906,7 @@ useEffect(() => {
                         )
                       }
                       role="button"
-                      tabIndex={0}
+                      tabIndex={isOfflineUnavailableTrack(track, offlineMode, downloadedTrackIds) ? -1 : 0}
                       {...trackActionMenu.getTriggerProps(
                         track,
                         {
