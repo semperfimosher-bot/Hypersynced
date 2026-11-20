@@ -230,7 +230,7 @@ test("admin paging bounds DOM rows and preserves selection across pages and hidd
   await navigation.getByRole("button", { name: "Media Catalog", exact: true }).click();
   await catalog.getByText("Song 100", { exact: true }).waitFor();
   await catalog.getByText("100 songs selected", { exact: true }).waitFor();
-  assert.ok(state.catalogFetches >= 4, "released catalog must load its two pages again");
+  assert.equal(state.catalogFetches, 2, "cached catalog reentry must not refetch either page");
   await catalog.getByRole("button", { name: "Catalog", exact: true }).click();
   await catalog.getByRole("button", { name: /^Artists/ }).click();
   await catalog.getByRole("button", { name: /^Fixture Artist/ }).click({ button: "right" });
