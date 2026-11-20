@@ -745,6 +745,8 @@ const [
     let cancelled =
       false;
 
+    let retryTimer = null;
+
     const refreshDownloads =
       async () => {
         try {
@@ -782,18 +784,24 @@ const [
               allTracks,
             );
           }
-        } catch {
+        } catch (error) {
+          /*
+           * A transient IndexedDB read or artwork-repair
+           * failure must never make completed downloads
+           * disappear from the Library. Keep the last
+           * known state and retry shortly.
+           */
           if (!cancelled) {
-            setDownloadedPlaylists(
-              [],
+            console.warn(
+              "Unable to refresh offline downloads; preserving current state.",
+              error,
             );
 
-            setDownloadedTracks(
-              [],
-            );
-
-            setAllDownloadedTracks(
-              [],
+            retryTimer = window.setTimeout(
+              () => {
+                void refreshDownloads();
+              },
+              1500,
             );
           }
         }
@@ -813,6 +821,10 @@ const [
 
     return () => {
       cancelled = true;
+
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer);
+      }
 
       window.removeEventListener(
         "hypersync:offline-downloads-changed",
