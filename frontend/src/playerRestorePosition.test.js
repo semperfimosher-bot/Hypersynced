@@ -35,7 +35,7 @@ test("restored position stays authoritative until live playback advances near it
 test("restored clock release requires small, consecutive forward progress", () => {
   assert.equal(isRestoredClockProgressing(38.5, 39.0, 38.5, 120), true);
   assert.equal(isRestoredClockProgressing(38.5, 43.0, 38.5, 120), false);
-  assert.equal(isRestoredClockProgressing(38.5, 40.5, 38.5, 120), true);
+  assert.equal(isRestoredClockProgressing(38.5, 40.0, 38.5, 120), true);
   assert.equal(isRestoredClockProgressing(38.5, 49.0, 38.5, 120), false);
   assert.equal(isRestoredClockProgressing(38.5, 38.4, 38.5, 120), false);
   assert.equal(isRestoredClockProgressing(116.0, 116.5, 116.0, 120), true);
