@@ -1710,6 +1710,14 @@ async function toggleOpenedPlaylistSaved() {
         openedPlaylist.id,
       );
     }
+
+    // Notify Library immediately after the server confirms the
+    // membership change so its cached snapshot refreshes now.
+    window.dispatchEvent(
+      new CustomEvent(
+        "hypersync:library-changed",
+      ),
+    );
   } catch (error) {
     setOpenedPlaylist(
       (current) => ({
@@ -1811,6 +1819,12 @@ async function downloadOpenedPlaylist() {
 
       await savePlaylist(
         playlistForDownload.id,
+      );
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "hypersync:library-changed",
+        ),
       );
 
       playlistForDownload = {
