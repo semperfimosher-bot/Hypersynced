@@ -35,3 +35,23 @@ export function getMissingDownloadBytes(
       cachedBytes,
   );
 }
+
+export function getOfflineDownloadWorkerCount(
+  pendingTrackCount,
+  requestedConcurrency = 6,
+) {
+  const pending = Math.max(
+    0,
+    Math.trunc(Number(pendingTrackCount) || 0),
+  );
+  const requested = Math.max(
+    1,
+    Math.trunc(Number(requestedConcurrency) || 1),
+  );
+
+  return Math.min(
+    pending,
+    requested,
+    6,
+  );
+}
