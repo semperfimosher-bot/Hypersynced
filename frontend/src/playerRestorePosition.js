@@ -5,7 +5,9 @@ export function shouldCorrectRestoredPlaybackClock(targetSeconds, liveSeconds, d
   if (target <= 0) return false;
 
   const nearTrackEnd = duration > 0 && target >= duration - 5.5;
-  if (nearTrackEnd && live <= duration + 0.5) return false;
+  if (nearTrackEnd) {
+    return live < target - 1.25 || live > target + 1.5 || live > duration + 0.5;
+  }
 
   return live < target - 1.25 || live > target + 5.5;
 }
