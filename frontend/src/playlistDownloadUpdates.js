@@ -8,18 +8,7 @@ function trackDownloadIdentity(
       "",
     );
 
-  const mediaVersion =
-    String(
-      track?.media_version ??
-      track?.mediaVersion ??
-      "",
-    );
-
-  return (
-    trackId +
-    "::" +
-    mediaVersion
-  );
+  return trackId;
 }
 
 
