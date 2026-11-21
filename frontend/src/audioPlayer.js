@@ -392,6 +392,8 @@ function beginListeningEvent(
     listenedSeconds: 0,
     lastMediaTime: getSafeCurrentTime(),
     lastSampleAt: globalThis.performance?.now?.() ?? Date.now(),
+    lastCheckpointSentAt: 0,
+    checkpointPromise: null,
     historyNotified: false,
   };
 
@@ -497,6 +499,33 @@ function sampleListeningProgress() {
     );
   }
 
+}
+
+function saveListeningCheckpoint(keepalive = true) {
+  const event = activeListeningEvent;
+  if (!event) return Promise.resolve();
+  if (event.checkpointPromise) return event.checkpointPromise;
+  const elapsed = Math.floor(event.listenedSeconds);
+  if (elapsed <= event.lastCheckpointSentAt) return Promise.resolve();
+  const task = (async () => {
+    const eventId = event.eventId ?? await event.request;
+    if (!eventId) return;
+    await apiRequest(
+      `/users/me/listening/${encodeURIComponent(eventId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ outcome: "progress", position_seconds: elapsed }),
+        ...(keepalive ? { keepalive: true } : {}),
+      },
+    );
+    event.lastCheckpointSentAt = elapsed;
+  })().catch((error) => {
+    console.warn("[HyperSynced] Listening checkpoint was not saved.", error);
+  }).finally(() => {
+    event.checkpointPromise = null;
+  });
+  event.checkpointPromise = task;
+  return task;
 }
 
 function finishListeningEvent(outcome) {
@@ -1728,6 +1757,7 @@ function handleBackgroundPlaybackLifecycle() {
 
   if (hidden) {
     sampleListeningProgress();
+    void saveListeningCheckpoint(true);
   }
 
   updateMediaSession(
