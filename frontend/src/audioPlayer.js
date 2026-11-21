@@ -1484,8 +1484,22 @@ function attachEvents() {
   audio.addEventListener(
     "playing",
     () => {
-      // On refresh, use the saved position until the browser is actually playing.
-      restoredTimeSeconds = 0;
+      // "playing" may fire while the media clock still reports stale/end
+      // position after refresh. Keep the saved fallback until clocks align.
+      const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
+      const mediaClock = Number(audio.currentTime) || 0;
+      if (
+        restoredTarget > 0 &&
+        Math.abs(mediaClock - restoredTarget) > 1.25
+      ) {
+        try {
+          audio.currentTime = restoredTarget;
+        } catch {
+          // Preserve fallback display if an early seek is rejected.
+        }
+      } else {
+        restoredTimeSeconds = 0;
+      }
       setPlaybackPhase(
         "playing",
       );
@@ -1587,6 +1601,15 @@ function attachEvents() {
   audio.addEventListener(
     "seeked",
     () => {
+      if (
+        restoredTimeSeconds > 0 &&
+        Math.abs(
+          (Number(audio.currentTime) || 0) -
+          restoredTimeSeconds
+        ) <= 1.25
+      ) {
+        restoredTimeSeconds = 0;
+      }
       setPlaybackPhase(
         audio.paused
           ? "paused"
