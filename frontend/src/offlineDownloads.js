@@ -3285,7 +3285,9 @@ export async function downloadTracksForOffline(
       ),
     );
 
-    await releaseObsoletePlaylistPins();
+    if (!mergeExistingPlaylistTracks) {
+      await releaseObsoletePlaylistPins();
+    }
 
     await saveDownloadJob({
       id:
@@ -3296,12 +3298,26 @@ export async function downloadTracksForOffline(
       downloadedBytes:
         totalBytes,
       trackKeys:
-        uniqueTracks.map(
-          (track) =>
-            trackIdentity(
-              track,
-            ).key,
-        ),
+        mergeExistingPlaylistTracks
+          ? Array.from(
+              new Set([
+                ...(Array.isArray(previousJob?.trackKeys)
+                  ? previousJob.trackKeys
+                  : []),
+                ...uniqueTracks.map(
+                  (track) =>
+                    trackIdentity(
+                      track,
+                    ).key,
+                ),
+              ]),
+            )
+          : uniqueTracks.map(
+              (track) =>
+                trackIdentity(
+                  track,
+                ).key,
+            ),
     });
 
     runtimeJobState =
