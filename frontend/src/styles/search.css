@@ -8531,3 +8531,48 @@ button:disabled {
 .hs-search-track__signals em.is-download-incomplete {
   color: #e6b56c;
 }
+
+
+/* Compact instant Library toggle for search playlist cards. */
+.hs-search-library-toggle {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(130, 170, 192, 0.35);
+  border-radius: 7px;
+  color: rgba(155, 184, 199, 0.72);
+  background: rgba(9, 19, 28, 0.78);
+  cursor: pointer;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+
+.hs-search-library-toggle:hover:not(:disabled) {
+  border-color: rgba(0, 190, 238, 0.7);
+  color: rgba(0, 205, 245, 0.9);
+}
+.hs-search-library-toggle:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.hs-search-library-toggle.is-saved {
+  border-color: #00bce8;
+  background: #00bce8;
+  color: #343b43;
+}
+.hs-search-library-toggle.is-saved svg {
+  stroke: #343b43;
+  stroke-width: 3;
+}
+.hs-search-library-toggle:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+@media (max-width: 600px) {
+  .hs-search-library-toggle {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+}
