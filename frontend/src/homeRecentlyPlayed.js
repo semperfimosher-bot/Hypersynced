@@ -12,7 +12,8 @@ export function getHomeRecentlyPlayed(profileOrTracks, limit = 12) {
 export function mergeRecentlyPlayedWithOptimisticCache(serverTracks, cachedTracks, limit = 12) {
   const server = Array.isArray(serverTracks) ? serverTracks : [];
   const cached = Array.isArray(cachedTracks) ? cachedTracks : [];
-  if (!server.length || !cached.length) return server.slice(0, limit);
+  if (!server.length) return cached.slice(0, limit);
+  if (!cached.length) return server.slice(0, limit);
   const serverIds = new Set(server.map((track) => String(track?.id ?? "")));
   const serverLatest = Math.max(
     0,
