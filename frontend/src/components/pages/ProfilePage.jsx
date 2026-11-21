@@ -166,6 +166,9 @@ export default function ProfilePage({
   const [socialMode, setSocialMode] =
     useState("");
 
+  const [totalPlaysOpen, setTotalPlaysOpen] =
+    useState(false);
+
   const [avatarVersion, setAvatarVersion] =
     useState(0);
 
@@ -473,6 +476,7 @@ export default function ProfilePage({
             profile?.tracks_played ?? 0
           }
           label="Total Plays"
+          onClick={() => setTotalPlaysOpen(true)}
         />
 
         <Stat
@@ -852,6 +856,62 @@ export default function ProfilePage({
         </p>
       ) : null}
 
+
+      {totalPlaysOpen ? (
+        <div className="hs-modal-backdrop">
+          <section className="hs-social-modal hs-total-plays-modal" role="dialog" aria-modal="true" aria-labelledby="hs-total-plays-title">
+            <header>
+              <div>
+                <span className="hs-eyebrow">ACCOUNT-WIDE LISTENING</span>
+                <h2 id="hs-total-plays-title">Total Plays</h2>
+                <p>Your listening history across every device signed into this account.</p>
+              </div>
+              <button className="hs-icon-button" type="button" onClick={() => setTotalPlaysOpen(false)} aria-label="Close">
+                <Icon name="close" size={19} />
+              </button>
+            </header>
+            <div className="hs-social-list hs-total-plays-content">
+              <div className="hs-total-plays-summary">
+                <strong>{Number(profile?.tracks_played ?? 0).toLocaleString()}</strong>
+                <span>plays recorded across devices</span>
+                <small>{profile?.hours_listened ?? 0} hours listened</small>
+              </div>
+              <h3>Most played in your recent history</h3>
+              {profile?.recently_played?.length ? profile.recently_played.map((track, index) => (
+                <button className="hs-total-plays-track" type="button" key={track.id} onClick={() => {
+                  setTotalPlaysOpen(false);
+                  player.playTrack(track.id, {
+                    audioUrl: track.audio_url,
+                    artworkUrl: track.artwork_url,
+                    title: track.title,
+                    artist: track.artist,
+                    mimeType: track.mime_type,
+                    fileSize: track.file_size,
+                    mediaVersion: track.media_version,
+                    genre: track.genre ?? "",
+                    releaseYear: track.release_year ?? null,
+                  }).catch(() => {});
+                }}>
+                  <span className="hs-total-plays-track__rank">{index + 1}</span>
+                  <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
+                  <span className="hs-total-plays-track__meta"><strong>{track.title}</strong><small>{track.artist}</small></span>
+                  <span className="hs-total-plays-track__count">{track.play_count} plays</span>
+                </button>
+              )) : <div className="hs-social-empty">Listening history will appear here after you play music.</div>}
+              {profile?.top_artists?.length ? (
+                <>
+                  <h3>Top artists</h3>
+                  {profile.top_artists.map((artist, index) => (
+                    <div className="hs-total-plays-artist" key={artist.artist}>
+                      <strong>#{index + 1}</strong><span>{artist.artist}</span><small>{artist.plays} plays</small>
+                    </div>
+                  ))}
+                </>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {editing && profile ? (
         <EditProfileModal
