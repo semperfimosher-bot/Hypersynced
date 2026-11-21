@@ -267,7 +267,8 @@ export default function ProfilePage({
       const detail = event?.detail ?? {};
       if (detail.owner && String(detail.owner) !== String(currentUser.id)) return;
       if (detail.type === "optimistic-play" && detail.track?.id) {
-        const next = applyOptimisticRecentlyPlayed(recentTracks, detail.track, 12, {
+        const cachedTracks = readCachedHomeRecentlyPlayed(recentOwner);
+        const next = applyOptimisticRecentlyPlayed(cachedTracks, detail.track, 12, {
           incrementPlayCount: false,
         });
         writeCachedHomeRecentlyPlayed(recentOwner, next);
@@ -288,7 +289,7 @@ export default function ProfilePage({
         }).catch(() => {});
       }
     });
-  }, [currentUser?.id, recentOwner, recentTracks, online]);
+  }, [currentUser?.id, recentOwner, online]);
 
   useQuietRefresh(
     () => getMyRecentlyPlayed().then((tracks) => {
@@ -652,6 +653,12 @@ export default function ProfilePage({
             )}
           </div>
 
+        ) : !online ? (
+          <OfflineNotice
+            compact
+            title="Recently Played is unavailable offline"
+            description="Your cached listening history will appear here when available."
+          />
         ) : (
           <div className="hs-empty-card">
             <Icon
