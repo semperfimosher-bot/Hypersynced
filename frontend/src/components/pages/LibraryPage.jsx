@@ -1009,6 +1009,32 @@ const [
         libraryCacheKey,
       );
 
+      // Recover pending optimistic mutations after refresh/restart. The save
+      // and unsave endpoints are idempotent membership operations; replaying
+      // the desired state prevents a click from being lost mid-request.
+      if (
+        !offline &&
+        cached?.pendingSavedPlaylistChanges &&
+        Object.keys(cached.pendingSavedPlaylistChanges).length
+      ) {
+        const pendingChanges = Object.entries(
+          cached.pendingSavedPlaylistChanges,
+        );
+        await Promise.allSettled(
+          pendingChanges.map(async ([playlistId, desiredSaved]) => {
+            if (desiredSaved) {
+              await savePlaylist(playlistId);
+            } else {
+              await unsavePlaylist(playlistId);
+            }
+            settleSavedPlaylistMembership(
+              libraryCacheKey,
+              playlistId,
+            );
+          }),
+        );
+      }
+
       // Restore IndexedDB-only snapshots before checking the server. This is
       // essential for large libraries whose localStorage mirror is a marker.
       if (
