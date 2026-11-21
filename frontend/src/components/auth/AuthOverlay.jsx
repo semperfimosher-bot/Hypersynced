@@ -50,6 +50,9 @@ export default function AuthOverlay({
   const [message, setMessage] =
     useState("");
 
+  const [submitting, setSubmitting] =
+    useState(false);
+
 
   useEffect(() => {
     if (
@@ -74,6 +77,8 @@ export default function AuthOverlay({
   async function submit(event) {
     event.preventDefault();
 
+    if (submitting) return;
+    setSubmitting(true);
     setMessage("");
 
     const form =
@@ -148,7 +153,7 @@ export default function AuthOverlay({
         { remember: rememberMe },
       );
 
-      onAuthenticated(data.user);
+      await onAuthenticated(data.user);
 
       onClose();
 
@@ -161,6 +166,8 @@ export default function AuthOverlay({
           ? error.message
           : "Authentication failed.",
       );
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -413,10 +420,11 @@ export default function AuthOverlay({
           <button
             className="auth-submit"
             type="submit"
+            disabled={submitting}
           >
-            {isCreate
-              ? "CREATE ACCOUNT"
-              : "SIGN IN"}
+            {submitting
+              ? (isCreate ? "CREATING ACCOUNT..." : "SIGNING IN...")
+              : (isCreate ? "CREATE ACCOUNT" : "SIGN IN")}
           </button>
         </form>
 
