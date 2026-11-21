@@ -80,8 +80,23 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     player._getAudioElement().dispatchEvent(new Event("playing"));
     assert.equal(player._getAudioElement().currentTime, 38.5);
     assert.equal(player.getState().currentTime, 38.5);
-    // The simulated element has no loaded media source, so it must not
-    // clear the saved fallback on a synthetic seeked event.
+
+    // Regression: a browser may subsequently report the end-of-track clock
+    // after restore. The fallback must remain visible and force the clock back.
+    const restoredAudio = player._getAudioElement();
+    restoredAudio.currentTime = 119.8;
+    restoredAudio.dispatchEvent(new Event("timeupdate"));
+    assert.equal(restoredAudio.currentTime, 38.5);
+    assert.equal(player.getState().currentTime, 38.5);
+
+    // A seeked event alone cannot release the fallback. It only releases after
+    // playback is active and the live clock has progressed from the saved point.
+    restoredAudio.dispatchEvent(new Event("seeked"));
+    assert.equal(player.getState().currentTime, 38.5);
+    restoredAudio.paused = false;
+    restoredAudio.currentTime = 39.0;
+    restoredAudio.dispatchEvent(new Event("timeupdate"));
+    assert.equal(player.getState().currentTime, 39.0);
 
     // A deliberate seek must replace the saved-position fallback shown by the UI.
     player.seekTo(12);
