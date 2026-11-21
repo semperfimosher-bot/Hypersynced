@@ -2,7 +2,7 @@ export function shouldCorrectRestoredPlaybackClock(targetSeconds, liveSeconds, d
   const target = Math.max(0, Number(targetSeconds) || 0);
   const live = Math.max(0, Number(liveSeconds) || 0);
   const duration = Math.max(0, Number(durationSeconds) || 0);
-  if (target <= 0) return false;
+  if (target <= 0) return live > 5.5;
 
   const nearTrackEnd = duration > 0 && target >= duration - 5.5;
   if (nearTrackEnd) {
@@ -16,7 +16,7 @@ export function shouldReleaseRestoredPosition(targetSeconds, liveSeconds, paused
   const target = Math.max(0, Number(targetSeconds) || 0);
   const live = Math.max(0, Number(liveSeconds) || 0);
   const duration = Math.max(0, Number(durationSeconds) || 0);
-  if (paused || target <= 0 || live < target + 0.35) return false;
+  if (paused || live < target + 0.35) return false;
 
   const nearTrackEnd = duration > 0 && target >= duration - 5.5;
   return nearTrackEnd ? live <= duration + 0.5 : live <= target + 5.5;
@@ -29,7 +29,7 @@ export function isRestoredClockProgressing(previousSeconds, currentSeconds, targ
   const target = Math.max(0, Number(targetSeconds) || 0);
   const duration = Math.max(0, Number(durationSeconds) || 0);
   const delta = current - previous;
-  if (target <= 0 || delta < 0.05 || delta > 1.5) return false;
+  if (delta < 0.05 || delta > 1.5) return false;
 
   const nearTrackEnd = duration > 0 && target >= duration - 5.5;
   return nearTrackEnd
