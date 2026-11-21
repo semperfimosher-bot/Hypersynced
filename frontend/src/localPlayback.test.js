@@ -27,6 +27,14 @@ test("listening progress is checkpointed only when a page becomes hidden or exit
   assert.match(source, /finishListeningEvent/);
 });
 
+test("Total Plays opens an account-wide listening summary", () => {
+  const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
+  assert.match(profile, /label="Total Plays"[\s\S]*?onClick=\{\(\) => setTotalPlaysOpen\(true\)\}/);
+  assert.ok(profile.includes("ACCOUNT-WIDE LISTENING"));
+  assert.ok(profile.includes("every device signed into this account"));
+  assert.ok(profile.includes("profile?.tracks_played"));
+});
+
 class TestAudio extends EventTarget {
   paused = true;
   currentTime = 0;
