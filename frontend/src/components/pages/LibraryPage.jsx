@@ -2513,57 +2513,80 @@ useEffect(() => {
       return;
     }
 
-    const shouldSave =
-      !selectedPlaylist.is_saved;
+    const playlist = selectedPlaylist;
+    const playlistId = String(playlist.id);
+    const shouldSave = !playlist.is_saved;
+    const optimisticPlaylist = {
+      ...playlist,
+      is_saved: shouldSave,
+    };
 
-    setActionBusy(
-      true,
-    );
-
+    setActionBusy(true);
     setError("");
-
-    setSelectedPlaylist(
-      (current) => ({
-        ...current,
-        is_saved:
-          shouldSave,
-      }),
+    setSelectedPlaylist(optimisticPlaylist);
+    applySavedPlaylistMembership(
+      libraryCacheKey,
+      optimisticPlaylist,
+      shouldSave,
     );
+    window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+      detail: {
+        phase: "optimistic",
+        playlist: optimisticPlaylist,
+        saved: shouldSave,
+        ownerKey: libraryCacheKey,
+      },
+    }));
 
     try {
       if (shouldSave) {
-        await savePlaylist(
-          selectedPlaylist.id,
-        );
+        await savePlaylist(playlistId);
       } else {
-        await unsavePlaylist(
-          selectedPlaylist.id,
-        );
+        await unsavePlaylist(playlistId);
       }
 
-      await loadLibrary();
+      settleSavedPlaylistMembership(libraryCacheKey, playlistId);
+      window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+        detail: {
+          phase: "confirmed",
+          playlist: optimisticPlaylist,
+          saved: shouldSave,
+          ownerKey: libraryCacheKey,
+        },
+      }));
     } catch (requestError) {
-      setSelectedPlaylist(
-        (current) => ({
-          ...current,
-          is_saved:
-            !shouldSave,
-        }),
+      const rollbackPlaylist = {
+        ...playlist,
+        is_saved: !shouldSave,
+      };
+      setSelectedPlaylist(current =>
+        String(current?.id) === playlistId
+          ? rollbackPlaylist
+          : current,
       );
-
+      applySavedPlaylistMembership(
+        libraryCacheKey,
+        rollbackPlaylist,
+        !shouldSave,
+      );
+      settleSavedPlaylistMembership(libraryCacheKey, playlistId);
+      window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+        detail: {
+          phase: "rollback",
+          playlist: rollbackPlaylist,
+          saved: !shouldSave,
+          ownerKey: libraryCacheKey,
+        },
+      }));
       setError(
-        requestError
-          instanceof Error
+        requestError instanceof Error
           ? requestError.message
-          : "Unable to update your Library.",
+          : "Unable to update your Library. The change was reverted.",
       );
     } finally {
-      setActionBusy(
-        false,
-      );
+      setActionBusy(false);
     }
   }
-
 
   function playPlaylist(
     startIndex = 0,
