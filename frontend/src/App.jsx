@@ -2623,15 +2623,18 @@ const clearPlaylistToOpen =
       const restoreGeneration =
         navigationGenerationRef.current;
 
+      // Switch the shell to the authenticated identity immediately. Account
+      // view restoration is a background task; it must never hold the user in
+      // the guest shell while a remote app-state request is pending.
+      setCurrentUser(user);
+      setAuthOpen(false);
+
       if (!user.offline_only) {
-        await restoreSavedAppView(
+        void restoreSavedAppView(
           user,
           restoreGeneration,
         );
       }
-
-      setCurrentUser(user);
-      setAuthOpen(false);
     },
     [
       cancelPendingSearchSave,
