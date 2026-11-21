@@ -127,22 +127,10 @@ let warmPlaybackTaskKey =
 let restoredTimeSeconds =
   0;
 
-// Explicit lock: zero is a valid restored position, not a signal that
-// restoration has finished. Keep the UI on the saved clock until playback
-// has demonstrably advanced from the restored seek.
-let restoredPositionLocked =
-  false;
-
 let restoredClockPreviousSeconds =
   null;
 
 let restoredClockProgressTicks =
-  0;
-
-let restoredClockGuardActive =
-  false;
-
-let restoredClockGuardProgressSeconds =
   0;
 
 
@@ -1311,7 +1299,7 @@ export function getState() {
     currentTime:
       currentTrackId && (
         loadedAudioTrackId !== currentTrackId ||
-        (restoredPositionLocked || restoredClockGuardActive)
+        restoredTimeSeconds > 0
       )
         ? Math.max(0, Number(restoredTimeSeconds) || 0)
         : getSafeCurrentTime(),
@@ -1656,7 +1644,7 @@ function attachEvents() {
       audio.addEventListener(
         eventName,
         () => {
-          if (eventName === "timeupdate" && (restoredPositionLocked || restoredClockGuardActive)) {
+          if (eventName === "timeupdate" && restoredTimeSeconds > 0) {
             const liveClock = Number(audio.currentTime) || 0;
             const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
             if (
@@ -1679,27 +1667,17 @@ function attachEvents() {
               const previousClock = Number.isFinite(restoredClockPreviousSeconds)
                 ? restoredClockPreviousSeconds
                 : restoredTarget;
-              const validProgress = isRestoredClockProgressing(
-                previousClock,
-                liveClock,
-                restoredTarget,
-                audio.duration,
-              );
-              if (validProgress) {
+              if (
+                isRestoredClockProgressing(
+                  previousClock,
+                  liveClock,
+                  restoredTarget,
+                  audio.duration,
+                )
+              ) {
                 restoredClockProgressTicks += 1;
-                if (restoredClockGuardActive) {
-                  // Move the guard's reference point forward with verified
-                  // playback. This keeps it protective for the whole restored
-                  // song without comparing later playback to the old seek point.
-                  restoredTimeSeconds = liveClock;
-                  restoredClockGuardProgressSeconds += Math.max(
-                    0,
-                    liveClock - previousClock,
-                  );
-                }
               } else {
                 restoredClockProgressTicks = 0;
-                restoredClockGuardProgressSeconds = 0;
               }
               restoredClockPreviousSeconds = liveClock;
 
@@ -1712,20 +1690,14 @@ function attachEvents() {
                   audio.duration,
                 )
               ) {
-                restoredPositionLocked = false;
-                restoredClockGuardActive = false;
+                restoredTimeSeconds = 0;
                 restoredClockPreviousSeconds = null;
-                restoredClockGuardProgressSeconds = 0;
                 restoredClockProgressTicks = 0;
               }
             } else {
               restoredClockPreviousSeconds = liveClock;
               restoredClockProgressTicks = 0;
-              restoredClockGuardProgressSeconds = 0;
             }
-
-            // Once the restored clock is verified, normal media events,
-            // seeking, lyrics timing, and end-of-track transitions resume.
           }
           notify();
         },
@@ -1767,23 +1739,6 @@ function attachEvents() {
   audio.addEventListener(
   "ended",
   () => {
-    // A stale terminal media clock during DB restoration must not complete the
-    // track or advance the queue. Re-seek the authoritative saved DB position.
-    if (restoredPositionLocked) {
-      const liveClock = Number(audio.currentTime) || 0;
-      const target = Math.max(0, Number(restoredTimeSeconds) || 0);
-      if (shouldCorrectRestoredPlaybackClock(target, liveClock, audio.duration)) {
-        try {
-          audio.currentTime = target;
-        } catch {
-          // Keep the restore guard active; next playback attempt will retry.
-        }
-      }
-      setPlaybackPhase("paused");
-      notify();
-      return;
-    }
-
     finishListeningEvent(
       "completed",
       Number.isFinite(
@@ -2332,11 +2287,6 @@ function applyTrackMetadata(
 
   restoredTimeSeconds =
     0;
-  restoredPositionLocked = false;
-  restoredClockPreviousSeconds = null;
-  restoredClockProgressTicks = 0;
-  restoredClockGuardActive = false;
-  restoredClockGuardProgressSeconds = 0;
 
   setPlaybackPhase(
     "loading",
@@ -3046,11 +2996,6 @@ export function setPlaybackPersistenceOwner(userId) {
     currentTrackTitle = "";
     currentTrackArtist = "";
     restoredTimeSeconds = 0;
-    restoredPositionLocked = false;
-    restoredClockPreviousSeconds = null;
-    restoredClockProgressTicks = 0;
-    restoredClockGuardActive = false;
-    restoredClockGuardProgressSeconds = 0;
     setPlaybackPhase("idle");
     notify();
   }
@@ -3154,11 +3099,8 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   // expiring audio URL is persisted in the browser snapshot.
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
-  restoredPositionLocked = true;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
-  restoredClockGuardActive = true;
-  restoredClockGuardProgressSeconds = 0;
   setPlaybackPhase("paused");
   notify();
   return getState();
@@ -3179,11 +3121,6 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   audio.pause();
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
-  restoredPositionLocked = true;
-  restoredClockPreviousSeconds = null;
-  restoredClockProgressTicks = 0;
-  restoredClockGuardActive = true;
-  restoredClockGuardProgressSeconds = 0;
 
   // Refill a short or newly rebased queue in the background. The current
   // track is already visible and this request never delays paused restore.
@@ -3296,11 +3233,6 @@ currentTrackArtist =
 
 restoredTimeSeconds =
   0;
-  restoredPositionLocked = false;
-  restoredClockPreviousSeconds = null;
-  restoredClockProgressTicks = 0;
-  restoredClockGuardActive = false;
-  restoredClockGuardProgressSeconds = 0;
 
   setPlaybackPhase(
     "idle",
@@ -3340,11 +3272,8 @@ export function seekTo(
 
   // A user seek supersedes any pending restored-position fallback.
   restoredTimeSeconds = 0;
-  restoredPositionLocked = false;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
-  restoredClockGuardActive = false;
-  restoredClockGuardProgressSeconds = 0;
 
   notify();
 }
