@@ -2988,7 +2988,7 @@ export function setPlaybackPersistenceOwner(userId) {
     notify();
   }
 
-  // Playback restoration is exclusively driven by the account's Neon state.
+  // Playback restoration is driven by this device's local playback snapshot.
   activePlaybackOwnerId = nextOwner;
 
   const cachedQueue = readPlayerQueueSnapshot(nextOwner);
