@@ -36,3 +36,8 @@ export function isRestoredClockProgressing(previousSeconds, currentSeconds, targ
     ? current <= duration + 0.5
     : current >= target - 0.5 && current <= target + 3.0;
 }
+
+
+export function shouldIgnoreRestoredEndedEvent(targetSeconds, liveSeconds, durationSeconds = 0) {
+  return shouldCorrectRestoredPlaybackClock(targetSeconds, liveSeconds, durationSeconds);
+}
