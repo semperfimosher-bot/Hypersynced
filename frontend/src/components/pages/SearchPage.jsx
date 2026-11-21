@@ -2608,7 +2608,9 @@ async function downloadOpenedPlaylist() {
             openedPlaylist.artwork_url
           }
           fallbackSize={32}
-        />
+                  loading="eager"
+          fetchPriority="high"
+/>
 
       </div>
 
@@ -2810,30 +2812,32 @@ async function downloadOpenedPlaylist() {
       {(openedPlaylist.tracks?.length ??
       0) > 0 ? (
         <div className="hs-playlist-track-search">
-          <label>
-            <Icon
-              name="search"
-              size={15}
-            />
+          <div className="hs-playlist-track-search__controls">
+            <label className="hs-playlist-track-search__query">
+              <Icon
+                name="search"
+                size={15}
+              />
 
-            <input
-              type="search"
-              value={
-                playlistSearchQuery
-              }
-              placeholder="Search in playlist"
-              aria-label={
-                `Search in ${openedPlaylist.title}`
-              }
-              onChange={(
-                event,
-              ) => {
-                setPlaylistSearchQuery(
-                  event.target.value,
-                );
-              }}
-            />
-          </label>
+              <input
+                type="search"
+                value={
+                  playlistSearchQuery
+                }
+                placeholder="Search in playlist"
+                aria-label={
+                  `Search in ${openedPlaylist.title}`
+                }
+                onChange={(
+                  event,
+                ) => {
+                  setPlaylistSearchQuery(
+                    event.target.value,
+                  );
+                }}
+              />
+            </label>
+          </div>
 
           <div className="hs-playlist-track-search__meta">
             <span>
@@ -3272,7 +3276,9 @@ async function downloadOpenedPlaylist() {
                       displayResults.tracks
                     }
                     fallbackSize={34}
-                  />
+                            loading="eager"
+          fetchPriority="high"
+/>
                 </div>
 
                 <div className="hs-search-generated-playlist__copy">
@@ -3751,7 +3757,9 @@ async function downloadOpenedPlaylist() {
                               playlist.artwork_url
                             }
                             fallbackSize={20}
-                          />
+                                    loading="eager"
+          fetchPriority="high"
+/>
 
                           <i aria-hidden="true">
                             <Icon
