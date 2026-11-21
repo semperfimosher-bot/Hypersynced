@@ -9,6 +9,7 @@ import * as player from "../../audioPlayer.js";
 
 import {
   getMyProfile,
+  getMyRecentlyPlayed,
 } from "../../profileApi.js";
 
 import Avatar from "../profile/Avatar.jsx";
@@ -40,8 +41,10 @@ import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChan
 import {
   applyOptimisticRecentlyPlayed,
   readCachedHomeRecentlyPlayed,
+  writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
+import useQuietRefresh from "../../hooks/useQuietRefresh.js";
 
 
 function memberFor(value) {
@@ -172,6 +175,10 @@ export default function ProfilePage({
   const [avatarVersion, setAvatarVersion] =
     useState(0);
 
+  const recentOwner = currentUser?.id ?? currentUser?.username;
+  const [recentTracks, setRecentTracks] = useState(() => readCachedHomeRecentlyPlayed(recentOwner));
+  const recentRequest = useRef(0);
+
 
   const loadProfile =
     useCallback(
@@ -238,6 +245,60 @@ export default function ProfilePage({
   }, [
     loadProfile,
   ]);
+
+  useEffect(() => {
+    const request = ++recentRequest.current;
+    const owner = currentUser?.id;
+    if (!currentUser || !online) return undefined;
+    void getMyRecentlyPlayed().then((tracks) => {
+      if (request !== recentRequest.current || owner !== currentUser?.id) return;
+      const normalized = Array.isArray(tracks) ? tracks : [];
+      writeCachedHomeRecentlyPlayed(recentOwner, normalized);
+      setRecentTracks(normalized);
+    }).catch(() => {
+      // The owner-scoped local snapshot remains visible when refresh fails.
+    });
+    return () => { recentRequest.current += 1; };
+  }, [currentUser?.id, recentOwner, online]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    return subscribeListeningHistoryChanged((event) => {
+      const detail = event?.detail ?? {};
+      if (detail.owner && String(detail.owner) !== String(currentUser.id)) return;
+      if (detail.type === "optimistic-play" && detail.track?.id) {
+        const next = applyOptimisticRecentlyPlayed(recentTracks, detail.track, 12, {
+          incrementPlayCount: false,
+        });
+        writeCachedHomeRecentlyPlayed(recentOwner, next);
+        setRecentTracks(next);
+        return;
+      }
+      if (detail.type === "cache-updated") {
+        setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
+        return;
+      }
+      if (online) {
+        const request = ++recentRequest.current;
+        void getMyRecentlyPlayed().then((tracks) => {
+          if (request !== recentRequest.current) return;
+          const normalized = Array.isArray(tracks) ? tracks : [];
+          writeCachedHomeRecentlyPlayed(recentOwner, normalized);
+          setRecentTracks(normalized);
+        }).catch(() => {});
+      }
+    });
+  }, [currentUser?.id, recentOwner, recentTracks, online]);
+
+  useQuietRefresh(
+    () => getMyRecentlyPlayed().then((tracks) => {
+      const normalized = Array.isArray(tracks) ? tracks : [];
+      writeCachedHomeRecentlyPlayed(recentOwner, normalized);
+      setRecentTracks(normalized);
+    }).catch(() => {}),
+    { enabled: Boolean(currentUser && online), intervalMs: 30_000 },
+  );
+
 
 
 
@@ -504,15 +565,9 @@ export default function ProfilePage({
         </header>
 
 
-        {!online ? (
-          <OfflineNotice
-            compact
-            title="Go back online to see Recently Played"
-            description="Your listening history will appear here once you reconnect."
-          />
-        ) : profile?.recently_played?.length ? (
+        {recentTracks.length ? (
           <div className="hs-recent-grid">
-            {profile.recently_played.map(
+            {recentTracks.map(
               (track) => (
                 <button
                   className="hs-recent-card"
@@ -877,7 +932,7 @@ export default function ProfilePage({
                 <small>{profile?.hours_listened ?? 0} hours listened</small>
               </div>
               <h3>Recent songs and play counts</h3>
-              {profile?.recently_played?.length ? profile.recently_played.map((track, index) => (
+              {recentTracks.length ? recentTracks.map((track, index) => (
                 <button className="hs-total-plays-track" type="button" key={track.id} onClick={() => {
                   setTotalPlaysOpen(false);
                   player.playTrack(track.id, {
