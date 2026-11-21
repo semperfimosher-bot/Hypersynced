@@ -1387,7 +1387,7 @@ useEffect(() => {
               }
             } else if (hydrated.tracks.length === 100 && !Number.isFinite(expectedCount)) {
               // Unknown legacy total: continue until a short page is returned.
-              for (let offset = 100; ; offset += 100 {
+              for (let offset = 100; ; offset += 100) {
                 const page = await getPlaylist(playlistId, {
                   limit: 100,
                   offset,
