@@ -45,7 +45,7 @@ test("profile Recently Played has its own server refresh and owner-scoped cache"
   const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
   assert.match(profile, /getMyRecentlyPlayed/);
   assert.match(profile, /readCachedHomeRecentlyPlayed\(recentOwner\)/);
-  assert.match(profile, /writeCachedHomeRecentlyPlayed\(recentOwner, normalized\)/);
+  assert.match(profile, /writeCachedHomeRecentlyPlayed\(recentOwner, mergedTracks\)/);
   assert.match(profile, /useQuietRefresh/);
   assert.match(profile, /recentTracks\.map/);
   assert.doesNotMatch(profile, /profile\??\.recently_played/);
