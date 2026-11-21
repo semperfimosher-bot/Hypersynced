@@ -1,10 +1,8 @@
 import {
-  Activity,
   lazy,
   Suspense,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -33,12 +31,6 @@ import {
   readCachedAppView,
   writeCachedAppView,
 } from "./appViewCache.js";
-import {
-  PAGE_WARM_SWEEP_MS,
-  pruneWarmPages,
-  touchWarmPage,
-  warmPageKey,
-} from "./pageWarmCache.js";
 
 import HexBackdrop from "./components/HexBackdrop.jsx";
 
@@ -244,161 +236,6 @@ function MainPage({
   installState,
   onInstallApp,
 }) {
-  const warmOwnerKey =
-    [
-      String(
-        currentUser?.id ??
-        "guest",
-      ),
-      String(
-        currentUser?.account_type ??
-        "guest",
-      ),
-      String(
-        currentUser?.role ??
-        "user",
-      ),
-    ].join(
-      ":",
-    );
-
-  const activeWarmKey =
-    warmPageKey(
-      activePage,
-      profileUsername,
-    );
-
-  const previousActiveRef =
-    useRef({
-      key:
-        activeWarmKey,
-      ownerKey:
-        warmOwnerKey,
-    });
-
-  const [
-    warmPages,
-    setWarmPages,
-  ] = useState(
-    () =>
-      touchWarmPage(
-        [],
-        {
-          page:
-            activePage,
-          profileUsername,
-          ownerKey:
-            warmOwnerKey,
-        },
-      ),
-  );
-
-
-  /*
-   * Keep visited pages warm for up to thirty days.
-   *
-   * React Activity preserves their UI and
-   * component state while hidden, but cleans
-   * up Effects so inactive pages do not keep
-   * polling or holding subscriptions. Persistent
-   * data caches separately restore eligible data
-   * after a full app restart.
-   */
-  useLayoutEffect(() => {
-    const now =
-      Date.now();
-
-    setWarmPages(
-      (current) => {
-        const previous =
-          previousActiveRef.current;
-
-        const stamped =
-          current.map(
-            (entry) =>
-              (
-                previous &&
-                entry.ownerKey ===
-                  previous.ownerKey &&
-                entry.key ===
-                  previous.key &&
-                (
-                  previous.key !==
-                    activeWarmKey ||
-                  previous.ownerKey !==
-                    warmOwnerKey
-                )
-              )
-                ? {
-                    ...entry,
-                    lastVisitedAt:
-                      now,
-                  }
-                : entry,
-          );
-
-        return touchWarmPage(
-          stamped,
-          {
-            page:
-              activePage,
-            profileUsername,
-            ownerKey:
-              warmOwnerKey,
-            now,
-          },
-        );
-      },
-    );
-
-    previousActiveRef.current =
-      {
-        key:
-          activeWarmKey,
-        ownerKey:
-          warmOwnerKey,
-      };
-  }, [
-    activePage,
-    activeWarmKey,
-    profileUsername,
-    warmOwnerKey,
-  ]);
-
-
-  useEffect(() => {
-    const intervalId =
-      window.setInterval(
-        () => {
-          setWarmPages(
-            (current) =>
-              pruneWarmPages(
-                current,
-                {
-                  activeKey:
-                    activeWarmKey,
-                  ownerKey:
-                    warmOwnerKey,
-                  now:
-                    Date.now(),
-                },
-              ),
-          );
-        },
-        PAGE_WARM_SWEEP_MS,
-      );
-
-    return () => {
-      window.clearInterval(
-        intervalId,
-      );
-    };
-  }, [
-    activeWarmKey,
-    warmOwnerKey,
-  ]);
-
-
   function renderPage(
     page,
     cachedProfileUsername,
@@ -708,51 +545,24 @@ function MainPage({
 
 
   return (
-    <>
-      {warmPages
-        .filter(
-          (entry) =>
-            entry.ownerKey ===
-            warmOwnerKey,
-        )
-        .map(
-          (entry) => (
-            <Activity
-              key={
-                entry.instanceKey
-              }
-              mode={
-                entry.key ===
-                activeWarmKey
-                  ? "visible"
-                  : "hidden"
-              }
-            >
-              <PageErrorBoundary>
-                <Suspense
-                  fallback={
-                    <div
-                      className="hs-profile-page page-stack"
-                      role="status"
-                      aria-live="polite"
-                      aria-busy="true"
-                    >
-                      <div className="hs-profile-skeleton" />
-                      <div className="hs-profile-skeleton" />
-                      <div className="hs-profile-skeleton" />
-                    </div>
-                  }
-                >
-                  {renderPage(
-                    entry.page,
-                    entry.profileUsername,
-                  )}
-                </Suspense>
-              </PageErrorBoundary>
-            </Activity>
-          ),
-        )}
-    </>
+    <PageErrorBoundary>
+      <Suspense
+        fallback={
+          <div
+            className="hs-profile-page page-stack"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <div className="hs-profile-skeleton" />
+            <div className="hs-profile-skeleton" />
+            <div className="hs-profile-skeleton" />
+          </div>
+        }
+      >
+        {renderPage(activePage, profileUsername)}
+      </Suspense>
+    </PageErrorBoundary>
   );
 }
 
