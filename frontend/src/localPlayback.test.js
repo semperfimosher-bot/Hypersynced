@@ -19,6 +19,8 @@ test("app shell and playback restore from local snapshots without cross-device s
   assert.ok(!app.includes("/users/me/app-state"));
   assert.ok(!app.includes("appStateSaveQueueRef"));
   assert.ok(!app.includes("appStateVersionRef"));
+  assert.doesNotMatch(app, /<Activity|warmPages|warmPageKey|PAGE_WARM_SWEEP_MS/);
+  assert.match(app, /renderPage\(activePage, profileUsername\)/);
 });
 
 test("listening progress is checkpointed only when a page becomes hidden or exits", () => {
