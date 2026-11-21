@@ -3119,15 +3119,9 @@ export async function downloadTracksForOffline(
     0;
 
   const workerCount =
-    Math.max(
-      1,
-      Math.min(
-        Math.trunc(
-          concurrency,
-        ) || 1,
-        pendingTracks.length,
-        4,
-      ),
+    getOfflineDownloadWorkerCount(
+      pendingTracks.length,
+      concurrency,
     );
 
   async function worker() {
