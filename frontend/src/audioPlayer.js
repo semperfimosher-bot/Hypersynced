@@ -1648,6 +1648,8 @@ function attachEvents() {
                 // Fallback remains authoritative; try again on later updates.
               }
             } else if (
+              loadedAudioTrackId === currentTrackId &&
+              hasAudioSource() &&
               shouldReleaseRestoredPosition(
                 restoredTarget,
                 liveClock,
