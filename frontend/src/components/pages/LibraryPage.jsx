@@ -332,13 +332,6 @@ function LibraryPage({
   );
 
   const [
-    visiblePlaylistCount,
-    setVisiblePlaylistCount,
-  ] = useState(
-    LIBRARY_RENDER_BATCH_SIZE,
-  );
-
-  const [
   currentTrackId,
   setCurrentTrackId,
 ] = useState(
@@ -728,9 +721,6 @@ const [
       LIBRARY_RENDER_BATCH_SIZE,
     );
     setVisibleEntityCardCount(
-      LIBRARY_RENDER_BATCH_SIZE,
-    );
-    setVisiblePlaylistCount(
       LIBRARY_RENDER_BATCH_SIZE,
     );
   }, [
@@ -3240,11 +3230,10 @@ useEffect(() => {
       ],
     );
 
+  // Library playlists are rendered in full; do not hide the collection
+  // behind a manual "Show more" action.
   const renderedVisiblePlaylists =
-    getLibraryRenderItems(
-      sortedVisiblePlaylists,
-      visiblePlaylistCount,
-    );
+    sortedVisiblePlaylists;
 
   const sortedActiveLibraryCollection =
     useMemo(
@@ -5640,19 +5629,7 @@ useEffect(() => {
               },
             )}
 
-            <LibraryLoadMore
-              label="playlists"
-              visibleCount={renderedVisiblePlaylists.length}
-              totalCount={sortedVisiblePlaylists.length}
-              onClick={() => {
-                setVisiblePlaylistCount((current) =>
-                  getNextLibraryRenderCount(
-                    current,
-                    sortedVisiblePlaylists.length,
-                  ),
-                );
-              }}
-            />
+
 
           </div>
 
