@@ -1178,10 +1178,32 @@ const [
             ? mine
             : [];
 
-        const nextSaved =
+        let nextSaved =
           Array.isArray(saved)
             ? saved
             : [];
+
+        // Preserve local optimistic mutations while requests are in flight,
+        // so a background refresh cannot briefly undo the user's click.
+        const pendingSavedChanges =
+          cached?.pendingSavedPlaylistChanges ?? {};
+        for (const [pendingId, pendingSaved] of Object.entries(pendingSavedChanges)) {
+          const id = String(pendingId);
+          const existing = nextSaved.find(item => String(item?.id) === id);
+          if (pendingSaved) {
+            const pendingPlaylist = existing ??
+              cached?.saved?.find(item => String(item?.id) === id) ??
+              cached?.owned?.find(item => String(item?.id) === id);
+            if (pendingPlaylist) {
+              nextSaved = [
+                { ...pendingPlaylist, is_saved: true },
+                ...nextSaved.filter(item => String(item?.id) !== id),
+              ];
+            }
+          } else {
+            nextSaved = nextSaved.filter(item => String(item?.id) !== id);
+          }
+        }
 
         const fetchedTracks = Array.isArray(tracks)
           ? tracks
@@ -1247,6 +1269,10 @@ const [
               libraryNextOffsetRef.current,
 
             changeToken,
+            pendingSavedPlaylistIds:
+              cached?.pendingSavedPlaylistIds ?? [],
+            pendingSavedPlaylistChanges:
+              cached?.pendingSavedPlaylistChanges ?? {},
           },
         );
         await setCachedLibraryPageAsync(
