@@ -375,7 +375,7 @@ export default function useDownloadedPlaylistUpdates({
 
         try {
           await startPlaylistDownloadForOffline(
-            playlist.tracks,
+            missingTracks,
             {
               jobId:
                 getPlaylistDownloadJobId(
@@ -384,6 +384,8 @@ export default function useDownloadedPlaylistUpdates({
                 ),
               ownerKey:
                 offlineOwnerKey,
+              mergeExistingPlaylistTracks:
+                true,
               jobMetadata:
                 playlistJobMetadata(
                   playlist,
