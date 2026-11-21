@@ -140,3 +140,19 @@ test(
     );
   },
 );
+
+test(
+  "playlist download workers scale up to six tracks and remain bounded",
+  async () => {
+    const {
+      getOfflineDownloadWorkerCount,
+    } = await loadDownloadMath();
+
+    assert.equal(getOfflineDownloadWorkerCount(0), 0);
+    assert.equal(getOfflineDownloadWorkerCount(3), 3);
+    assert.equal(getOfflineDownloadWorkerCount(12), 6);
+    assert.equal(getOfflineDownloadWorkerCount(12, 2), 2);
+    assert.equal(getOfflineDownloadWorkerCount(12, 100), 6);
+    assert.equal(getOfflineDownloadWorkerCount(12, -4), 1);
+  },
+);
