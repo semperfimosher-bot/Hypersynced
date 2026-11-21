@@ -1724,9 +1724,8 @@ function attachEvents() {
               restoredClockGuardProgressSeconds = 0;
             }
 
-            // The restored clock guard intentionally stays active for the
-            // entire track. Its reference position advances only with verified
-            // playback, so delayed stale clock events cannot end/skip the song.
+            // Once the restored clock is verified, normal media events,
+            // seeking, lyrics timing, and end-of-track transitions resume.
           }
           notify();
         },
