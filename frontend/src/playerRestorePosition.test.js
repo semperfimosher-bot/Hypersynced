@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   shouldCorrectRestoredPlaybackClock,
   shouldReleaseRestoredPosition,
+  isRestoredClockProgressing,
 } from "./playerRestorePosition.js";
 
 test("restore clock correction catches end jumps without fighting normal playback", () => {
@@ -18,4 +19,13 @@ test("restored position stays authoritative until live playback advances near it
   assert.equal(shouldReleaseRestoredPosition(38.5, 39.0, true, 120), false);
   assert.equal(shouldReleaseRestoredPosition(38.5, 39.0, false, 120), true);
   assert.equal(shouldReleaseRestoredPosition(116, 119.8, false, 120), true);
+});
+
+
+test("restored clock release requires small, consecutive forward progress", () => {
+  assert.equal(isRestoredClockProgressing(38.5, 39.0, 38.5, 120), true);
+  assert.equal(isRestoredClockProgressing(38.5, 43.0, 38.5, 120), false);
+  assert.equal(isRestoredClockProgressing(38.5, 40.5, 38.5, 120), false);
+  assert.equal(isRestoredClockProgressing(38.5, 38.4, 38.5, 120), false);
+  assert.equal(isRestoredClockProgressing(116.0, 116.5, 116.0, 120), true);
 });
