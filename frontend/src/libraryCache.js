@@ -219,6 +219,10 @@ export function applySavedPlaylistMembership(userKey, playlist, saved) {
         id,
       ]),
     ],
+    pendingSavedPlaylistChanges: {
+      ...(current.pendingSavedPlaylistChanges ?? {}),
+      [id]: Boolean(saved),
+    },
   };
   libraryByOwner.set(ownerKey(userKey), next);
   void writeRecord(userKey, "library", "root", next);
@@ -233,6 +237,10 @@ export function settleSavedPlaylistMembership(userKey, playlistId) {
     ...current,
     pendingSavedPlaylistIds: (current.pendingSavedPlaylistIds ?? [])
       .filter(item => String(item) !== id),
+    pendingSavedPlaylistChanges: Object.fromEntries(
+      Object.entries(current.pendingSavedPlaylistChanges ?? {})
+        .filter(([key]) => String(key) !== id),
+    ),
     cachedAt: Date.now(),
   };
   libraryByOwner.set(ownerKey(userKey), next);
