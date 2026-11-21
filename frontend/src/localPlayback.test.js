@@ -3,6 +3,7 @@ import "fake-indexeddb/auto";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { mergeRecentlyPlayedWithOptimisticCache } from "./homeRecentlyPlayed.js";
 
 // Local player/app state is browser-scoped; the account DB only receives listening events.
 test("app shell and playback restore from local snapshots without cross-device state API calls", () => {
@@ -30,6 +31,14 @@ test("listening progress is checkpointed only when a page becomes hidden or exit
   assert.match(source, /if \(hidden\) \{\s*sampleListeningProgress\(\);\s*void saveListeningCheckpoint\(true\);/);
   assert.match(source, /if \(event\.checkpointPromise\) \{\s*await event\.checkpointPromise;\s*\}/);
   assert.match(source, /finishListeningEvent/);
+});
+
+test("recently played retains owner cache while the server history is empty", () => {
+  const cached = [{ id: "cached-track", last_played_at: "2026-11-21T16:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache([], cached), cached);
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache([], []), []);
+  const server = [{ id: "server-track", last_played_at: "2026-11-21T15:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, []), server);
 });
 
 test("profile Recently Played has its own server refresh and owner-scoped cache", () => {
