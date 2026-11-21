@@ -4,17 +4,19 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-// The complete app shell renders immediately; Neon state hydrates it in the background.
-test("app shell and account playback restore from local device snapshots without account-state API calls", () => {
+// Local player/app state is browser-scoped; the account DB only receives listening events.
+test("app shell and playback restore from local snapshots without cross-device state API calls", () => {
   const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
   assert.match(app, /accountStateReady/);
   assert.match(app, /<MainPage/);
   assert.match(app, /<PlayerBar/);
-  assert.match(sync, /device-playback\\.v2/);
+  assert.ok(sync.includes("device-playback.v2"));
   assert.match(sync, /restoreTrackPaused/);
   assert.doesNotMatch(sync, /apiRequest|playback-state|expected_playback_updated_at/);
-  assert.doesNotMatch(app, /users\\/me\\/app-state|appStateSaveQueueRef|appStateVersionRef/);
+  assert.ok(!app.includes("/users/me/app-state"));
+  assert.ok(!app.includes("appStateSaveQueueRef"));
+  assert.ok(!app.includes("appStateVersionRef"));
 });
 
 test("listening history no longer sends repeated audible-progress PATCH requests", () => {
