@@ -3232,3 +3232,31 @@ button.hs-profile-stat:hover,
 /* Offline profile edit controls are disabled with a clear visual affordance. */
 .hs-account-actions > button.is-offline-disabled, .hs-avatar-edit-button.is-offline-disabled { opacity:.42; filter:grayscale(.75); cursor:not-allowed; transform:none !important; box-shadow:none !important; }
 .hs-account-actions > button.is-offline-disabled:hover { border-color:rgba(71,183,225,.09); background:rgba(5,24,35,.55); }
+
+
+/* Account-wide listening summary opened from Total Plays. */
+.hs-total-plays-content { padding: 18px 24px 24px; }
+.hs-total-plays-summary {
+  display: grid; gap: 5px; padding: 18px; margin-bottom: 12px;
+  border: 1px solid rgba(82, 212, 255, 0.16); border-radius: 10px;
+  background: rgba(6, 26, 39, 0.7);
+}
+.hs-total-plays-summary strong { font-size: 2.2rem; color: #effaff; }
+.hs-total-plays-summary span, .hs-total-plays-summary small { color: #8ba7b8; }
+.hs-total-plays-content h3 {
+  margin: 18px 0 10px; color: #c9eaf7; font-size: 0.85rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.hs-total-plays-track, .hs-total-plays-artist {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 4px; border: 0; border-bottom: 1px solid rgba(83, 193, 234, 0.09);
+  color: #e9f7ff; background: transparent; text-align: left;
+}
+.hs-total-plays-track { cursor: pointer; }
+.hs-total-plays-track:hover { background: rgba(44, 145, 184, 0.09); }
+.hs-total-plays-track__rank, .hs-total-plays-artist > strong { width: 24px; color: #77cde8; text-align: center; }
+.hs-total-plays-track__meta { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.hs-total-plays-track__meta strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hs-total-plays-track__meta small, .hs-total-plays-track__count, .hs-total-plays-artist small { color: #8ba7b8; font-size: 0.78rem; }
+.hs-total-plays-artist span { flex: 1; }
+.hs-total-plays-modal > header p { margin: 4px 0 0; color: #8ba7b8; }
