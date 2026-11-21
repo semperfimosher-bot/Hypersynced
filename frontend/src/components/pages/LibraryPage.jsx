@@ -304,13 +304,6 @@ function LibraryPage({
   );
 
   const [
-    visiblePlaylistTrackCount,
-    setVisiblePlaylistTrackCount,
-  ] = useState(
-    LIBRARY_RENDER_BATCH_SIZE,
-  );
-
-  const [
     visibleDownloadedTrackCount,
     setVisibleDownloadedTrackCount,
   ] = useState(
@@ -711,9 +704,6 @@ const [
   ] = useState(null);
 
   useEffect(() => {
-    setVisiblePlaylistTrackCount(
-      LIBRARY_RENDER_BATCH_SIZE,
-    );
     setVisibleDownloadedTrackCount(
       LIBRARY_RENDER_BATCH_SIZE,
     );
@@ -3361,11 +3351,9 @@ useEffect(() => {
       ],
     );
 
+  // Show every track in the opened playlist immediately.
   const renderedSelectedPlaylistTracks =
-    getLibraryRenderItems(
-      filteredSelectedPlaylistTracks,
-      visiblePlaylistTrackCount,
-    );
+    filteredSelectedPlaylistTracks;
 
   useEffect(() => {
     setPlaylistSearchQuery(
@@ -4288,19 +4276,7 @@ useEffect(() => {
                 },
               )}
 
-              <LibraryLoadMore
-                label="playlist tracks"
-                visibleCount={renderedSelectedPlaylistTracks.length}
-                totalCount={filteredSelectedPlaylistTracks.length}
-                onClick={() => {
-                  setVisiblePlaylistTrackCount((current) =>
-                    getNextLibraryRenderCount(
-                      current,
-                      filteredSelectedPlaylistTracks.length,
-                    ),
-                  );
-                }}
-              />
+
 
             </div>
 
