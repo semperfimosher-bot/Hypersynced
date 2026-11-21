@@ -70,6 +70,8 @@ export default function PlaylistArtwork({
   artworkUrl = null,
   className = "",
   fallbackSize = 24,
+  loading = "lazy",
+  fetchPriority = "low",
 }) {
   const sources =
     artworkSources({
@@ -146,9 +148,9 @@ export default function PlaylistArtwork({
                 <img
                   src={source}
                   alt=""
-                  loading="lazy"
+                  loading={loading}
                   decoding="async"
-                  fetchPriority="low"
+                  fetchPriority={fetchPriority}
                   onLoad={(event) => {
                     resetArtworkRetry(
                       event.currentTarget,
