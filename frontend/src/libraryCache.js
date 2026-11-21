@@ -191,6 +191,54 @@ export function setCachedLibrary(userKey, library) {
   libraryByOwner.set(ownerKey(userKey), snapshot);
   return writeRecord(userKey, "library", "root", snapshot);
 }
+export function applySavedPlaylistMembership(userKey, playlist, saved) {
+  if (!playlist?.id) return null;
+  const current = getCachedLibrary(userKey) ?? {
+    owned: [],
+    saved: [],
+    tracks: [],
+    hasMoreLibraryTracks: false,
+    libraryNextOffset: 0,
+    changeToken: null,
+  };
+  const id = String(playlist.id);
+  const savedList = Array.isArray(current.saved) ? current.saved : [];
+  const ownedList = Array.isArray(current.owned) ? current.owned : [];
+  const normalized = { ...playlist, is_saved: Boolean(saved) };
+  const nextSaved = saved
+    ? [normalized, ...savedList.filter(item => String(item?.id) !== id)]
+    : savedList.filter(item => String(item?.id) !== id);
+  const next = {
+    ...current,
+    saved: nextSaved,
+    owned: ownedList,
+    cachedAt: Date.now(),
+    pendingSavedPlaylistIds: [
+      ...new Set([
+        ...(current.pendingSavedPlaylistIds ?? []),
+        id,
+      ]),
+    ],
+  };
+  libraryByOwner.set(ownerKey(userKey), next);
+  void writeRecord(userKey, "library", "root", next);
+  return next;
+}
+
+export function settleSavedPlaylistMembership(userKey, playlistId) {
+  const current = getCachedLibrary(userKey);
+  if (!current || !playlistId) return;
+  const id = String(playlistId);
+  const next = {
+    ...current,
+    pendingSavedPlaylistIds: (current.pendingSavedPlaylistIds ?? [])
+      .filter(item => String(item) !== id),
+    cachedAt: Date.now(),
+  };
+  libraryByOwner.set(ownerKey(userKey), next);
+  void writeRecord(userKey, "library", "root", next);
+}
+
 export async function clearCachedLibraryPages(userKey) {
   const owner = ownerKey(userKey);
   const prefix = owner + "|page|";
