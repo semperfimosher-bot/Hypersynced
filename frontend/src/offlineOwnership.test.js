@@ -1713,3 +1713,96 @@ test(
     );
   },
 );
+
+
+test(
+  "download status stays true across media-version changes and explicit removal clears the manual pin",
+  async () => {
+    const mediaStore =
+      await import("./mediaStore.js");
+
+    const offline =
+      await loadOfflineDownloads();
+
+    const ownerKey =
+      "persistent-download-owner-" + Date.now();
+
+    const trackId =
+      "persistent-download-track-" + Date.now();
+
+    const manualPin =
+      offline.getManualDownloadPinRef(ownerKey);
+
+    const likedPin =
+      offline.getLikedSongsDownloadPinRef(ownerKey);
+
+    const oldVersion =
+      mediaStore.createMediaRecord({
+        trackId,
+        mediaVersion: "v1",
+        mimeType: "audio/mpeg",
+        fileSize: 100,
+        state: "PINNED",
+      });
+
+    oldVersion.cachedBytes = 100;
+    oldVersion.pinRefs = [manualPin, likedPin];
+    oldVersion.artworkValidatedAt = Date.now();
+    await mediaStore.saveMediaRecord(oldVersion);
+
+    // Catalog metadata now reports v2, but the locally stored v1
+    // download remains present and should still show as downloaded.
+    assert.equal(
+      await offline.isTrackDownloaded(
+        { id: trackId, media_version: "v2" },
+        { ownerKey },
+      ),
+      true,
+    );
+
+    assert.equal(
+      await offline.isTrackDownloaded(
+        { id: trackId, media_version: "v2" },
+        { pinRef: manualPin },
+      ),
+      true,
+    );
+
+    assert.equal(
+      await offline.removeTrackFromOffline(
+        { id: trackId, media_version: "v2" },
+        ownerKey,
+      ),
+      true,
+    );
+
+    const remaining =
+      await mediaStore.getMediaRecord(trackId, "v1");
+
+    assert.ok(remaining);
+    assert.equal(
+      remaining.pinRefs.includes(manualPin),
+      false,
+    );
+    assert.equal(
+      remaining.pinRefs.includes(likedPin),
+      true,
+    );
+
+    assert.equal(
+      await offline.isTrackDownloaded(
+        { id: trackId, media_version: "v2" },
+        { pinRef: manualPin },
+      ),
+      false,
+    );
+
+    assert.equal(
+      await offline.isTrackDownloaded(
+        { id: trackId, media_version: "v2" },
+        { pinRef: likedPin },
+      ),
+      true,
+    );
+  },
+);
