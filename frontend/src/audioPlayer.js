@@ -139,6 +139,12 @@ let restoredClockPreviousSeconds =
 let restoredClockProgressTicks =
   0;
 
+let restoredClockGuardActive =
+  false;
+
+let restoredClockGuardProgressSeconds =
+  0;
+
 
 /*
  * Prevent multiple callers from trying
@@ -1650,7 +1656,7 @@ function attachEvents() {
       audio.addEventListener(
         eventName,
         () => {
-          if (eventName === "timeupdate" && restoredPositionLocked) {
+          if (eventName === "timeupdate" && (restoredPositionLocked || restoredClockGuardActive)) {
             const liveClock = Number(audio.currentTime) || 0;
             const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
             if (
@@ -1696,14 +1702,32 @@ function attachEvents() {
                   audio.duration,
                 )
               ) {
-                restoredTimeSeconds = 0;
                 restoredPositionLocked = false;
-                restoredClockPreviousSeconds = null;
+                restoredClockGuardActive = true;
+                restoredClockPreviousSeconds = liveClock;
+                restoredClockGuardProgressSeconds = 0;
                 restoredClockProgressTicks = 0;
               }
             } else {
               restoredClockPreviousSeconds = liveClock;
               restoredClockProgressTicks = 0;
+              restoredClockGuardProgressSeconds = 0;
+            }
+
+            if (
+              restoredClockGuardActive &&
+              !audio.paused &&
+              restoredClockProgressTicks > 0 &&
+              Number.isFinite(restoredClockPreviousSeconds)
+            ) {
+              // Keep a short post-restore guard even after the UI lock releases.
+              // Some browsers report the correct seek, then jump to an old
+              // terminal clock on a later event. Require ~8 seconds of verified
+              // progression before handing the clock over permanently.
+              if (restoredClockGuardProgressSeconds >= 8) {
+                restoredClockGuardActive = false;
+                restoredClockGuardProgressSeconds = 0;
+              }
             }
           }
           notify();
@@ -2297,6 +2321,8 @@ function applyTrackMetadata(
   restoredPositionLocked = false;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
+  restoredClockGuardActive = false;
+  restoredClockGuardProgressSeconds = 0;
 
   setPlaybackPhase(
     "loading",
