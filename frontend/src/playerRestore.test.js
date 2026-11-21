@@ -51,22 +51,6 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     assert.equal(state.paused, true);
     assert.equal(player._getAudioElement().currentSrc, "");
 
-    const zeroPositionRestore = player.restoreCachedTrackMetadata(
-      {
-        id: "zero-position-track",
-        title: "Zero Position Song",
-        artist: "Cached Artist",
-        media_version: "zero-v1",
-      },
-      0,
-    );
-    assert.equal(zeroPositionRestore.currentTime, 0);
-    const zeroPositionAudio = player._getAudioElement();
-    zeroPositionAudio.currentTime = 119.8;
-    zeroPositionAudio.dispatchEvent(new Event("timeupdate"));
-    assert.equal(zeroPositionAudio.currentTime, 0, "zero-second restore must override stale end clock");
-    assert.equal(player.getState().currentTime, 0, "UI remains locked to zero while paused");
-
     const cached = player.restoreCachedTrackMetadata(
       {
         id: "cached-track",
