@@ -1688,6 +1688,10 @@ function attachEvents() {
               if (validProgress) {
                 restoredClockProgressTicks += 1;
                 if (restoredClockGuardActive) {
+                  // Move the guard's reference point forward with verified
+                  // playback. This keeps it protective for the whole restored
+                  // song without comparing later playback to the old seek point.
+                  restoredTimeSeconds = liveClock;
                   restoredClockGuardProgressSeconds += Math.max(
                     0,
                     liveClock - previousClock,
@@ -1720,20 +1724,9 @@ function attachEvents() {
               restoredClockGuardProgressSeconds = 0;
             }
 
-            if (
-              restoredClockGuardActive &&
-              !audio.paused &&
-              restoredClockGuardProgressSeconds >= 8
-            ) {
-              // Keep a short post-restore guard even after the UI lock releases.
-              // Some browsers report the correct seek, then jump to an old
-              // terminal clock on a later event. Require ~8 seconds of verified
-              // progression before handing the clock over permanently.
-              if (restoredClockGuardProgressSeconds >= 8) {
-                restoredClockGuardActive = false;
-                restoredClockGuardProgressSeconds = 0;
-              }
-            }
+            // The restored clock guard intentionally stays active for the
+            // entire track. Its reference position advances only with verified
+            // playback, so delayed stale clock events cannot end/skip the song.
           }
           notify();
         },
