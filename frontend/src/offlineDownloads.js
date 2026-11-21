@@ -31,6 +31,7 @@ import {
 
 import {
   getMissingDownloadBytes,
+  getOfflineDownloadWorkerCount,
 } from "./offlineDownloadMath.js";
 
 
@@ -44,7 +45,7 @@ export const DOWNLOAD_RANGE_CONCURRENCY =
   2;
 
 export const DEFAULT_DOWNLOAD_CONCURRENCY =
-  4;
+  6;
 
 const MAX_OFFLINE_ARTWORK_BYTES =
   12 * 1024 * 1024;
