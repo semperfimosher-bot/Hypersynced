@@ -218,6 +218,8 @@ const [
   trackProgress: {},
 });
 
+const [optimisticPlaylistRowDownloads, setOptimisticPlaylistRowDownloads] = useState({});
+
 const playlistRowDownloads =
   useMemo(
     () =>
@@ -3601,11 +3603,8 @@ async function downloadOpenedPlaylist() {
                   ) => {
 
                     const rowDownload =
-                      playlistRowDownloads[
-                        String(
-                          playlist.id,
-                        )
-                      ] ??
+                      optimisticPlaylistRowDownloads[String(playlist.id)] ??
+                      playlistRowDownloads[String(playlist.id)] ??
                       null;
 
                     const rowDownloadPercent =
@@ -3734,18 +3733,46 @@ async function downloadOpenedPlaylist() {
                                     return;
                                   }
 
+                                  const playlistId = String(playlist.id);
+                                  const optimisticSavedPlaylist = {
+                                    ...playlist,
+                                    is_saved: true,
+                                  };
+                                  setOptimisticPlaylistRowDownloads(current => ({
+                                    ...current,
+                                    [playlistId]: { status: "downloading", progress: 0 },
+                                  }));
+                                  // Add to the Library cache/UI immediately; backend save and
+                                  // playlist resolution continue asynchronously behind the UI.
+                                  if (!playlist.is_owner && !playlist.is_saved) {
+                                    const ownerKey = currentUser?.id ?? currentUser?.username ?? "anonymous";
+                                    applySavedPlaylistMembership(ownerKey, optimisticSavedPlaylist, true);
+                                    window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+                                      detail: {
+                                        phase: "optimistic",
+                                        playlist: optimisticSavedPlaylist,
+                                        saved: true,
+                                        ownerKey,
+                                      },
+                                    }));
+                                  }
                                   try {
                                     await downloadPlaylistByIdForOffline(
                                       playlist.id,
                                       currentUser,
                                       {
-                                        ensureSaved:
-                                          true,
+                                        ensureSaved: true,
                                       },
                                     );
-                                  } catch (
-                                    requestError
-                                  ) {
+                                    setOptimisticPlaylistRowDownloads(current => ({
+                                      ...current,
+                                      [playlistId]: { status: "downloaded", progress: 1 },
+                                    }));
+                                  } catch (requestError) {
+                                    setOptimisticPlaylistRowDownloads(current => ({
+                                      ...current,
+                                      [playlistId]: { status: "error", progress: 0 },
+                                    }));
                                     setPlaylistError(
                                       requestError instanceof Error
                                         ? requestError.message
