@@ -38,10 +38,13 @@ export const OFFLINE_ARTWORK_ROUTE_PREFIX =
   "/__hypersync/artwork/";
 
 export const DOWNLOAD_NETWORK_WINDOW_SIZE =
-  MEDIA_CHUNK_SIZE * 16;
+  MEDIA_CHUNK_SIZE * 32;
+
+export const DOWNLOAD_RANGE_CONCURRENCY =
+  2;
 
 export const DEFAULT_DOWNLOAD_CONCURRENCY =
-  3;
+  4;
 
 const MAX_OFFLINE_ARTWORK_BYTES =
   12 * 1024 * 1024;
@@ -2252,8 +2255,8 @@ export async function downloadTrackForOffline(
     );
   }
 
-  let completedBytes =
-    0;
+  const downloadWindows =
+    [];
 
   for (
     let byteStart = 0;
@@ -2261,61 +2264,114 @@ export async function downloadTrackForOffline(
     byteStart +=
       DOWNLOAD_NETWORK_WINDOW_SIZE
   ) {
-    const byteEnd =
-      Math.min(
-        byteStart +
-          DOWNLOAD_NETWORK_WINDOW_SIZE -
-          1,
-        fileSize - 1,
-      );
-
-    const windowLength =
-      byteEnd -
-      byteStart +
-      1;
-
-    const cached =
-      await isWindowCached({
-        trackId,
-        mediaVersion,
-        byteStart,
-        byteEnd,
-        fileSize,
-      });
-
-    if (!cached) {
-      const response =
-        await fetchAudioRange({
-          trackId,
-          byteStart,
-          byteEnd,
-          signal,
-        });
-
-      await cacheNetworkMediaResponse({
-        response,
-        trackId,
-        mediaVersion,
-        byteStart,
-        byteEnd,
-        fileSize,
-      });
-    }
-
-    completedBytes +=
-      windowLength;
-
-    onProgress?.({
-      trackId,
-      downloadedBytes:
-        completedBytes,
-      totalBytes:
-        fileSize,
-      progress:
-        completedBytes /
-        fileSize,
+    downloadWindows.push({
+      byteStart,
+      byteEnd:
+        Math.min(
+          byteStart +
+            DOWNLOAD_NETWORK_WINDOW_SIZE -
+            1,
+          fileSize - 1,
+        ),
     });
   }
+
+  let completedBytes =
+    0;
+
+  let nextWindowIndex =
+    0;
+
+  async function downloadWindowWorker() {
+    while (true) {
+      if (signal?.aborted) {
+        throw new DOMException(
+          "Download cancelled.",
+          "AbortError",
+        );
+      }
+
+      const index =
+        nextWindowIndex++;
+
+      if (
+        index >=
+        downloadWindows.length
+      ) {
+        return;
+      }
+
+      const {
+        byteStart,
+        byteEnd,
+      } =
+        downloadWindows[index];
+
+      const windowLength =
+        byteEnd -
+        byteStart +
+        1;
+
+      const cached =
+        await isWindowCached({
+          trackId,
+          mediaVersion,
+          byteStart,
+          byteEnd,
+          fileSize,
+        });
+
+      if (!cached) {
+        const response =
+          await fetchAudioRange({
+            trackId,
+            byteStart,
+            byteEnd,
+            signal,
+          });
+
+        await cacheNetworkMediaResponse({
+          response,
+          trackId,
+          mediaVersion,
+          byteStart,
+          byteEnd,
+          fileSize,
+        });
+      }
+
+      completedBytes +=
+        windowLength;
+
+      onProgress?.({
+        trackId,
+        downloadedBytes:
+          completedBytes,
+        totalBytes:
+          fileSize,
+        progress:
+          completedBytes /
+          fileSize,
+      });
+    }
+  }
+
+  const rangeWorkerCount =
+    Math.min(
+      DOWNLOAD_RANGE_CONCURRENCY,
+      downloadWindows.length,
+    );
+
+  await Promise.all(
+    Array.from(
+      {
+        length:
+          rangeWorkerCount,
+      },
+      () =>
+        downloadWindowWorker(),
+    ),
+  );
 
   let artwork =
     null;
@@ -2343,11 +2399,15 @@ export async function downloadTrackForOffline(
      */
   }
 
-  await cacheTrackLyrics(
+  // Lyrics are a non-essential offline enhancement.
+  // Fetch them alongside other work without delaying audio completion.
+  void cacheTrackLyrics(
     trackId,
     {
       signal,
     },
+  ).catch(
+    () => null,
   );
 
   const record =
