@@ -3,6 +3,9 @@ import * as player from "./audioPlayer.js";
 function playbackSnapshotKey(ownerId) {
   return "hypersynced.device-playback.v2:" + encodeURIComponent(String(ownerId ?? ""));
 }
+function legacyPlaybackSnapshotKey(ownerId) {
+  return "hypersynced.playback-snapshot.v1:" + encodeURIComponent(String(ownerId ?? ""));
+}
 function normalizeTrack(track) {
   if (!track?.id) return null;
   return {
@@ -17,7 +20,9 @@ function normalizeTrack(track) {
 }
 function readDevicePlayback(ownerId) {
   try {
-    const raw = globalThis.localStorage?.getItem(playbackSnapshotKey(ownerId));
+    const storage = globalThis.localStorage;
+    const currentRaw = storage?.getItem(playbackSnapshotKey(ownerId));
+    const raw = currentRaw ?? storage?.getItem(legacyPlaybackSnapshotKey(ownerId));
     const saved = raw ? JSON.parse(raw) : null;
     const track = normalizeTrack(saved?.track);
     const savedAt = Number(saved?.savedAt);
@@ -38,6 +43,7 @@ function writeDevicePlayback(ownerId, state) {
       savedAt: Date.now(), track, positionSeconds: Math.max(0, Number(state.currentTime) || 0),
       paused: Boolean(state.paused),
     }));
+    globalThis.localStorage?.removeItem(legacyPlaybackSnapshotKey(ownerId));
     return true;
   } catch { return false; }
 }
