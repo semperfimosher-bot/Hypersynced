@@ -30,7 +30,6 @@ import {
 
 import { apiRequest } from "./api/client.js";
 
-import { normalizeAppViewState } from "./appViewState.js";
 import {
   readCachedAppView,
   writeCachedAppView,
@@ -1449,21 +1448,7 @@ export default function App() {
   const searchStateTimerRef =
     useRef(null);
 
-  // Keep server writes ordered so an older navigation cannot overwrite the latest view.
-  const appStateSaveQueueRef = useRef(Promise.resolve());
-  const activeAppStateOwnerRef = useRef(currentUser?.id ?? null);
-  const appStateVersionRef = useRef(null);
-  const appStateVersionLoadedRef = useRef(false);
-  const appStateLastQueuedSignatureRef = useRef(null);
-  if (activeAppStateOwnerRef.current !== (currentUser?.id ?? null)) {
-    activeAppStateOwnerRef.current = currentUser?.id ?? null;
-    appStateVersionRef.current = null;
-    appStateVersionLoadedRef.current = false;
-    appStateLastQueuedSignatureRef.current = null;
-    appStateSaveQueueRef.current = Promise.resolve();
-  }
-
-  const cancelPendingSearchSave =
+  const cancelPendingSearchSave =  const cancelPendingSearchSave =
   useCallback(() => {
     if (
       searchStateTimerRef.current
@@ -1480,218 +1465,27 @@ export default function App() {
 
 const restoreSavedAppView =
   useCallback(
-    async (
-      user,
-      restoreGeneration =
-        navigationGenerationRef.current,
-    ) => {
-      if (navigationGenerationRef.current !== restoreGeneration) {
-        return;
-      }
-      const requestId = ++appViewRestoreRequestRef.current;
-
-      // Apply the account-scoped local view before the remote sync, avoiding
-      // a several-second default-home flash after a full app refresh.
+    async (user, restoreGeneration = navigationGenerationRef.current) => {
+      if (navigationGenerationRef.current !== restoreGeneration) return;
       const cachedView = readCachedAppView(user?.id, user?.role);
       if (cachedView) {
         setActivePage(cachedView.activePage);
-        setSearchQuery("");
-        setActiveProfileUsername(cachedView.profileUsername);
-        appStateLastQueuedSignatureRef.current = JSON.stringify({
-          active_page: cachedView.activePage,
-          search_query: "",
-          profile_username: cachedView.profileUsername || null,
-        });
+        setSearchQuery(cachedView.searchQuery ?? "");
+        setActiveProfileUsername(cachedView.profileUsername ?? "");
       }
-
-      const params =
-        new URLSearchParams(
-          window.location.search,
-        );
-
-      const linkedUsername =
-        params.get(
-          "view",
-        ) ===
-          "messages"
-          ? String(
-              params.get(
-                "user",
-              ) ??
-              "",
-            ).trim()
-          : "";
-
-      try {
-        const state =
-          await apiRequest(
-            "/users/me/app-state",
-          );
-
-        const restored =
-          normalizeAppViewState(
-            state,
-            user?.role,
-          );
-        writeCachedAppView(user?.id, {
-          active_page: restored.activePage,
-          search_query: "",
-          profile_username: restored.profileUsername,
-        }, user?.role);
-
-        if (
-          navigationGenerationRef.current !== restoreGeneration ||
-          appViewRestoreRequestRef.current !== requestId
-        ) {
-          return;
-        }
-
-        if (activeAppStateOwnerRef.current === user?.id) {
-          appStateVersionRef.current = state?.updated_at ?? null;
-          appStateVersionLoadedRef.current = true;
-        }
-
-        setActivePage(
-          restored.activePage,
-        );
-
-        setSearchQuery(
-          restored.searchQuery,
-        );
-
-        setActiveProfileUsername(
-          restored.profileUsername,
-        );
-        appStateLastQueuedSignatureRef.current = JSON.stringify({
-          active_page: restored.activePage,
-          search_query: restored.searchQuery,
-          profile_username: restored.profileUsername,
-        });
-
-        // A message URL may select a conversation only after Neon confirms
-        // that Messages is the account's saved page. It never overrides it.
-        if (linkedUsername && restored.activePage === "messages") {
-          setMessageToOpen(linkedUsername);
-        }
-
-        if (linkedUsername) {
-          window.history.replaceState(
-            null,
-            "",
-            window.location.pathname + window.location.hash,
-          );
-        }
-      } catch (error) {
-        // Keep the current in-memory navigation unchanged if the database
-        // is temporarily unavailable; never fall back to browser app state.
-        console.error("[HyperSynced] Unable to load saved app view.", error);
-      }
+      const params = new URLSearchParams(window.location.search);
+      const linkedUsername = params.get("view") === "messages" ? String(params.get("user") ?? "").trim() : "";
+      if (linkedUsername && (cachedView?.activePage ?? "home") === "messages") setMessageToOpen(linkedUsername);
+      if (linkedUsername) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
     },
     [],
   );
 
 
 const persistAppView =
-  useCallback(
-    (state) => {
-      if (!currentUser) {
-        return;
-      }
-
-      const savedState = { ...state };
-      writeCachedAppView(currentUser.id, savedState, currentUser.role);
-      appStateLastQueuedSignatureRef.current = JSON.stringify({
-        active_page: savedState.active_page,
-        search_query: savedState.search_query ?? "",
-        profile_username: savedState.profile_username ?? null,
-      });
-      const ownerId = currentUser.id;
-      const navigationGeneration = navigationGenerationRef.current;
-
-      const signature = JSON.stringify({
-        active_page: savedState.active_page,
-        search_query: savedState.search_query ?? "",
-        profile_username: savedState.profile_username ?? null,
-      });
-
-      appStateSaveQueueRef.current =
-        appStateSaveQueueRef.current
-          .catch(() => {})
-          .then(async () => {
-            if (activeAppStateOwnerRef.current !== ownerId) {
-              return null;
-            }
-
-            // Read the current Neon version before the first write for this account.
-            if (!appStateVersionLoadedRef.current) {
-              const latest = await apiRequest("/users/me/app-state");
-              if (activeAppStateOwnerRef.current !== ownerId) return null;
-              appStateVersionRef.current = latest?.updated_at ?? null;
-              appStateVersionLoadedRef.current = true;
-            }
-
-            const save = () => apiRequest(
-              "/users/me/app-state",
-              {
-                method: "PATCH",
-                body: JSON.stringify({
-                  ...savedState,
-                  expected_updated_at: appStateVersionRef.current,
-                }),
-              },
-            );
-
-            try {
-              const saved = await save();
-              if (activeAppStateOwnerRef.current === ownerId) {
-                appStateVersionRef.current = saved?.updated_at ?? null;
-                appStateVersionLoadedRef.current = true;
-              }
-              return saved;
-            } catch (error) {
-              // A 409 means another writer advanced the DB version. Retry this
-              // exact navigation only if it is still the newest local intent.
-              if (
-                error?.status !== 409 ||
-                activeAppStateOwnerRef.current !== ownerId ||
-                navigationGenerationRef.current !== navigationGeneration ||
-                appStateLastQueuedSignatureRef.current !== signature ||
-                searchStateTimerRef.current
-              ) {
-                throw error;
-              }
-
-              const latest = await apiRequest("/users/me/app-state");
-              if (
-                activeAppStateOwnerRef.current !== ownerId ||
-                navigationGenerationRef.current !== navigationGeneration ||
-                appStateLastQueuedSignatureRef.current !== signature
-              ) {
-                return null;
-              }
-
-              appStateVersionRef.current = latest?.updated_at ?? null;
-              appStateVersionLoadedRef.current = true;
-
-              const saved = await save();
-              if (activeAppStateOwnerRef.current === ownerId) {
-                appStateVersionRef.current = saved?.updated_at ?? null;
-                appStateVersionLoadedRef.current = true;
-              }
-              return saved;
-            }
-          })
-          .catch((error) => {
-            // Allow a later state change/click to retry if this write did not
-            // reach Neon; don't leave a failed payload marked as successfully handled.
-            if (appStateLastQueuedSignatureRef.current === signature) {
-              appStateLastQueuedSignatureRef.current = null;
-            }
-            console.error("[HyperSynced] Unable to save app view state.", error);
-          });
-    },
-    [currentUser],
-  );
+  useCallback((state) => {
+    if (currentUser) writeCachedAppView(currentUser.id, state, currentUser.role);
+  }, [currentUser]);
 
   // Safety net: every persisted account-view change is saved from the
   // authoritative React state, even if a button bypasses a navigation helper.
@@ -1706,17 +1500,8 @@ const persistAppView =
       search_query: searchQuery,
       profile_username: activePage === "public-profile" ? activeProfileUsername : null,
     };
-    const signature = JSON.stringify(state);
-    if (signature === appStateLastQueuedSignatureRef.current) {
-      return undefined;
-    }
-
     const delay = activePage === "search" ? 350 : 0;
-    const timer = window.setTimeout(() => {
-      if (signature !== appStateLastQueuedSignatureRef.current) {
-        persistAppView(state);
-      }
-    }, delay);
+    const timer = window.setTimeout(() => persistAppView(state), delay);
 
     return () => window.clearTimeout(timer);
   }, [
@@ -1918,87 +1703,7 @@ const persistAppView =
   restoreSavedAppView,
 ]);
 
-  // Keep the saved page in sync across signed-in devices without reloading.
-  // Local navigation/search edits always win over an older in-flight poll.
-  useEffect(() => {
-    if (!currentUser?.id || currentUser.offline_only) return undefined;
-
-    let active = true;
-    let refreshing = false;
-
-    const refreshSavedView = async () => {
-      if (
-        refreshing ||
-        searchStateTimerRef.current ||
-        document.visibilityState === "hidden" ||
-        navigator.onLine === false
-      ) return;
-      refreshing = true;
-      const ownerId = currentUser.id;
-      const navigationGeneration = navigationGenerationRef.current;
-
-      try {
-        await appStateSaveQueueRef.current.catch(() => {});
-        if (
-          !active ||
-          activeAppStateOwnerRef.current !== ownerId ||
-          navigationGenerationRef.current !== navigationGeneration ||
-          searchStateTimerRef.current
-        ) return;
-
-        const state = await apiRequest("/users/me/app-state");
-        if (
-          !active ||
-          activeAppStateOwnerRef.current !== ownerId ||
-          navigationGenerationRef.current !== navigationGeneration ||
-          searchStateTimerRef.current
-        ) return;
-
-        appStateVersionRef.current = state?.updated_at ?? null;
-        appStateVersionLoadedRef.current = true;
-        const restored = normalizeAppViewState(state, currentUser.role);
-        setActivePage((current) =>
-          current === restored.activePage ? current : restored.activePage
-        );
-        setSearchQuery((current) =>
-          current === restored.searchQuery ? current : restored.searchQuery
-        );
-        setActiveProfileUsername((current) =>
-          current === restored.profileUsername ? current : restored.profileUsername
-        );
-      } catch {
-        // Keep the current view during temporary network failures.
-      } finally {
-        refreshing = false;
-      }
-    };
-
-    // The initial Neon read is already performed by restoreSavedAppView.
-    // Poll less aggressively for cross-device changes, and only while this
-    // tab is visible. Returning to the tab still triggers an immediate sync.
-    const refreshWhenVisible = () => {
-      if (document.visibilityState !== "hidden" && navigator.onLine !== false) {
-        void refreshSavedView();
-      }
-    };
-    const interval = window.setInterval(refreshSavedView, 10_000);
-
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-    window.addEventListener("focus", refreshWhenVisible);
-    window.addEventListener("online", refreshWhenVisible);
-    window.addEventListener("pageshow", refreshWhenVisible);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", refreshWhenVisible);
-      window.removeEventListener("focus", refreshWhenVisible);
-      window.removeEventListener("online", refreshWhenVisible);
-      window.removeEventListener("pageshow", refreshWhenVisible);
-    };
-  }, [currentUser?.id, currentUser?.offline_only, currentUser?.role]);
-
-  const navigate =
+  const navigate =  const navigate =
   useCallback(
     (page) => {
       // Fetch the page bundle while switching views to avoid cold lazy imports.
