@@ -59,6 +59,7 @@ import {
 import {
   shouldCorrectRestoredPlaybackClock,
   shouldReleaseRestoredPosition,
+  isRestoredClockProgressing,
 } from "./playerRestorePosition.js";
 
 import {
@@ -124,6 +125,12 @@ let warmPlaybackTaskKey =
  * restored song should return to.
  */
 let restoredTimeSeconds =
+  0;
+
+let restoredClockPreviousSeconds =
+  null;
+
+let restoredClockProgressTicks =
   0;
 
 
@@ -1494,19 +1501,24 @@ function attachEvents() {
       // event alone is not proof: some browsers briefly report the song end.
       const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
       const mediaClock = Number(audio.currentTime) || 0;
-      if (
-        restoredTarget > 0 &&
-        shouldCorrectRestoredPlaybackClock(
-          restoredTarget,
-          mediaClock,
-          audio.duration,
-        )
-      ) {
-        try {
-          audio.currentTime = restoredTarget;
-        } catch {
-          // Keep the fallback active and retry on subsequent clock updates.
+      if (restoredTarget > 0) {
+        if (
+          shouldCorrectRestoredPlaybackClock(
+            restoredTarget,
+            mediaClock,
+            audio.duration,
+          )
+        ) {
+          try {
+            audio.currentTime = restoredTarget;
+          } catch {
+            // Keep the fallback active and retry on subsequent clock updates.
+          }
+          restoredClockPreviousSeconds = restoredTarget;
+        } else {
+          restoredClockPreviousSeconds = mediaClock;
         }
+        restoredClockProgressTicks = 0;
       }
       setPlaybackPhase(
         "playing",
@@ -1650,14 +1662,41 @@ function attachEvents() {
             } else if (
               loadedAudioTrackId === currentTrackId &&
               hasAudioSource() &&
-              shouldReleaseRestoredPosition(
-                restoredTarget,
-                liveClock,
-                audio.paused,
-                audio.duration,
-              )
+              !audio.paused
             ) {
-              restoredTimeSeconds = 0;
+              const previousClock = Number.isFinite(restoredClockPreviousSeconds)
+                ? restoredClockPreviousSeconds
+                : restoredTarget;
+              if (
+                isRestoredClockProgressing(
+                  previousClock,
+                  liveClock,
+                  restoredTarget,
+                  audio.duration,
+                )
+              ) {
+                restoredClockProgressTicks += 1;
+              } else {
+                restoredClockProgressTicks = 0;
+              }
+              restoredClockPreviousSeconds = liveClock;
+
+              if (
+                restoredClockProgressTicks >= 2 &&
+                shouldReleaseRestoredPosition(
+                  restoredTarget,
+                  liveClock,
+                  audio.paused,
+                  audio.duration,
+                )
+              ) {
+                restoredTimeSeconds = 0;
+                restoredClockPreviousSeconds = null;
+                restoredClockProgressTicks = 0;
+              }
+            } else {
+              restoredClockPreviousSeconds = liveClock;
+              restoredClockProgressTicks = 0;
             }
           }
           notify();
@@ -3060,6 +3099,8 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   // expiring audio URL is persisted in the browser snapshot.
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
+  restoredClockPreviousSeconds = null;
+  restoredClockProgressTicks = 0;
   setPlaybackPhase("paused");
   notify();
   return getState();
@@ -3231,6 +3272,8 @@ export function seekTo(
 
   // A user seek supersedes any pending restored-position fallback.
   restoredTimeSeconds = 0;
+  restoredClockPreviousSeconds = null;
+  restoredClockProgressTicks = 0;
 
   notify();
 }
