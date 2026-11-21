@@ -12,7 +12,9 @@ test("app shell and playback restore from local snapshots without cross-device s
   assert.match(app, /<MainPage/);
   assert.match(app, /<PlayerBar/);
   assert.ok(sync.includes("device-playback.v2"));
-  assert.match(sync, /restoreTrackPaused/);
+  assert.match(sync, /restoreCachedTrackMetadata/);
+  assert.doesNotMatch(sync, /restoreTrackPaused/);
+  assert.doesNotMatch(sync, /setInterval/);
   assert.doesNotMatch(sync, /apiRequest|playback-state|expected_playback_updated_at/);
   assert.ok(!app.includes("/users/me/app-state"));
   assert.ok(!app.includes("appStateSaveQueueRef"));
