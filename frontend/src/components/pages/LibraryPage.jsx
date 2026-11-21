@@ -1529,11 +1529,29 @@ const [
         }
 
         if (phase === "confirmed" && playlist?.id) {
+          const playlistId = String(playlist.id);
+          const shouldBeSaved = Boolean(saved);
+          setSavedPlaylists(current =>
+            shouldBeSaved
+              ? [playlist, ...current.filter(item => String(item?.id) !== playlistId)]
+              : current.filter(item => String(item?.id) !== playlistId),
+          );
+          setSelectedPlaylist(current =>
+            String(current?.id) === playlistId
+              ? { ...current, is_saved: shouldBeSaved }
+              : current,
+          );
+          applySavedPlaylistMembership(
+            libraryCacheKey,
+            playlist,
+            shouldBeSaved,
+          );
           settleSavedPlaylistMembership(
             libraryCacheKey,
             playlist.id,
           );
-          void loadLibrary({ force: true });
+          // The optimistic update already changed the Library UI. Avoid a
+          // stale server snapshot overwriting it immediately after confirmation.
           return;
         }
 
