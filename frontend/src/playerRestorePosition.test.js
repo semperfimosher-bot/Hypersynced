@@ -10,7 +10,8 @@ test("restore clock correction catches end jumps without fighting normal playbac
   assert.equal(shouldCorrectRestoredPlaybackClock(38.5, 119.8, 120), true);
   assert.equal(shouldCorrectRestoredPlaybackClock(38.5, 0, 120), true);
   assert.equal(shouldCorrectRestoredPlaybackClock(38.5, 39.2, 120), false);
-  assert.equal(shouldCorrectRestoredPlaybackClock(116, 119.8, 120), false);
+  assert.equal(shouldCorrectRestoredPlaybackClock(116, 119.8, 120), true);
+  assert.equal(shouldCorrectRestoredPlaybackClock(119, 120, 120), false);
 });
 
 test("restored position stays authoritative until live playback advances near it", () => {
