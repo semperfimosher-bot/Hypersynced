@@ -109,6 +109,7 @@ export default function AuthOverlay({
       setMessage(
         "Enter the administrator verification password.",
       );
+      setSubmitting(false);
 
       return;
     }
