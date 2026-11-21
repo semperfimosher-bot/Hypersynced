@@ -3050,6 +3050,8 @@ export function setPlaybackPersistenceOwner(userId) {
     restoredPositionLocked = false;
     restoredClockPreviousSeconds = null;
     restoredClockProgressTicks = 0;
+    restoredClockGuardActive = false;
+    restoredClockGuardProgressSeconds = 0;
     setPlaybackPhase("idle");
     notify();
   }
@@ -3295,6 +3297,11 @@ currentTrackArtist =
 
 restoredTimeSeconds =
   0;
+  restoredPositionLocked = false;
+  restoredClockPreviousSeconds = null;
+  restoredClockProgressTicks = 0;
+  restoredClockGuardActive = false;
+  restoredClockGuardProgressSeconds = 0;
 
   setPlaybackPhase(
     "idle",
@@ -3337,6 +3344,8 @@ export function seekTo(
   restoredPositionLocked = false;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
+  restoredClockGuardActive = false;
+  restoredClockGuardProgressSeconds = 0;
 
   notify();
 }
