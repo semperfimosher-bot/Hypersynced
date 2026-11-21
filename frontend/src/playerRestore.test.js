@@ -74,6 +74,15 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     assert.equal(player._getAudioElement().currentSrc, "");
     assert.equal(player.getState().mediaVersion, "cached-v1");
 
+    // Some browser refresh restores fire "playing" while currentTime still
+    // points at the stale/end value. The bar must keep the saved value and
+    // force the media clock back to it until a matching seeked event arrives.
+    player._getAudioElement().dispatchEvent(new Event("playing"));
+    assert.equal(player._getAudioElement().currentTime, 38.5);
+    assert.equal(player.getState().currentTime, 38.5);
+    player._getAudioElement().dispatchEvent(new Event("seeked"));
+    assert.equal(player.getState().currentTime, 38.5);
+
     // A deliberate seek must replace the saved-position fallback shown by the UI.
     player.seekTo(12);
     assert.equal(player._getAudioElement().currentTime, 12);
