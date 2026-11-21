@@ -96,7 +96,9 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     restoredAudio.paused = false;
     restoredAudio.currentTime = 39.0;
     restoredAudio.dispatchEvent(new Event("timeupdate"));
-    assert.equal(player.getState().currentTime, 39.0);
+    // The test media has no loaded src, so release must be blocked even
+    // though its synthetic clock advanced.
+    assert.equal(player.getState().currentTime, 38.5);
 
     // A deliberate seek must replace the saved-position fallback shown by the UI.
     player.seekTo(12);
