@@ -1102,6 +1102,29 @@ async function cacheTrackArtwork(
 }
 
 
+async function cachePlaylistArtworkBatch(tracks, concurrency = 4) {
+  const unique = [];
+  const seen = new Set();
+  for (const track of Array.isArray(tracks) ? tracks : []) {
+    const id = String(track?.id ?? "").trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    unique.push(track);
+  }
+  let next = 0;
+  async function worker() {
+    while (next < unique.length) {
+      const index = next++;
+      try {
+        await cacheTrackArtwork(unique[index]);
+      } catch {
+        // Artwork is best-effort and must never fail audio downloads.
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, unique.length) }, worker));
+}
+
 async function cacheTrackLyrics(
   trackId,
   {
@@ -2682,6 +2705,12 @@ export async function downloadTracksForOffline(
     });
 
     return [];
+  }
+
+  // Cache artwork for every playlist member, including audio-not-downloaded
+  // tracks. This runs alongside audio downloads and never delays their UI.
+  if (jobMetadata?.kind === "playlist") {
+    void cachePlaylistArtworkBatch(uniqueTracks).catch(() => {});
   }
 
   await requestPersistentStorage();
