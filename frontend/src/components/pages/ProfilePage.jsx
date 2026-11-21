@@ -40,6 +40,7 @@ import OfflineNotice from
 import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
 import {
   applyOptimisticRecentlyPlayed,
+  mergeRecentlyPlayedWithOptimisticCache,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
@@ -254,8 +255,10 @@ export default function ProfilePage({
       const tracks = await getMyRecentlyPlayed();
       if (request !== recentRequest.current || owner !== currentUser?.id) return;
       const normalized = Array.isArray(tracks) ? tracks : [];
-      writeCachedHomeRecentlyPlayed(recentOwner, normalized);
-      setRecentTracks(normalized);
+      const cachedTracks = readCachedHomeRecentlyPlayed(recentOwner);
+      const mergedTracks = mergeRecentlyPlayedWithOptimisticCache(normalized, cachedTracks, 12);
+      writeCachedHomeRecentlyPlayed(recentOwner, mergedTracks);
+      setRecentTracks(mergedTracks);
     } catch {
       // Keep the owner-scoped cache visible when refresh fails.
     }
