@@ -57,6 +57,11 @@ import {
 } from "./lyricsSync.js";
 
 import {
+  shouldCorrectRestoredPlaybackClock,
+  shouldReleaseRestoredPosition,
+} from "./playerRestorePosition.js";
+
+import {
   notifyListeningHistoryChanged,
   canRecordListeningHistory,
   shouldBeginListeningEvent,
@@ -1484,21 +1489,24 @@ function attachEvents() {
   audio.addEventListener(
     "playing",
     () => {
-      // "playing" may fire while the media clock still reports stale/end
-      // position after refresh. Keep the saved fallback until clocks align.
+      // Keep the saved position as the UI source of truth until the live
+      // clock has demonstrably advanced from the restored point. A "playing"
+      // event alone is not proof: some browsers briefly report the song end.
       const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
       const mediaClock = Number(audio.currentTime) || 0;
       if (
         restoredTarget > 0 &&
-        Math.abs(mediaClock - restoredTarget) > 1.25
+        shouldCorrectRestoredPlaybackClock(
+          restoredTarget,
+          mediaClock,
+          audio.duration,
+        )
       ) {
         try {
           audio.currentTime = restoredTarget;
         } catch {
-          // Preserve fallback display if an early seek is rejected.
+          // Keep the fallback active and retry on subsequent clock updates.
         }
-      } else {
-        restoredTimeSeconds = 0;
       }
       setPlaybackPhase(
         "playing",
@@ -1601,15 +1609,8 @@ function attachEvents() {
   audio.addEventListener(
     "seeked",
     () => {
-      if (
-        restoredTimeSeconds > 0 &&
-        Math.abs(
-          (Number(audio.currentTime) || 0) -
-          restoredTimeSeconds
-        ) <= 1.25
-      ) {
-        restoredTimeSeconds = 0;
-      }
+      // The seek may land correctly while the browser's clock is still
+      // settling. Do not release the saved-position display on seeked alone.
       setPlaybackPhase(
         audio.paused
           ? "paused"
@@ -1630,7 +1631,35 @@ function attachEvents() {
     (eventName) => {
       audio.addEventListener(
         eventName,
-        notify,
+        () => {
+          if (eventName === "timeupdate" && restoredTimeSeconds > 0) {
+            const liveClock = Number(audio.currentTime) || 0;
+            const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
+            if (
+              shouldCorrectRestoredPlaybackClock(
+                restoredTarget,
+                liveClock,
+                audio.duration,
+              )
+            ) {
+              try {
+                audio.currentTime = restoredTarget;
+              } catch {
+                // Fallback remains authoritative; try again on later updates.
+              }
+            } else if (
+              shouldReleaseRestoredPosition(
+                restoredTarget,
+                liveClock,
+                audio.paused,
+                audio.duration,
+              )
+            ) {
+              restoredTimeSeconds = 0;
+            }
+          }
+          notify();
+        },
       );
     },
   );
