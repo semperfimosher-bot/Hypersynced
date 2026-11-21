@@ -8480,18 +8480,13 @@ button:disabled {
 }
 
 
-/* Offline Library tracks remain visible with full-color artwork.
-   Only text and secondary controls are muted; unavailable rows are inert. */
+/* Offline Library tracks remain visible as metadata-only rows, but are
+   deliberately gray and inert so they do not appear playable. */
 .hs-library-track-row.is-offline-unavailable {
   cursor: default;
   pointer-events: none;
-}
-.hs-library-track-row.is-offline-unavailable .hs-search-track__rank,
-.hs-library-track-row.is-offline-unavailable .hs-search-track__copy,
-.hs-library-track-row.is-offline-unavailable .hs-search-track__signals,
-.hs-library-track-row.is-offline-unavailable .hs-search-track__duration,
-.hs-library-track-row.is-offline-unavailable .hs-search-track__play {
-  opacity: 0.48;
+  opacity: 0.28;
+  filter: grayscale(1);
 }
 .hs-library-track-row.is-offline-unavailable .hs-search-track__art i {
   display: none;
