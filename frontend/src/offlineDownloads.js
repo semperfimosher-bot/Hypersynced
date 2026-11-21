@@ -4150,7 +4150,6 @@ export async function removeTrackFromOffline(
 ) {
   const {
     trackId,
-    mediaVersion,
   } =
     trackIdentity(
       track,
@@ -4163,17 +4162,40 @@ export async function removeTrackFromOffline(
 
   if (
     !trackId ||
-    !mediaVersion ||
     !pinRef
   ) {
     return false;
   }
 
-  return removeDownloadedMedia(
-    trackId,
-    mediaVersion,
-    pinRef,
-  );
+  // Media versions can change after catalog refreshes. Explicit removal
+  // therefore clears the owner's manual-download pin across versions,
+  // without touching Liked Songs or playlist pins.
+  const records =
+    (
+      await getPinnedMediaRecords()
+    ).filter(
+      (record) =>
+        record.trackId === trackId &&
+        getMediaPinReferences(record).includes(pinRef),
+    );
+
+  if (!records.length) {
+    return false;
+  }
+
+  const results =
+    await Promise.all(
+      records.map(
+        (record) =>
+          removeDownloadedMedia(
+            trackId,
+            record.mediaVersion,
+            pinRef,
+          ),
+      ),
+    );
+
+  return results.some(Boolean);
 }
 
 
@@ -4192,24 +4214,7 @@ export async function isTrackDownloaded(
       track,
     );
 
-  if (
-    !trackId ||
-    !mediaVersion
-  ) {
-    return false;
-  }
-
-  const record =
-    await getMediaRecord(
-      trackId,
-      mediaVersion,
-    );
-
-  if (
-    !isCompletePinnedRecord(
-      record,
-    )
-  ) {
+  if (!trackId) {
     return false;
   }
 
@@ -4218,25 +4223,60 @@ export async function isTrackDownloaded(
       pinRef ?? "",
     ).trim();
 
-  if (normalizedPinRef) {
-    return getMediaPinReferences(
-      record,
-    ).includes(
-      normalizedPinRef,
-    );
-  }
-
   const normalizedOwnerKey =
     normalizeOwnerKey(
       ownerKey,
     );
 
-  if (normalizedOwnerKey) {
-    return recordBelongsToOwner(
-      record,
-      normalizedOwnerKey,
+  const exactRecord =
+    mediaVersion
+      ? await getMediaRecord(
+          trackId,
+          mediaVersion,
+        )
+      : null;
+
+  const exactRecordIsDownloaded =
+    isCompletePinnedRecord(
+      exactRecord,
+    ) &&
+    (
+      normalizedPinRef
+        ? getMediaPinReferences(exactRecord).includes(normalizedPinRef)
+        : normalizedOwnerKey
+          ? recordBelongsToOwner(exactRecord, normalizedOwnerKey)
+          : true
     );
+
+  if (exactRecordIsDownloaded) {
+    return true;
   }
 
-  return true;
+  // Keep the downloaded UI status stable if the catalog changes the
+  // track's mediaVersion. The owner's complete pinned copy remains the
+  // durable source of truth until they explicitly remove it.
+  if (!normalizedPinRef && !normalizedOwnerKey) {
+    return false;
+  }
+
+  const pinPrefix =
+    normalizedOwnerKey
+      ? getOfflineOwnerPinPrefix(normalizedOwnerKey)
+      : null;
+
+  const records =
+    await getPinnedMediaRecords();
+
+  return records.some(
+    (record) =>
+      record.trackId === trackId &&
+      isCompletePinnedRecord(record) &&
+      (
+        normalizedPinRef
+          ? getMediaPinReferences(record).includes(normalizedPinRef)
+          : pinPrefix
+              ? getMediaPinReferences(record).some((reference) => reference.startsWith(pinPrefix))
+              : false
+      ),
+  );
 }
