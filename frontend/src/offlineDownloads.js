@@ -2617,6 +2617,7 @@ export async function downloadTracksForOffline(
     jobId = null,
     jobMetadata = null,
     ownerKey = null,
+    mergeExistingPlaylistTracks = false,
   } = {},
 ) {
   const normalizedOwnerKey =
@@ -3084,12 +3085,26 @@ export async function downloadTracksForOffline(
     downloadedBytes:
       downloadedBytesNow(),
     trackKeys:
-      uniqueTracks.map(
-        (track) =>
-          trackIdentity(
-            track,
-          ).key,
-      ),
+      mergeExistingPlaylistTracks
+        ? Array.from(
+            new Set([
+              ...(Array.isArray(previousJob?.trackKeys)
+                ? previousJob.trackKeys
+                : []),
+              ...uniqueTracks.map(
+                (track) =>
+                  trackIdentity(
+                    track,
+                  ).key,
+              ),
+            ]),
+          )
+        : uniqueTracks.map(
+            (track) =>
+              trackIdentity(
+                track,
+              ).key,
+          ),
   });
 
   report();
@@ -3098,7 +3113,9 @@ export async function downloadTracksForOffline(
     pendingTracks.length ===
     0
   ) {
-    await releaseObsoletePlaylistPins();
+    if (!mergeExistingPlaylistTracks) {
+      await releaseObsoletePlaylistPins();
+    }
 
     emitOfflineDownloadsChanged();
 
