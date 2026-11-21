@@ -128,7 +128,9 @@ import {
 } from "../../playlistOfflineAction.js";
 
 import {
+  applySavedPlaylistMembership,
   getCachedPlaylistAsync,
+  settleSavedPlaylistMembership,
   setCachedPlaylist,
 } from "../../libraryCache.js";
 
@@ -1679,66 +1681,85 @@ async function toggleOpenedPlaylistSaved() {
 
   if (!currentUser) {
     onOpenAuth?.();
-
     return;
   }
 
-  const shouldSave =
-    !openedPlaylist.is_saved;
+  const playlist = openedPlaylist;
+  const playlistId = String(playlist.id);
+  const shouldSave = !playlist.is_saved;
+  const ownerKey = currentUser?.id ?? currentUser?.username ?? "anonymous";
+  const optimisticPlaylist = {
+    ...playlist,
+    is_saved: shouldSave,
+  };
 
-  setPlaylistActionBusy(
-    true,
-  );
-
+  // Update the page and the shared Library snapshot before waiting on network.
+  setPlaylistActionBusy(true);
   setPlaylistError("");
-
-  setOpenedPlaylist(
-    (current) => ({
-      ...current,
-      is_saved:
-        shouldSave,
-    }),
+  setOpenedPlaylist(optimisticPlaylist);
+  applySavedPlaylistMembership(
+    ownerKey,
+    optimisticPlaylist,
+    shouldSave,
   );
+  window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+    detail: {
+      phase: "optimistic",
+      playlist: optimisticPlaylist,
+      saved: shouldSave,
+      ownerKey,
+    },
+  }));
 
   try {
     if (shouldSave) {
-      await savePlaylist(
-        openedPlaylist.id,
-      );
+      await savePlaylist(playlistId);
     } else {
-      await unsavePlaylist(
-        openedPlaylist.id,
-      );
+      await unsavePlaylist(playlistId);
     }
 
-    // Notify Library immediately after the server confirms the
-    // membership change so its cached snapshot refreshes now.
-    window.dispatchEvent(
-      new CustomEvent(
-        "hypersync:library-changed",
-      ),
-    );
+    settleSavedPlaylistMembership(ownerKey, playlistId);
+    window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+      detail: {
+        phase: "confirmed",
+        playlist: optimisticPlaylist,
+        saved: shouldSave,
+        ownerKey,
+      },
+    }));
   } catch (error) {
-    setOpenedPlaylist(
-      (current) => ({
-        ...current,
-        is_saved:
-          !shouldSave,
-      }),
+    const rollbackPlaylist = {
+      ...playlist,
+      is_saved: !shouldSave,
+    };
+    setOpenedPlaylist(current =>
+      String(current?.id) === playlistId
+        ? rollbackPlaylist
+        : current,
     );
-
+    applySavedPlaylistMembership(
+      ownerKey,
+      rollbackPlaylist,
+      !shouldSave,
+    );
+    settleSavedPlaylistMembership(ownerKey, playlistId);
+    window.dispatchEvent(new CustomEvent("hypersync:library-changed", {
+      detail: {
+        phase: "rollback",
+        playlist: rollbackPlaylist,
+        saved: !shouldSave,
+        ownerKey,
+      },
+    }));
     setPlaylistError(
       error instanceof Error
         ? error.message
-        : "Unable to update your library.",
+        : "Unable to update your Library. The change was reverted.",
     );
   } finally {
-    setPlaylistActionBusy(
-      false,
-    );
+    setPlaylistActionBusy(false);
   }
 }
-
 
 async function confirmRemoveOpenedPlaylistDownload() {
   if (
