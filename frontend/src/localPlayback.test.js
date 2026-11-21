@@ -26,6 +26,7 @@ test("listening progress is checkpointed only when a page becomes hidden or exit
   assert.doesNotMatch(source, /saveListeningProgress/);
   assert.match(source, /function saveListeningCheckpoint/);
   assert.match(source, /if \(hidden\) \{\s*sampleListeningProgress\(\);\s*void saveListeningCheckpoint\(true\);/);
+  assert.match(source, /if \(event\.checkpointPromise\) \{\s*await event\.checkpointPromise;\s*\}/);
   assert.match(source, /finishListeningEvent/);
 });
 
