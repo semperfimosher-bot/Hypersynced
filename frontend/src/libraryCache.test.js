@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import "fake-indexeddb/auto";
 import {
+  applySavedPlaylistMembership, settleSavedPlaylistMembership,
   clearCachedLibraryScope, clearCachedLibraryPages, getCachedLibrary, getCachedLibraryAsync,
   getCachedLibraryPageAsync, getCachedPlaylistAsync,
   setCachedLibrary, setCachedLibraryPageAsync, setCachedPlaylist,
@@ -82,4 +83,27 @@ test("invalidating changed-library pages clears stale pages only for that accoun
   assert.equal(await getCachedLibraryPageAsync(ownerA, 1000), null);
   assert.deepEqual(await getCachedLibraryPageAsync(ownerB, 0), [{ id: "keep-b-0" }]);
   assert.deepEqual(await getCachedLibraryPageAsync(ownerB, 1000), [{ id: "keep-b-1" }]);
+});
+
+
+test("optimistic saved-playlist changes update the Library snapshot immediately and can be settled", async () => {
+  const owner = "optimistic-library-" + Date.now();
+  const playlist = { id: "saved-playlist", title: "Saved instantly" };
+  await setCachedLibrary(owner, { owned: [], saved: [], tracks: [] });
+  const optimistic = applySavedPlaylistMembership(owner, playlist, true);
+  assert.equal(optimistic.saved[0].id, playlist.id);
+  assert.equal(optimistic.saved[0].is_saved, true);
+  assert.deepEqual(optimistic.pendingSavedPlaylistChanges, {
+    [playlist.id]: true,
+  });
+
+  applySavedPlaylistMembership(owner, playlist, false);
+  assert.deepEqual(getCachedLibrary(owner).saved, []);
+  assert.equal(getCachedLibrary(owner).pendingSavedPlaylistChanges[playlist.id], false);
+
+  settleSavedPlaylistMembership(owner, playlist.id);
+  assert.deepEqual(getCachedLibrary(owner).pendingSavedPlaylistChanges, {});
+  const persisted = await getCachedLibraryAsync(owner);
+  assert.deepEqual(persisted.saved, []);
+  assert.deepEqual(persisted.pendingSavedPlaylistChanges, {});
 });
