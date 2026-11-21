@@ -63,13 +63,11 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
   };
   const cached = readDevicePlayback(userId);
   if (cached?.track?.id) {
+    // Restore UI state only. Resolving/loading the media source is deferred
+    // until the user presses Play, avoiding an automatic startup network fetch.
     player.restoreCachedTrackMetadata(cached.track, cached.positionSeconds);
-    void player.restoreTrackPaused(cached.track, cached.positionSeconds).catch((error) => {
-      console.warn("[HyperSynced] Unable to restore local playback snapshot.", error);
-    });
   }
   const unsubscribe = player.subscribe(() => saveLocal());
-  const checkpointTimer = window.setInterval(saveLocal, 3_000);
   const persistOnHide = () => saveLocal();
   const onVisibilityChange = () => { if (document.visibilityState === "hidden") persistOnHide(); };
   window.addEventListener("pagehide", persistOnHide);
@@ -77,7 +75,6 @@ export function bindAccountPlayback(userId, onInitialRestoreComplete = () => {})
   try { onInitialRestoreComplete(); } catch {}
   return () => {
     active = false;
-    window.clearInterval(checkpointTimer);
     window.removeEventListener("pagehide", persistOnHide);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     unsubscribe();
