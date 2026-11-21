@@ -536,6 +536,11 @@ function finishListeningEvent(outcome) {
   activeListeningEvent = null;
 
   void (async () => {
+    // If a background checkpoint is already in flight, serialize the final
+    // outcome after it so a late progress PATCH cannot overwrite completion.
+    if (event.checkpointPromise) {
+      await event.checkpointPromise;
+    }
     const eventId = event.eventId ?? await event.request;
     if (!eventId) return;
     await apiRequest(
