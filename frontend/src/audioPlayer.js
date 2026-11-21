@@ -127,6 +127,12 @@ let warmPlaybackTaskKey =
 let restoredTimeSeconds =
   0;
 
+// Explicit lock: zero is a valid restored position, not a signal that
+// restoration has finished. Keep the UI on the saved clock until playback
+// has demonstrably advanced from the restored seek.
+let restoredPositionLocked =
+  false;
+
 let restoredClockPreviousSeconds =
   null;
 
@@ -1299,7 +1305,7 @@ export function getState() {
     currentTime:
       currentTrackId && (
         loadedAudioTrackId !== currentTrackId ||
-        restoredTimeSeconds > 0
+        restoredPositionLocked
       )
         ? Math.max(0, Number(restoredTimeSeconds) || 0)
         : getSafeCurrentTime(),
@@ -1644,7 +1650,7 @@ function attachEvents() {
       audio.addEventListener(
         eventName,
         () => {
-          if (eventName === "timeupdate" && restoredTimeSeconds > 0) {
+          if (eventName === "timeupdate" && restoredPositionLocked) {
             const liveClock = Number(audio.currentTime) || 0;
             const restoredTarget = Math.max(0, Number(restoredTimeSeconds) || 0);
             if (
@@ -1691,6 +1697,7 @@ function attachEvents() {
                 )
               ) {
                 restoredTimeSeconds = 0;
+                restoredPositionLocked = false;
                 restoredClockPreviousSeconds = null;
                 restoredClockProgressTicks = 0;
               }
@@ -2287,6 +2294,9 @@ function applyTrackMetadata(
 
   restoredTimeSeconds =
     0;
+  restoredPositionLocked = false;
+  restoredClockPreviousSeconds = null;
+  restoredClockProgressTicks = 0;
 
   setPlaybackPhase(
     "loading",
@@ -2996,6 +3006,9 @@ export function setPlaybackPersistenceOwner(userId) {
     currentTrackTitle = "";
     currentTrackArtist = "";
     restoredTimeSeconds = 0;
+    restoredPositionLocked = false;
+    restoredClockPreviousSeconds = null;
+    restoredClockProgressTicks = 0;
     setPlaybackPhase("idle");
     notify();
   }
@@ -3099,6 +3112,7 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   // expiring audio URL is persisted in the browser snapshot.
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
+  restoredPositionLocked = true;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
   setPlaybackPhase("paused");
@@ -3121,6 +3135,9 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   audio.pause();
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
+  restoredPositionLocked = true;
+  restoredClockPreviousSeconds = null;
+  restoredClockProgressTicks = 0;
 
   // Refill a short or newly rebased queue in the background. The current
   // track is already visible and this request never delays paused restore.
@@ -3272,6 +3289,7 @@ export function seekTo(
 
   // A user seek supersedes any pending restored-position fallback.
   restoredTimeSeconds = 0;
+  restoredPositionLocked = false;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
 
