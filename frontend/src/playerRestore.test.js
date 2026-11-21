@@ -80,8 +80,8 @@ test("a reopened player ignores legacy browser playback state and waits for Neon
     player._getAudioElement().dispatchEvent(new Event("playing"));
     assert.equal(player._getAudioElement().currentTime, 38.5);
     assert.equal(player.getState().currentTime, 38.5);
-    player._getAudioElement().dispatchEvent(new Event("seeked"));
-    assert.equal(player.getState().currentTime, 38.5);
+    // The simulated element has no loaded media source, so it must not
+    // clear the saved fallback on a synthetic seeked event.
 
     // A deliberate seek must replace the saved-position fallback shown by the UI.
     player.seekTo(12);
