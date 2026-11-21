@@ -94,6 +94,7 @@ import {
   getDownloadedPlaylists,
   getDownloadedTracks,
   getOfflineOwnerKey,
+  getOfflineArtworkUrl,
   getPlaylistDownloadJob,
   getPlaylistDownloadJobId,
   reconcileDownloadedPlaylistMembership,
@@ -4011,6 +4012,11 @@ useEffect(() => {
                   trackIndex,
                 ) => {
                   const trackArtwork =
+                    resolveArtworkUrl(
+                      offlineMode
+                        ? getOfflineArtworkUrl(track.id, track.artwork_version ?? track.artworkVersion)
+                        : track.artwork_url,
+                    ) ??
                     resolveArtworkUrl(
                       track.artwork_url,
                     );
