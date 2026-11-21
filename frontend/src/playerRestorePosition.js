@@ -34,10 +34,5 @@ export function isRestoredClockProgressing(previousSeconds, currentSeconds, targ
   const nearTrackEnd = duration > 0 && target >= duration - 5.5;
   return nearTrackEnd
     ? current <= duration + 0.5
-    : current >= target - 0.5 && current <= target + 3.0;
-}
-
-
-export function shouldIgnoreRestoredEndedEvent(targetSeconds, liveSeconds, durationSeconds = 0) {
-  return shouldCorrectRestoredPlaybackClock(targetSeconds, liveSeconds, durationSeconds);
+    : current >= target - 0.5 && current <= target + 10.0;
 }
