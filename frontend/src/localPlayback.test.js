@@ -39,6 +39,16 @@ test("recently played retains owner cache while the server history is empty", ()
   assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache([], []), []);
   const server = [{ id: "server-track", last_played_at: "2026-11-21T15:00:00Z" }];
   assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, []), server);
+  const newerCache = [{ id: "new-local-track", last_played_at: "2026-11-21T17:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, newerCache), [...newerCache, ...server]);
+  const olderCache = [{ id: "stale-track", last_played_at: "2026-11-21T14:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, olderCache), server);
+});
+
+test("Home Recently Played merges server results with newer owner cache", () => {
+  const home = readFileSync(new URL("./components/pages/HomePage.jsx", import.meta.url), "utf8");
+  assert.match(home, /mergeRecentlyPlayedWithOptimisticCache\(serverTracks, cachedTracks, 12\)/);
+  assert.match(home, /writeCachedHomeRecentlyPlayed\(recentOwner, mergedTracks\)/);
 });
 
 test("profile Recently Played has its own server refresh and owner-scoped cache", () => {
