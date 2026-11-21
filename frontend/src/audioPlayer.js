@@ -1679,17 +1679,23 @@ function attachEvents() {
               const previousClock = Number.isFinite(restoredClockPreviousSeconds)
                 ? restoredClockPreviousSeconds
                 : restoredTarget;
-              if (
-                isRestoredClockProgressing(
-                  previousClock,
-                  liveClock,
-                  restoredTarget,
-                  audio.duration,
-                )
-              ) {
+              const validProgress = isRestoredClockProgressing(
+                previousClock,
+                liveClock,
+                restoredTarget,
+                audio.duration,
+              );
+              if (validProgress) {
                 restoredClockProgressTicks += 1;
+                if (restoredClockGuardActive) {
+                  restoredClockGuardProgressSeconds += Math.max(
+                    0,
+                    liveClock - previousClock,
+                  );
+                }
               } else {
                 restoredClockProgressTicks = 0;
+                restoredClockGuardProgressSeconds = 0;
               }
               restoredClockPreviousSeconds = liveClock;
 
@@ -1717,8 +1723,7 @@ function attachEvents() {
             if (
               restoredClockGuardActive &&
               !audio.paused &&
-              restoredClockProgressTicks > 0 &&
-              Number.isFinite(restoredClockPreviousSeconds)
+              restoredClockGuardProgressSeconds >= 8
             ) {
               // Keep a short post-restore guard even after the UI lock releases.
               // Some browsers report the correct seek, then jump to an old
