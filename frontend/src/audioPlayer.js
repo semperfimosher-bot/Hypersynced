@@ -1713,8 +1713,8 @@ function attachEvents() {
                 )
               ) {
                 restoredPositionLocked = false;
-                restoredClockGuardActive = true;
-                restoredClockPreviousSeconds = liveClock;
+                restoredClockGuardActive = false;
+                restoredClockPreviousSeconds = null;
                 restoredClockGuardProgressSeconds = 0;
                 restoredClockProgressTicks = 0;
               }
@@ -1770,7 +1770,7 @@ function attachEvents() {
   () => {
     // A stale terminal media clock during DB restoration must not complete the
     // track or advance the queue. Re-seek the authoritative saved DB position.
-    if (restoredPositionLocked || restoredClockGuardActive) {
+    if (restoredPositionLocked) {
       const liveClock = Number(audio.currentTime) || 0;
       const target = Math.max(0, Number(restoredTimeSeconds) || 0);
       if (shouldCorrectRestoredPlaybackClock(target, liveClock, audio.duration)) {
