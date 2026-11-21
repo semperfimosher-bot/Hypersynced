@@ -1510,7 +1510,7 @@ const persistAppView =
   restoreSavedAppView,
 ]);
 
-  const navigate =  const navigate =
+  const navigate =
   useCallback(
     (page) => {
       // Fetch the page bundle while switching views to avoid cold lazy imports.
