@@ -876,7 +876,7 @@ export default function ProfilePage({
                 <span>plays recorded across devices</span>
                 <small>{profile?.hours_listened ?? 0} hours listened</small>
               </div>
-              <h3>Most played in your recent history</h3>
+              <h3>Recent songs and play counts</h3>
               {profile?.recently_played?.length ? profile.recently_played.map((track, index) => (
                 <button className="hs-total-plays-track" type="button" key={track.id} onClick={() => {
                   setTotalPlaysOpen(false);
