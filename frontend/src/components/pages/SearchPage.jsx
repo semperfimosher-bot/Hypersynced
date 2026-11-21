@@ -2737,7 +2737,9 @@ async function downloadOpenedPlaylist() {
 
   <button
     type="button"
-    className="hs-search-playlist-action"
+    className={
+      `hs-search-library-toggle${openedPlaylist.is_saved ? " is-saved" : ""}`
+    }
     disabled={
       openedPlaylist.transient ||
       playlistActionBusy
@@ -2747,6 +2749,12 @@ async function downloadOpenedPlaylist() {
         ? "Remove from Library"
         : "Add to Library"
     }
+    aria-label={
+      openedPlaylist.is_saved
+        ? "Remove playlist from Library"
+        : "Add playlist to Library"
+    }
+    aria-pressed={Boolean(openedPlaylist.is_saved)}
     onClick={() => {
       void toggleOpenedPlaylistSaved();
     }}
@@ -2757,12 +2765,8 @@ async function downloadOpenedPlaylist() {
           ? "check"
           : "plus"
       }
-      size={14}
+      size={15}
     />
-
-    {openedPlaylist.is_saved
-      ? "In Library"
-      : "Add to Library"}
   </button>
 
 ) : null}
