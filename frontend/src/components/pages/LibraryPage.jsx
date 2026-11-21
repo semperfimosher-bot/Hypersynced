@@ -108,6 +108,8 @@ import {
   getCachedLibraryPageAsync,
   getCachedPlaylistAsync,
   clearCachedLibraryPages,
+  applySavedPlaylistMembership,
+  settleSavedPlaylistMembership,
   setCachedLibrary,
   setCachedLibraryPageAsync,
   setCachedPlaylist,
@@ -1463,7 +1465,46 @@ const [
 
   useEffect(() => {
     const handleLibraryChanged =
-      () => {
+      (event) => {
+        const detail = event?.detail;
+        const playlist = detail?.playlist;
+        const phase = detail?.phase;
+
+        if (
+          playlist?.id &&
+          detail?.ownerKey &&
+          String(detail.ownerKey) === String(libraryCacheKey) &&
+          (phase === "optimistic" || phase === "rollback")
+        ) {
+          const playlistId = String(playlist.id);
+          const shouldBeSaved = Boolean(detail.saved);
+          setSavedPlaylists(current =>
+            shouldBeSaved
+              ? [playlist, ...current.filter(item => String(item?.id) !== playlistId)]
+              : current.filter(item => String(item?.id) !== playlistId),
+          );
+          setSelectedPlaylist(current =>
+            String(current?.id) === playlistId
+              ? { ...current, is_saved: shouldBeSaved }
+              : current,
+          );
+          applySavedPlaylistMembership(
+            libraryCacheKey,
+            playlist,
+            shouldBeSaved,
+          );
+          return;
+        }
+
+        if (phase === "confirmed" && playlist?.id) {
+          settleSavedPlaylistMembership(
+            libraryCacheKey,
+            playlist.id,
+          );
+          void loadLibrary({ force: true });
+          return;
+        }
+
         void loadLibrary({ force: true });
       };
 
