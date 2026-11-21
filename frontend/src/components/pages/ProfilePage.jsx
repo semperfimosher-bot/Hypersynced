@@ -284,6 +284,7 @@ export default function ProfilePage({
         return;
       }
       if (detail.type === "cache-updated") {
+        recentRequest.current += 1;
         setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
         return;
       }
