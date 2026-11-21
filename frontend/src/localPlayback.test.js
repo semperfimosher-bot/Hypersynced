@@ -19,9 +19,11 @@ test("app shell and playback restore from local snapshots without cross-device s
   assert.ok(!app.includes("appStateVersionRef"));
 });
 
-test("listening history no longer sends repeated audible-progress PATCH requests", () => {
+test("listening progress is checkpointed only when a page becomes hidden or exits", () => {
   const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /saveListeningProgress|outcome: "progress"/);
+  assert.doesNotMatch(source, /saveListeningProgress/);
+  assert.match(source, /function saveListeningCheckpoint/);
+  assert.match(source, /if \(hidden\) \{\s*sampleListeningProgress\(\);\s*void saveListeningCheckpoint\(true\);/);
   assert.match(source, /finishListeningEvent/);
 });
 
