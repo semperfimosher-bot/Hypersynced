@@ -1385,9 +1385,9 @@ useEffect(() => {
               for (let offset = hydrated.tracks.length; offset < expectedCount; offset += 100) {
                 pageOffsets.push(offset);
               }
-            } else if (hydrated.tracks.length === 1000 && !Number.isFinite(expectedCount)) {
+            } else if (hydrated.tracks.length === 100 && !Number.isFinite(expectedCount)) {
               // Unknown legacy total: continue until a short page is returned.
-              for (let offset = 1000; ; offset += 1000) {
+              for (let offset = 100; ; offset += 100 {
                 const page = await getPlaylist(playlistId, {
                   limit: 100,
                   offset,
