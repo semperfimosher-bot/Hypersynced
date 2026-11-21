@@ -62,14 +62,14 @@ test(
         livePlaylist,
         missing,
       ),
-      "playlist-1|track-3::v1",
+      "playlist-1|track-3",
     );
   },
 );
 
 
 test(
-  "changed media versions are treated as downloadable updates",
+  "changed media versions do not count as newly added playlist songs",
   () => {
     const missing =
       findMissingPlaylistTracks(
@@ -97,7 +97,7 @@ test(
 
     assert.equal(
       missing.length,
-      1,
+      0,
     );
   },
 );
