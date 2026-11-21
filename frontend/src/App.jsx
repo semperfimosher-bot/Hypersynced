@@ -28,7 +28,6 @@ import {
   shouldRestoreSession,
 } from "./api/auth.js";
 
-import { apiRequest } from "./api/client.js";
 
 import {
   readCachedAppView,
@@ -828,7 +827,7 @@ export default function App() {
   const [currentUser, setCurrentUser] =
     useState(() => readCachedUserProfile());
 
-  // Keep the account UI hidden until Neon app and playback state are restored.
+  // Playback and navigation are restored from this browser's local snapshots.
   const [accountStateReady, setAccountStateReady] =
     useState(() => !shouldRestoreSession());
 
@@ -837,8 +836,6 @@ export default function App() {
 
   // Invalidates asynchronous saved-view/session restores after user navigation.
   const navigationGenerationRef = useRef(0);
-  // Ensures overlapping session/auth restores cannot apply out of order.
-  const appViewRestoreRequestRef = useRef(0);
 
     const [
     activeProfileUsername,
@@ -1448,7 +1445,7 @@ export default function App() {
   const searchStateTimerRef =
     useRef(null);
 
-  const cancelPendingSearchSave =  const cancelPendingSearchSave =
+  const cancelPendingSearchSave =
   useCallback(() => {
     if (
       searchStateTimerRef.current
