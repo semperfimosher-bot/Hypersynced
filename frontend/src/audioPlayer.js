@@ -1311,7 +1311,7 @@ export function getState() {
     currentTime:
       currentTrackId && (
         loadedAudioTrackId !== currentTrackId ||
-        restoredPositionLocked
+        (restoredPositionLocked || restoredClockGuardActive)
       )
         ? Math.max(0, Number(restoredTimeSeconds) || 0)
         : getSafeCurrentTime(),
@@ -1775,6 +1775,23 @@ function attachEvents() {
   audio.addEventListener(
   "ended",
   () => {
+    // A stale terminal media clock during DB restoration must not complete the
+    // track or advance the queue. Re-seek the authoritative saved DB position.
+    if (restoredPositionLocked || restoredClockGuardActive) {
+      const liveClock = Number(audio.currentTime) || 0;
+      const target = Math.max(0, Number(restoredTimeSeconds) || 0);
+      if (shouldCorrectRestoredPlaybackClock(target, liveClock, audio.duration)) {
+        try {
+          audio.currentTime = target;
+        } catch {
+          // Keep the restore guard active; next playback attempt will retry.
+        }
+      }
+      setPlaybackPhase("paused");
+      notify();
+      return;
+    }
+
     finishListeningEvent(
       "completed",
       Number.isFinite(
@@ -3146,6 +3163,8 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   restoredPositionLocked = true;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
+  restoredClockGuardActive = true;
+  restoredClockGuardProgressSeconds = 0;
   setPlaybackPhase("paused");
   notify();
   return getState();
@@ -3169,6 +3188,8 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
   restoredPositionLocked = true;
   restoredClockPreviousSeconds = null;
   restoredClockProgressTicks = 0;
+  restoredClockGuardActive = true;
+  restoredClockGuardProgressSeconds = 0;
 
   // Refill a short or newly rebased queue in the background. The current
   // track is already visible and this request never delays paused restore.
