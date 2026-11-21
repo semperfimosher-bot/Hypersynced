@@ -5,45 +5,22 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 // The complete app shell renders immediately; Neon state hydrates it in the background.
-test("app shell renders page and player while database state restores", () => {
-  const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+test("app shell and account playback restore from local device snapshots without account-state API calls", () => {
+  const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
-  assert.match(source, /accountStateReady/);
-  assert.doesNotMatch(source, /Restoring your account from the database/);
-  assert.match(source, /<MainPage/);
-  assert.match(source, /<PlayerBar/);
-  assert.match(source, /void restoreSavedAppView/);
-  assert.match(source, /setCurrentUser\(user\);[\s\S]*?void restoreSavedAppView/);
-  assert.match(sync, /onInitialRestoreComplete/);
-  assert.match(sync, /void player\.restoreTrackPaused/);
-  assert.doesNotMatch(sync, /await player\.restoreTrackPaused/);
+  assert.match(app, /accountStateReady/);
+  assert.match(app, /<MainPage/);
+  assert.match(app, /<PlayerBar/);
+  assert.match(sync, /device-playback\\.v2/);
+  assert.match(sync, /restoreTrackPaused/);
+  assert.doesNotMatch(sync, /apiRequest|playback-state|expected_playback_updated_at/);
+  assert.doesNotMatch(app, /users\\/me\\/app-state|appStateSaveQueueRef|appStateVersionRef/);
 });
 
-test("app shell restores and persists account playback through the existing API", () => {
-  const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
-  const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
-  assert.match(source, /bindAccountPlayback/);
-  assert.match(source, /accountPlayback/);
-  assert.match(sync, /\/users\/me\/playback-state/);
-  assert.match(sync, /player\.setPlaybackPersistenceOwner/);
-  assert.match(sync, /expected_playback_updated_at/);
-  assert.doesNotMatch(sync, /pagehide|save\(true,\s*true\)/);
-  assert.doesNotMatch(source, /playbackDevices|playbackRemoteCommands|playback-devices|setRemotePlaybackController/);
-});
-
-test("app view is restored and persisted only through the account database API", () => {
-  const source = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /persistedAppView|readPersistedAppView|writePersistedAppView|localStorage/);
-  assert.match(source, /\/users\/me\/app-state/);
-  assert.match(source, /method: "PATCH"/);
-  assert.match(source, /expected_updated_at/);
-});
-
-test("playback state is restored only from Neon, never from persistent browser storage", () => {
-  const player = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
-  assert.match(player, /setPlaybackPersistenceOwner/);
-  assert.match(player, /restoreTrackPaused/);
-  assert.doesNotMatch(player, /playerPersistence|PersistedPlayerState|localStorage|sessionStorage/);
+test("listening history no longer sends repeated audible-progress PATCH requests", () => {
+  const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /saveListeningProgress|outcome: "progress"/);
+  assert.match(source, /finishListeningEvent/);
 });
 
 class TestAudio extends EventTarget {
