@@ -392,8 +392,6 @@ function beginListeningEvent(
     listenedSeconds: 0,
     lastMediaTime: getSafeCurrentTime(),
     lastSampleAt: globalThis.performance?.now?.() ?? Date.now(),
-    lastProgressSentAt: 0,
-    progressPromise: null,
     historyNotified: false,
   };
 
@@ -499,44 +497,6 @@ function sampleListeningProgress() {
     );
   }
 
-  if (
-    event.listenedSeconds >= 2 &&
-    event.listenedSeconds - event.lastProgressSentAt >= 5
-  ) {
-    void saveListeningProgress();
-  }
-}
-
-function saveListeningProgress(keepalive = false) {
-  const event = activeListeningEvent;
-  if (!event || event.progressPromise) return event?.progressPromise ?? Promise.resolve();
-  const elapsed = Math.floor(event.listenedSeconds);
-  if (elapsed <= event.lastProgressSentAt) return Promise.resolve();
-
-  const request = (async () => {
-    const eventId = event.eventId ?? await event.request;
-    if (!eventId) return;
-    await apiRequest(
-      `/users/me/listening/${encodeURIComponent(eventId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ outcome: "progress", position_seconds: elapsed }),
-        ...(keepalive ? { keepalive: true } : {}),
-      },
-    );
-    event.lastProgressSentAt = elapsed;
-    if (!event.historyNotified && elapsed >= 2) {
-      event.historyNotified = true;
-      notifyListeningHistoryChanged({ type: "confirmed-progress" });
-    }
-  })().catch((error) => {
-    console.error("[HyperSynced] Listening progress was not saved.", error);
-  }).finally(() => {
-    event.progressPromise = null;
-  });
-
-  event.progressPromise = request;
-  return request;
 }
 
 function finishListeningEvent(outcome) {
@@ -1563,7 +1523,6 @@ function attachEvents() {
     sampleListeningProgress();
     // Pause is not a new play. Keep the current event open so resuming this
     // same track does not create another Recently Played or play-count entry.
-    void saveListeningProgress(true);
     if (
       currentTrackId ||
       audio.currentSrc
@@ -1769,7 +1728,6 @@ function handleBackgroundPlaybackLifecycle() {
 
   if (hidden) {
     sampleListeningProgress();
-    void saveListeningProgress(true);
   }
 
   updateMediaSession(
