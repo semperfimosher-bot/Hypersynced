@@ -1328,9 +1328,15 @@ useEffect(() => {
       ...(seed ?? {}),
       ...(cached ?? {}),
       id: playlistId,
-      tracks: cached?.tracks ?? seed?.tracks ?? [],
+      tracks: cached?.tracks?.length ? cached.tracks : (seed?.tracks ?? []),
       transient: !cached?.complete,
     };
+    const warmPlaylistAudio = (tracks) => {
+      for (const track of (tracks ?? []).slice(0, 3)) {
+        if (track?.id) void player.warmTrackForPlayback(track.id, track).catch(() => {});
+      }
+    };
+    warmPlaylistAudio(shell.tracks);
 
     openedPlaylistIdRef.current = key;
     setOpenedPlaylist(shell);
@@ -1354,7 +1360,7 @@ useEffect(() => {
             // Fetch the first page only, then reveal tracks immediately.
             // Larger playlist pages are appended asynchronously in order.
             const firstPage = await getPlaylist(playlistId, {
-              limit: 1000,
+              limit: 100,
               offset: 0,
             });
             let hydrated = {
@@ -1376,14 +1382,14 @@ useEffect(() => {
             const expectedCount = Number(firstPage?.track_count);
             const pageOffsets = [];
             if (Number.isInteger(expectedCount) && expectedCount > hydrated.tracks.length) {
-              for (let offset = hydrated.tracks.length; offset < expectedCount; offset += 1000) {
+              for (let offset = hydrated.tracks.length; offset < expectedCount; offset += 100) {
                 pageOffsets.push(offset);
               }
             } else if (hydrated.tracks.length === 1000 && !Number.isFinite(expectedCount)) {
               // Unknown legacy total: continue until a short page is returned.
               for (let offset = 1000; ; offset += 1000) {
                 const page = await getPlaylist(playlistId, {
-                  limit: 1000,
+                  limit: 100,
                   offset,
                 });
                 const rows = Array.isArray(page?.tracks) ? page.tracks : [];
@@ -1391,16 +1397,16 @@ useEffect(() => {
                 searchPlaylistCache.set(cacheKey, hydrated);
                 warmTrackArtwork(rows);
                 void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
-                if (rows.length < 1000) break;
+                if (rows.length < 100) break;
               }
             }
 
-            for (let index = 0; index < pageOffsets.length; index += 3) {
-              const batch = pageOffsets.slice(index, index + 3);
+            for (let index = 0; index < pageOffsets.length; index += 5) {
+              const batch = pageOffsets.slice(index, index + 5);
               const pages = await Promise.all(
                 batch.map((offset) =>
                   getPlaylist(playlistId, {
-                    limit: 1000,
+                    limit: 100,
                     offset,
                   }),
                 ),
@@ -1416,6 +1422,7 @@ useEffect(() => {
               };
               searchPlaylistCache.set(cacheKey, hydrated);
               warmTrackArtwork(pages.flatMap((page) => Array.isArray(page?.tracks) ? page.tracks : []));
+              warmPlaylistAudio(hydrated.tracks);
               void setCachedPlaylist(offlineOwnerKey, hydrated).catch(() => {});
               if (openedPlaylistIdRef.current === key) {
                 setOpenedPlaylist({
@@ -2872,6 +2879,24 @@ async function downloadOpenedPlaylist() {
         </div>
       ) : null}
 
+
+      {filteredOpenedPlaylistTracks.length === 0 &&
+      !playlistSearchQuery.trim() &&
+      playlistOpeningId === String(openedPlaylist.id) ? (
+        <div className="hs-playlist-loading-rows" aria-label="Loading playlist tracks" aria-live="polite">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div className="hs-playlist-loading-row" key={`playlist-skeleton-${index}`}>
+              <span className="hs-playlist-shimmer hs-playlist-loading-rank" />
+              <span className="hs-playlist-shimmer hs-playlist-loading-thumb" />
+              <span className="hs-playlist-loading-row-copy">
+                <span className="hs-playlist-shimmer hs-playlist-loading-song" />
+                <span className="hs-playlist-shimmer hs-playlist-loading-artist" />
+              </span>
+              <span className="hs-playlist-shimmer hs-playlist-loading-duration" />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {filteredOpenedPlaylistTracks.length ===
       0 &&

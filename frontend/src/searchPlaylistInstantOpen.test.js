@@ -20,8 +20,8 @@ test("search playlist navigation renders the shell before awaiting playlist data
 });
 
 test("search playlist hydration fetches the first page and progressively appends ordered pages", () => {
-  assert.match(openHandler, /limit:\s*1000,\s*offset:\s*0/);
-  assert.match(openHandler, /pageOffsets\.slice\(index,\s*index\s*\+\s*3\)/);
+  assert.match(openHandler, /limit:\s*100,\s*offset:\s*0/);
+  assert.match(openHandler, /pageOffsets\.slice\(index,\s*index\s*\+\s*5\)/);
   assert.match(openHandler, /tracks:\s*\[\s*\.\.\.hydrated\.tracks,[\s\S]*?pages\.flatMap/);
   assert.match(openHandler, /searchPlaylistCache\.set\(cacheKey,\s*hydrated\)/);
 });
@@ -46,4 +46,6 @@ test("search playlist prewarms artwork from cached and hydrated tracks", () => {
   assert.match(searchPageSource, /warmTrackArtwork\(cached\.tracks\)/);
   assert.match(searchPageSource, /warmTrackArtwork\(hydrated\.tracks\)/);
   assert.match(searchPageSource, /warmTrackArtwork\(rows\)/);
+  assert.match(openHandler, /warmPlaylistAudio\(shell\.tracks\)/);
+  assert.match(searchPageSource, /hs-playlist-loading-rows/);
 });

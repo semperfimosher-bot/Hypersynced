@@ -8492,7 +8492,7 @@ button:disabled {
 .hs-playlist-loading-title { width:min(85%,340px); height:30px; }
 .hs-playlist-loading-meta { width:55%; height:12px; }
 .hs-playlist-loading-action { width:135px; height:36px; margin-top:8px; }
-.hs-playlist-loading-rows { display:grid; gap:7px; }
+.hs-playlist-loading-rows { display:grid; gap:7px; min-height:220px; }
 .hs-playlist-loading-row { display:grid; grid-template-columns:25px 48px minmax(0,1fr) 36px; align-items:center; gap:12px; padding:9px 11px; border:1px solid rgba(74,174,216,.08); border-radius:8px; background:rgba(5,20,30,.6); }
 .hs-playlist-loading-rank { width:18px; height:12px; }
 .hs-playlist-loading-thumb { width:48px; height:48px; border-radius:7px; }
