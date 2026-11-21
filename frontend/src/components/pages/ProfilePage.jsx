@@ -246,20 +246,25 @@ export default function ProfilePage({
     loadProfile,
   ]);
 
-  useEffect(() => {
+  const loadRecentlyPlayed = useCallback(async () => {
     const request = ++recentRequest.current;
     const owner = currentUser?.id;
-    if (!currentUser || !online) return undefined;
-    void getMyRecentlyPlayed().then((tracks) => {
+    if (!currentUser || !online) return;
+    try {
+      const tracks = await getMyRecentlyPlayed();
       if (request !== recentRequest.current || owner !== currentUser?.id) return;
       const normalized = Array.isArray(tracks) ? tracks : [];
       writeCachedHomeRecentlyPlayed(recentOwner, normalized);
       setRecentTracks(normalized);
-    }).catch(() => {
-      // The owner-scoped local snapshot remains visible when refresh fails.
-    });
-    return () => { recentRequest.current += 1; };
+    } catch {
+      // Keep the owner-scoped cache visible when refresh fails.
+    }
   }, [currentUser?.id, recentOwner, online]);
+
+  useEffect(() => {
+    void loadRecentlyPlayed();
+    return () => { recentRequest.current += 1; };
+  }, [loadRecentlyPlayed]);
 
   useEffect(() => {
     if (!currentUser) return undefined;
@@ -279,55 +284,14 @@ export default function ProfilePage({
         setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
         return;
       }
-      if (online) {
-        const request = ++recentRequest.current;
-        void getMyRecentlyPlayed().then((tracks) => {
-          if (request !== recentRequest.current) return;
-          const normalized = Array.isArray(tracks) ? tracks : [];
-          writeCachedHomeRecentlyPlayed(recentOwner, normalized);
-          setRecentTracks(normalized);
-        }).catch(() => {});
-      }
+      void loadRecentlyPlayed();
     });
-  }, [currentUser?.id, recentOwner, online]);
+  }, [currentUser?.id, recentOwner, loadRecentlyPlayed]);
 
   useQuietRefresh(
-    () => getMyRecentlyPlayed().then((tracks) => {
-      const normalized = Array.isArray(tracks) ? tracks : [];
-      writeCachedHomeRecentlyPlayed(recentOwner, normalized);
-      setRecentTracks(normalized);
-    }).catch(() => {}),
+    loadRecentlyPlayed,
     { enabled: Boolean(currentUser && online), intervalMs: 30_000 },
   );
-
-
-
-
-
-  useEffect(() => {
-    if (!currentUser) return undefined;
-    return subscribeProfileSnapshotChanged(currentUser.id, () => {
-      const cachedProfile = readProfileSnapshot(currentUser.id);
-      if (cachedProfile) setProfile(cachedProfile);
-    });
-  }, [currentUser?.id]);
-
-  useEffect(() => {
-    if (!currentUser) return undefined;
-    return subscribeListeningHistoryChanged((event) => {
-      const detail = event?.detail ?? {};
-      if (detail.owner && String(detail.owner) !== String(currentUser.id)) return;
-      if (detail.type === "optimistic-play" && detail.track?.id) {
-        const cachedTracks = readCachedHomeRecentlyPlayed(currentUser.id);
-        const nextTracks = applyOptimisticRecentlyPlayed(cachedTracks, detail.track, 12, {
-          incrementPlayCount: false,
-        });
-        setProfile((current) => current ? { ...current, recently_played: nextTracks } : current);
-        return;
-      }
-      if (online) void loadProfile({ quiet: true });
-    });
-  }, [currentUser?.id, loadProfile, online]);
 
 
   if (!currentUser) {
