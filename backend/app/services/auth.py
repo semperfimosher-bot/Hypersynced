@@ -484,6 +484,7 @@ async def authenticate_password_account(
                 database_session=session,
                 user=user,
                 request=request,
+                remember_me=remember_me,
             )
         )
 
