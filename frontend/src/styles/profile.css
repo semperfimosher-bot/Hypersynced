@@ -3330,14 +3330,14 @@ button.hs-profile-stat:hover,
 .hs-total-played-rows {
   display: grid;
 }
- .hs-search-track.hs-search-track.hs-search-track.hs-total-played-track {
+.hs-search-track.hs-total-played-track {
   grid-template-columns: 28px 46px minmax(0, 1fr) minmax(112px, 160px) 44px 31px;
   min-height: 64px;
   padding: 8px 11px;
 }
-.hs-search-track.hs-search-track.hs-total-played-track .track-artwork-shell,
-.hs-search-track.hs-search-track.hs-search-track.hs-total-played-track .track-artwork,
-.hs-search-track.hs-search-track.hs-search-track.hs-total-played-track .cover-placeholder {
+.hs-search-track.hs-total-played-track .track-artwork-shell,
+.hs-search-track.hs-total-played-track .track-artwork,
+.hs-search-track.hs-total-played-track .cover-placeholder {
   width: 46px;
   height: 46px;
   border-radius: 6px;
@@ -3348,12 +3348,12 @@ button.hs-profile-stat:hover,
   overflow: hidden;
   place-items: center;
 }
-.hs-total-played-track .track-artwork,
-.hs-total-played-track .cover-placeholder {
+.hs-search-track.hs-total-played-track .track-artwork,
+.hs-search-track.hs-total-played-track .cover-placeholder {
   display: block;
   object-fit: cover;
 }
-.hs-total-played-track .cover-placeholder {
+.hs-search-track.hs-total-played-track .cover-placeholder {
   display: grid;
   place-items: center;
 }
@@ -3401,7 +3401,7 @@ button.hs-profile-stat:hover,
   .hs-total-played-table-head span:last-child {
     grid-column: 4;
   }
-  .hs-total-played-track {
+  .hs-search-track.hs-total-played-track {
     grid-template-columns: 22px 42px minmax(0, 1fr) 64px 31px;
     gap: 8px;
     min-height: 60px;
