@@ -497,28 +497,66 @@ useEffect(() => {
     };
   }, [offlineOwnerKey, resetToken]);
 
-  // Warm persistent playlist caches while search results are visible, so a
-  // previously opened playlist can render its tracks without waiting on network.
+  // Preload playlist first-page tracks while search results are visible,
+  // so a first-ever click can display songs instead of starting a cold fetch.
+  // Keep this bounded to two concurrent requests and persist partial snapshots.
   useEffect(() => {
     const playlistResults = Array.isArray(results?.playlists)
       ? results.playlists
       : [];
-    for (const seed of playlistResults) {
-      const playlistId = seed?.id;
-      if (!playlistId) continue;
-      const cacheKey = `${offlineOwnerKey ?? "guest"}::${String(playlistId)}`;
-      if (searchPlaylistCache.has(cacheKey)) continue;
-      void getCachedPlaylistAsync(offlineOwnerKey, playlistId)
-        .then((cachedPlaylist) => {
-          if (!cachedPlaylist?.tracks?.length) return;
-          warmTrackArtwork(cachedPlaylist.tracks);
-          searchPlaylistCache.set(cacheKey, {
-            ...cachedPlaylist,
-            complete: Boolean(cachedPlaylist.complete),
-          });
-        })
-        .catch(() => {});
-    }
+    let cancelled = false;
+    const preload = async () => {
+      const candidates = [];
+      for (const seed of playlistResults) {
+        const playlistId = seed?.id;
+        if (!playlistId) continue;
+        const cacheKey = `${offlineOwnerKey ?? "guest"}::${String(playlistId)}`;
+        if (searchPlaylistCache.get(cacheKey)?.tracks?.length) continue;
+        try {
+          const cachedPlaylist = await getCachedPlaylistAsync(offlineOwnerKey, playlistId);
+          if (cachedPlaylist?.tracks?.length) {
+            const normalized = {
+              ...cachedPlaylist,
+              complete: Boolean(cachedPlaylist.complete),
+            };
+            searchPlaylistCache.set(cacheKey, normalized);
+            warmTrackArtwork(normalized.tracks);
+            if (normalized.complete) continue;
+          }
+        } catch {
+          // Continue with preloading from the network.
+        }
+        candidates.push({ seed, playlistId, cacheKey });
+      }
+
+      let cursor = 0;
+      const worker = async () => {
+        while (!cancelled && cursor < candidates.length) {
+          const candidate = candidates[cursor++];
+          const { seed, playlistId, cacheKey } = candidate;
+          if (searchPlaylistCache.get(cacheKey)?.tracks?.length) continue;
+          try {
+            const firstPage = await getPlaylist(playlistId, { limit: 100, offset: 0 });
+            if (cancelled) return;
+            const tracks = Array.isArray(firstPage?.tracks) ? firstPage.tracks : [];
+            const partial = {
+              ...seed,
+              ...firstPage,
+              tracks,
+              complete: tracks.length < 100,
+            };
+            searchPlaylistCache.set(cacheKey, partial);
+            warmTrackArtwork(tracks);
+            void setCachedPlaylist(offlineOwnerKey, partial).catch(() => {});
+          } catch {
+            // Preloading is opportunistic; clicking still performs the normal load.
+          }
+        }
+      };
+      await Promise.all([worker(), worker()]);
+    };
+    void preload();
+    return () => { cancelled = true; };
   }, [results?.playlists, offlineOwnerKey]);
 
   const [
