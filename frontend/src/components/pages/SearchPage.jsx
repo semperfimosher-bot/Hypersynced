@@ -1355,7 +1355,35 @@ useEffect(() => {
     });
 
     const hydrate = async () => {
-      let playlist = cached?.complete ? cached : null;
+      // Hydrate persistent cache before starting network work. The module cache
+      // may be cold after a reload even when IndexedDB already has playlist rows.
+      let persistentCached = cached;
+      if (!persistentCached?.tracks?.length) {
+        try {
+          const stored = await getCachedPlaylistAsync(offlineOwnerKey, playlistId);
+          if (stored?.tracks?.length) {
+            persistentCached = {
+              ...stored,
+              complete: Boolean(stored.complete),
+            };
+            searchPlaylistCache.set(cacheKey, persistentCached);
+            warmTrackArtwork(persistentCached.tracks);
+            if (openedPlaylistIdRef.current === key) {
+              setOpenedPlaylist({
+                ...shell,
+                ...persistentCached,
+                id: playlistId,
+                tracks: persistentCached.tracks,
+                transient: !persistentCached.complete,
+              });
+            }
+          }
+        } catch {
+          // A cache read failure falls through to the network fetch.
+        }
+      }
+
+      let playlist = persistentCached?.complete ? persistentCached : null;
 
       if (!playlist) {
         let request = searchPlaylistRequests.get(cacheKey);
