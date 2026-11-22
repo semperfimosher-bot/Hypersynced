@@ -700,6 +700,65 @@ async def get_my_recently_played(
     ]
 
 
+@router.get(
+    "/me/total-played",
+    response_model=list[TrackSummary],
+)
+async def get_my_total_played(
+    user: CurrentUser,
+    session: DatabaseSession,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[TrackSummary]:
+    """Return all unique tracks in account listening history, newest plays first."""
+    page_limit = max(1, min(limit, 100))
+    page_offset = max(0, offset)
+    play_summary = (
+        select(
+            ListeningEvent.track_id.label("track_id"),
+            func.count(ListeningEvent.id).label("play_count"),
+            func.max(ListeningEvent.listened_at).label("last_played_at"),
+        )
+        .join(Track, Track.id == ListeningEvent.track_id)
+        .where(ListeningEvent.user_id == user.id)
+        .group_by(ListeningEvent.track_id)
+        .subquery()
+    )
+    result = await session.execute(
+        select(
+            Track,
+            play_summary.c.play_count,
+            play_summary.c.last_played_at,
+        )
+        .join(play_summary, play_summary.c.track_id == Track.id)
+        .order_by(
+            play_summary.c.last_played_at.desc(),
+            Track.title.asc(),
+        )
+        .limit(page_limit)
+        .offset(page_offset)
+    )
+    return [
+        TrackSummary(
+            id=track.id,
+            title=track.title,
+            artist=track.artist,
+            album=track.album,
+            genre=getattr(track, "genre", None),
+            release_year=getattr(track, "release_year", None),
+            audio_url=audio_url(track),
+            artwork_url=artwork_url(track),
+            mime_type=track.mime_type,
+            file_size=track.file_size,
+            media_version=_track_media_version(track),
+            artwork_version=_track_artwork_version(track),
+            play_count=play_count,
+            last_played_at=last_played_at,
+        )
+        for track, play_count, last_played_at in result.all()
+    ]
+
+
 @router.patch(
     "/me/profile",
     response_model=ProfileDashboardResponse,
