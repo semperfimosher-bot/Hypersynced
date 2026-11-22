@@ -9,6 +9,7 @@ import * as player from "../../audioPlayer.js";
 
 import {
   getMyProfile,
+  getMyTotalPlayed,
 } from "../../profileApi.js";
 
 import Avatar from "../profile/Avatar.jsx";
@@ -170,6 +171,15 @@ export default function ProfilePage({
   const [totalPlaysOpen, setTotalPlaysOpen] =
     useState(false);
 
+  const [totalPlayedTracks, setTotalPlayedTracks] =
+    useState([]);
+
+  const [totalPlayedLoading, setTotalPlayedLoading] =
+    useState(false);
+
+  const [totalPlayedError, setTotalPlayedError] =
+    useState("");
+
   const [avatarVersion, setAvatarVersion] =
     useState(0);
 
@@ -243,6 +253,37 @@ export default function ProfilePage({
   }, [
     loadProfile,
   ]);
+
+  useEffect(() => {
+    if (!totalPlaysOpen || !currentUser || !online) return undefined;
+    let cancelled = false;
+    setTotalPlayedLoading(true);
+    setTotalPlayedError("");
+    setTotalPlayedTracks([]);
+    async function loadAllPlayedTracks() {
+      try {
+        const allTracks = [];
+        let offset = 0;
+        const pageSize = 100;
+        while (!cancelled) {
+          const page = await getMyTotalPlayed({ limit: pageSize, offset });
+          if (cancelled) return;
+          allTracks.push(...(Array.isArray(page) ? page : []));
+          if (!Array.isArray(page) || page.length < pageSize) break;
+          offset += page.length;
+        }
+        if (!cancelled) setTotalPlayedTracks(allTracks);
+      } catch (loadError) {
+        if (!cancelled) setTotalPlayedError(
+          loadError instanceof Error ? loadError.message : "Unable to load your listening history.",
+        );
+      } finally {
+        if (!cancelled) setTotalPlayedLoading(false);
+      }
+    }
+    void loadAllPlayedTracks();
+    return () => { cancelled = true; };
+  }, [totalPlaysOpen, currentUser?.id, online]);
 
   const loadRecentlyPlayed = useCallback(() => {
     setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
@@ -862,29 +903,31 @@ export default function ProfilePage({
 
 
       {totalPlaysOpen ? (
-        <div className="hs-modal-backdrop">
-          <section className="hs-social-modal hs-total-plays-modal" role="dialog" aria-modal="true" aria-labelledby="hs-total-plays-title">
-            <header>
-              <div>
-                <span className="hs-eyebrow">ACCOUNT-WIDE LISTENING</span>
-                <h2 id="hs-total-plays-title">Total Plays</h2>
-                <p>Your listening history across every device signed into this account.</p>
-              </div>
-              <button className="hs-icon-button" type="button" onClick={() => setTotalPlaysOpen(false)} aria-label="Close">
-                <Icon name="close" size={19} />
-              </button>
-            </header>
-            <div className="hs-social-list hs-total-plays-content">
-              <div className="hs-total-plays-summary">
-                <strong>{Number(profile?.tracks_played ?? 0).toLocaleString()}</strong>
-                <span>plays recorded across devices</span>
-                <small>{profile?.hours_listened ?? 0} hours listened</small>
-              </div>
-              <h3>Recent songs and play counts</h3>
-              {recentTracks.length ? recentTracks.map((track, index) => (
-                <button className="hs-total-plays-track" type="button" key={track.id} onClick={() => {
-                  setTotalPlaysOpen(false);
-                  player.playTrack(track.id, {
+        <section className="hs-total-played-page" aria-label="Total played songs">
+          <header className="hs-total-played-header">
+            <button type="button" className="hs-search-playlist-back" onClick={() => setTotalPlaysOpen(false)}>
+              <Icon name="chevron" size={15} /> Back to Profile
+            </button>
+            <div className="hs-total-played-heading">
+              <span className="hs-eyebrow">ACCOUNT-WIDE LISTENING</span>
+              <h1>Total Played</h1>
+              <p>{Number(profile?.tracks_played ?? 0).toLocaleString()} plays across all devices · {totalPlayedTracks.length.toLocaleString()} unique songs</p>
+            </div>
+          </header>
+          <div className="hs-total-played-list">
+            {totalPlayedLoading && !totalPlayedTracks.length ? (
+              <div className="hs-playlist-loading"><span className="hs-playlist-shimmer" /></div>
+            ) : totalPlayedError ? (
+              <div className="hs-empty-card" role="alert">{totalPlayedError}</div>
+            ) : totalPlayedTracks.length ? (
+              totalPlayedTracks.map((track, index) => (
+                <div
+                  key={track.id}
+                  className="hs-search-track hs-library-track-row hs-total-played-track"
+                  role="button"
+                  tabIndex={0}
+                  {...trackActionMenu.getTriggerProps(track)}
+                  onClick={() => player.playTrack(track.id, {
                     audioUrl: track.audio_url,
                     artworkUrl: track.artwork_url,
                     title: track.title,
@@ -894,27 +937,39 @@ export default function ProfilePage({
                     mediaVersion: track.media_version,
                     genre: track.genre ?? "",
                     releaseYear: track.release_year ?? null,
-                  }).catch(() => {});
-                }}>
-                  <span className="hs-total-plays-track__rank">{index + 1}</span>
+                  }).catch(() => {})}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      player.playTrack(track.id, {
+                        audioUrl: track.audio_url,
+                        artworkUrl: track.artwork_url,
+                        title: track.title,
+                        artist: track.artist,
+                        mimeType: track.mime_type,
+                        fileSize: track.file_size,
+                        mediaVersion: track.media_version,
+                        genre: track.genre ?? "",
+                        releaseYear: track.release_year ?? null,
+                      }).catch(() => {});
+                    }
+                  }}
+                >
+                  <span className="hs-total-played-rank">{index + 1}</span>
                   <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
-                  <span className="hs-total-plays-track__meta"><strong>{track.title}</strong><small>{track.artist}</small></span>
-                  <span className="hs-total-plays-track__count">{track.play_count} plays</span>
-                </button>
-              )) : <div className="hs-social-empty">Listening history will appear here after you play music.</div>}
-              {profile?.top_artists?.length ? (
-                <>
-                  <h3>Top artists</h3>
-                  {profile.top_artists.map((artist, index) => (
-                    <div className="hs-total-plays-artist" key={artist.artist}>
-                      <strong>#{index + 1}</strong><span>{artist.artist}</span><small>{artist.plays} plays</small>
-                    </div>
-                  ))}
-                </>
-              ) : null}
-            </div>
-          </section>
-        </div>
+                  <span className="hs-total-played-meta"><strong>{track.title}</strong><small>{track.artist}</small></span>
+                  <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()} plays</span>
+                </div>
+              ))
+            ) : (
+              <div className="hs-empty-card">
+                <Icon name="music" size={30} />
+                <strong>No listening history yet</strong>
+                <p>Once you play songs, your full history will appear here.</p>
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
 
       {editing && profile ? (
