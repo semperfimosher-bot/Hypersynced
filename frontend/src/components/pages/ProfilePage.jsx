@@ -269,6 +269,7 @@ export default function ProfilePage({
           const page = await getMyTotalPlayed({ limit: pageSize, offset });
           if (cancelled) return;
           allTracks.push(...(Array.isArray(page) ? page : []));
+          if (!cancelled) setTotalPlayedTracks(allTracks.slice());
           if (!Array.isArray(page) || page.length < pageSize) break;
           offset += page.length;
         }
@@ -917,6 +918,8 @@ export default function ProfilePage({
           <div className="hs-total-played-list">
             {totalPlayedLoading && !totalPlayedTracks.length ? (
               <div className="hs-playlist-loading"><span className="hs-playlist-shimmer" /></div>
+            ) : !online ? (
+              <OfflineNotice compact title="Go online to load Total Played" description="Your full account listening history needs a connection." />
             ) : totalPlayedError ? (
               <div className="hs-empty-card" role="alert">{totalPlayedError}</div>
             ) : totalPlayedTracks.length ? (
