@@ -163,6 +163,9 @@ function preloadPage(page) {
     case "profile":
       request = import("./components/pages/ProfilePage.jsx");
       break;
+    case "total-played":
+      request = import("./components/pages/TotalPlayedPage.jsx");
+      break;
     case "public-profile":
       request = import("./components/pages/PublicProfilePage.jsx");
       break;
@@ -190,6 +193,7 @@ const LibraryPage = lazy(() => import("./components/pages/LibraryPage.jsx"));
 const SearchPage = lazy(() => import("./components/pages/SearchPage.jsx"));
 const MessagesPage = lazy(() => import("./components/pages/MessagesPage.jsx"));
 const ProfilePage = lazy(() => import("./components/pages/ProfilePage.jsx"));
+const TotalPlayedPage = lazy(() => import("./components/pages/TotalPlayedPage.jsx"));
 const PublicProfilePage = lazy(() => import("./components/pages/PublicProfilePage.jsx"));
 const AdminUploadsPage = lazy(() => import("./components/pages/AdminUploadsPage.jsx"));
 const AdminCatalogPage = lazy(() => import("./components/pages/AdminCatalogPage.jsx"));
@@ -453,6 +457,10 @@ function MainPage({
       );
     }
 
+
+    if (page === "total-played") {
+      return <TotalPlayedPage currentUser={currentUser} onNavigate={onNavigate} />;
+    }
 
     if (
       page === "profile"
