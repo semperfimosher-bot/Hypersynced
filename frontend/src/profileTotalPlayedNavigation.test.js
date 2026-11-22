@@ -13,8 +13,8 @@ test("ProfilePage receives navigation callback for Total Played stat", () => {
   );
 
   const profileRender = appSource.slice(
-    appSource.indexOf('if (page === "profile")'),
-    appSource.indexOf('if (page === "public-profile"'),
+    appSource.indexOf("<ProfilePage"),
+    appSource.indexOf("<PublicProfilePage"),
   );
 
   assert.match(profileRender, /onNavigate\s*=\s*\{\s*onNavigate\s*\}/);
