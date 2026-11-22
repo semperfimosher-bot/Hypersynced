@@ -14,6 +14,10 @@ import {
   resolveArtworkUrl,
 } from "../../artworkUrl.js";
 
+import {
+  warmPlaylistArtwork,
+} from "../../artworkWarmCache.js";
+
 import * as player from
   "../../audioPlayer.js";
 
@@ -986,6 +990,12 @@ const [
         navigator.onLine ===
           false;
 
+      // Show a loading state immediately only when no in-memory snapshot
+      // is available; IndexedDB hydration then restores the persisted copy.
+      if (!getCachedLibrary(libraryCacheKey) && !quiet) {
+        setLoading(true);
+      }
+
       const cached = await getCachedLibraryAsync(
         libraryCacheKey,
       );
@@ -1025,6 +1035,7 @@ const [
         const cachedOwned = Array.isArray(cached.owned) ? cached.owned : [];
         const cachedSaved = Array.isArray(cached.saved) ? cached.saved : [];
         const cachedTracks = Array.isArray(cached.tracks) ? cached.tracks : [];
+        warmPlaylistArtwork([...cachedOwned, ...cachedSaved]);
         setOwnedPlaylists(cachedOwned);
         setSavedPlaylists(cachedSaved);
         setLibraryTracks(cachedTracks);
@@ -1189,6 +1200,7 @@ const [
           Array.isArray(saved)
             ? saved
             : [];
+        warmPlaylistArtwork([...nextOwned, ...nextSaved]);
 
         // Preserve local optimistic mutations while requests are in flight,
         // so a background refresh cannot briefly undo the user's click.
@@ -1299,6 +1311,10 @@ const [
           );
 
         if (fallback) {
+          warmPlaylistArtwork([
+            ...(Array.isArray(fallback.owned) ? fallback.owned : []),
+            ...(Array.isArray(fallback.saved) ? fallback.saved : []),
+          ]);
           setOwnedPlaylists(
             Array.isArray(
               fallback.owned,
