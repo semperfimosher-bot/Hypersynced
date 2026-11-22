@@ -4702,24 +4702,20 @@ useEffect(() => {
 
         {visibleSongTracks.length === 0 ? (
 
-          <div className="hs-library-empty">
-
-            <Icon
-              name="music"
-              size={22}
+          offlineMode ? (
+            <OfflineNotice
+              title="Go online to download music"
+              description="Connect to HyperSynced to add songs to your library and download them for offline listening."
             />
-
-            <div>
-              <strong>
-                Go online to download music
-              </strong>
-
-              <p>
-                Connect to HyperSynced to add songs to your library and download them for offline listening.
-              </p>
+          ) : (
+            <div className="hs-library-empty">
+              <Icon name="music" size={22} />
+              <div>
+                <strong>Nothing here yet</strong>
+                <p>Add songs to your Library and they'll appear here.</p>
+              </div>
             </div>
-
-          </div>
+          )
 
         ) : (
 
