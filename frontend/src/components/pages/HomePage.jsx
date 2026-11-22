@@ -35,22 +35,12 @@ import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 
 import {
-  getMyRecentlyPlayed,
-} from "../../profileApi.js";
-
-import {
-  getHomeRecentlyPlayed,
   getHomeRecentlyPlayedForOwner,
-  mergeRecentlyPlayedWithOptimisticCache,
   applyOptimisticRecentlyPlayed,
-  isCurrentHistoryResponse,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
-
-import useQuietRefresh from
-  "../../hooks/useQuietRefresh.js";
 
 function CachedArtwork({
   src,
@@ -135,10 +125,6 @@ function HomePage({
   onNavigate,
   onOpenAuth,
 }) {
-  const historyRequest = useRef(0);
-  const historyOwner = useRef(currentUser?.id);
-  historyOwner.current = currentUser?.id;
-
   const online =
     useOnlineStatus();
 
@@ -184,110 +170,22 @@ const [
 ] = useState("");
 
 
-const loadRecentlyPlayed =
-  useCallback(
-    async ({
-      quiet = false,
-    } = {}) => {
-      const request = ++historyRequest.current;
-      const owner = currentUser?.id;
-      const isCurrent = () => isCurrentHistoryResponse(request, historyRequest.current, owner, historyOwner.current);
-      if (!currentUser) {
-        setRecentlyPlayed(
-          [],
-        );
-
-        setRecentLoading(
-          false,
-        );
-
-        setRecentError(
-          "",
-        );
-
-        return;
-      }
-
-      if (!quiet) {
-        setRecentLoading(true);
-        setRecentError("");
-      }
-
-      const offline =
-        typeof navigator !==
-          "undefined" &&
-        navigator.onLine ===
-          false;
-
-      if (offline) {
-        // Keep the last Neon-sourced snapshot; downloaded files are not
-        // listening history and must never be mixed into Recently Played.
-        setRecentLoading(false);
-        return;
-      }
-
-      try {
-        const profile =
-          await getMyRecentlyPlayed();
-        if (!isCurrent()) return;
-
-        // Neon listening events are the single source of truth for both
-        // Home and Profile. Never prepend tracks merely selected in this tab.
-        const serverTracks = getHomeRecentlyPlayed(profile);
-        const cachedTracks = readCachedHomeRecentlyPlayed(recentOwner);
-        const mergedTracks = mergeRecentlyPlayedWithOptimisticCache(serverTracks, cachedTracks, 12);
-        setRecentlyPlayed(mergedTracks);
-        writeCachedHomeRecentlyPlayed(recentOwner, mergedTracks);
-
-        setRecentError(
-          "",
-        );
-      } catch (error) {
-        if (!quiet) {
-          setRecentError(
-            error instanceof Error
-              ? error.message
-              : "Unable to load recently played.",
-          );
-        }
-      } finally {
-        if (isCurrent()) {
-          setRecentLoading(
-            false,
-          );
-        }
-      }
-    },
-    [
-      currentUser,
-    ],
-  );
-
-
-useEffect(() => {
-  // Show only the last Neon-sourced history snapshot while refreshing it.
-  // Player selection itself is not a listening event.
+const loadRecentlyPlayed = useCallback(async () => {
   const cached = readCachedHomeRecentlyPlayed(recentOwner);
   setRecentlyPlayed(cached);
+  setRecentLoading(false);
+  setRecentError("");
 }, [recentOwner]);
-
 
 useEffect(() => {
   void loadRecentlyPlayed();
-  return () => { historyRequest.current += 1; };
-}, [
-  loadRecentlyPlayed,
-]);
+}, [loadRecentlyPlayed]);
 
-// Update on same-device history events and quietly check for cross-device changes.
+// Recently Played is device-local: listen to local playback/cache events only.
 useEffect(() => {
   return subscribeListeningHistoryChanged((event) => {
     const detail = event?.detail ?? {};
-    const eventOwner = detail.owner;
-    if (eventOwner && String(eventOwner) !== String(recentOwner ?? "")) return;
-
-    // Render a just-started track from the shared cache immediately, then
-    // reconcile with the server after the listening-history write completes.
+    if (detail.owner && String(detail.owner) !== String(recentOwner ?? "")) return;
     if (detail.type === "optimistic-play" && detail.track?.id) {
       const cached = readCachedHomeRecentlyPlayed(recentOwner);
       const instant = applyOptimisticRecentlyPlayed(cached, detail.track, 12, {
@@ -298,20 +196,9 @@ useEffect(() => {
       setRecentError("");
       return;
     }
-    void loadRecentlyPlayed({ quiet: true });
+    setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));
   });
-}, [loadRecentlyPlayed, recentOwner]);
-
-useQuietRefresh(
-  () => loadRecentlyPlayed({ quiet: true }),
-  {
-    enabled: Boolean(currentUser),
-    intervalMs: 30_000,
-  },
-);
-
-
-
+}, [recentOwner]);
 
   const playTrack = async (
     trackId,
