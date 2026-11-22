@@ -1582,8 +1582,9 @@ function attachEvents() {
     // Pause is not a new play. Keep the current event open so resuming this
     // same track does not create another Recently Played or play-count entry.
     if (
-      currentTrackId ||
-      audio.currentSrc
+      (currentTrackId ||
+        audio.currentSrc) &&
+      playbackPhase !== "loading"
     ) {
       setPlaybackPhase(
         "paused",
@@ -2363,6 +2364,11 @@ async function playTrackInternal(
     };
     persistQueueSnapshot();
   }
+
+  // A source transition pauses the old Audio source as part of loading.
+  // Keep the state in "loading" so that expected source-change pause events
+  // don't appear as an unsolicited user pause.
+  setPlaybackPhase("loading");
 
   // Publish the current row immediately, before media preparation or
   // recommendation requests have completed.
