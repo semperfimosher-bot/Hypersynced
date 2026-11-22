@@ -1446,12 +1446,26 @@ const persistAppView =
 
   useEffect(() => {
     if (!shouldRestoreSession()) {
-      // A session-only login is deliberately revoked on page reload.
-      // Send the cookie to the server for revocation before the app proceeds.
+      // Treat a session-only login on reload as an explicit logout: clear
+      // authenticated state and continue in the Guest shell, not the login overlay.
+      clearProfileSnapshot(currentUser?.id);
+      clearMessagesListSnapshot(currentUser?.id);
+      navigationGenerationRef.current += 1;
+      cancelPendingSearchSave();
+      player.pausePlayback();
+      void logoutSession();
+
       setCurrentUser(null);
       setAccountStateReady(true);
-      setAuthOpen(true);
-      void logoutSession();
+      resetDownloadedPlaylistUpdates();
+      setMessageToOpen("");
+      setArtistToOpen("");
+      resetMessageNotifications();
+      setActivePage("home");
+      setSearchQuery("");
+      setActiveProfileUsername("");
+      setAuthMode("signin");
+      setAuthOpen(false);
       return undefined;
     }
 
