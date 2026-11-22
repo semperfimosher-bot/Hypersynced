@@ -2918,6 +2918,20 @@ export async function togglePlay() {
      */
     await ensureCurrentTrackSource();
 
+    // A restored saved position must be applied to the real media clock
+    // before play() is invoked. Otherwise browsers can start at a stale
+    // duration/end position while the UI temporarily shows the saved time.
+    if (restoredTimeSeconds > 0 && currentTrackId && loadedAudioTrackId === currentTrackId) {
+      const restoredPositionApplied = await applyRestoredPlaybackPosition(
+        currentTrackId,
+        restoredTimeSeconds,
+      );
+      if (!restoredPositionApplied) {
+        // Keep the saved position as the UI source of truth; don't let a
+        // stale media clock jump to the end before a successful restore seek.
+        notify();
+      }
+    }
 
     if (
       !hasAudioSource()
