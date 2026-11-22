@@ -1,3 +1,8 @@
+const pages = new Map();
+
+export function readCatalogPage(key) { return pages.get(key) ?? 0; }
+export function writeCatalogPage(key, page) { pages.set(key, Math.max(0, Number(page) || 0)); }
+
 const state = {
   searchQuery: "",
   category: null,
