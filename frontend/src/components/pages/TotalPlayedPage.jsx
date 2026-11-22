@@ -118,7 +118,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
               <span>TRACK</span><span>LAST PLAYED</span><span>PLAYS</span>
             </div>
             <div className="hs-total-played-rows">
-              {tracks.map((track) => (
+              {tracks.map((track, index) => (
                 <button type="button" key={track.id} className="hs-search-track hs-library-track-row hs-total-played-track"
                   {...trackActionMenu.getTriggerProps(track)} onClick={() => play(track)}>
                   <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
