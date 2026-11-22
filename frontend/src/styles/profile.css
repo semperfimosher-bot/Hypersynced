@@ -3388,7 +3388,7 @@ button.hs-profile-stat:hover,
     padding: 13px;
   }
   .hs-total-played-table-head {
-    grid-template-columns: 22px 42px minmax(0, 1fr) 64px 31px;
+    grid-template-columns: 22px 42px minmax(0, 1fr) 0 64px 31px;
     gap: 8px;
     padding: 10px;
   }
@@ -3399,7 +3399,7 @@ button.hs-profile-stat:hover,
     display: none;
   }
   .hs-total-played-table-head span:last-child {
-    grid-column: 4;
+    grid-column: 5;
   }
   .hs-search-track.hs-total-played-track {
     grid-template-columns: 22px 42px minmax(0, 1fr) 64px 31px;
