@@ -854,3 +854,41 @@ async def test_expired_previous_refresh_token_does_not_affect_other_session() ->
 
         assert sibling is not None
         assert sibling.revoked_at is None
+@pytest.mark.asyncio
+async def test_login_remember_me_false_uses_session_cookie_and_survives_refresh_as_session_only() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        registered = await _register(client)
+        username = registered["user"]["username"]
+        login = await client.post(
+            "/api/auth/login",
+            json={
+                "username": username,
+                "password": "stable-session-test-password",
+                "remember_me": False,
+            },
+        )
+        assert login.status_code == 200, login.text
+        login_cookie = login.headers.get("set-cookie", "").lower()
+        assert "hypersync_refresh=" in login_cookie
+        assert "max-age=" not in login_cookie
+        assert "expires=" not in login_cookie
+        claims = decode_access_token(login.json()["access_token"])
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            row = await session.get(UserSession, claims.session_id)
+            assert row is not None
+            assert row.remember_me is False
+
+        refresh = await client.post("/api/auth/refresh")
+        assert refresh.status_code == 200, refresh.text
+        refresh_cookie = refresh.headers.get("set-cookie", "").lower()
+        assert "hypersync_refresh=" in refresh_cookie
+        assert "max-age=" not in refresh_cookie
+        assert "expires=" not in refresh_cookie
+        refreshed_claims = decode_access_token(refresh.json()["access_token"])
+        assert refreshed_claims.session_id == claims.session_id
+        async with session_factory() as session:
+            row = await session.get(UserSession, claims.session_id)
+            assert row is not None
+            assert row.remember_me is False

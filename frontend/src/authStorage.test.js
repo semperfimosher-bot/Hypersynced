@@ -67,6 +67,13 @@ test("legacy auth tokens are cleared but account playback caches and identity pe
   assert.equal(localStorage.length, 4);
 });
 
+test("legacy remember-me flag is cleared from persistent storage on startup", async () => {
+  globalThis.localStorage = createStorage({ hypersync_remember_me: "true" });
+  globalThis.sessionStorage = createStorage();
+  await import(`./api/storage.js?legacy-remember=${Date.now()}`);
+  assert.equal(localStorage.getItem("hypersync_remember_me"), null);
+});
+
 test("session restoration always checks the HttpOnly refresh cookie", async () => {
   globalThis.localStorage = createStorage();
   globalThis.sessionStorage = createStorage();
