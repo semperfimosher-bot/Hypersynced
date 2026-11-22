@@ -275,6 +275,15 @@ export function isAuthRefreshCoolingDown() {
 
 
 export async function refreshAccessToken() {
+  if (!shouldRememberSession()) {
+    const error = new Error("Authentication required.");
+    error.status = 401;
+    error.detail = "Session-only login cannot be restored after refresh.";
+    clearAuthSession();
+    void clearOfflineIdentity().catch(() => {});
+    throw error;
+  }
+
   if (refreshInFlight) {
     return refreshInFlight;
   }
