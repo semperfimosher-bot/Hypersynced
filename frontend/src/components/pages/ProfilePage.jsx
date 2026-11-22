@@ -9,7 +9,6 @@ import * as player from "../../audioPlayer.js";
 
 import {
   getMyProfile,
-  getMyTotalPlayed,
 } from "../../profileApi.js";
 
 import Avatar from "../profile/Avatar.jsx";
