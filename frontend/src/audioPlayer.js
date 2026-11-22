@@ -274,7 +274,8 @@ function warmNextTrackFirstChunk() {
   const remaining = audio.duration - audio.currentTime;
   // Start warming well before the transition so the first media range is
   // already in the service-worker cache when the current track ends.
-  if (remaining > 25 || remaining < 0) return;
+  // Fetch the upcoming track's first playable range 5 seconds before the transition.
+  if (remaining > 5 || remaining < 0) return;
 
   const key = `${String(entry.id)}|${String(mediaVersion)}`;
   if (nextTrackFirstChunkWarmKey === key) return;
