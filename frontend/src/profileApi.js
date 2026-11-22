@@ -19,6 +19,15 @@ export function getMyRecentlyPlayed() {
 }
 
 
+
+
+export function getMyTotalPlayed({ limit = 100, offset = 0 } = {}) {
+  return apiRequest(
+    `/users/me/total-played?limit=${encodeURIComponent(limit)}&offset=${encodeURIComponent(offset)}`,
+    { cache: "no-store" },
+  );
+}
+
 export async function updateMyProfile({
   displayName,
   bio,
