@@ -73,6 +73,95 @@ test("Profile Recently Played is device-local while account analytics remain sou
   assert.match(profile, /profile\?\.tracks_played/);
 });
 
+test("Total Played opens the dedicated full-page account listening history", () => {
+  const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
+  const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  const page = readFileSync(new URL("./components/pages/TotalPlayedPage.jsx", import.meta.url), "utf8");
+  assert.match(profile, /label="Total Played"[\\s\\S]*?onClick=\\{\\(\\) => onNavigate\\?\\.\\("total-played"\\)\\}/);
+  assert.ok(app.includes('page === "total-played"'));
+  assert.ok(page.includes("YOUR LISTENING HISTORY"));
+  assert.ok(page.includes("most recently played at the top"));
+  assert.ok(page.includes("getMyTotalPlayed"));
+  assert.ok(page.includes("LAST PLAYED"));
+  assert.ok(page.includes("PLAYS"));
+  assert.ok(page.includes("Load more"));
+  assert.ok(page.includes("TrackActionMenu"));
+  assert.ok(profile.includes("profile?.tracks_played"));
+});ort "fake-indexeddb/auto";
+
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { mergeRecentlyPlayedWithOptimisticCache } from "./homeRecentlyPlayed.js";
+
+// Local player/app state is browser-scoped; the account DB only receives listening events.
+test("app shell and playback restore from local snapshots without cross-device state API calls", () => {
+  const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  const sync = readFileSync(new URL("./accountPlayback.js", import.meta.url), "utf8");
+  assert.match(app, /accountStateReady/);
+  assert.match(app, /<MainPage/);
+  assert.match(app, /<PlayerBar/);
+  assert.ok(sync.includes("device-playback.v2"));
+  assert.match(sync, /restoreCachedTrackMetadata/);
+  assert.doesNotMatch(sync, /restoreTrackPaused/);
+  assert.doesNotMatch(sync, /setInterval/);
+  assert.doesNotMatch(sync, /apiRequest|playback-state|expected_playback_updated_at/);
+  assert.ok(!app.includes("/users/me/app-state"));
+  assert.ok(!app.includes("appStateSaveQueueRef"));
+  assert.ok(!app.includes("appStateVersionRef"));
+  assert.doesNotMatch(app, /<Activity|warmPages|warmPageKey|PAGE_WARM_SWEEP_MS/);
+  assert.match(app, /renderPage\(activePage, profileUsername\)/);
+});
+
+test("upcoming audio and playlist artwork warm before transitions", () => {
+  const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
+  assert.match(source, /remaining > 5/);
+  assert.match(source, /warmQueuedAudioEntry\(nextEntry/);
+  assert.match(source, /playbackPhase !== "loading"/);
+  assert.match(source, /setPlaybackPhase\("loading"\)/);
+});
+
+test("listening progress is checkpointed only when a page becomes hidden or exits", () => {
+  const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /saveListeningProgress/);
+  assert.match(source, /function saveListeningCheckpoint/);
+  assert.match(source, /if \(hidden\) \{\s*sampleListeningProgress\(\);\s*void saveListeningCheckpoint\(true\);/);
+  assert.match(source, /if \(event\.checkpointPromise\) \{\s*await event\.checkpointPromise;\s*\}/);
+  assert.match(source, /finishListeningEvent/);
+});
+
+test("recently played retains owner cache while the server history is empty", () => {
+  const cached = [{ id: "cached-track", last_played_at: "2026-11-21T16:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache([], cached), cached);
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache([], []), []);
+  const server = [{ id: "server-track", last_played_at: "2026-11-21T15:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, []), server);
+  const newerCache = [{ id: "new-local-track", last_played_at: "2026-11-21T17:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, newerCache), [...newerCache, ...server]);
+  const olderCache = [{ id: "stale-track", last_played_at: "2026-11-21T14:00:00Z" }];
+  assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, olderCache), server);
+});
+
+test("Home Recently Played is device-local and reacts to local playback events", () => {
+  const home = readFileSync(new URL("./components/pages/HomePage.jsx", import.meta.url), "utf8");
+  assert.match(home, /readCachedHomeRecentlyPlayed\(recentOwner\)/);
+  assert.match(home, /subscribeListeningHistoryChanged/);
+  assert.match(home, /applyOptimisticRecentlyPlayed\(cached, detail\.track, 12/);
+  assert.match(home, /writeCachedHomeRecentlyPlayed\(recentOwner, instant\)/);
+  assert.doesNotMatch(home, /getMyRecentlyPlayed|mergeRecentlyPlayedWithOptimisticCache|recently-played/);
+});
+
+test("Profile Recently Played is device-local while account analytics remain sourced from profile API", () => {
+  const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
+  assert.match(profile, /readCachedHomeRecentlyPlayed\(recentOwner\)/);
+  assert.match(profile, /subscribeListeningHistoryChanged/);
+  assert.match(profile, /applyOptimisticRecentlyPlayed\(cachedTracks, detail\.track, 12/);
+  assert.match(profile, /writeCachedHomeRecentlyPlayed\(recentOwner, next\)/);
+  assert.match(profile, /recentTracks\.map/);
+  assert.doesNotMatch(profile, /getMyRecentlyPlayed|mergeRecentlyPlayedWithOptimisticCache|useQuietRefresh|profile\??\.recently_played/);
+  assert.match(profile, /profile\?\.tracks_played/);
+});
+
 test("Total Plays navigates to a dedicated account-wide history page", () => {
   const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
   const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
