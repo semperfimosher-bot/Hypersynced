@@ -272,13 +272,26 @@ function warmNextTrackFirstChunk() {
   if (!entry?.id || !mediaVersion) return;
 
   const remaining = audio.duration - audio.currentTime;
-  if (remaining > 5 || remaining < 0) return;
+  // Start warming well before the transition so the first media range is
+  // already in the service-worker cache when the current track ends.
+  if (remaining > 25 || remaining < 0) return;
 
   const key = `${String(entry.id)}|${String(mediaVersion)}`;
   if (nextTrackFirstChunkWarmKey === key) return;
   nextTrackFirstChunkWarmKey = key;
 
-  void warmQueuedAudioEntry(entry, { warmBytes: 256 * 1024 }).catch(() => {});
+  void Promise.resolve(
+    warmQueuedAudioEntry(entry, { warmBytes: 256 * 1024 }),
+  ).then((result) => {
+    // Retry on later timeupdate events if this opportunistic warm failed.
+    if (!result?.warmed && nextTrackFirstChunkWarmKey === key) {
+      nextTrackFirstChunkWarmKey = null;
+    }
+  }).catch(() => {
+    if (nextTrackFirstChunkWarmKey === key) {
+      nextTrackFirstChunkWarmKey = null;
+    }
+  });
 }
 
 
@@ -863,6 +876,17 @@ function appendAutoplayTracks(
 
   persistQueueSnapshot();
   notify();
+
+  // Autoplay tracks arrive in batches while the current track is still
+  // playing. Warm the first upcoming track immediately instead of waiting
+  // until the current song is nearly over.
+  const nextIndex = getNextQueueIndex(currentQueue, currentQueueIndex);
+  if (nextIndex >= 0) {
+    const nextEntry = currentQueue[nextIndex];
+    void Promise.resolve(
+      warmQueuedAudioEntry(nextEntry, { warmBytes: 256 * 1024 }),
+    ).catch(() => {});
+  }
 
   return unique.length;
 }
