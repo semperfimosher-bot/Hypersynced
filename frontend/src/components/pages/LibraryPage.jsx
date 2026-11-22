@@ -1859,6 +1859,43 @@ useEffect(() => {
 ]);
 
 
+  const playlistPrefetchRequestsRef = useRef(new Map());
+
+  function requestPlaylistDetails(playlistId) {
+    const key = String(playlistId);
+    const existing = playlistPrefetchRequestsRef.current.get(key);
+    if (existing) return existing;
+
+    const request = getPlaylist(playlistId)
+      .then(async (playlist) => {
+        await setCachedPlaylist(libraryCacheKey, playlist);
+        warmPlaylistArtwork([playlist]);
+        return playlist;
+      })
+      .finally(() => {
+        playlistPrefetchRequestsRef.current.delete(key);
+      });
+
+    playlistPrefetchRequestsRef.current.set(key, request);
+    return request;
+  }
+
+  async function prefetchPlaylistDetails(playlistId) {
+    if (!playlistId || offlineMode) return;
+    const key = String(playlistId);
+    if (playlistPrefetchRequestsRef.current.has(key)) return;
+    // Keep hover/intent warming bounded so moving across the list cannot
+    // flood the backend. Cached playlist details are reused on click.
+    if (playlistPrefetchRequestsRef.current.size >= 2) return;
+
+    const cached = await getCachedPlaylistAsync(libraryCacheKey, playlistId).catch(() => null);
+    if (cached?.tracks?.length) {
+      warmPlaylistArtwork([cached]);
+      return;
+    }
+    void requestPlaylistDetails(playlistId).catch(() => {});
+  }
+
   async function openPlaylist(
   playlistId,
 ) {
@@ -1983,7 +2020,7 @@ useEffect(() => {
     libraryCacheKey,
     playlistId,
   ).catch(() => null);
-  const serverPlaylistPromise = getPlaylist(playlistId);
+  const serverPlaylistPromise = requestPlaylistDetails(playlistId);
 
   try {
     // Start the server refresh immediately, but render a local snapshot as
@@ -5487,6 +5524,12 @@ useEffect(() => {
                     ]
                       .filter(Boolean)
                       .join(" ")}
+                    onMouseEnter={() => {
+                      void prefetchPlaylistDetails(playlist.id);
+                    }}
+                    onFocus={() => {
+                      void prefetchPlaylistDetails(playlist.id);
+                    }}
                     onClick={() => {
                       if (
                         !openingPlaylistId
