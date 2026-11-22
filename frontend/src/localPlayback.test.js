@@ -45,20 +45,24 @@ test("recently played retains owner cache while the server history is empty", ()
   assert.deepEqual(mergeRecentlyPlayedWithOptimisticCache(server, olderCache), server);
 });
 
-test("Home Recently Played merges server results with newer owner cache", () => {
+test("Home Recently Played is device-local and reacts to local playback events", () => {
   const home = readFileSync(new URL("./components/pages/HomePage.jsx", import.meta.url), "utf8");
-  assert.match(home, /mergeRecentlyPlayedWithOptimisticCache\(serverTracks, cachedTracks, 12\)/);
-  assert.match(home, /writeCachedHomeRecentlyPlayed\(recentOwner, mergedTracks\)/);
+  assert.match(home, /readCachedHomeRecentlyPlayed\(recentOwner\)/);
+  assert.match(home, /subscribeListeningHistoryChanged/);
+  assert.match(home, /applyOptimisticRecentlyPlayed\(cached, detail\.track, 12/);
+  assert.match(home, /writeCachedHomeRecentlyPlayed\(recentOwner, instant\)/);
+  assert.doesNotMatch(home, /getMyRecentlyPlayed|mergeRecentlyPlayedWithOptimisticCache|recently-played/);
 });
 
-test("profile Recently Played has its own server refresh and owner-scoped cache", () => {
+test("Profile Recently Played is device-local while account analytics remain sourced from profile API", () => {
   const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
-  assert.match(profile, /getMyRecentlyPlayed/);
   assert.match(profile, /readCachedHomeRecentlyPlayed\(recentOwner\)/);
-  assert.match(profile, /writeCachedHomeRecentlyPlayed\(recentOwner, mergedTracks\)/);
-  assert.match(profile, /useQuietRefresh/);
+  assert.match(profile, /subscribeListeningHistoryChanged/);
+  assert.match(profile, /applyOptimisticRecentlyPlayed\(cachedTracks, detail\.track, 12/);
+  assert.match(profile, /writeCachedHomeRecentlyPlayed\(recentOwner, next\)/);
   assert.match(profile, /recentTracks\.map/);
-  assert.doesNotMatch(profile, /profile\??\.recently_played/);
+  assert.doesNotMatch(profile, /getMyRecentlyPlayed|mergeRecentlyPlayedWithOptimisticCache|useQuietRefresh|profile\??\.recently_played/);
+  assert.match(profile, /profile\?\.tracks_played/);
 });
 
 test("Total Plays opens an account-wide listening summary", () => {
