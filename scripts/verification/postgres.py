@@ -37,7 +37,7 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
 
     from backend.app.api.dependencies import authenticate_access_token
     from backend.app.config import get_settings
-    from backend.app.models import AccountType, User, UserProfile, UserSession
+    from backend.app.models import AccountType, User, UserProfile
     from backend.app.models.playlist import Playlist
     from backend.app.security.tokens import create_access_token
 
@@ -90,6 +90,7 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
             session.add(
                 UserProfile(user_id=user_id, display_name="Before upgrade", bio="preserved")
             )
+            await session.flush()
             # Insert using the pre-remember-me schema. The ORM model includes
             # the new column, but this database is intentionally at the migration
             # predecessor to exercise the upgrade with existing session rows.
