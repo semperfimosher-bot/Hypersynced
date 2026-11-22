@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { pageRows } from "../../pagination.js";
+import { readCatalogPage, writeCatalogPage } from "../../adminCatalogViewState.js";
 
 export function useRowPagination(rows, key) {
-  const [position, setPosition] = useState({ key, page: 0 });
+  const [position, setPosition] = useState({ key, page: readCatalogPage(key) });
   return {
     ...pageRows(rows, position.key === key ? position.page : 0),
-    setPage: (page) => setPosition({ key, page }),
+    setPage: (page) => { writeCatalogPage(key, page); setPosition({ key, page }); },
   };
 }
 
