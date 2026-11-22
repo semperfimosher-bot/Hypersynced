@@ -1884,10 +1884,8 @@ useEffect(() => {
     if (!playlistId || (typeof navigator !== "undefined" && navigator.onLine === false)) return;
     const key = String(playlistId);
     if (playlistPrefetchRequestsRef.current.has(key)) return;
-    // Keep hover/intent warming bounded so moving across the list cannot
-    // flood the backend. Cached playlist details are reused on click.
-    if (playlistPrefetchRequestsRef.current.size >= 2) return;
-
+    // Requests are deduplicated per playlist. The background queue below
+    // limits concurrent warming to two while covering every playlist.
     const cached = await getCachedPlaylistAsync(libraryCacheKey, playlistId).catch(() => null);
     if (cached?.tracks?.length) {
       warmPlaylistArtwork([cached]);
@@ -1900,12 +1898,27 @@ useEffect(() => {
     if (!isRegistered || (typeof navigator !== "undefined" && navigator.onLine === false)) {
       return;
     }
-    // Warm only the first two visible playlist details for touch devices,
-    // where hover intent is unavailable. This keeps startup backend work bounded.
-    const warmTargets = [...ownedPlaylists, ...savedPlaylists].slice(0, 2);
-    for (const playlist of warmTargets) {
-      void prefetchPlaylistDetails(playlist.id);
+    const targets = [...ownedPlaylists, ...savedPlaylists];
+    const unique = [...new Map(
+      targets.filter((playlist) => playlist?.id)
+        .map((playlist) => [String(playlist.id), playlist]),
+    ).values()];
+    let cancelled = false;
+    let nextIndex = 0;
+
+    // Warm all playlist details in the background. Two workers provide useful
+    // ahead-of-click coverage without flooding the API. Cache hits are skipped.
+    async function worker() {
+      while (!cancelled && nextIndex < unique.length) {
+        const playlist = unique[nextIndex++];
+        await prefetchPlaylistDetails(playlist.id);
+      }
     }
+
+    void Promise.all([worker(), worker()]);
+    return () => {
+      cancelled = true;
+    };
   }, [isRegistered, ownedPlaylists, savedPlaylists]);
 
   async function openPlaylist(
