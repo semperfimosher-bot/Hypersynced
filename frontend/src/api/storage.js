@@ -3,7 +3,7 @@ export const ACCESS_TOKEN_KEY = "hypersync_access_token";
 export const SESSION_ACTIVE_KEY = "hypersync_session_active";
 export const REMEMBER_ME_KEY = "hypersync_remember_me";
 export const CACHED_USER_KEY = "hypersync_user_profile";
-let memoryAccessToken = null, memorySessionActive = false, memoryUserProfile = null, sessionOnlyAuthBlocked = false;
+let memoryAccessToken = null, memorySessionActive = false, memoryUserProfile = null;
 function safeStorage(name) { try { return globalThis[name] ?? null; } catch { return null; } }
 function sanitizeProfile(user) {
  if (!user || typeof user !== "object") return null;
@@ -14,7 +14,6 @@ function sanitizeProfile(user) {
 function clearLegacyAuth() { try { const local=safeStorage("localStorage"); local?.removeItem(ACCESS_TOKEN_KEY); local?.removeItem(SESSION_ACTIVE_KEY); local?.removeItem(REMEMBER_ME_KEY); } catch {} try { const session=safeStorage("sessionStorage"); session?.removeItem(ACCESS_TOKEN_KEY); session?.removeItem(SESSION_ACTIVE_KEY); } catch {} }
 function loadCachedProfile() { try { memoryUserProfile=sanitizeProfile(JSON.parse(safeStorage("localStorage")?.getItem(CACHED_USER_KEY)??"null")); } catch { memoryUserProfile=null; try{safeStorage("localStorage")?.removeItem(CACHED_USER_KEY);}catch{} } }
 clearLegacyAuth(); loadCachedProfile();
-sessionOnlyAuthBlocked = (() => { try { return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY) === "false"; } catch { return false; } })();
 export function shouldRememberSession(){ try{return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY)!=="false";}catch{return true;} }
 export function getActiveStorage(){return null;}
 export function getAccessToken(){return memoryAccessToken;}
@@ -27,5 +26,5 @@ export function cacheUserProfile(user,{remember=shouldRememberSession()}={}){
 }
 export function clearCachedUserProfile(){memoryUserProfile=null;for(const storage of [safeStorage("localStorage"),safeStorage("sessionStorage")]){try{storage?.removeItem(CACHED_USER_KEY);}catch{}}}
 export function shouldRestoreSession(){return shouldRememberSession();}
-export function saveAuthSession(accessToken,{remember=true}={}){memoryAccessToken=accessToken||null;memorySessionActive=Boolean(accessToken);sessionOnlyAuthBlocked=!remember;try{const ss=safeStorage("sessionStorage");if(remember)ss?.removeItem(REMEMBER_ME_KEY);else ss?.setItem(REMEMBER_ME_KEY,"false");}catch{}}
-export function clearAuthSession(){memoryAccessToken=null;memorySessionActive=false;clearCachedUserProfile();const sessionOnly=sessionOnlyAuthBlocked;sessionOnlyAuthBlocked=false;try{const ss=safeStorage("sessionStorage");if(sessionOnly)ss?.setItem(REMEMBER_ME_KEY,"false");else ss?.removeItem(REMEMBER_ME_KEY);}catch{}}
+export function saveAuthSession(accessToken,{remember=true}={}){memoryAccessToken=accessToken||null;memorySessionActive=Boolean(accessToken);try{const ss=safeStorage("sessionStorage");if(remember)ss?.removeItem(REMEMBER_ME_KEY);else ss?.setItem(REMEMBER_ME_KEY,"false");}catch{}}
+export function clearAuthSession(){memoryAccessToken=null;memorySessionActive=false;clearCachedUserProfile();try{safeStorage("sessionStorage")?.removeItem(REMEMBER_ME_KEY);}catch{}}
