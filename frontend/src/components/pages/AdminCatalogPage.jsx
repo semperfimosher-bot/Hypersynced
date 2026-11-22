@@ -1,4 +1,5 @@
 import RowPager, { useRowPagination } from "../ui/RowPager.jsx";
+import { readAdminCatalogState, writeAdminCatalogState } from "../../adminCatalogViewState.js";
 import {
   useEffect,
   useMemo,
@@ -47,25 +48,22 @@ export default function AdminCatalogPage() {
   const [
     searchQuery,
     setSearchQuery,
-  ] = useState("");
+  ] = useState(() => readAdminCatalogState().searchQuery);
 
   const [
     category,
     setCategory,
-  ] = useState(null);
+  ] = useState(() => readAdminCatalogState().category);
 
   const [
     folderValue,
     setFolderValue,
-  ] = useState(null);
+  ] = useState(() => readAdminCatalogState().folderValue);
 
   const [
     selectedTrackIds,
     setSelectedTrackIds,
-  ] = useState(
-    () =>
-      new Set(),
-  );
+  ] = useState(() => readAdminCatalogState().selectedTrackIds);
 
   const [
     bulkDeleteBusy,
