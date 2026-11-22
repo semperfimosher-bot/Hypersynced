@@ -1,14 +1,14 @@
 """persist remember-me preference on refresh sessions
 
 Revision ID: ca91b5e7d204
-Revises: f8b2d6a4c1e9
+Revises: c9d4e7a2b6f1
 """
 from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
 revision: str = "ca91b5e7d204"
-down_revision: str | Sequence[str] | None = "f8b2d6a4c1e9"
+down_revision: str | Sequence[str] | None = "c9d4e7a2b6f1"
 branch_labels = None
 depends_on = None
 

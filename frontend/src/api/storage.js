@@ -11,7 +11,7 @@ function sanitizeProfile(user) {
  for (const key of allowed) { const value=user[key]; if(typeof value==="string"||typeof value==="boolean"||typeof value==="number") profile[key]=value; }
  return profile.id ? profile : null;
 }
-function clearLegacyAuth() { for(const storage of [safeStorage("localStorage"),safeStorage("sessionStorage")]) { try { storage?.removeItem(ACCESS_TOKEN_KEY); storage?.removeItem(SESSION_ACTIVE_KEY); } catch {} } }
+function clearLegacyAuth() { try { const local=safeStorage("localStorage"); local?.removeItem(ACCESS_TOKEN_KEY); local?.removeItem(SESSION_ACTIVE_KEY); local?.removeItem(REMEMBER_ME_KEY); } catch {} try { const session=safeStorage("sessionStorage"); session?.removeItem(ACCESS_TOKEN_KEY); session?.removeItem(SESSION_ACTIVE_KEY); } catch {} }
 function loadCachedProfile() { try { memoryUserProfile=sanitizeProfile(JSON.parse(safeStorage("localStorage")?.getItem(CACHED_USER_KEY)??"null")); } catch { memoryUserProfile=null; try{safeStorage("localStorage")?.removeItem(CACHED_USER_KEY);}catch{} } }
 clearLegacyAuth(); loadCachedProfile();
 export function shouldRememberSession(){ try{return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY)!=="false";}catch{return true;} }

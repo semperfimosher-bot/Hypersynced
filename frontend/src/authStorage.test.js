@@ -76,6 +76,22 @@ test("session restoration always checks the HttpOnly refresh cookie", async () =
   assert.equal(storage.getActiveStorage(), null);
 });
 
+test("unchecked remember-me is session scoped and profile is not persisted locally", async () => {
+  globalThis.localStorage = createStorage();
+  globalThis.sessionStorage = createStorage();
+  const storage = await import(`./api/storage.js?remember-off=${Date.now()}`);
+  storage.saveAuthSession("volatile-token", { remember: false });
+  storage.cacheUserProfile({ id: "user-2", username: "temporary" }, { remember: false });
+  assert.equal(storage.getAccessToken(), "volatile-token");
+  assert.equal(storage.shouldRememberSession(), false);
+  assert.equal(localStorage.getItem("hypersync_user_profile"), null);
+  assert.equal(sessionStorage.getItem("hypersync_remember_me"), "false");
+  assert.equal(JSON.parse(sessionStorage.getItem("hypersync_user_profile")).id, "user-2");
+  storage.clearAuthSession();
+  assert.equal(sessionStorage.getItem("hypersync_remember_me"), null);
+  assert.equal(sessionStorage.getItem("hypersync_user_profile"), null);
+});
+
 test("blocked browser storage does not crash authentication startup", async () => {
   const localDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const sessionDescriptor = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
