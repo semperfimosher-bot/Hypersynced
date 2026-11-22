@@ -136,6 +136,7 @@ export default function ProfilePage({
   onToggleCompact,
   onStatusMessage,
   onSearchArtist,
+  onNavigate,
   onOpenProfile,
   onProfileUpdated,
   installState,
@@ -168,17 +169,6 @@ export default function ProfilePage({
   const [socialMode, setSocialMode] =
     useState("");
 
-  const [totalPlaysOpen, setTotalPlaysOpen] =
-    useState(false);
-
-  const [totalPlayedTracks, setTotalPlayedTracks] =
-    useState([]);
-
-  const [totalPlayedLoading, setTotalPlayedLoading] =
-    useState(false);
-
-  const [totalPlayedError, setTotalPlayedError] =
-    useState("");
 
   const [avatarVersion, setAvatarVersion] =
     useState(0);
@@ -254,37 +244,7 @@ export default function ProfilePage({
     loadProfile,
   ]);
 
-  useEffect(() => {
-    if (!totalPlaysOpen || !currentUser || !online) return undefined;
-    let cancelled = false;
-    setTotalPlayedLoading(true);
-    setTotalPlayedError("");
-    setTotalPlayedTracks([]);
-    async function loadAllPlayedTracks() {
-      try {
-        const allTracks = [];
-        let offset = 0;
-        const pageSize = 100;
-        while (!cancelled) {
-          const page = await getMyTotalPlayed({ limit: pageSize, offset });
-          if (cancelled) return;
-          allTracks.push(...(Array.isArray(page) ? page : []));
-          if (!cancelled) setTotalPlayedTracks(allTracks.slice());
-          if (!Array.isArray(page) || page.length < pageSize) break;
-          offset += page.length;
-        }
-        if (!cancelled) setTotalPlayedTracks(allTracks);
-      } catch (loadError) {
-        if (!cancelled) setTotalPlayedError(
-          loadError instanceof Error ? loadError.message : "Unable to load your listening history.",
-        );
-      } finally {
-        if (!cancelled) setTotalPlayedLoading(false);
-      }
-    }
-    void loadAllPlayedTracks();
-    return () => { cancelled = true; };
-  }, [totalPlaysOpen, currentUser?.id, online]);
+
 
   const loadRecentlyPlayed = useCallback(() => {
     setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
@@ -522,7 +482,7 @@ export default function ProfilePage({
             profile?.tracks_played ?? 0
           }
           label="Total Plays"
-          onClick={() => setTotalPlaysOpen(true)}
+          onClick={() => onNavigate?.("total-played")}
         />
 
         <Stat
@@ -903,77 +863,7 @@ export default function ProfilePage({
       ) : null}
 
 
-      {totalPlaysOpen ? (
-        <section className="hs-total-played-page" aria-label="Total played songs">
-          <header className="hs-total-played-header">
-            <button type="button" className="hs-search-playlist-back" onClick={() => setTotalPlaysOpen(false)}>
-              <Icon name="chevron" size={15} /> Back to Profile
-            </button>
-            <div className="hs-total-played-heading">
-              <span className="hs-eyebrow">ACCOUNT-WIDE LISTENING</span>
-              <h1>Total Played</h1>
-              <p>Listening history from every device signed into this account · {Number(profile?.tracks_played ?? 0).toLocaleString()} plays · {totalPlayedTracks.length.toLocaleString()} unique songs</p>
-            </div>
-          </header>
-          <div className="hs-total-played-list">
-            {totalPlayedLoading && !totalPlayedTracks.length ? (
-              <div className="hs-playlist-loading"><span className="hs-playlist-shimmer" /></div>
-            ) : !online ? (
-              <OfflineNotice compact title="Go online to load Total Played" description="Your full account listening history needs a connection." />
-            ) : totalPlayedError ? (
-              <div className="hs-empty-card" role="alert">{totalPlayedError}</div>
-            ) : totalPlayedTracks.length ? (
-              totalPlayedTracks.map((track, index) => (
-                <div
-                  key={track.id}
-                  className="hs-search-track hs-library-track-row hs-total-played-track"
-                  role="button"
-                  tabIndex={0}
-                  {...trackActionMenu.getTriggerProps(track)}
-                  onClick={() => player.playTrack(track.id, {
-                    audioUrl: track.audio_url,
-                    artworkUrl: track.artwork_url,
-                    title: track.title,
-                    artist: track.artist,
-                    mimeType: track.mime_type,
-                    fileSize: track.file_size,
-                    mediaVersion: track.media_version,
-                    genre: track.genre ?? "",
-                    releaseYear: track.release_year ?? null,
-                  }).catch(() => {})}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      player.playTrack(track.id, {
-                        audioUrl: track.audio_url,
-                        artworkUrl: track.artwork_url,
-                        title: track.title,
-                        artist: track.artist,
-                        mimeType: track.mime_type,
-                        fileSize: track.file_size,
-                        mediaVersion: track.media_version,
-                        genre: track.genre ?? "",
-                        releaseYear: track.release_year ?? null,
-                      }).catch(() => {});
-                    }
-                  }}
-                >
-                  <span className="hs-total-played-rank">{index + 1}</span>
-                  <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
-                  <span className="hs-total-played-meta"><strong>{track.title}</strong><small>{track.artist}</small></span>
-                  <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()} plays</span>
-                </div>
-              ))
-            ) : (
-              <div className="hs-empty-card">
-                <Icon name="music" size={30} />
-                <strong>No listening history yet</strong>
-                <p>Once you play songs, your full history will appear here.</p>
-              </div>
-            )}
-          </div>
-        </section>
-      ) : null}
+
 
       {editing && profile ? (
         <EditProfileModal
