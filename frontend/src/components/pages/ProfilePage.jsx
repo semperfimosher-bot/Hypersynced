@@ -915,7 +915,7 @@ export default function ProfilePage({
             <div className="hs-total-played-heading">
               <span className="hs-eyebrow">ACCOUNT-WIDE LISTENING</span>
               <h1>Total Played</h1>
-              <p>{Number(profile?.tracks_played ?? 0).toLocaleString()} plays across all devices · {totalPlayedTracks.length.toLocaleString()} unique songs</p>
+              <p>Listening history from every device signed into this account · {Number(profile?.tracks_played ?? 0).toLocaleString()} plays · {totalPlayedTracks.length.toLocaleString()} unique songs</p>
             </div>
           </header>
           <div className="hs-total-played-list">
