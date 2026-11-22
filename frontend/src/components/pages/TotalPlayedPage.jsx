@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as player from "../../audioPlayer.js";
 import { getMyTotalPlayed } from "../../profileApi.js";
 import Icon from "../ui/Icon.jsx";
@@ -25,10 +25,13 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
   const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
+  const requestRef = useRef(0);
 
   const loadPage = useCallback(async ({ append = false } = {}) => {
     if (!currentUser || !online) return;
-    const requestOffset = append ? offset : 0;
+    const requestOffset = append ? offsetRef.current : 0;
+    const requestId = requestRef.current;
     append ? setLoadingMore(true) : setLoading(true);
     setError("");
     try {
@@ -43,7 +46,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [currentUser?.id, online, offset]);
+  }, [currentUser?.id, online]);
 
   useEffect(() => {
     setTracks([]);
