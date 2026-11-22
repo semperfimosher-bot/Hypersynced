@@ -497,6 +497,28 @@ useEffect(() => {
     };
   }, [offlineOwnerKey, resetToken]);
 
+  // Prewarm the first visible search tracks as soon as results arrive.
+  // This fetches their first media range before the user clicks Play.
+  useEffect(() => {
+    const tracks = Array.isArray(results?.tracks) ? results.tracks : [];
+    if (!tracks.length || globalThis.navigator?.onLine === false) return;
+    let cancelled = false;
+    const candidates = tracks.slice(0, 5).filter((track) => track?.id);
+    let cursor = 0;
+    const worker = async () => {
+      while (!cancelled && cursor < candidates.length) {
+        const track = candidates[cursor++];
+        try {
+          await player.warmTrackForPlayback(track.id, track, { warmBytes: 256 * 1024 });
+        } catch {
+          // Warming is optional; click-to-play retains the normal source path.
+        }
+      }
+    };
+    void Promise.all([worker(), worker()]);
+    return () => { cancelled = true; };
+  }, [results?.tracks]);
+
   // Preload playlist first-page tracks while search results are visible,
   // so a first-ever click can display songs instead of starting a cold fetch.
   // Keep this bounded to two concurrent requests and persist partial snapshots.
