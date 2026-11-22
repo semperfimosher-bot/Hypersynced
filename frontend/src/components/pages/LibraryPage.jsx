@@ -1896,6 +1896,18 @@ useEffect(() => {
     void requestPlaylistDetails(playlistId).catch(() => {});
   }
 
+  useEffect(() => {
+    if (!isRegistered || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+      return;
+    }
+    // Warm only the first two visible playlist details for touch devices,
+    // where hover intent is unavailable. This keeps startup backend work bounded.
+    const warmTargets = [...ownedPlaylists, ...savedPlaylists].slice(0, 2);
+    for (const playlist of warmTargets) {
+      void prefetchPlaylistDetails(playlist.id);
+    }
+  }, [isRegistered, ownedPlaylists, savedPlaylists]);
+
   async function openPlaylist(
   playlistId,
 ) {
