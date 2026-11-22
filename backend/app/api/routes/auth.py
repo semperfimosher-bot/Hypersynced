@@ -949,8 +949,11 @@ async def reset_password_from_recovery_link(
 
     settings = get_settings()
     request_is_https = request.url.scheme == "https"
-    response.delete_cookie(
+    response.set_cookie(
         key="hypersync_refresh",
+        value="",
+        max_age=0,
+        expires=0,
         path="/api/auth",
         secure=settings.environment == "production" or request_is_https,
         httponly=True,
