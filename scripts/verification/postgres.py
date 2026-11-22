@@ -90,13 +90,22 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
             session.add(
                 UserProfile(user_id=user_id, display_name="Before upgrade", bio="preserved")
             )
-            session.add(
-                UserSession(
-                    id=auth_id,
-                    user_id=user_id,
-                    refresh_token_hash=uuid4().hex,
-                    expires_at=datetime.now(UTC) + timedelta(hours=1),
-                )
+            # Insert using the pre-remember-me schema. The ORM model includes
+            # the new column, but this database is intentionally at the migration
+            # predecessor to exercise the upgrade with existing session rows.
+            await session.execute(
+                text(
+                    "INSERT INTO user_sessions "
+                    "(id, user_id, family_id, refresh_token_hash, expires_at) "
+                    "VALUES (:id, :user_id, :family_id, :refresh_token_hash, :expires_at)"
+                ),
+                {
+                    "id": auth_id,
+                    "user_id": user_id,
+                    "family_id": uuid4(),
+                    "refresh_token_hash": uuid4().hex,
+                    "expires_at": datetime.now(UTC) + timedelta(hours=1),
+                },
             )
             await session.commit()
         await migrate("head")
