@@ -3278,3 +3278,160 @@ button.hs-profile-stat:hover,
 .hs-total-played-count { white-space: nowrap; }
 .hs-total-played-route { padding: 12px; }
 @media (max-width: 560px) { .hs-total-played-page { padding: 12px; } .hs-total-played-track { gap: 8px; } .hs-total-played-rank { width: 20px; flex-basis: 20px; } .hs-total-played-count { font-size: .68rem; } }
+
+/* Total Played — full-page, library-style listening history */
+.hs-total-played-route {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding: clamp(14px, 2.2vw, 28px);
+  gap: 16px;
+}
+.hs-total-played-header {
+  margin: 0;
+}
+.hs-total-played-heading {
+  margin: 20px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.hs-total-played-heading h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+}
+.hs-total-played-heading p {
+  max-width: 720px;
+  line-height: 1.5;
+}
+.hs-total-played-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+}
+.hs-total-played-summary strong {
+  color: var(--text, #edfaff);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.hs-total-played-summary span {
+  color: var(--muted, #8ba7b8);
+  font-size: .8rem;
+}
+.hs-total-played-list {
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+  border: 1px solid rgba(78, 185, 225, .12);
+  border-radius: 10px;
+  background: rgba(4, 13, 21, .56);
+}
+.hs-total-played-table-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 230px) 100px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px 10px 72px;
+  border-bottom: 1px solid rgba(78, 185, 225, .11);
+  color: #5f8496;
+  font: 700 .65rem "JetBrains Mono", monospace;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.hs-total-played-table-head span:last-child {
+  text-align: right;
+}
+.hs-total-played-rows {
+  display: grid;
+}
+.hs-total-played-track {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(170px, 230px) 100px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 66px;
+  padding: 9px 18px;
+  border: 0;
+  border-bottom: 1px solid rgba(66, 128, 154, .065);
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+.hs-total-played-track:last-child {
+  border-bottom: 0;
+}
+.hs-total-played-track:hover,
+.hs-total-played-track:focus-visible {
+  background: linear-gradient(90deg, rgba(28, 177, 218, .075), rgba(23, 127, 165, .018));
+  box-shadow: inset 2px 0 rgba(77, 227, 255, .92);
+}
+.hs-total-played-track > .hs-track-artwork,
+.hs-total-played-track > img {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+}
+.hs-total-played-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.hs-total-played-meta strong,
+.hs-total-played-meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-total-played-meta strong {
+  color: #eaf7fc;
+  font-size: .88rem;
+  font-weight: 700;
+}
+.hs-total-played-meta small,
+.hs-total-played-last,
+.hs-total-played-count {
+  color: #819bab;
+  font-size: .76rem;
+}
+.hs-total-played-last {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-total-played-count {
+  justify-self: end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hs-total-played-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  border-top: 1px solid rgba(78, 185, 225, .1);
+}
+.hs-total-played-load-more button {
+  min-width: min(360px, 100%);
+}
+@media (max-width: 680px) {
+  .hs-total-played-route { padding: 10px; }
+  .hs-total-played-table-head {
+    grid-template-columns: minmax(0, 1fr) 72px;
+    padding-left: 66px;
+  }
+  .hs-total-played-table-head span:nth-child(2) { display: none; }
+  .hs-total-played-track {
+    grid-template-columns: 42px minmax(0, 1fr) 72px;
+    gap: 9px;
+    padding: 8px 10px;
+  }
+  .hs-total-played-track > .hs-track-artwork,
+  .hs-total-played-track > img {
+    width: 42px;
+    height: 42px;
+  }
+  .hs-total-played-last { display: none; }
+  .hs-total-played-count { font-size: .7rem; }
+}
