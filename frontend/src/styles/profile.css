@@ -3263,110 +3263,77 @@ button.hs-profile-stat:hover,
 
 
 /* Account-wide Total Played is a dedicated route within the main app layout. */
-.hs-total-played-page { padding: clamp(16px, 3vw, 36px); background: var(--page-bg, #020810); }
-.hs-total-played-header { max-width: 1100px; margin: 0 auto 20px; }
-.hs-total-played-heading { margin: 24px 0 16px; }
-.hs-total-played-heading h1 { margin: 8px 0; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; color: var(--text, #edfaff); }
-.hs-total-played-heading p { margin: 0; color: var(--muted, #8ba7b8); }
-.hs-total-played-list { max-width: 1100px; margin: 0 auto; }
-.hs-total-played-countline { margin-top: 8px !important; color: var(--muted, #8ba7b8); font-size: .82rem; }
-.hs-total-played-track { display: flex; align-items: center; gap: 12px; cursor: pointer; min-height: 62px; }
-.hs-total-played-rank { width: 28px; flex: 0 0 28px; text-align: center; color: var(--muted, #8ba7b8); }
-.hs-total-played-meta { display: grid; gap: 3px; min-width: 0; flex: 1; }
-.hs-total-played-meta strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hs-total-played-meta small, .hs-total-played-count { color: var(--muted, #8ba7b8); font-size: .78rem; }
-.hs-total-played-count { white-space: nowrap; }
-.hs-total-played-route { padding: 12px; }
-@media (max-width: 560px) { .hs-total-played-page { padding: 12px; } .hs-total-played-track { gap: 8px; } .hs-total-played-rank { width: 20px; flex-basis: 20px; } .hs-total-played-count { font-size: .68rem; } }
 
-/* Total Played — full-page, library-style listening history */
+
+/* Total Played — use the same Library page shell, type, and track rows. */
 .hs-total-played-route {
-  width: min(100%, 1180px);
-  margin-inline: auto;
-  padding: clamp(14px, 2.2vw, 28px);
+  width: 100%;
   gap: 16px;
 }
 .hs-total-played-header {
   margin: 0;
 }
-.hs-total-played-heading {
-  margin: 20px 0 0;
-  display: grid;
-  gap: 8px;
+.hs-total-played-hero {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 18px;
 }
-.hs-total-played-heading h1 {
+.hs-total-played-heading {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.04em;
 }
 .hs-total-played-heading p {
   max-width: 720px;
-  line-height: 1.5;
 }
 .hs-total-played-summary {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: rgba(119, 154, 171, 0.9);
+  font-size: 9px;
 }
 .hs-total-played-summary strong {
-  color: var(--text, #edfaff);
-  font-size: 1.25rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
   font-weight: 800;
-}
-.hs-total-played-summary span {
-  color: var(--muted, #8ba7b8);
-  font-size: .8rem;
 }
 .hs-total-played-list {
   width: 100%;
   max-width: none;
   overflow: hidden;
-  border: 1px solid rgba(78, 185, 225, .12);
+  border: 1px solid rgba(67, 180, 224, 0.13);
   border-radius: 10px;
-  background: rgba(4, 13, 21, .56);
+  background: rgba(4, 13, 21, 0.56);
 }
 .hs-total-played-table-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 230px) 100px;
+  grid-template-columns: 28px 46px minmax(0, 1fr) minmax(112px, 160px) 44px 31px;
   align-items: center;
-  gap: 12px;
-  padding: 12px 18px 10px 72px;
-  border-bottom: 1px solid rgba(78, 185, 225, .11);
-  color: #5f8496;
-  font: 700 .65rem "JetBrains Mono", monospace;
-  letter-spacing: .09em;
+  gap: 10px;
+  padding: 12px 11px 10px;
+  border-bottom: 1px solid rgba(78, 185, 225, 0.11);
+  color: #65818d;
+  font: 600 6.5px "JetBrains Mono", monospace;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+.hs-total-played-table-head span:first-child {
+  grid-column: 1 / 4;
+}
+.hs-total-played-table-head span:nth-child(2) {
+  grid-column: 4;
+}
 .hs-total-played-table-head span:last-child {
+  grid-column: 5;
   text-align: right;
 }
 .hs-total-played-rows {
   display: grid;
 }
 .hs-total-played-track {
-  display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) minmax(170px, 230px) 100px;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 66px;
-  padding: 9px 18px;
-  border: 0;
-  border-bottom: 1px solid rgba(66, 128, 154, .065);
-  color: inherit;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: background 120ms ease, box-shadow 120ms ease;
-}
-.hs-total-played-track:last-child {
-  border-bottom: 0;
-}
-.hs-total-played-track:hover,
-.hs-total-played-track:focus-visible {
-  background: linear-gradient(90deg, rgba(28, 177, 218, .075), rgba(23, 127, 165, .018));
-  box-shadow: inset 2px 0 rgba(77, 227, 255, .92);
+  grid-template-columns: 28px 46px minmax(0, 1fr) minmax(112px, 160px) 44px 31px;
+  min-height: 64px;
+  padding: 8px 11px;
 }
 .hs-total-played-track .track-artwork-shell,
 .hs-total-played-track .track-artwork,
@@ -3381,7 +3348,8 @@ button.hs-profile-stat:hover,
   overflow: hidden;
   place-items: center;
 }
-.hs-total-played-track .track-artwork {
+.hs-total-played-track .track-artwork,
+.hs-total-played-track .cover-placeholder {
   display: block;
   object-fit: cover;
 }
@@ -3389,35 +3357,17 @@ button.hs-profile-stat:hover,
   display: grid;
   place-items: center;
 }
-.hs-total-played-meta {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-.hs-total-played-meta strong,
-.hs-total-played-meta small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.hs-total-played-meta strong {
-  color: #eaf7fc;
-  font-size: .88rem;
-  font-weight: 700;
-}
-.hs-total-played-meta small,
-.hs-total-played-last,
-.hs-total-played-count {
-  color: #819bab;
-  font-size: .76rem;
-}
 .hs-total-played-last {
   overflow: hidden;
+  color: #4f6873;
+  font: 500 6px "JetBrains Mono", monospace;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .hs-total-played-count {
   justify-self: end;
+  color: #70858f;
+  font: 500 7px "JetBrains Mono", monospace;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -3425,22 +3375,37 @@ button.hs-profile-stat:hover,
   display: flex;
   justify-content: center;
   padding: 14px;
-  border-top: 1px solid rgba(78, 185, 225, .1);
+  border-top: 1px solid rgba(78, 185, 225, 0.1);
 }
 .hs-total-played-load-more button {
   min-width: min(360px, 100%);
 }
 @media (max-width: 680px) {
-  .hs-total-played-route { padding: 10px; }
-  .hs-total-played-table-head {
-    grid-template-columns: minmax(0, 1fr) 72px;
-    padding-left: 66px;
+  .hs-total-played-route {
+    gap: 12px;
   }
-  .hs-total-played-table-head span:nth-child(2) { display: none; }
+  .hs-total-played-hero {
+    padding: 13px;
+  }
+  .hs-total-played-table-head {
+    grid-template-columns: 22px 42px minmax(0, 1fr) 64px 31px;
+    gap: 8px;
+    padding: 10px;
+  }
+  .hs-total-played-table-head span:first-child {
+    grid-column: 1 / 4;
+  }
+  .hs-total-played-table-head span:nth-child(2) {
+    display: none;
+  }
+  .hs-total-played-table-head span:last-child {
+    grid-column: 4;
+  }
   .hs-total-played-track {
-    grid-template-columns: 42px minmax(0, 1fr) 72px;
-    gap: 9px;
-    padding: 8px 10px;
+    grid-template-columns: 22px 42px minmax(0, 1fr) 64px 31px;
+    gap: 8px;
+    min-height: 60px;
+    padding: 7px 10px;
   }
   .hs-total-played-track .track-artwork-shell,
   .hs-total-played-track .track-artwork,
@@ -3448,6 +3413,10 @@ button.hs-profile-stat:hover,
     width: 42px;
     height: 42px;
   }
-  .hs-total-played-last { display: none; }
-  .hs-total-played-count { font-size: .7rem; }
+  .hs-total-played-last {
+    display: none;
+  }
+  .hs-total-played-count {
+    font-size: 7px;
+  }
 }
