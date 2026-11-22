@@ -1891,7 +1891,7 @@ useEffect(() => {
       warmPlaylistArtwork([cached]);
       return;
     }
-    void requestPlaylistDetails(playlistId).catch(() => {});
+    await requestPlaylistDetails(playlistId).catch(() => null);
   }
 
   useEffect(() => {
