@@ -545,7 +545,11 @@ def set_refresh_cookie(
     response.set_cookie(
         key="hypersync_refresh",
         value=refresh_token,
-        max_age=(settings.refresh_token_ttl_days * 24 * 60 * 60) if remember_me else None,
+        max_age=(
+            settings.refresh_token_ttl_days * 24 * 60 * 60
+            if remember_me
+            else None
+        ),
         httponly=True,
         secure=(
             settings.environment
