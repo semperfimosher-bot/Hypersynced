@@ -126,3 +126,27 @@ test("blocked browser storage does not crash authentication startup", async () =
     }
   }
 });
+
+
+test("logout clears local state immediately and calls backend directly without refresh", async () => {
+  globalThis.localStorage = createStorage({ hypersync_user_profile: JSON.stringify({ id: "user-logout", username: "listener" }) });
+  globalThis.sessionStorage = createStorage({ hypersync_remember_me: "false", hypersync_user_profile: JSON.stringify({ id: "user-logout" }) });
+  const originalFetch = globalThis.fetch;
+  let observed = null;
+  globalThis.fetch = async (url, options) => {
+    observed = { url: String(url), options, profileAtRequest: localStorage.getItem("hypersync_user_profile") };
+    return { ok: true, status: 200 };
+  };
+  try {
+    const auth = await import(`./api/auth.js?logout-direct=${Date.now()}`);
+    await auth.logoutSession();
+    assert.ok(observed.url.endsWith("/auth/logout"), observed.url);
+    assert.equal(observed.options.method, "POST");
+    assert.equal(observed.options.credentials, "include");
+    assert.equal(observed.profileAtRequest, null, "profile must be cleared before the logout request");
+    assert.equal(localStorage.getItem("hypersync_user_profile"), null);
+    assert.equal(sessionStorage.getItem("hypersync_remember_me"), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
