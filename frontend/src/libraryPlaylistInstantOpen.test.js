@@ -14,10 +14,11 @@ test("Library playlist detail requests are shared and persisted for instant reop
   assert.match(source, /getCachedPlaylistAsync\(libraryCacheKey, playlistId\)/);
 });
 
-test("playlist hover and keyboard focus warm details, and background warming uses two workers", () => {
-  assert.match(source, /playlistPrefetchRequestsRef\.current\.size >= 2/);
+test("playlist hover and keyboard focus warm details and background warming uses two workers", () => {
   assert.match(source, /onMouseEnter=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
-  assert.match(source, /onFocus=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);\n  assert.match(source, /await requestPlaylistDetails\(playlistId\)\.catch\(\(\) => null\)/);
+  assert.match(source, /onFocus=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
+  assert.match(source, /void Promise\.all\(\[worker\(\), worker\(\)\]\)/);
+  assert.match(source, /await requestPlaylistDetails\(playlistId\)\.catch\(\(\) => null\)/);
 });
 
 test("opening a playlist reuses its prefetch request rather than issuing a duplicate", () => {
