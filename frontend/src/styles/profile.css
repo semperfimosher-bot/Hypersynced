@@ -3262,17 +3262,17 @@ button.hs-profile-stat:hover,
 .hs-total-plays-modal > header p { margin: 4px 0 0; color: #8ba7b8; }
 
 
-/* Account-wide Total Played opens as a playlist-style full page. */
-.hs-total-played-page { position: fixed; inset: 0; z-index: 120; overflow-y: auto; padding: clamp(16px, 3vw, 36px); background: var(--page-bg, #020810); }
+/* Account-wide Total Played is a dedicated route within the main app layout. */
+.hs-total-played-page { padding: clamp(16px, 3vw, 36px); background: var(--page-bg, #020810); }
 .hs-total-played-header { max-width: 1100px; margin: 0 auto 20px; }
 .hs-total-played-heading { margin: 24px 0 16px; }
 .hs-total-played-heading h1 { margin: 8px 0; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; color: var(--text, #edfaff); }
 .hs-total-played-heading p { margin: 0; color: var(--muted, #8ba7b8); }
-.hs-total-played-list { max-width: 1100px; margin: 0 auto; }
+.hs-total-played-list { max-width: 1100px; margin: 0 auto; }\n.hs-total-played-countline { margin-top: 8px !important; color: var(--muted, #8ba7b8); font-size: .82rem; }
 .hs-total-played-track { display: flex; align-items: center; gap: 12px; cursor: pointer; min-height: 62px; }
 .hs-total-played-rank { width: 28px; flex: 0 0 28px; text-align: center; color: var(--muted, #8ba7b8); }
 .hs-total-played-meta { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .hs-total-played-meta strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hs-total-played-meta small, .hs-total-played-count { color: var(--muted, #8ba7b8); font-size: .78rem; }
 .hs-total-played-count { white-space: nowrap; }
-@media (max-width: 560px) { .hs-total-played-page { padding: 12px; } .hs-total-played-track { gap: 8px; } .hs-total-played-rank { width: 20px; flex-basis: 20px; } .hs-total-played-count { font-size: .68rem; } }
+.hs-total-played-route { padding: 12px; }\n@media (max-width: 560px) { .hs-total-played-page { padding: 12px; } .hs-total-played-track { gap: 8px; } .hs-total-played-rank { width: 20px; flex-basis: 20px; } .hs-total-played-count { font-size: .68rem; } }
