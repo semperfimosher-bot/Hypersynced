@@ -3368,11 +3368,26 @@ button.hs-profile-stat:hover,
   background: linear-gradient(90deg, rgba(28, 177, 218, .075), rgba(23, 127, 165, .018));
   box-shadow: inset 2px 0 rgba(77, 227, 255, .92);
 }
-.hs-total-played-track > .hs-track-artwork,
-.hs-total-played-track > img {
+.hs-total-played-track .track-artwork-shell,
+.hs-total-played-track .track-artwork,
+.hs-total-played-track .cover-placeholder {
   width: 46px;
   height: 46px;
   border-radius: 6px;
+}
+.hs-total-played-track .track-artwork-shell {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+}
+.hs-total-played-track .track-artwork {
+  display: block;
+  object-fit: cover;
+}
+.hs-total-played-track .cover-placeholder {
+  display: grid;
+  place-items: center;
 }
 .hs-total-played-meta {
   display: grid;
@@ -3427,8 +3442,9 @@ button.hs-profile-stat:hover,
     gap: 9px;
     padding: 8px 10px;
   }
-  .hs-total-played-track > .hs-track-artwork,
-  .hs-total-played-track > img {
+  .hs-total-played-track .track-artwork-shell,
+  .hs-total-played-track .track-artwork,
+  .hs-total-played-track .cover-placeholder {
     width: 42px;
     height: 42px;
   }
