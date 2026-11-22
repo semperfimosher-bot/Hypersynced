@@ -13,7 +13,8 @@ function sanitizeProfile(user) {
 }
 function clearLegacyAuth() { try { const local=safeStorage("localStorage"); local?.removeItem(ACCESS_TOKEN_KEY); local?.removeItem(SESSION_ACTIVE_KEY); local?.removeItem(REMEMBER_ME_KEY); } catch {} try { const session=safeStorage("sessionStorage"); session?.removeItem(ACCESS_TOKEN_KEY); session?.removeItem(SESSION_ACTIVE_KEY); } catch {} }
 function loadCachedProfile() { try { memoryUserProfile=sanitizeProfile(JSON.parse(safeStorage("localStorage")?.getItem(CACHED_USER_KEY)??"null")); } catch { memoryUserProfile=null; try{safeStorage("localStorage")?.removeItem(CACHED_USER_KEY);}catch{} } }
-clearLegacyAuth(); loadCachedProfile();\nsessionOnlyAuthBlocked = (() => { try { return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY) === "false"; } catch { return false; } })();
+clearLegacyAuth(); loadCachedProfile();
+sessionOnlyAuthBlocked = (() => { try { return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY) === "false"; } catch { return false; } })();
 export function shouldRememberSession(){ if(sessionOnlyAuthBlocked)return false; try{return safeStorage("sessionStorage")?.getItem(REMEMBER_ME_KEY)!=="false";}catch{return true;} }
 export function getActiveStorage(){return null;}
 export function getAccessToken(){return memoryAccessToken;}
