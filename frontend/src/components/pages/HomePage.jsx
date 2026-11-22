@@ -28,12 +28,6 @@ import TrackActionMenu from
 import useTrackActionMenu from
   "../../hooks/useTrackActionMenu.js";
 
-import useOnlineStatus from
-  "../../hooks/useOnlineStatus.js";
-
-import OfflineNotice from
-  "../ui/OfflineNotice.jsx";
-
 import {
   getHomeRecentlyPlayedForOwner,
   applyOptimisticRecentlyPlayed,
@@ -125,9 +119,6 @@ function HomePage({
   onNavigate,
   onOpenAuth,
 }) {
-  const online =
-    useOnlineStatus();
-
   const trackActionMenu =
     useTrackActionMenu();
 
