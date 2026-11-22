@@ -335,3 +335,23 @@ test(
     }
   },
 );
+
+
+test(
+  "session-only reload blocks refresh requests and revocation clears profile",
+  async () => {
+    resetStorage({}, { hypersync_remember_me: "false" });
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async () => { calls += 1; throw new Error("unexpected network request"); };
+    try {
+      const storage = await import(`./api/storage.js?session-only-block=${Date.now()}`);
+      const client = await import(`./api/client.js?session-only-block=${Date.now()}`);
+      assert.equal(storage.shouldRestoreSession(), false);
+      await assert.rejects(() => client.refreshAccessToken(), /Authentication required/);
+      assert.equal(calls, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  },
+);
