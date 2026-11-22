@@ -783,6 +783,22 @@ async def refresh_authenticated_session(
                 "Refresh token has expired."
             ),
         )
+    if not current_session.remember_me:
+        await database_session.delete(
+            current_session,
+        )
+
+        await database_session.commit()
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
+            detail=(
+                "Session-only login cannot be restored after refresh."
+            ),
+        )
+
 
     user_result = await database_session.execute(
         select(

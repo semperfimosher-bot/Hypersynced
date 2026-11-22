@@ -88,6 +88,39 @@ async def _register(
 
 
 @pytest.mark.asyncio
+async def test_session_only_login_refresh_revokes_session_and_rejects_restore() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        registered = await _register(client)
+        username = registered["user"]["username"]
+        login = await client.post(
+            "/api/auth/login",
+            json={
+                "username": username,
+                "password": "stable-session-test-password",
+                "remember_me": False,
+            },
+        )
+        assert login.status_code == 200, login.text
+        login_cookie = login.headers.get("set-cookie", "").lower()
+        assert "hypersync_refresh=" in login_cookie
+        assert "max-age=" not in login_cookie
+        assert "expires=" not in login_cookie
+        claims = decode_access_token(login.json()["access_token"])
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            row = await session.get(UserSession, claims.session_id)
+            assert row is not None
+            assert row.remember_me is False
+
+        refresh = await client.post("/api/auth/refresh")
+        assert refresh.status_code == 401
+        async with session_factory() as session:
+            row = await session.get(UserSession, claims.session_id)
+            assert row is None
+
+
+@pytest.mark.asyncio
 async def test_refresh_keeps_one_stable_browser_session_and_purges_dead_rows() -> None:
     transport = ASGITransport(
         app=app,
