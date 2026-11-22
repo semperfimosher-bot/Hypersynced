@@ -1881,7 +1881,7 @@ useEffect(() => {
   }
 
   async function prefetchPlaylistDetails(playlistId) {
-    if (!playlistId || offlineMode) return;
+    if (!playlistId || (typeof navigator !== "undefined" && navigator.onLine === false)) return;
     const key = String(playlistId);
     if (playlistPrefetchRequestsRef.current.has(key)) return;
     // Keep hover/intent warming bounded so moving across the list cannot
