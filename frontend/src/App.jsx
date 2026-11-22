@@ -497,6 +497,9 @@ function MainPage({
           onProfileUpdated={
             onProfileUpdated
           }
+          onNavigate={
+            onNavigate
+          }
           installState={
             installState
           }
