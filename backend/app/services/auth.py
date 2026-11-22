@@ -257,6 +257,7 @@ async def register_account(
     admin_verification_password: str | None,
     requester_role: UserRole | None,
     request: Request,
+    remember_me: bool = True,
 ) -> tuple[
     User,
     UserSession,
