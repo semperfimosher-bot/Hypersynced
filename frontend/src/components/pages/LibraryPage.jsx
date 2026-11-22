@@ -110,6 +110,7 @@ import {
 import {
   getCachedLibrary,
   getCachedLibraryAsync,
+  getCachedPlaylist,
   getCachedLibraryPageAsync,
   getCachedPlaylistAsync,
   clearCachedLibraryPages,
@@ -1929,7 +1930,15 @@ useEffect(() => {
   }
 
   selectedPlaylistIdRef.current = String(playlistId);
-  setOpeningPlaylistId(playlistId);
+  const memoryCachedPlaylist = getCachedPlaylist(libraryCacheKey, playlistId);
+  if (memoryCachedPlaylist?.tracks?.length) {
+    // Render the in-memory playlist snapshot synchronously before any IndexedDB
+    // or network awaits. The server refresh below remains background work.
+    setSelectedPlaylist(memoryCachedPlaylist);
+    setOpeningPlaylistId(null);
+  } else {
+    setOpeningPlaylistId(playlistId);
+  }
   setError("");
 
   const offline =
