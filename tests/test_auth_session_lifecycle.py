@@ -887,3 +887,28 @@ async def test_expired_previous_refresh_token_does_not_affect_other_session() ->
 
         assert sibling is not None
         assert sibling.revoked_at is None
+
+
+@pytest.mark.asyncio
+async def test_logout_revokes_session_and_deletes_refresh_cookie() -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        registered = await _register(client)
+        claims = decode_access_token(registered["access_token"])
+        assert client.cookies.get("hypersync_refresh")
+
+        response = await client.post("/api/auth/logout")
+        assert response.status_code == 200, response.text
+        deletion_cookie = response.headers.get("set-cookie", "").lower()
+        assert "hypersync_refresh=" in deletion_cookie
+        assert "max-age=0" in deletion_cookie
+        assert "path=/api/auth" in deletion_cookie
+        assert "httponly" in deletion_cookie
+        assert "samesite=lax" in deletion_cookie
+        assert client.cookies.get("hypersync_refresh") is None
+
+        async with get_session_factory()() as session:
+            row = await session.get(UserSession, claims.session_id)
+            assert row is None
+
+        refresh = await client.post("/api/auth/refresh")
+        assert refresh.status_code == 401
