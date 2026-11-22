@@ -91,6 +91,7 @@ test("unchecked remember-me is session scoped and profile is not persisted local
   storage.cacheUserProfile({ id: "user-2", username: "temporary" }, { remember: false });
   assert.equal(storage.getAccessToken(), "volatile-token");
   assert.equal(storage.shouldRememberSession(), false);
+  assert.equal(storage.shouldRestoreSession(), false);
   assert.equal(localStorage.getItem("hypersync_user_profile"), null);
   assert.equal(sessionStorage.getItem("hypersync_remember_me"), "false");
   assert.equal(JSON.parse(sessionStorage.getItem("hypersync_user_profile")).id, "user-2");
