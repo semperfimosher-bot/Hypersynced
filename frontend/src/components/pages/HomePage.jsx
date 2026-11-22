@@ -134,7 +134,7 @@ function HomePage({
   const greetingName =
     getGreetingName(currentUser);
 
-  const recentOwner = currentUser?.id ?? currentUser?.username;
+  const recentOwner = currentUser?.id ?? currentUser?.username ?? "guest-device";
   const [recentlyPlayedState, setRecentlyPlayedState] = useState(() => ({
     owner: recentOwner,
     tracks: readCachedHomeRecentlyPlayed(recentOwner),
@@ -312,13 +312,7 @@ useEffect(() => {
 }}
         />
 
-          {!online ? (
-            <OfflineNotice
-              compact
-              title="Go back online to see Recently Played"
-              description="Recently Played updates from your account when connected."
-            />
-          ) : recentlyPlayed.length > 0 ? (
+          {recentlyPlayed.length > 0 ? (
   <div
     className="home-track-grid"
     aria-busy={recentLoading}
