@@ -988,9 +988,16 @@ async def logout(
                 refresh_token=refresh_token,
             )
 
-    response.delete_cookie(
+    settings = get_settings()
+    response.set_cookie(
         key="hypersync_refresh",
+        value="",
+        max_age=0,
+        expires=0,
         path="/api/auth",
+        secure=settings.environment == "production" or request.url.scheme == "https",
+        httponly=True,
+        samesite="lax",
     )
 
     return {
