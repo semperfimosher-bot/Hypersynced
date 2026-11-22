@@ -24,6 +24,14 @@ test("app shell and playback restore from local snapshots without cross-device s
   assert.match(app, /renderPage\(activePage, profileUsername\)/);
 });
 
+test("upcoming audio and playlist artwork warm before transitions", () => {
+  const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
+  assert.match(source, /remaining > 25/);
+  assert.match(source, /warmQueuedAudioEntry\(nextEntry/);
+  assert.match(source, /playbackPhase !== "loading"/);
+  assert.match(source, /setPlaybackPhase\("loading"\)/);
+});
+
 test("listening progress is checkpointed only when a page becomes hidden or exits", () => {
   const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /saveListeningProgress/);
