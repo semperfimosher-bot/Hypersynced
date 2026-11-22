@@ -421,8 +421,8 @@ async def authenticate_password_account(
     *,
     identifier: str,
     password: str,
-    remember_me: bool = True,
     request: Request,
+    remember_me: bool = True,
 ) -> tuple[
     User,
     UserSession,

@@ -155,8 +155,6 @@ class UserProfile(
 ):
     __tablename__ = "user_profiles"
 
-    remember_me: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
-
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey(
             "users.id",
@@ -205,6 +203,8 @@ class UserSession(
     Base,
 ):
     __tablename__ = "user_sessions"
+
+    remember_me: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
 
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey(
