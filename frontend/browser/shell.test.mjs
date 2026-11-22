@@ -359,16 +359,20 @@ test("IndexedDB media survives reload and supports offline range, decoding, play
       return audio;
     } });
   });
-  state.playbackState = {
-    track: {
-      id: "browser-audio", title: "Offline Fixture", artist: "Fixture",
-      audio_url: "/__hypersync/media/browser-audio/v1", mime_type: "audio/wav",
-      file_size: fileSize, duration_seconds: 8, media_version: "v1",
-    },
-    position_seconds: 0,
-  };
-  // Persistent player snapshots are no longer allowed in browser storage.
-  // The account playback endpoint is the sole restore source after reload.
+  // Playback is device-local by design. Seed the device playback snapshot
+  // rather than the obsolete cross-device account playback endpoint.
+  await page.evaluate((size) => {
+    localStorage.setItem("hypersynced.device-playback.v2:browser-admin", JSON.stringify({
+      savedAt: Date.now(),
+      track: {
+        id: "browser-audio", title: "Offline Fixture", artist: "Fixture",
+        album: "Offline Test", mime_type: "audio/wav", file_size: size,
+        media_version: "v1", duration_seconds: 8,
+      },
+      positionSeconds: 0,
+      paused: true,
+    }));
+  }, fileSize);
   await page.reload();
   const player = page.getByRole("region", { name: "Player", exact: true });
   await player.getByText("Offline Fixture", { exact: true }).first().waitFor();
