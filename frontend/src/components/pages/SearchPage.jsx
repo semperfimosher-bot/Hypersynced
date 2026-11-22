@@ -520,6 +520,7 @@ useEffect(() => {
               complete: Boolean(cachedPlaylist.complete),
             };
             searchPlaylistCache.set(cacheKey, normalized);
+            warmTrackArtwork(cachedPlaylist.tracks);
             warmTrackArtwork(normalized.tracks);
             if (normalized.complete) continue;
           }
