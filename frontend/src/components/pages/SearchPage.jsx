@@ -521,7 +521,6 @@ useEffect(() => {
             };
             searchPlaylistCache.set(cacheKey, normalized);
             warmTrackArtwork(cachedPlaylist.tracks);
-            warmTrackArtwork(normalized.tracks);
             if (normalized.complete) continue;
           }
         } catch {
