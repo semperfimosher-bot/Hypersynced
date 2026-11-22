@@ -4,19 +4,19 @@ import { getMyTotalPlayed } from "../../profileApi.js";
 import Icon from "../ui/Icon.jsx";
 import TrackArtwork from "../ui/TrackArtwork.jsx";
 import OfflineNotice from "../ui/OfflineNotice.jsx";
+import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useOnlineStatus from "../../hooks/useOnlineStatus.js";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 
 const PAGE_SIZE = 50;
 
 function formatLastPlayed(value) {
-  if (!value) return "Last played date unavailable";
+  if (!value) return "Date unavailable";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Last played date unavailable";
-  return `Last played ${date.toLocaleString()}`;
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString();
 }
 
-export default function TotalPlayedPage({ currentUser, onNavigate }) {
+export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth }) {
   const online = useOnlineStatus();
   const trackActionMenu = useTrackActionMenu();
   const [tracks, setTracks] = useState([]);
@@ -24,36 +24,55 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
-  const [offset, setOffset] = useState(0);
   const offsetRef = useRef(0);
   const requestRef = useRef(0);
+  const appendInFlightRef = useRef(false);
 
-  const loadPage = useCallback(async ({ append = false } = {}) => {
-    if (!currentUser || !online) return;
-    const requestOffset = append ? offsetRef.current : 0;
+  const loadPage = useCallback(async ({ append = false } = {}) =>    {
+    if (!currentUser || !online || (append && appendInFlightRef.current)) return;
     const requestId = requestRef.current;
-    append ? setLoadingMore(true) : setLoading(true);
+    const requestOffset = append ? offsetRef.current : 0;
+    if (append) {
+      appendInFlightRef.current = true;
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError("");
     try {
       const response = await getMyTotalPlayed({ limit: PAGE_SIZE, offset: requestOffset });
+      if (requestId !== requestRef.current) return;
       const batch = Array.isArray(response) ? response : [];
       setTracks((previous) => append ? [...previous, ...batch] : batch);
-      setOffset(requestOffset + batch.length);
+      offsetRef.current = requestOffset + batch.length;
       setHasMore(batch.length === PAGE_SIZE);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load listening history.");
+      if (requestId === requestRef.current) {
+        setError(err instanceof Error ? err.message : "Unable to load listening history.");
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+        appendInFlightRef.current = false;
+      }
     }
   }, [currentUser?.id, online]);
 
   useEffect(() => {
+    requestRef.current += 1;
+    offsetRef.current = 0;
+    appendInFlightRef.current = false;
     setTracks([]);
-    setOffset(0);
+    setLoading(false);
+    setLoadingMore(false);
     setHasMore(false);
+    setError("");
     if (currentUser && online) void loadPage();
-  }, [currentUser?.id, online]);
+    return () => {
+      requestRef.current += 1;
+    };
+  }, [currentUser?.id, online, loadPage]);
 
   const play = (track) => player.playTrack(track.id, {
     audioUrl: track.audio_url,
@@ -79,20 +98,20 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
           <p>All the songs you've played on this account, with the most recently played at the top.</p>
           <div className="hs-total-played-summary">
             <strong>{tracks.length.toLocaleString()}</strong>
-            <span>{tracks.length === 1 ? "song loaded" : "songs loaded"}{hasMore ? " · more history available" : tracks.length && !loading ? " · complete history" : ""}</span>
+            <span>{tracks.length === 1 ? "song loaded" : "songs loaded"}{hasMore ? " · more history available" : tracks.length && !loading ? " · end of history" : ""}</span>
           </div>
         </div>
       </header>
 
       <section className="hs-total-played-list" aria-label="All played songs">
         {!online ? (
-          <OfflineNotice compact title="Go online to load Total Played" description="Your complete account listening history requires a connection." />
+          <OfflineNotice compact title="Go online to load Total Played" description="Your account listening history needs an internet connection." />
         ) : error ? (
           <div className="hs-empty-card" role="alert">{error}</div>
         ) : tracks.length ? (
           <>
             <div className="hs-total-played-table-head" aria-hidden="true">
-              <span>TRACK</span><span>LAST PLAYED</span><span>PLAY COUNT</span>
+              <span>TRACK</span><span>LAST PLAYED</span><span>PLAYS</span>
             </div>
             <div className="hs-total-played-rows">
               {tracks.map((track) => (
@@ -101,7 +120,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
                   <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
                   <span className="hs-total-played-meta">
                     <strong>{track.title}</strong>
-                    <small>{track.artist}</small>
+                    <small>{track.artist}{track.album ? ` · ${track.album}` : ""}</small>
                   </span>
                   <span className="hs-total-played-last">{formatLastPlayed(track.last_played_at)}</span>
                   <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()}</span>
@@ -111,7 +130,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
             {hasMore ? (
               <div className="hs-total-played-load-more">
                 <button type="button" className="hs-search-primary-action" disabled={loadingMore} onClick={() => void loadPage({ append: true })}>
-                  {loadingMore ? "Loading history…" : `Load more songs · ${tracks.length.toLocaleString()} loaded`}
+                  {loadingMore ? "Loading…" : `Load more · ${tracks.length.toLocaleString()} songs`}
                 </button>
               </div>
             ) : null}
@@ -119,9 +138,10 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
         ) : loading ? (
           <div className="hs-playlist-loading"><span className="hs-playlist-shimmer" /></div>
         ) : (
-          <div className="hs-empty-card"><Icon name="music" size={30}/><strong>No listening history yet</strong><p>Once you play songs, your complete account history will appear here.</p></div>
+          <div className="hs-empty-card"><Icon name="music" size={30}/><strong>No listening history yet</strong><p>When you play songs, your account history will show up here, newest first.</p></div>
         )}
       </section>
+      <TrackActionMenu menu={trackActionMenu.menu} onClose={trackActionMenu.closeMenu} currentUser={currentUser} onRequireAuth={onRequireAuth} />
     </div>
   );
 }
