@@ -87,20 +87,24 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   }).catch(() => {});
 
   return (
-    <div className="page-stack hs-library-page hs-total-played-route">
+    <div className="page-stack hs-search-page hs-library-page hs-total-played-route">
       <header className="hs-total-played-header">
-        <button type="button" className="hs-search-playlist-back" onClick={() => onNavigate?.("profile")}>
-          <Icon name="chevron" size={15} /> Back to Profile
-        </button>
-        <div className="hs-total-played-heading">
-          <span className="hs-eyebrow">YOUR LISTENING HISTORY</span>
-          <h1>Total Played</h1>
-          <p>All the songs you've played on this account, with the most recently played at the top.</p>
-          <div className="hs-total-played-summary">
-            <strong>{tracks.length.toLocaleString()}</strong>
-            <span>{tracks.length === 1 ? "song loaded" : "songs loaded"}{hasMore ? " · more history available" : tracks.length && !loading ? " · end of history" : ""}</span>
-          </div>
+        <div className="hs-search-playlist-view__nav">
+          <button type="button" className="hs-search-playlist-back" onClick={() => onNavigate?.("profile")}>
+            <Icon name="chevron" size={15} /> Back to Profile
+          </button>
         </div>
+        <section className="hs-search-playlist-view__hero hs-total-played-hero">
+          <div className="hs-search-playlist-view__copy hs-total-played-heading">
+            <span>YOUR LISTENING HISTORY</span>
+            <h2>Total Played</h2>
+            <p>All the songs you've played on this account, with the most recently played at the top.</p>
+            <small className="hs-total-played-summary">
+              <strong>{tracks.length.toLocaleString()}</strong>
+              {tracks.length === 1 ? " song loaded" : " songs loaded"}{hasMore ? " · more history available" : tracks.length && !loading ? " · end of history" : ""}
+            </small>
+          </div>
+        </section>
       </header>
 
       <section className="hs-total-played-list" aria-label="All played songs">
@@ -115,15 +119,20 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
             </div>
             <div className="hs-total-played-rows">
               {tracks.map((track) => (
-                <button type="button" key={track.id} className="hs-total-played-track"
+                <button type="button" key={track.id} className="hs-search-track hs-library-track-row hs-total-played-track"
                   {...trackActionMenu.getTriggerProps(track)} onClick={() => play(track)}>
-                  <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
-                  <span className="hs-total-played-meta">
+                  <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="hs-search-track__art">
+                    <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
+                    <i aria-hidden="true"><Icon name="play" size={15} /></i>
+                  </span>
+                  <span className="hs-search-track__copy">
                     <strong>{track.title}</strong>
-                    <small>{track.artist}{track.album ? ` · ${track.album}` : ""}</small>
+                    <small>{track.artist || "Unknown Artist"}{track.album ? ` • ${track.album}` : ""}</small>
                   </span>
                   <span className="hs-total-played-last">{formatLastPlayed(track.last_played_at)}</span>
                   <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()}</span>
+                  <span className="hs-search-track__play" aria-hidden="true"><Icon name="play" size={14} /></span>
                 </button>
               ))}
             </div>
