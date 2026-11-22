@@ -180,9 +180,6 @@ export default function ProfilePage({
   const [totalPlayedError, setTotalPlayedError] =
     useState("");
 
-  const [totalPlayedError, setTotalPlayedError] =
-    useState("");
-
   const [avatarVersion, setAvatarVersion] =
     useState(0);
 
