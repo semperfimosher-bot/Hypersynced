@@ -394,6 +394,7 @@ async def register_account(
                 database_session=session,
                 user=user,
                 request=request,
+                remember_me=remember_me,
             )
         )
 
@@ -420,6 +421,7 @@ async def authenticate_password_account(
     *,
     identifier: str,
     password: str,
+    remember_me: bool = True,
     request: Request,
 ) -> tuple[
     User,
@@ -526,6 +528,8 @@ def set_refresh_cookie(
     response: Response,
     refresh_token: str,
     request: Request,
+    *,
+    remember_me: bool = True,
 ) -> None:
     settings = get_settings()
 
@@ -541,7 +545,7 @@ def set_refresh_cookie(
     response.set_cookie(
         key="hypersync_refresh",
         value=refresh_token,
-        max_age=(settings.refresh_token_ttl_days * 24 * 60 * 60),
+        max_age=(settings.refresh_token_ttl_days * 24 * 60 * 60) if remember_me else None,
         httponly=True,
         secure=(
             settings.environment
@@ -899,6 +903,7 @@ async def create_session(
     database_session,
     user: User,
     request: Request,
+    remember_me: bool = True,
 ):
     settings = get_settings()
     now = datetime.now(
@@ -945,6 +950,7 @@ async def create_session(
             if (
                 same_user
                 and still_live
+                and existing_session.remember_me == remember_me
             ):
                 replacement_refresh_token = (
                     await _rotate_refresh_session_secret(
@@ -974,6 +980,7 @@ async def create_session(
     )
 
     user_session = UserSession(
+        remember_me=remember_me,
         user_id=user.id,
         refresh_token_hash=(
             hash_refresh_token(

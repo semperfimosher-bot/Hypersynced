@@ -214,6 +214,7 @@ async def login(
     ) = await authenticate_password_account(
         identifier=identifier,
         password=payload.password,
+        remember_me=payload.remember_me,
         request=request,
     )
 
@@ -229,6 +230,7 @@ async def login(
         response,
         refresh_token,
         request,
+        remember_me=user_session.remember_me,
     )
 
     return AuthResponse(
@@ -1054,6 +1056,7 @@ async def refresh(
             response,
             replacement_refresh_token,
             request,
+            remember_me=current_session.remember_me,
         )
 
         return AuthResponse(

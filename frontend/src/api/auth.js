@@ -135,6 +135,10 @@ function persistRestoredSession(
 
 
 async function restoreSessionInternal() {
+  if (!shouldRememberSession()) {
+    await logoutSession();
+    return null;
+  }
   const token =
     getAccessToken();
 

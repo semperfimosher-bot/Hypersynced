@@ -139,6 +139,7 @@ export default function AuthOverlay({
               : {
                   username,
                   password,
+                  remember_me: rememberMe,
                 },
           ),
         },
