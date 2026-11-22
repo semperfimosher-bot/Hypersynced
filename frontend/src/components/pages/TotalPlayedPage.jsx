@@ -56,7 +56,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
   }).catch(() => {});
 
   return (
-    <div className="hs-library-page hs-total-played-route">
+    <div className="page-stack hs-library-page hs-total-played-route">
       <header className="hs-total-played-header">
         <button type="button" className="hs-search-playlist-back" onClick={() => onNavigate?.("profile")}>
           <Icon name="chevron" size={15} /> Back to Profile
