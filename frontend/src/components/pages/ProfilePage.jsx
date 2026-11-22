@@ -480,7 +480,7 @@ export default function ProfilePage({
           value={
             profile?.tracks_played ?? 0
           }
-          label="Total Plays"
+          label="Total Played"
           onClick={() => onNavigate?.("total-played")}
         />
 
