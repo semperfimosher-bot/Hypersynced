@@ -79,7 +79,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate }) {
               {...trackActionMenu.getTriggerProps(track)} onClick={() => play(track)}>
               <span className="hs-total-played-rank">{index + 1}</span>
               <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
-              <span className="hs-total-played-meta"><strong>{track.title}</strong><small>{track.artist}</small></span>
+              <span className="hs-total-played-meta"><strong>{track.title}</strong><small>{track.artist}</small><small>{track.last_played_at ? `Last played ${new Date(track.last_played_at).toLocaleString()}` : ""}</small></span>
               <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()} plays</span>
             </button>
           ))
