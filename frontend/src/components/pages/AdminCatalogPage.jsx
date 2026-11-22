@@ -87,6 +87,15 @@ export default function AdminCatalogPage() {
   ]);
 
 
+  useEffect(() => {
+    writeAdminCatalogState({
+      searchQuery,
+      category,
+      folderValue,
+      selectedTrackIds,
+    });
+  }, [searchQuery, category, folderValue, selectedTrackIds]);
+
   const normalizedSearch =
     searchQuery
       .trim()
