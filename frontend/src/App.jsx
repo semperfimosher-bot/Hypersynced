@@ -1446,10 +1446,12 @@ const persistAppView =
 
   useEffect(() => {
     if (!shouldRestoreSession()) {
-      if (!readCachedUserProfile()) {
-        setAuthOpen(true);
-      }
-
+      // A session-only login is deliberately revoked on page reload.
+      // Send the cookie to the server for revocation before the app proceeds.
+      setCurrentUser(null);
+      setAccountStateReady(true);
+      setAuthOpen(true);
+      void logoutSession();
       return undefined;
     }
 
