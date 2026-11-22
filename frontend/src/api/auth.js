@@ -4,6 +4,7 @@ import {
 } from "../mediaStore.js";
 
 import {
+  API_BASE,
   apiRequest,
   refreshAccessToken,
 } from "./client.js";
@@ -323,19 +324,17 @@ export function restoreSession() {
 
 
 export function logoutSession() {
-  void clearOfflineIdentity().catch(() => {});
-  const request =
-    apiRequest(
-      "/auth/logout",
-      {
-        method: "POST",
-      },
-    ).catch(() => {
-      // Ignore network failures
-      // during logout.
-    });
-
+  // Clear local authenticated state immediately. Logout must never trigger
+  // automatic refresh/re-authentication through apiRequest.
   clearAuthSession();
+  void clearOfflineIdentity().catch(() => {});
 
-  return request;
+  return fetch(`${API_BASE}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => {
+    // Local logout remains complete even if the server is unreachable.
+    // The server-side session will expire; cookie deletion requires a
+    // successful response from the backend.
+  });
 }
