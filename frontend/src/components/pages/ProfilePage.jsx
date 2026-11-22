@@ -9,7 +9,6 @@ import * as player from "../../audioPlayer.js";
 
 import {
   getMyProfile,
-  getMyRecentlyPlayed,
 } from "../../profileApi.js";
 
 import Avatar from "../profile/Avatar.jsx";
@@ -40,12 +39,10 @@ import OfflineNotice from
 import { readProfileSnapshot, writeProfileSnapshot, subscribeProfileSnapshotChanged } from "../../profileSnapshotCache.js";
 import {
   applyOptimisticRecentlyPlayed,
-  mergeRecentlyPlayedWithOptimisticCache,
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
-import useQuietRefresh from "../../hooks/useQuietRefresh.js";
 
 
 function memberFor(value) {
@@ -247,28 +244,16 @@ export default function ProfilePage({
     loadProfile,
   ]);
 
-  const loadRecentlyPlayed = useCallback(async () => {
-    const request = ++recentRequest.current;
-    const owner = currentUser?.id;
-    if (!currentUser || !online) return;
-    try {
-      const tracks = await getMyRecentlyPlayed();
-      if (request !== recentRequest.current || owner !== currentUser?.id) return;
-      const normalized = Array.isArray(tracks) ? tracks : [];
-      const cachedTracks = readCachedHomeRecentlyPlayed(recentOwner);
-      const mergedTracks = mergeRecentlyPlayedWithOptimisticCache(normalized, cachedTracks, 12);
-      writeCachedHomeRecentlyPlayed(recentOwner, mergedTracks);
-      setRecentTracks(mergedTracks);
-    } catch {
-      // Keep the owner-scoped cache visible when refresh fails.
-    }
-  }, [currentUser?.id, recentOwner, online]);
+  const loadRecentlyPlayed = useCallback(() => {
+    setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
+  }, [recentOwner]);
 
   useEffect(() => {
-    void loadRecentlyPlayed();
-    return () => { recentRequest.current += 1; };
+    loadRecentlyPlayed();
   }, [loadRecentlyPlayed]);
 
+  // Profile Recently Played is the current device's local history. Account
+  // analytics (total plays/listening time) continue to come from the profile API.
   useEffect(() => {
     if (!currentUser) return undefined;
     return subscribeListeningHistoryChanged((event) => {
@@ -283,20 +268,9 @@ export default function ProfilePage({
         setRecentTracks(next);
         return;
       }
-      if (detail.type === "cache-updated") {
-        recentRequest.current += 1;
-        setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
-        return;
-      }
-      void loadRecentlyPlayed();
+      setRecentTracks(readCachedHomeRecentlyPlayed(recentOwner));
     });
-  }, [currentUser?.id, recentOwner, loadRecentlyPlayed]);
-
-  useQuietRefresh(
-    loadRecentlyPlayed,
-    { enabled: Boolean(currentUser && online), intervalMs: 30_000 },
-  );
-
+  }, [currentUser?.id, recentOwner]);
 
   if (!currentUser) {
     return (
