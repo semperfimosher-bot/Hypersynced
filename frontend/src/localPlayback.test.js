@@ -73,11 +73,15 @@ test("Profile Recently Played is device-local while account analytics remain sou
   assert.match(profile, /profile\?\.tracks_played/);
 });
 
-test("Total Plays opens an account-wide listening summary", () => {
+test("Total Plays navigates to a dedicated account-wide history page", () => {
   const profile = readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
-  assert.match(profile, /label="Total Plays"[\s\S]*?onClick=\{\(\) => setTotalPlaysOpen\(true\)\}/);
-  assert.ok(profile.includes("ACCOUNT-WIDE LISTENING"));
-  assert.ok(profile.includes("every device signed into this account"));
+  const app = readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  const page = readFileSync(new URL("./components/pages/TotalPlayedPage.jsx", import.meta.url), "utf8");
+  assert.match(profile, /label="Total Plays"[\s\S]*?onClick=\{\(\) => onNavigate\?\.\("total-played"\)\}/);
+  assert.ok(app.includes("page === \"total-played\""));
+  assert.ok(page.includes("ACCOUNT-WIDE LISTENING"));
+  assert.ok(page.includes("most recently played to oldest"));
+  assert.ok(page.includes("getMyTotalPlayed"));
   assert.ok(profile.includes("profile?.tracks_played"));
 });
 
