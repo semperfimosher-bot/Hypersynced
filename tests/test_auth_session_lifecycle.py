@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -13,8 +14,10 @@ from backend.app.database import (
 )
 from backend.app.main import app
 from backend.app.models.account import (
+    UserRole,
     UserSession,
 )
+from backend.app.models.visitor import VisitorDevice
 from backend.app.models.base import Base
 from backend.app.security.tokens import (
     create_refresh_token,
@@ -912,3 +915,53 @@ async def test_logout_revokes_session_and_deletes_refresh_cookie() -> None:
 
         refresh = await client.post("/api/auth/refresh")
         assert refresh.status_code == 401
+
+
+
+@pytest.mark.asyncio
+async def test_admin_device_revoke_invalidates_linked_access_session() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        registered = await _register(client)
+        claims = decode_access_token(registered["access_token"])
+        session_factory = get_session_factory()
+        visitor_token = "test-visitor-device-token-" + uuid4().hex
+        token_hash = hashlib.sha256(visitor_token.encode("utf-8")).hexdigest()
+
+        async with session_factory() as session:
+            user_session = await session.get(UserSession, claims.session_id)
+            assert user_session is not None
+            user = await session.get(UserSession, claims.session_id)
+            assert user is not None
+            user_session.visitor_token_hash = token_hash
+            account = await session.get(__import__("backend.app.models.account", fromlist=["User"]).User, claims.user_id)
+            assert account is not None
+            account.role = UserRole.ADMIN
+            device = VisitorDevice(
+                token_hash=token_hash,
+                user_agent="test browser",
+                account_user_id=claims.user_id,
+                visit_count=1,
+            )
+            session.add(device)
+            await session.commit()
+            device_number = device.id
+
+        revoke = await client.delete(
+            f"/api/visitors/admin/{device_number}",
+            headers={"Authorization": f"Bearer {registered['access_token']}"},
+        )
+        assert revoke.status_code == 200, revoke.text
+
+        protected = await client.get(
+            "/api/users/me",
+            headers={"Authorization": f"Bearer {registered['access_token']}"},
+        )
+        assert protected.status_code == 401, protected.text
+
+        heartbeat = await client.post(
+            "/api/visitors/heartbeat",
+            headers={"x-hs-visitor-id": visitor_token},
+        )
+        assert heartbeat.status_code == 200, heartbeat.text
+        assert heartbeat.json()["revoked"] is True
