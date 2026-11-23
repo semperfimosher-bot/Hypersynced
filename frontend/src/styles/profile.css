@@ -3459,8 +3459,8 @@ button.hs-profile-stat:hover,
 .hs-total-played-keepalive.is-active { display: contents; }
 
 
-/* Match Total Played and visitor-device rows, plus their top/bottom gutters,
-   to the slightly lifted dark header surface. */
+/* Use the same neutral navy surface as the Library page panel across the
+   entire row-list area, not only the individual row elements. */
 .hs-total-played-list,
 .hs-total-played-rows,
 .hs-admin-device-list,
@@ -3468,7 +3468,7 @@ button.hs-profile-stat:hover,
 .hs-admin-device-footer,
 .hs-search-track.hs-total-played-track,
 .hs-search-track.hs-admin-device-row {
-  background-color: rgba(8, 16, 24, 0.97);
+  background-color: #030a11;
 }
 
 .hs-search-track.hs-total-played-track:hover,
