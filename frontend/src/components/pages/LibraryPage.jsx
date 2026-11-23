@@ -5564,6 +5564,9 @@ useEffect(() => {
                     onFocus={() => {
                       void prefetchPlaylistDetails(playlist.id);
                     }}
+                    onTouchStart={() => {
+                      void prefetchPlaylistDetails(playlist.id);
+                    }}
                     onClick={() => {
                       if (
                         !openingPlaylistId
