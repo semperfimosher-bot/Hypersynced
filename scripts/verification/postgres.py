@@ -60,8 +60,21 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
         head = script.get_current_head()
         assert head is not None
         revision = script.get_revision(head)
-        if revision is None or not isinstance(revision.down_revision, str):
-            raise RuntimeError("Expected a single migration predecessor")
+        if revision is None or revision.down_revision is None:
+            raise RuntimeError("Expected a migration predecessor")
+        predecessors = (
+            (revision.down_revision,)
+            if isinstance(revision.down_revision, str)
+            else tuple(revision.down_revision)
+        )
+        # For merge revisions, start from the session-history branch so the
+        # populated pre-remember-me session survives while the other branch
+        # (visitor-device schema) is applied during the final upgrade.
+        predecessor = (
+            "ca91b5e7d204"
+            if "ca91b5e7d204" in predecessors
+            else predecessors[0]
+        )
 
         async def migrate(target: str) -> None:
             async with engine.begin() as connection:
@@ -72,7 +85,7 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
 
                 await connection.run_sync(upgrade)
 
-        await migrate(revision.down_revision)
+        await migrate(predecessor)
         user_id, auth_id = uuid4(), uuid4()
         # Verify existing accounts survive the final historical migration.
         factory = async_sessionmaker(engine, expire_on_commit=False)
