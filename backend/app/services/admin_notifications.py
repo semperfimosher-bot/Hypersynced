@@ -18,6 +18,20 @@ logger = logging.getLogger(
 )
 
 
+_HEARTBEAT_ACTIVITY_KINDS = {
+    "heartbeat",
+    "visitor_heartbeat",
+    "visitor-heartbeat",
+    "visitor_heartbeat_ping",
+}
+
+
+def should_record_admin_activity(kind: str) -> bool:
+    normalized = kind.strip().casefold().replace("-", "_")
+    return normalized not in _HEARTBEAT_ACTIVITY_KINDS and not normalized.endswith("_heartbeat")
+
+
+
 async def record_admin_activity(
     *,
     kind: str,
@@ -28,6 +42,9 @@ async def record_admin_activity(
     source_message_id: UUID | None = None,
 ) -> None:
     """Record one activity notification for every active admin."""
+
+    if not should_record_admin_activity(kind):
+        return
 
     try:
         session_factory = get_session_factory()

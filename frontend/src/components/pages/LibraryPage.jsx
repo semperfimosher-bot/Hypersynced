@@ -1544,7 +1544,7 @@ const [
 
         if (phase === "confirmed" && playlist?.id) {
           const playlistId = String(playlist.id);
-          const shouldBeSaved = Boolean(saved);
+          const shouldBeSaved = Boolean(detail.saved);
           setSavedPlaylists(current =>
             shouldBeSaved
               ? [playlist, ...current.filter(item => String(item?.id) !== playlistId)]

@@ -321,3 +321,15 @@ def test_autoplay_request_model_accepts_stale_mixed_browser_state() -> None:
         )
         == []
     )
+
+
+def test_autoplay_cold_start_returns_global_popular_order_and_respects_exclusions() -> None:
+    from backend.app.services.autoplay import _cold_start_tracks
+
+    popular = [
+        cast(Track, SimpleNamespace(id="popular-1")),
+        cast(Track, SimpleNamespace(id="popular-2")),
+        cast(Track, SimpleNamespace(id="popular-3")),
+    ]
+    selected = _cold_start_tracks(popular, {"popular-2"}, 2)
+    assert [track.id for track in selected] == ["popular-1", "popular-3"]

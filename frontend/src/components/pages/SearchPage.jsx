@@ -1049,6 +1049,27 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
   const combinedResults = results;
 
+  // Reflect optimistic Library saves immediately in Search results and detail.
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    const ownerKey = String(currentUser.id ?? currentUser.username ?? "anonymous");
+    const handleLibraryChanged = (event) => {
+      const detail = event?.detail ?? {};
+      const playlist = detail.playlist;
+      if (!playlist?.id || String(detail.ownerKey ?? "") !== ownerKey) return;
+      if (!["optimistic", "confirmed", "rollback"].includes(detail.phase)) return;
+      const playlistId = String(playlist.id);
+      const saved = Boolean(detail.saved);
+      setResults((current) => ({
+        ...current,
+        playlists: (current.playlists ?? []).map((item) => String(item?.id) === playlistId ? { ...item, is_saved: saved } : item),
+      }));
+      setOpenedPlaylist((current) => String(current?.id ?? "") === playlistId ? { ...current, is_saved: saved } : current);
+    };
+    window.addEventListener("hypersync:library-changed", handleLibraryChanged);
+    return () => window.removeEventListener("hypersync:library-changed", handleLibraryChanged);
+  }, [currentUser?.id, currentUser?.username]);
+
 
   const displayResults =
   useMemo(
@@ -3874,7 +3895,7 @@ async function downloadOpenedPlaylist() {
                           </strong>
 
                           <small>
-                            HyperSynced
+                            {playlist.is_saved ? "✓ In Library" : "HyperSynced"}
                           </small>
 
                         </span>

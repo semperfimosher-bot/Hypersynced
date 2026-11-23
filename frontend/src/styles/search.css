@@ -8467,3 +8467,18 @@ button:disabled {
 @media (max-width: 760px) {
   .hs-library-entity-row { grid-template-columns: 24px 46px minmax(0, 1fr) 16px; min-height: 62px; padding: 8px 10px; gap: 8px; }
 }
+
+
+/* Readable but restrained headings and a divider above the first item. */
+.hs-search-section__heading { min-height: 56px; padding: 11px 14px; }
+.hs-search-section__heading h3 { line-height: 1.32; margin-top: 5px; font-size: 14px; }
+.hs-search-console__heading h2, .hs-library-console__heading h2 { line-height: 1.24; letter-spacing: -0.025em; }
+.hs-search-track-list > .hs-search-track:first-child,
+.library-track-list > .hs-search-track:first-child,
+.hs-search-section > .hs-search-track-list > .hs-search-track:first-child,
+.hs-library-entity-list > .hs-library-entity-row:first-child,
+.hs-library-collection > .hs-search-track-list > .hs-search-track:first-child,
+.hs-message-conversation-list > *:first-child {
+  border-top: 1px solid var(--hs-shared-row-divider, rgba(114, 165, 190, 0.16));
+}
+.hs-search-track__copy small { line-height: 1.42; }

@@ -41,6 +41,15 @@ RECENT_SESSION_LIMIT = 12
 RECENT_SESSION_DECAY = 0.90
 
 
+def _cold_start_tracks(
+    popular_tracks: list[Track],
+    excluded: set[UUID],
+    limit: int,
+) -> list[Track]:
+    """Use global popularity order for accounts with no personal listening data."""
+    return [track for track in popular_tracks if track.id not in excluded][:limit]
+
+
 def _text_key(
     value: str | None,
 ) -> str:
@@ -570,6 +579,8 @@ async def recommend_autoplay_tracks(
         int,
     )
 
+
+    history_rows = []
 
     if user_id is not None:
         history_result = (
@@ -1191,11 +1202,22 @@ async def recommend_autoplay_tracks(
     )
 
 
-    for track in (
+    popular_tracks = (
         popular_result
         .scalars()
         .all()
-    ):
+    )
+
+    # Cold-start accounts have no personal signals yet. Use the global
+    # most-played ordering until listening history exists, then personalize.
+    if not history_rows:
+        return _cold_start_tracks(
+            popular_tracks,
+            excluded,
+            limit,
+        )
+
+    for track in popular_tracks:
         candidate_by_id[
             track.id
         ] = track

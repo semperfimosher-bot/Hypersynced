@@ -1050,10 +1050,13 @@ button.hs-profile-stat:hover,
     1.25rem;
 
   font-weight:
-    900;
+    850;
+
+  line-height:
+    1.32;
 
   letter-spacing:
-    -0.02em;
+    -0.015em;
 }
 
 
