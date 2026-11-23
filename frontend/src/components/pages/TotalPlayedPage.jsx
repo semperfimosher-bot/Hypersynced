@@ -52,7 +52,11 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       const nextTracks = append
         ? mergeTotalPlayedTracks(cached.tracks, batch)
         : mergeTotalPlayedTracks(batch, batch.length === PAGE_SIZE ? cached.tracks.slice(PAGE_SIZE) : []);
-      setTracksState({ owner: ownerKey, tracks: nextTracks });
+      const historyChanged = nextTracks.length !== tracks.length || nextTracks.some((track, index) => {
+        const previous = tracks[index];
+        return !previous || previous.id !== track.id || previous.play_count !== track.play_count || previous.last_played_at !== track.last_played_at;
+      });
+      if (historyChanged) setTracksState({ owner: ownerKey, tracks: nextTracks });
       offsetRef.current = append ? requestOffset + batch.length : batch.length;
       const nextHasMore = batch.length === PAGE_SIZE;
       setHasMore(nextHasMore);
@@ -68,7 +72,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
         appendInFlightRef.current = false;
       }
     }
-  }, [ownerKey, online]);
+  }, [ownerKey, online, tracks]);
 
   useEffect(() => {
     requestRef.current += 1;
@@ -96,7 +100,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       if (entries.some((entry) => entry.isIntersecting) && !appendInFlightRef.current) {
         void loadPage({ append: true });
       }
-    }, { rootMargin: "600px 0px" });
+    }, { rootMargin: "1400px 0px" });
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [error, hasMore, loading, loadingMore, online, loadPage]);
