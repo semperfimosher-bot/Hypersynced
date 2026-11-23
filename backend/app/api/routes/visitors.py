@@ -59,8 +59,9 @@ async def visitor_heartbeat(
         device.ip_address = _client_ip(request)
         device.user_agent = request.headers.get("user-agent", "")[:1200]
         device.account_user_id = user.id if user else device.account_user_id
+        if device.last_seen_at < now - timedelta(minutes=30):
+            device.visit_count = int(device.visit_count or 0) + 1
         device.last_seen_at = now
-        device.visit_count = int(device.visit_count or 0) + 1
     await session.commit()
     if is_new:
         await record_admin_activity(
@@ -88,7 +89,7 @@ async def list_visitor_devices(
     ip_cutoff = now - timedelta(days=IP_RETENTION_DAYS)
     await session.execute(
         update(VisitorDevice)
-        .where(VisitorDevice.first_seen_at < ip_cutoff, VisitorDevice.ip_address.is_not(None))
+        .where(VisitorDevice.last_seen_at < ip_cutoff, VisitorDevice.ip_address.is_not(None))
         .values(ip_address=None)
     )
     result = await session.execute(

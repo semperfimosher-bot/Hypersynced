@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import * as player from "./audioPlayer.js";
+import { apiRequest } from "./api/client.js";
 import { bindAccountPlayback } from "./accountPlayback.js";
 
 import {
@@ -644,6 +645,33 @@ function shouldIgnorePlaybackShortcut(
 
 
 export default function App() {
+  useEffect(() => {
+    let visitorToken = "";
+    try {
+      visitorToken = window.localStorage.getItem("hs-visitor-token") || "";
+      if (!visitorToken || visitorToken.length < 32) {
+        visitorToken = window.crypto.randomUUID().replaceAll("-", "") + window.crypto.randomUUID().replaceAll("-", "");
+        window.localStorage.setItem("hs-visitor-token", visitorToken);
+      }
+    } catch {
+      return undefined;
+    }
+    const sendHeartbeat = () => {
+      if (document.visibilityState !== "visible") return;
+      void apiRequest("/visitors/heartbeat", {
+        method: "POST",
+        headers: { "X-HS-Visitor-Id": visitorToken },
+      }).catch(() => {});
+    };
+    sendHeartbeat();
+    const timer = window.setInterval(sendHeartbeat, 45_000);
+    const onVisibility = () => sendHeartbeat();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
   // Resolve the account-scoped saved page synchronously before the first render.
   // This prevents Home from flashing while session restoration runs.
   const [startupAppView] = useState(() => {
