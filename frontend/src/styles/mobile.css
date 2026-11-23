@@ -3359,3 +3359,17 @@
   padding-top: 10px;
   border-top: 1px solid rgba(80, 164, 211, 0.08);
 }
+
+/* Unified Library/Total Played/Visitor Device row surface and hover treatment. */
+.hs-search-track.hs-total-played-track,
+.hs-search-track.hs-admin-device-row {
+  background: rgba(8, 32, 49, 0.92) !important;
+  border-bottom: 1px solid rgba(66, 128, 154, 0.065) !important;
+}
+.hs-search-track.hs-total-played-track:hover,
+.hs-search-track.hs-total-played-track.is-selected,
+.hs-search-track.hs-admin-device-row:hover,
+.hs-search-track.hs-admin-device-row.is-selected {
+  background: rgba(14, 55, 79, 0.96) !important;
+  box-shadow: inset 2px 0 rgba(77, 227, 255, 0.92);
+}
