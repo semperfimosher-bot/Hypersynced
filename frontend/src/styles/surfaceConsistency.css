@@ -667,3 +667,36 @@
 .hs-messages-console:has(.hs-messages-console__surface-group) + .hs-search-section {
   gap: 0;
 }
+
+
+/* Samsung A-series and other narrow mobile viewports: contain page width and controls. */
+@media (max-width: 979px) {
+  html, body, #root { width: 100%; max-width: 100%; overflow-x: clip; }
+  .app-shell, .main-workspace, .main-content, .page-stack, .page-content,
+  .hs-search-page, .hs-library-page, .hs-search-console, .hs-library-console,
+  .hs-search-section, .hs-search-console__surface-group, .hs-library-console__surface-group {
+    width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+  }
+  .hs-search-console__surface-group, .hs-library-console__surface-group { overflow: clip; }
+  .hs-search-console__heading, .hs-library-console__heading,
+  .hs-search-console__actions, .hs-search-console__status,
+  .hs-library-console__actions, .hs-library-console__status,
+  .hs-search-filterbar, .library-tabs { min-width: 0; max-width: 100%; }
+  .hs-search-console__actions, .hs-library-console__actions { display:flex; flex-wrap:wrap; align-items:center; }
+  .hs-search-console__actions > *, .hs-library-console__actions > * { flex: 0 1 auto; max-width:100%; }
+  .hs-search-filterbar, .library-tabs { display:flex; flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+  .hs-search-filterbar > *, .library-tabs > * { flex:0 0 auto; }
+  .hs-search-track-list, .library-track-list { width:100%; max-width:100%; min-width:0; }
+  .hs-search-track, .hs-library-track-row, .library-track-row { display:grid; grid-template-columns: minmax(0,1fr) auto; width:100%; max-width:100%; min-width:0; }
+  .hs-search-track__copy, .hs-library-track-row__copy, .library-track-row__copy { min-width:0; max-width:100%; }
+  .hs-search-track__actions, .hs-library-track-actions, .library-track-actions { min-width:0; max-width:100%; flex-wrap:wrap; }
+  .mobile-bottom-nav { width:100%; max-width:100vw; left:0; right:0; box-sizing:border-box; }
+}
+@media (max-width: 420px) {
+  .main-content { padding-inline: 10px; }
+  .hs-search-console__heading, .hs-library-console__heading { padding:10px; }
+  .hs-search-console__actions button, .hs-library-console__actions button,
+  .hs-search-track__actions button, .hs-library-track-actions button, .library-track-actions button {
+    max-width:100%; min-width:0; font-size:clamp(10px, 3vw, 12px); padding-inline:clamp(6px, 2vw, 9px);
+  }
+}

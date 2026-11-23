@@ -392,7 +392,6 @@ export default function AdminUploadsPage() {
       {catalogMessage ? (
         <p className="upload-item-error">{catalogMessage}</p>
       ) : null}
-on>
     </div>
   );
 }

@@ -87,3 +87,13 @@ test("lyrics lines use a transparent single-color surface", () => {
   assert.match(lyrics, /\.live-lyrics__line,[\s\S]*background: transparent !important/);
   assert.match(lyrics, /\.live-lyrics__viewport,[\s\S]*background: var\(--hs-surface\) !important/);
 });
+
+
+test("mobile Search and Library width containment prevents zoom and bottom-nav overflow", () => {
+  const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /name="viewport"[\s\S]*width=device-width, initial-scale=1\.0/);
+  assert.match(shared, /\.hs-search-page,[\s\S]*\.hs-library-page,[\s\S]*width: 100%/);
+  assert.match(shared, /\.mobile-bottom-nav[\s\S]*max-width:100vw/);
+  assert.match(shared, /\.hs-search-track__actions,[\s\S]*flex-wrap:wrap/);
+});
