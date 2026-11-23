@@ -3348,3 +3348,15 @@
 .admin-device-summary__open-row:hover {
   background: rgba(0, 153, 235, 0.04);
 }
+
+/* Final opaque row-surface override: exactly match Total Played's Library rows.
+   Keep the bright admin dashboard background from bleeding through. */
+.hs-search-track.hs-library-track-row.hs-admin-device-row {
+  background: rgba(8, 32, 49, 0.98) !important;
+  border-bottom-color: rgba(66, 128, 154, 0.065) !important;
+}
+.hs-search-track.hs-library-track-row.hs-admin-device-row:hover,
+.hs-search-track.hs-library-track-row.hs-admin-device-row.is-selected {
+  background: rgba(14, 55, 79, 0.98) !important;
+  box-shadow: inset 2px 0 rgba(77, 227, 255, 0.92) !important;
+}
