@@ -546,14 +546,6 @@ export default function AdminDashboardPage({
   ]);
 
   useQuietRefresh(
-    loadVisitorDevices,
-    {
-      intervalMs: 20_000,
-      enabled: true,
-    },
-  );
-
-  useQuietRefresh(
     loadDashboard,
     {
       intervalMs:
