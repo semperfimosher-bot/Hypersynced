@@ -56,13 +56,15 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
         : mergeTotalPlayedTracks(batch, batch.length === PAGE_SIZE ? cached.tracks.slice(PAGE_SIZE) : []);
       const historyChanged = nextTracks.length !== tracksRef.current.length || nextTracks.some((track, index) => {
         const previous = tracksRef.current[index];
-        return !previous || previous.id !== track.id || previous.play_count !== track.play_count || previous.last_played_at !== track.last_played_at;
+        return !previous || previous.id !== track.id || previous.play_count !== track.play_count || previous.last_played_at !== track.last_played_at || previous.title !== track.title || previous.artist !== track.artist || previous.album !== track.album || previous.artwork_url !== track.artwork_url || previous.genre !== track.genre || previous.release_year !== track.release_year || previous.media_version !== track.media_version;
       });
       if (historyChanged) setTracksState({ owner: ownerKey, tracks: nextTracks });
       offsetRef.current = append ? requestOffset + batch.length : batch.length;
       const nextHasMore = batch.length === PAGE_SIZE;
       setHasMore(nextHasMore);
-      writeTotalPlayedCache(ownerKey, nextTracks, nextHasMore);
+      if (historyChanged || cached.hasMore !== nextHasMore) {
+        writeTotalPlayedCache(ownerKey, nextTracks, nextHasMore);
+      }
     } catch (err) {
       if (requestId === requestRef.current) {
         setError(err instanceof Error ? err.message : "Unable to load listening history.");
