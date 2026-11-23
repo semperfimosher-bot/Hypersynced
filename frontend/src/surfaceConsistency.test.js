@@ -14,7 +14,7 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.match(entry, /@import "\.\/styles\/surfaceConsistency\.css";/);
   assert.ok(entry.indexOf("surfaceConsistency.css") > entry.indexOf("./styles/search.css"));
   assert.match(shared, /--hs-surface:\s*#012036/i);
-  assert.match(shared, /@media \(min-width:\s*980px\)[\s\S]*--hs-surface:\s*#000F1A/i);
+  assert.doesNotMatch(shared, /--hs-surface:\s*#000F1A/i);
   assert.ok(shared.includes(".hs-search-console__surface-group"));
   assert.ok(shared.includes(".hs-library-console__surface-group"));
   assert.ok(shared.includes(".hs-messages-console__surface-group"));
