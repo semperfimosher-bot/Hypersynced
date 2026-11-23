@@ -19,8 +19,8 @@ logger = logging.getLogger(
 
 
 def should_record_admin_activity(kind: str) -> bool:
-    normalized = kind.strip().casefold().replace("-", "_")
-    return normalized not in _HEARTBEAT_ACTIVITY_KINDS and not normalized.endswith("_heartbeat")
+    compact = kind.strip().casefold().replace("-", "").replace("_", "")
+    return "heartbeat" not in compact
 
 
 
