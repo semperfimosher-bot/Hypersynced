@@ -577,11 +577,13 @@ export default function AdminDashboardPage({
     loadDashboard,
   ]);
 
-  useEffect(() => {
-    void loadVisitorDevices();
-    const timer = window.setInterval(() => void loadVisitorDevices(), 20_000);
-    return () => window.clearInterval(timer);
-  }, [loadVisitorDevices]);
+  useQuietRefresh(
+    loadVisitorDevices,
+    {
+      intervalMs: 20_000,
+      enabled: true,
+    },
+  );
 
   useQuietRefresh(
     loadDashboard,
