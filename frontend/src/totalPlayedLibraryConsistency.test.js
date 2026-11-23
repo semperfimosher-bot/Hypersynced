@@ -33,7 +33,10 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*min-height: 64px/);
   assert.match(profileStyles, /\.hs-total-played-heading\s*\{[\s\S]*margin: 0/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*background: rgba\(8, 32, 49, 0\.92\) !important/);
-  assert.match(profileStyles, /hs-search-track\.hs-total-played-track:hover[\s\S]*background: rgba\(14, 55, 79, 0\.96\) !important/);\n  assert.match(page, /readTotalPlayedCache/);\n  assert.match(page, /silent: cached\.tracks.length > 0/);\n  assert.match(page, /const PAGE_SIZE = 100/);
+  assert.match(profileStyles, /hs-search-track\.hs-total-played-track:hover[\s\S]*background: rgba\(14, 55, 79, 0\.96\) !important/);
+  assert.match(page, /readTotalPlayedCache/);
+  assert.match(page, /silent: cached\.tracks.length > 0/);
+  assert.match(page, /const PAGE_SIZE = 100/);
   assert.match(page, /IntersectionObserver/);
   assert.match(page, /rootMargin: "600px 0px"/);
   assert.match(page, /hs-total-played-scroll-sentinel/);
