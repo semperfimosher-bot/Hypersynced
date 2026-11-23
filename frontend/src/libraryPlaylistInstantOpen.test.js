@@ -18,7 +18,8 @@ test("playlist hover and keyboard focus warm details and background warming uses
   assert.match(source, /onMouseEnter=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
   assert.match(source, /onFocus=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
   assert.match(source, /onTouchStart=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
-  assert.match(source, /void Promise\.all\(\[worker\(\), worker\(\)\]\)/);
+  assert.match(source, /void Promise\.all\(\[worker\(\), worker\(\), worker\(\), worker\(\)\]\)/);
+  assert.match(source, /sortPinnedPlaylists\([\s\S]*pinnedPlaylistIds/);
   assert.match(source, /await requestPlaylistDetails\(playlistId\)\.catch\(\(\) => null\)/);
 });
 
