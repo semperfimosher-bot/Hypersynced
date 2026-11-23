@@ -7,8 +7,9 @@ import OfflineNotice from "../ui/OfflineNotice.jsx";
 import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useOnlineStatus from "../../hooks/useOnlineStatus.js";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
+import { readTotalPlayedCache, writeTotalPlayedCache, mergeTotalPlayedTracks } from "../../totalPlayedCache.js";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100;
 
 function formatLastPlayed(value) {
   if (!value) return "Date unavailable";
@@ -19,7 +20,10 @@ function formatLastPlayed(value) {
 export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth }) {
   const online = useOnlineStatus();
   const trackActionMenu = useTrackActionMenu();
-  const [tracks, setTracks] = useState([]);
+  const ownerKey = currentUser?.id ?? currentUser?.username ?? null;
+  const initialCache = readTotalPlayedCache(ownerKey);
+  const [tracksState, setTracksState] = useState(() => ({ owner: ownerKey, tracks: initialCache.tracks }));
+  const tracks = tracksState.owner === ownerKey ? tracksState.tracks : readTotalPlayedCache(ownerKey).tracks;
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -29,14 +33,14 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const appendInFlightRef = useRef(false);
   const loadMoreSentinelRef = useRef(null);
 
-  const loadPage = useCallback(async ({ append = false } = {}) => {
+  const loadPage = useCallback(async ({ append = false, silent = false } = {}) => {
     if (!currentUser || !online || (append && appendInFlightRef.current)) return;
     const requestId = requestRef.current;
     const requestOffset = append ? offsetRef.current : 0;
     if (append) {
       appendInFlightRef.current = true;
       setLoadingMore(true);
-    } else {
+    } else if (!silent) {
       setLoading(true);
     }
     setError("");
@@ -44,36 +48,44 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       const response = await getMyTotalPlayed({ limit: PAGE_SIZE, offset: requestOffset });
       if (requestId !== requestRef.current) return;
       const batch = Array.isArray(response) ? response : [];
-      setTracks((previous) => append ? [...previous, ...batch] : batch);
-      offsetRef.current = requestOffset + batch.length;
-      setHasMore(batch.length === PAGE_SIZE);
+      const cached = readTotalPlayedCache(ownerKey);
+      const nextTracks = append
+        ? mergeTotalPlayedTracks(cached.tracks, batch)
+        : mergeTotalPlayedTracks(batch, batch.length === PAGE_SIZE ? cached.tracks.slice(PAGE_SIZE) : []);
+      setTracksState({ owner: ownerKey, tracks: nextTracks });
+      offsetRef.current = append ? requestOffset + batch.length : batch.length;
+      const nextHasMore = batch.length === PAGE_SIZE;
+      setHasMore(nextHasMore);
+      writeTotalPlayedCache(ownerKey, nextTracks, nextHasMore);
     } catch (err) {
       if (requestId === requestRef.current) {
         setError(err instanceof Error ? err.message : "Unable to load listening history.");
       }
     } finally {
       if (requestId === requestRef.current) {
-        setLoading(false);
+        if (!silent) setLoading(false);
         setLoadingMore(false);
         appendInFlightRef.current = false;
       }
     }
-  }, [currentUser?.id, online]);
+  }, [ownerKey, online]);
 
   useEffect(() => {
     requestRef.current += 1;
     offsetRef.current = 0;
     appendInFlightRef.current = false;
-    setTracks([]);
-    setLoading(false);
+    const cached = readTotalPlayedCache(ownerKey);
+    setTracksState({ owner: ownerKey, tracks: cached.tracks });
+    offsetRef.current = 0;
+    setLoading(cached.tracks.length === 0);
     setLoadingMore(false);
-    setHasMore(false);
+    setHasMore(cached.hasMore || cached.tracks.length >= PAGE_SIZE);
     setError("");
-    if (currentUser && online) void loadPage();
+    if (ownerKey && online) void loadPage({ silent: cached.tracks.length > 0 });
     return () => {
       requestRef.current += 1;
     };
-  }, [currentUser?.id, online, loadPage]);
+  }, [ownerKey, online, loadPage]);
 
 
   useEffect(() => {
@@ -123,7 +135,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       </header>
 
       <section className="hs-total-played-list" aria-label="All played songs">
-        {!online ? (
+        {!online && !tracks.length ? (
           <OfflineNotice compact title="Go online to load Total Played" description="Your account listening history needs an internet connection." />
         ) : error && !tracks.length ? (
           <div className="hs-empty-card" role="alert">{error}</div>
@@ -154,7 +166,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
             {error ? (
               <div className="hs-total-played-load-error" role="alert">
                 <span>{error}</span>
-                <button type="button" onClick={() => void loadPage({ append: true })}>Retry loading history</button>
+                <button type="button" onClick={() => void loadPage({ append: offsetRef.current > 0 })}>Retry loading history</button>
               </div>
             ) : null}
             {hasMore ? (

@@ -28,6 +28,14 @@ export function getMyTotalPlayed({ limit = 100, offset = 0 } = {}) {
   );
 }
 
+export function getSuggestedMusic({ currentTrackId = null, excludeTrackIds = [], contextTrackIds = [], limit = 12 } = {}) {
+  return apiRequest("/recommendations/autoplay", {
+    method: "POST",
+    body: JSON.stringify({ current_track_id: currentTrackId, exclude_track_ids: excludeTrackIds, context_track_ids: contextTrackIds, limit }),
+  });
+}
+
+
 export async function updateMyProfile({
   displayName,
   bio,
