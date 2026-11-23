@@ -255,6 +255,7 @@ function MainPage({
     cachedProfileUsername,
   ) {
     const adminPage =
+      page === "admin-devices" ||
       ADMIN_NAV_ITEMS.some(
         (item) =>
           item.id === page,

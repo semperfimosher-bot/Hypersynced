@@ -76,6 +76,7 @@ export const PAGE_TITLES = {
   profile: "Profile",
 
   admin: "Admin Dashboard",
+  "admin-devices": "Visitor Devices",
   "admin-uploads": "Uploads",
   "admin-catalog": "Media Catalog",
 };
