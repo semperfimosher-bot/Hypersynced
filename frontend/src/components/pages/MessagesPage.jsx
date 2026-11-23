@@ -1128,6 +1128,7 @@ export default function MessagesPage({
           aria-hidden="true"
         />
 
+        <div className="hs-messages-console__surface-group">
         <div className="hs-search-console__heading">
           <div className="hs-search-console__intro">
             <div className="hs-search-console__eyebrow-row">
@@ -1206,6 +1207,7 @@ export default function MessagesPage({
           <span className="hs-search-status-chip">
             VIEWED MESSAGES EXPIRE IN 7 DAYS
           </span>
+        </div>
         </div>
       </section>
 
