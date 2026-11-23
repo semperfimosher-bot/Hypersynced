@@ -579,7 +579,7 @@ function MainPage({
         {renderPage(activePage, profileUsername)}
         {totalPlayedVisited ? (
           <div className={`hs-total-played-keepalive${activePage === "total-played" ? " is-active" : ""}`} aria-hidden={activePage !== "total-played"}>
-            <TotalPlayedPage currentUser={currentUser} onNavigate={onNavigate} />
+            <TotalPlayedPage currentUser={currentUser} onNavigate={onNavigate} isActive={activePage === "total-played"} />
           </div>
         ) : null}
       </Suspense>
