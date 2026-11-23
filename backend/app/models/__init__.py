@@ -31,7 +31,7 @@ from .playlist import (
     PlaylistTrack,
     SavedPlaylist,
 )
-from .system import (
+from .visitor import VisitorDevice\nfrom .system import (
     RateLimitBucket,
     SystemResetState,
 )
@@ -61,5 +61,5 @@ __all__ = [
     "PlaylistTrack",
     "SavedPlaylist",
     "RateLimitBucket",
-    "SystemResetState",
+    "SystemResetState",\n    "VisitorDevice",
 ]
