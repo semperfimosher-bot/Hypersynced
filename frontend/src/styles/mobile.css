@@ -2685,42 +2685,42 @@
 }
 
 
-/* Mobile readability baseline: raise legacy micro-labels to usable sizes. */
+/* Mobile readability baseline: keep small labels legible without scaling the layout. */
 @media (max-width: 979px) {
   .mobile-bottom-nav button {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .player-bar__track small {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .library-track-index,
   .library-track-duration {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .library-track-copy small {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .settings-panel--settings .settings-row > span {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .mobile-player-details__queue-index {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .mobile-player-details__queue-copy small {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .mobile-player-details__queue-status {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .mobile-player-details__empty p {
-    font-size: 10px;
+    font-size: 12px;
   }
 }

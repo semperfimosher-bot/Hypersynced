@@ -8,16 +8,25 @@ const mobileStyles = fs.readFileSync(
 );
 
 test("mobile navigation and music UI keep legacy micro-labels readable", () => {
-  for (const rule of [
-    /\.mobile-bottom-nav button\s*\{[^}]*font-size:\s*10px/s,
-    /\.library-track-index,\s*\.library-track-duration\s*\{[^}]*font-size:\s*10px/s,
-    /\.library-track-copy small\s*\{[^}]*font-size:\s*10px/s,
-    /\.settings-panel--settings \.settings-row > span\s*\{[^}]*font-size:\s*10px/s,
-    /\.mobile-player-details__queue-index\s*\{[^}]*font-size:\s*10px/s,
-    /\.mobile-player-details__queue-copy small\s*\{[^}]*font-size:\s*9px/s,
-    /\.mobile-player-details__queue-status\s*\{[^}]*font-size:\s*8px/s,
-    /\.mobile-player-details__empty p\s*\{[^}]*font-size:\s*10px/s,
+  const baseline = mobileStyles.slice(
+    mobileStyles.indexOf("/* Mobile readability baseline:"),
+  );
+
+  for (const [selectorPattern, minimum] of [
+    ["\\.mobile-bottom-nav button", 11],
+    ["\\.player-bar__track small", 11],
+    ["\\.library-track-index,\\s*\\.library-track-duration", 11],
+    ["\\.library-track-copy small", 11],
+    ["\\.settings-panel--settings \\.settings-row > span", 12],
+    ["\\.mobile-player-details__queue-index", 11],
+    ["\\.mobile-player-details__queue-copy small", 11],
+    ["\\.mobile-player-details__queue-status", 11],
+    ["\\.mobile-player-details__empty p", 12],
   ]) {
-    assert.match(mobileStyles, rule);
+    const rule = new RegExp(
+      `${selectorPattern}\\s*\\{[^}]*font-size:\\s*${minimum}px`,
+      "s",
+    );
+    assert.match(baseline, rule, `Expected selector to use at least ${minimum}px`);
   }
 });
