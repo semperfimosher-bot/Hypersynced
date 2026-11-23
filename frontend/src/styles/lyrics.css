@@ -16,21 +16,7 @@
   border-radius: 20px;
 
   background:
-    radial-gradient(
-      circle at 88% 14%,
-      rgba(0, 163, 255, 0.16),
-      transparent 33%
-    ),
-    radial-gradient(
-      circle at 8% 90%,
-      rgba(0, 93, 255, 0.1),
-      transparent 36%
-    ),
-    linear-gradient(
-      145deg,
-      rgba(5, 16, 27, 0.97),
-      rgba(2, 8, 15, 0.98)
-    );
+    var(--hs-surface);;
 
   box-shadow:
     inset 0 1px
@@ -108,16 +94,7 @@
   border-radius: 50%;
 
   background:
-    radial-gradient(
-      circle,
-      rgba(
-        0,
-        180,
-        255,
-        0.16
-      ),
-      transparent 68%
-    );
+    var(--hs-surface);;
 
   filter:
     blur(12px);
@@ -184,7 +161,7 @@
   border-radius: 50%;
 
   background:
-    #24d8ff;
+    var(--hs-surface);;
 
   box-shadow:
     0 0 11px
@@ -258,12 +235,7 @@
     #54d9ff;
 
   background:
-    rgba(
-      0,
-      142,
-      220,
-      0.08
-    );
+    var(--hs-surface);;
 
   font-size: 7px;
 
@@ -351,7 +323,7 @@
     );
 
   background:
-    transparent;
+    var(--hs-surface);;
 
   font-size:
     clamp(
@@ -516,12 +488,7 @@
     #3ed2ff;
 
   background:
-    rgba(
-      0,
-      143,
-      220,
-      0.07
-    );
+    var(--hs-surface);;
 
   font-size: 25px;
 

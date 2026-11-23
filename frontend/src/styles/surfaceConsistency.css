@@ -1,123 +1,425 @@
-/* Shared surfaces for Search, Library, Messages, Devices, and Total Played.
-   Imported last so page-specific legacy CSS cannot override the common palette. */
+/* HyperSynced global surface tokens and shared connected-list structure.
+   Individual page styles normalize their own surface declarations to these tokens. */
 :root {
-  --hs-shared-surface: rgb(2, 10, 16);
-  --hs-shared-border: rgba(67, 180, 224, 0.13);
-  --hs-shared-row-divider: rgba(66, 128, 154, 0.065);
-  --hs-shared-row-highlight: linear-gradient(
-    90deg,
-    rgba(28, 177, 218, 0.075),
-    rgba(23, 127, 165, 0.018)
-  );
-  --hs-shared-row-highlight-shadow: inset 2px 0 rgba(77, 227, 255, 0.88);
+  --hs-surface: #012036;
+  --hs-surface-hover: #004573;
+  --hs-shared-surface: var(--hs-surface);
+  --hs-shared-border: rgba(67, 180, 224, 0.16);
+  --hs-shared-row-divider: rgba(114, 165, 190, 0.16);
+  --hs-shared-row-highlight: var(--hs-surface-hover);
+  --hs-shared-row-highlight-shadow: none;
 }
 
-/* Page backgrounds, panel surfaces, and list gutters all use one base color. */
+/* Preserve the existing page canvas; only UI surfaces receive the theme. */
 .hs-search-page,
 .hs-library-page,
 .hs-messages-page,
 .hs-total-played-route,
-.hs-total-played-header,
 .hs-search-console,
 .hs-library-console,
 .hs-search-section,
 .hs-messages-console,
 .hs-messages-search-section,
 .hs-messages-directory,
-.hs-total-played-hero,
 .hs-total-played-list,
-.hs-total-played-table-head,
-.hs-total-played-rows,
 .hs-admin-device-list,
-.hs-admin-device-head,
-.hs-admin-device-rows,
-.hs-admin-device-footer,
-.hs-message-thread,
-.hs-message-thread__header,
-.hs-messages-list__heading,
-.hs-search-section__heading,
-.hs-search-track-list,
-.hs-message-conversation-list,
-.library-track-list,
 .admin-device-registry,
-.admin-device-registry__header,
-.admin-device-registry__stats,
-.admin-device-registry__stats > div,
-.admin-device-registry__list {
-  background: var(--hs-shared-surface);
+.hs-search-track-list,
+.library-track-list,
+.hs-message-conversation-list,
+.hs-search-playlist {
+  background: transparent;
 }
 
-/* Track/conversation rows have identical base surfaces and separators. */
+/* Persistent desktop/mobile chrome surfaces. */
+.desktop-sidebar,
+.desktop-topbar,
+.desktop-right-rail,
+.player-bar,
+.mobile-header,
+.mobile-bottom-nav {
+  background: var(--hs-surface);
+}
+
+/* Independent headers. */
+.hs-search-console__heading,
+.hs-search-section__heading,
+.hs-messages-list__heading,
+.hs-message-thread__header,
+.hs-search-playlist-view__hero,
+.hs-total-played-hero,
+.hs-total-played-table-head,
+.hs-admin-device-head,
+.admin-device-registry__header,
+.admin-device-registry__stats {
+  background: var(--hs-surface);
+  border-radius: 12px;
+}
+
+/* Connected rows: thin separators, no row gaps, 12px list outer corners. */
+.hs-search-track-list,
+.library-track-list,
+.hs-message-conversation-list,
+.hs-total-played-rows,
+.hs-admin-device-rows,
+.admin-device-registry__list {
+  display: grid;
+  gap: 0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-shared-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .hs-search-track,
+.hs-library-track-row,
 .library-track-row,
 .hs-message-conversation,
+.hs-admin-device-row,
 .admin-device-registry__row {
-  background: var(--hs-shared-surface);
-  border-bottom-color: var(--hs-shared-row-divider);
-  transition: background 120ms ease, box-shadow 120ms ease;
+  background: var(--hs-surface);
+  border-bottom: 1px solid var(--hs-shared-row-divider);
+  border-radius: 0;
+  transition: background-color 120ms ease;
 }
 
-/* Shared container borders and header separators. */
+.hs-search-track-list > :last-child,
+.library-track-list > :last-child,
+.hs-message-conversation-list > :last-child,
+.hs-total-played-rows > :last-child,
+.hs-admin-device-rows > :last-child,
+.admin-device-registry__list > :last-child {
+  border-bottom: 0;
+}
+
+/* Transparent shells use a small, deliberate gap between separate blocks. */
+.hs-search-section {
+  display: grid;
+  gap: 12px;
+  border: 0;
+  box-shadow: none;
+  border-radius: 12px;
+}
+
 .hs-search-console,
 .hs-library-console,
-.hs-search-section,
 .hs-messages-console,
 .hs-messages-search-section,
-.hs-messages-directory,
-.hs-total-played-list,
-.hs-admin-device-list,
-.admin-device-registry {
+.hs-messages-directory {
+  display: grid;
+  gap: 12px;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+
+.hs-search-console__heading {
+  padding: 16px;
+  border: 1px solid var(--hs-shared-border);
+}
+
+.hs-search-section__heading {
+  padding: 12px;
+  margin: 0;
+  border: 1px solid var(--hs-shared-border);
+}
+
+.hs-search-playlist-view__hero,
+.hs-total-played-hero {
+  padding: 16px;
+  border: 1px solid var(--hs-shared-border);
+  margin-bottom: 12px;
+}
+
+.hs-total-played-list {
+  display: grid;
+  gap: 12px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.hs-total-played-table-head {
+  margin: 0;
+  border: 1px solid var(--hs-shared-border);
+  padding: 12px;
+}
+
+.hs-total-played-rows {
   border-color: var(--hs-shared-border);
 }
 
-.hs-total-played-table-head,
-.hs-admin-device-head,
-.hs-messages-list__heading,
-.hs-message-thread__header,
-.hs-search-section__heading,
-.admin-device-registry__header,
-.admin-device-registry__stats {
-  border-bottom-color: var(--hs-shared-border);
+.hs-message-conversation-list,
+.hs-admin-device-rows,
+.admin-device-registry__list {
+  padding: 0;
 }
 
-/* Identical hover/selected treatment on every ordinary row.
-   The currently-playing track keeps its distinct playback state. */
+.hs-message-conversation,
+.admin-device-registry__row {
+  min-width: 0;
+}
+
+/* 12px corners on UI cards, headers, popup surfaces and buttons. */
+.mobile-header,
+.desktop-sidebar,
+.desktop-topbar,
+.desktop-right-rail,
+.player-bar,
+.mobile-bottom-nav,
+.mobile-notification-panel,
+.desktop-player-notification-panel,
+.hs-search-playlist-view__hero,
+.hs-search-playlist-modal,
+.hs-library-modal,
+.library-modal,
+.admin-device-modal,
+.admin-device-context-menu,
+.hs-edit-modal,
+.hs-social-modal,
+.mobile-player-details,
+.upload-studio,
+.admin-upload-studio,
+.admin-upload-catalog,
+.admin-upload-list,
+.live-lyrics,
+.settings-panel,
+.admin-panel,
+.admin-stat-card,
+.admin-device-summary__open,
+.hs-profile-section,
+.hs-total-plays-summary,
+.hs-empty-card,
+.hs-locked-card,
+.empty-content-card,
+.search-empty-panel,
+.library-list-panel,
+.library-welcome,
+.category-card,
+.create-playlist-button,
+.profile-media-card,
+.genre-empty-panel,
+.auth-panel,
+.home-track-card,
+.home-signal,
+.hs-search-entity-card,
+.hs-search-person,
+.hs-search-quick-commands button,
+.hs-search-filterbar button,
+.hs-library-track-actions button,
+.hs-primary-button,
+.hs-secondary-button,
+.hs-request-button,
+.primary-button,
+.secondary-button,
+.home-button,
+.home-hero-button,
+.icon-button,
+.hs-icon-button,
+.admin-quick-action,
+.admin-recent-item,
+.admin-user-result,
+.admin-explorer-folder,
+.admin-explorer-file,
+.upload-dropzone,
+.upload-queue-item,
+.upload-browse-button,
+.upload-item-action,
+.admin-refresh-button,
+.secondary-admin-button,
+.admin-inline-button,
+.library-primary-action,
+.library-play-action,
+.library-action-button,
+.library-track-actions button,
+.library-modal-secondary,
+.library-modal__header > button,
+.library-field input,
+.library-field textarea,
+.library-field select,
+.profile-identity__copy button,
+.profile-avatar-wrap > button,
+.track-action-menu__track > button,
+.track-action-menu > button,
+.track-action-playlists > button,
+.hs-search-playlist-primary,
+.hs-search-playlist-back,
+.hs-search-playlist-action,
+.hs-search-generated-playlist,
+.hs-search-generated-playlist__actions button,
+.admin-bot-result,
+.admin-bot-provision,
+.admin-bot-hero,
+.admin-bot-hero__status,
+.admin-bot-kpi,
+.admin-duplicate-idle,
+.admin-duplicate-group,
+.admin-explorer-selection-bar,
+.admin-explorer-selection-bar__actions button,
+.bot-status-card,
+.hs-profile-badges > span,
+.hs-total-played-load-error button {
+  border-radius: 12px;
+}
+
+/* Ordinary interactive surfaces share the requested hover color.
+   Explicit danger actions keep their red semantic state. */
 .hs-search-track:hover:not(.is-current-track),
-.hs-search-track.is-selected:not(.is-current-track),
+.hs-library-track-row:hover,
 .library-track-row:hover,
 .hs-message-conversation:hover,
-.hs-message-conversation.is-active,
 .hs-admin-device-row:hover,
-.hs-admin-device-row.is-selected,
-.admin-device-registry__row:hover {
-  background: var(--hs-shared-row-highlight);
-  box-shadow: var(--hs-shared-row-highlight-shadow);
+.admin-device-registry__row:hover,
+.desktop-nav__item:hover:not(.is-active),
+.mobile-bottom-nav button:hover,
+.primary-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled),
+.home-button:hover:not(:disabled),
+.home-hero-button:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
+.hs-primary-button:hover:not(:disabled),
+.hs-secondary-button:hover:not(:disabled),
+.hs-request-button:hover:not(:disabled),
+.admin-quick-action:hover:not(:disabled),
+.admin-panel--interactive:hover,
+.admin-stat-card:hover,
+.admin-explorer-folder:hover,
+.admin-explorer-file:hover,
+.hs-search-entity-card:hover,
+.hs-search-person:hover,
+.hs-search-filterbar button:hover,
+.hs-search-quick-commands button:hover,
+.hs-library-track-actions button:hover:not(:disabled):not([class*="danger"]),
+.upload-browse-button:hover:not(:disabled),
+.upload-item-action:hover:not(:disabled),
+.admin-refresh-button:hover:not(:disabled),
+.secondary-admin-button:hover:not(:disabled),
+.admin-inline-button:hover:not(:disabled),
+.library-primary-action:hover:not(:disabled),
+.library-play-action:hover:not(:disabled),
+.library-action-button:hover:not(:disabled):not([class*="danger"]),
+.library-track-actions button:hover:not(:disabled):not([class*="danger"]),
+.library-modal-secondary:hover:not(:disabled),
+.library-modal__header > button:hover:not(:disabled),
+.profile-identity__copy button:hover:not(:disabled),
+.profile-avatar-wrap > button:hover:not(:disabled),
+.track-action-menu__track > button:hover:not(:disabled),
+.track-action-menu > button:hover:not(:disabled):not(.track-action-menu__danger),
+.track-action-playlists > button:hover:not(:disabled),
+.hs-search-playlist-primary:hover:not(:disabled),
+.hs-search-playlist-back:hover:not(:disabled),
+.hs-search-playlist-action:hover:not(:disabled),
+.hs-search-generated-playlist__actions button:hover:not(:disabled),
+.admin-explorer-selection-bar__actions button:hover:not(:disabled):not(.danger-button),
+.hs-total-played-load-error button:hover:not(:disabled),
+.hs-profile-badges > span:hover {
+  background: var(--hs-surface-hover);
+  box-shadow: none;
   transform: none;
 }
- 
-/* Touch input uses the shared pressed state instead of sticky hover. */
+
+/* Touch devices use pressed states instead of sticky hover. */
 @media (hover: none) and (pointer: coarse) {
-  .hs-search-track:hover:not(.is-selected):not(.is-current-track),
+  .hs-search-track:hover:not(.is-current-track),
+  .hs-library-track-row:hover,
   .library-track-row:hover,
   .hs-message-conversation:hover:not(.is-active),
   .hs-admin-device-row:hover:not(.is-selected),
-  .admin-device-registry__row:hover {
-    background: var(--hs-shared-surface);
+  .admin-device-registry__row:hover,
+  .desktop-nav__item:hover:not(.is-active),
+  .mobile-bottom-nav button:hover,
+  .primary-button:hover:not(:disabled),
+  .secondary-button:hover:not(:disabled),
+  .home-button:hover:not(:disabled),
+  .home-hero-button:hover:not(:disabled),
+  .icon-button:hover:not(:disabled),
+  .hs-primary-button:hover:not(:disabled),
+  .hs-secondary-button:hover:not(:disabled),
+  .hs-request-button:hover:not(:disabled),
+  .admin-quick-action:hover:not(:disabled),
+  .admin-panel--interactive:hover,
+  .admin-stat-card:hover,
+  .admin-explorer-folder:hover,
+  .admin-explorer-file:hover,
+  .hs-search-entity-card:hover,
+  .hs-search-person:hover,
+  .hs-search-filterbar button:hover,
+  .hs-search-quick-commands button:hover,
+  .hs-library-track-actions button:hover:not(:disabled):not([class*="danger"]),
+  .upload-browse-button:hover:not(:disabled),
+  .upload-item-action:hover:not(:disabled),
+  .admin-refresh-button:hover:not(:disabled),
+  .secondary-admin-button:hover:not(:disabled),
+  .admin-inline-button:hover:not(:disabled),
+  .library-primary-action:hover:not(:disabled),
+  .library-play-action:hover:not(:disabled),
+  .library-action-button:hover:not(:disabled):not([class*="danger"]),
+  .library-track-actions button:hover:not(:disabled):not([class*="danger"]),
+  .library-modal-secondary:hover:not(:disabled),
+  .library-modal__header > button:hover:not(:disabled),
+  .profile-identity__copy button:hover:not(:disabled),
+  .profile-avatar-wrap > button:hover:not(:disabled),
+  .track-action-menu__track > button:hover:not(:disabled),
+  .track-action-menu > button:hover:not(:disabled):not(.track-action-menu__danger),
+  .track-action-playlists > button:hover:not(:disabled),
+  .hs-search-playlist-primary:hover:not(:disabled),
+  .hs-search-playlist-back:hover:not(:disabled),
+  .hs-search-playlist-action:hover:not(:disabled),
+  .hs-search-generated-playlist__actions button:hover:not(:disabled),
+  .admin-explorer-selection-bar__actions button:hover:not(:disabled):not(.danger-button),
+  .hs-total-played-load-error button:hover:not(:disabled) {
+    background: var(--hs-surface);
     box-shadow: none;
   }
 
   .hs-search-track:active:not(.is-current-track),
+  .hs-library-track-row:active,
   .library-track-row:active,
   .hs-message-conversation:active,
-  .admin-device-registry__row:active {
-    background: var(--hs-shared-row-highlight);
-    box-shadow: var(--hs-shared-row-highlight-shadow);
+  .hs-admin-device-row:active,
+  .admin-device-registry__row:active,
+  .primary-button:active:not(:disabled),
+  .secondary-button:active:not(:disabled),
+  .home-button:active:not(:disabled),
+  .home-hero-button:active:not(:disabled),
+  .icon-button:active:not(:disabled),
+  .hs-primary-button:active:not(:disabled),
+  .hs-secondary-button:active:not(:disabled),
+  .hs-request-button:active:not(:disabled),
+  .admin-quick-action:active:not(:disabled),
+  .admin-refresh-button:active:not(:disabled),
+  .secondary-admin-button:active:not(:disabled),
+  .admin-inline-button:active:not(:disabled),
+  .library-primary-action:active:not(:disabled),
+  .library-play-action:active:not(:disabled),
+  .library-action-button:active:not(:disabled):not([class*="danger"]),
+  .library-track-actions button:active:not(:disabled):not([class*="danger"]),
+  .library-modal-secondary:active:not(:disabled),
+  .library-modal__header > button:active:not(:disabled),
+  .profile-identity__copy button:active:not(:disabled),
+  .profile-avatar-wrap > button:active:not(:disabled),
+  .track-action-menu__track > button:active:not(:disabled),
+  .track-action-menu > button:active:not(:disabled):not(.track-action-menu__danger),
+  .track-action-playlists > button:active:not(:disabled),
+  .hs-search-playlist-primary:active:not(:disabled),
+  .hs-search-playlist-back:active:not(:disabled),
+  .hs-search-playlist-action:active:not(:disabled),
+  .hs-search-generated-playlist__actions button:active:not(:disabled),
+  .admin-explorer-selection-bar__actions button:active:not(:disabled):not(.danger-button),
+  .hs-total-played-load-error button:active:not(:disabled) {
+    background: var(--hs-surface-hover);
   }
 }
 
-/* Show the mobile equalizer in Total Played's otherwise-hidden play slot. */
-@media (max-width: 979px) and (pointer: coarse) {
-  .hs-total-played-track.is-playing-track .hs-search-track__play {
-    display: grid;
+/* Mobile playing bars use the current accent and respect reduced motion. */
+.hs-playing-indicator {
+  color: var(--blue);
+}
+.hs-playing-indicator > span {
+  background: currentColor;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-playing-indicator > span {
+    animation: none;
   }
 }

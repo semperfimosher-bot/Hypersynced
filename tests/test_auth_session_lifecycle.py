@@ -964,3 +964,31 @@ async def test_admin_device_revoke_invalidates_linked_access_session() -> None:
         )
         assert heartbeat.status_code == 200, heartbeat.text
         assert heartbeat.json()["revoked"] is True
+
+@pytest.mark.asyncio
+async def test_visitor_heartbeat_notifies_only_for_new_device(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recorded_activity: list[dict] = []
+
+    async def fake_record_admin_activity(**kwargs) -> None:
+        recorded_activity.append(kwargs)
+
+    monkeypatch.setattr(
+        "backend.app.api.routes.visitors.record_admin_activity",
+        fake_record_admin_activity,
+    )
+
+    transport = ASGITransport(app=app)
+    visitor_token = "test-visitor-heartbeat-token-" + uuid4().hex
+    headers = {"x-hs-visitor-id": visitor_token}
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        first = await client.post("/api/visitors/heartbeat", headers=headers)
+        second = await client.post("/api/visitors/heartbeat", headers=headers)
+
+    assert first.status_code == 200, first.text
+    assert first.json()["registered"] is True
+    assert second.status_code == 200, second.text
+    assert second.json()["registered"] is True
+    assert len(recorded_activity) == 1
+    assert recorded_activity[0]["kind"] == "new_visitor_device"

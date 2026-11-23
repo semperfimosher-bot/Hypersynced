@@ -2,42 +2,42 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-test("shared page surfaces are centralized and loaded after legacy styles", () => {
+test("shared design tokens use requested surfaces without changing the page canvas", () => {
   const entry = fs.readFileSync(new URL("./styles.css", import.meta.url), "utf8");
   const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
   const base = fs.readFileSync(new URL("./styles/base.css", import.meta.url), "utf8");
   const mobile = fs.readFileSync(new URL("./styles/mobile.css", import.meta.url), "utf8");
   const profile = fs.readFileSync(new URL("./styles/profile.css", import.meta.url), "utf8");
   const search = fs.readFileSync(new URL("./styles/search.css", import.meta.url), "utf8");
+  const desktop = fs.readFileSync(new URL("./styles/desktop.css", import.meta.url), "utf8");
 
   assert.match(entry, /@import "\.\/styles\/surfaceConsistency\.css";/);
   assert.ok(entry.indexOf("surfaceConsistency.css") > entry.indexOf("./styles/search.css"));
-  assert.match(shared, /--hs-shared-surface:\s*rgb\(2,\s*10,\s*16\)/);
-  assert.match(shared, /--hs-shared-row-highlight:/);
-  assert.match(shared, /--hs-shared-row-highlight-shadow:/);
-
-  for (const selector of [
-    ".hs-search-console",
-    ".hs-library-console",
-    ".hs-search-section",
-    ".hs-messages-console",
-    ".hs-total-played-hero",
-    ".hs-total-played-list",
-    ".hs-admin-device-list",
-    ".hs-message-thread__header",
-    ".hs-messages-list__heading",
-    ".hs-search-section__heading",
-    ".hs-search-track-list",
-    ".hs-total-played-rows",
-    ".hs-admin-device-rows",
-    ".hs-message-conversation-list",
-  ]) {
-    assert.ok(shared.includes(selector), "shared surface missing " + selector);
-  }
-
-  assert.match(shared, /\.hs-search-track:hover[\s\S]*\.hs-message-conversation\.is-active[\s\S]*background:\s*var\(--hs-shared-row-highlight\)/);
-  assert.match(shared, /\.library-track-row:hover[\s\S]*box-shadow:\s*var\(--hs-shared-row-highlight-shadow\)/);
-
+  assert.match(shared, /--hs-surface:\s*#012036/i);
+  assert.match(shared, /--hs-surface-hover:\s*#004573/i);
+  assert.ok(base.includes("background: var(--hs-surface);"));
+  assert.ok(search.includes("background: var(--hs-surface);"));
+  assert.ok(profile.includes("background: var(--hs-surface);"));
+  assert.ok(mobile.includes("background: var(--hs-surface);"));
+  assert.match(base, /--bg:\s*#03070b/i);
+  assert.match(base, /background:\s*#03070b/i);
+  assert.match(shared, /\.hs-search-page[\s\S]*background:\s*transparent/);
+  assert.ok(shared.includes(".hs-search-console__heading"));
+  assert.ok(shared.includes("background: var(--hs-surface);"));
+  assert.match(shared, /\.hs-total-played-table-head[\s\S]*border-radius:\s*12px/);
+  assert.match(shared, /\.hs-search-track-list[\s\S]*border-radius:\s*12px/);
+  assert.ok(shared.includes("border-bottom: 1px solid var(--hs-shared-row-divider);"));
+  assert.ok(shared.includes(".hs-search-track:hover"));
+  assert.ok(shared.includes("background: var(--hs-surface-hover);"));
+  assert.ok(shared.includes(".hs-message-conversation:hover,"));
+  assert.ok(!shared.includes(".hs-message-conversation.is-active,"));
+  assert.ok(shared.includes(".hs-playing-indicator {"));
+  assert.ok(shared.includes("color: var(--blue);"));
+  assert.match(shared, /prefers-reduced-motion/);
+  assert.match(base, /--panel:\s*#012036/i);
+  assert.match(search, /--hs-panel:\s*#012036/i);
+  assert.match(profile, /--hs-panel:\s*#012036/i);
+  assert.match(desktop, /\.desktop-sidebar/);
   assert.doesNotMatch(base, /\.hs-messages-list__heading\s*\{[^}]*background:/);
   assert.doesNotMatch(base, /\.hs-message-thread__header\s*\{[^}]*background:/);
   assert.doesNotMatch(base, /\.hs-message-conversation:hover,\s*\.hs-message-conversation\.is-active\s*\{[^}]*background:/);
@@ -47,7 +47,7 @@ test("shared page surfaces are centralized and loaded after legacy styles", () =
   assert.doesNotMatch(search, /\.hs-search-track:hover,\s*\.hs-search-track\.is-selected\s*\{[^}]*background:/);
 });
 
-test("the five main page components use the common row and header classes", () => {
+test("main list pages reuse shared row classes", () => {
   const pages = [
     ["./components/pages/SearchPage.jsx", "hs-search-track"],
     ["./components/pages/LibraryPage.jsx", "hs-library-console"],

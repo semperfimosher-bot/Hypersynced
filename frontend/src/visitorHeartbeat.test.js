@@ -1,4 +1,5 @@
 import { describe, it } from "node:test";
+import fs from "node:fs";
 import assert from "node:assert/strict";
 import {
   VISITOR_HEARTBEAT_MIN_INTERVAL_MS,
@@ -23,5 +24,16 @@ describe("visitor heartbeat throttling", () => {
       shouldSendVisitorHeartbeat(1000, 1000 + VISITOR_HEARTBEAT_MIN_INTERVAL_MS),
       true,
     );
+  });
+});
+
+describe("app heartbeat coordination", () => {
+  const appSource = fs.readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
+  it("persists a shared heartbeat timestamp so tabs throttle each other", () => {
+    assert.match(appSource, /hs-visitor-heartbeat-last-at/);
+    assert.match(appSource, /localStorage\.getItem\(heartbeatStorageKey\)/);
+    assert.match(appSource, /localStorage\.setItem\(heartbeatStorageKey, String\(now\)\)/);
+    assert.match(appSource, /setInterval\(sendHeartbeat, 300_000\)/);
+    assert.equal(VISITOR_HEARTBEAT_MIN_INTERVAL_MS, 300_000);
   });
 });

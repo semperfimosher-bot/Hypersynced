@@ -667,18 +667,35 @@ export default function App() {
       return undefined;
     }
     let lastHeartbeatAttempt = 0;
+    const heartbeatStorageKey = "hs-visitor-heartbeat-last-at";
     const sendHeartbeat = () => {
       if (document.visibilityState !== "visible") return;
       const now = Date.now();
-      if (!shouldSendVisitorHeartbeat(lastHeartbeatAttempt, now)) return;
+      let sharedLastAttempt = lastHeartbeatAttempt;
+      try {
+        const storedLastAttempt = Number(
+          window.localStorage.getItem(heartbeatStorageKey),
+        );
+        if (Number.isFinite(storedLastAttempt) && storedLastAttempt > sharedLastAttempt) {
+          sharedLastAttempt = storedLastAttempt;
+        }
+      } catch {
+        // Keep the in-memory throttle when storage is unavailable.
+      }
+      if (!shouldSendVisitorHeartbeat(sharedLastAttempt, now)) return;
       lastHeartbeatAttempt = now;
+      try {
+        window.localStorage.setItem(heartbeatStorageKey, String(now));
+      } catch {
+        // Storage is optional; the heartbeat remains throttled in this tab.
+      }
       void apiRequest("/visitors/heartbeat", {
         method: "POST",
         headers: { "X-HS-Visitor-Id": visitorToken },
       }).catch(() => {});
     };
     sendHeartbeat();
-    const timer = window.setInterval(sendHeartbeat, 120_000);
+    const timer = window.setInterval(sendHeartbeat, 300_000);
     const onVisibility = () => sendHeartbeat();
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
