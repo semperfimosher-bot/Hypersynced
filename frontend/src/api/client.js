@@ -56,6 +56,9 @@ function pathRequiresAuthentication(
       "/admin",
     ) ||
     path.startsWith(
+      "/visitors/admin",
+    ) ||
+    path.startsWith(
       "/library",
     ) ||
     path ===
