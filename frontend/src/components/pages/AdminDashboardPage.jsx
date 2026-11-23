@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import * as player from "../../audioPlayer.js";
 
 import {
@@ -900,7 +902,7 @@ export default function AdminDashboardPage({
         </article>
       </section>
 
-      {visitorModalOpen ? (
+      {visitorModalOpen ? createPortal(
         <div className="admin-device-modal-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setVisitorModalOpen(false); setVisitorContextMenu(null); } }}>
           <section className="admin-device-modal" role="dialog" aria-modal="true" aria-label="Visitor device registry">
             <header className="admin-device-modal__header">
@@ -941,7 +943,8 @@ export default function AdminDashboardPage({
               </div>
             ) : null}
           </section>
-        </div>
+        </div>,
+        document.body,
       ) : null}
 
       <section className="admin-tool-deck">

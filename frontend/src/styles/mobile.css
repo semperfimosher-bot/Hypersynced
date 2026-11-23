@@ -3158,3 +3158,51 @@
     align-self: flex-end;
   }
 }
+
+/* Registry dialog must be viewport-level, never clipped by app page containers. */
+.admin-device-modal-backdrop {
+  position: fixed !important;
+  z-index: 9999 !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  place-items: center !important;
+  overflow: auto !important;
+  padding: clamp(8px, 2vw, 24px) !important;
+  box-sizing: border-box !important;
+}
+.admin-device-modal {
+  width: min(900px, calc(100vw - 32px)) !important;
+  max-width: 900px !important;
+  min-width: 0 !important;
+  max-height: min(88dvh, 900px) !important;
+  margin: auto !important;
+  box-sizing: border-box !important;
+}
+.admin-device-modal__header,
+.admin-device-modal__stats,
+.admin-device-list,
+.admin-device-row,
+.admin-device-row__details {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+.admin-device-list {
+  max-height: none !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+.admin-device-row__details > span {
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+}
+@media (max-width: 600px) {
+  .admin-device-modal-backdrop { padding: 8px !important; }
+  .admin-device-modal { width: calc(100vw - 16px) !important; max-height: 94dvh !important; }
+  .admin-device-modal__stats { display: flex !important; }
+  .admin-device-modal__header { flex-wrap: wrap !important; }
+  .admin-device-modal__header button { flex: 0 0 auto !important; }
+}
