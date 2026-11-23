@@ -125,6 +125,12 @@ function HomePage({
   }, [recentOwner, recentContextKey]);
 
   useEffect(() => {
+    if (suggestedTracks.length) {
+      player.seedQueueFromSuggestions(suggestedTracks);
+    }
+  }, [suggestedTracks]);
+
+  useEffect(() => {
     void loadSuggestions();
     return () => { suggestionsRequestRef.current += 1; };
   }, [loadSuggestions]);

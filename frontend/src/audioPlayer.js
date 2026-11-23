@@ -2555,6 +2555,19 @@ export async function playTrack(
   return state;
 }
 
+// Seed an idle queue from the Home recommendations without auto-playing.
+export function seedQueueFromSuggestions(tracks) {
+  if (currentTrackId || currentQueue.length || !Array.isArray(tracks)) return false;
+  const seededQueue = buildTrackQueue(tracks);
+  if (!seededQueue.length) return false;
+  currentQueue = seededQueue;
+  currentQueueIndex = -1;
+  queueRevision += 1;
+  persistQueueSnapshot();
+  notify();
+  return true;
+}
+
 export async function playQueueIndex(
   index,
 ) {
