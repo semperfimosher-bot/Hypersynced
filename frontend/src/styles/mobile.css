@@ -2683,3 +2683,44 @@
     max-width: 100%;
   }
 }
+
+
+/* Mobile readability baseline: raise legacy micro-labels to usable sizes. */
+@media (max-width: 979px) {
+  .mobile-bottom-nav button {
+    font-size: 10px;
+  }
+
+  .player-bar__track small {
+    font-size: 9px;
+  }
+
+  .library-track-index,
+  .library-track-duration {
+    font-size: 10px;
+  }
+
+  .library-track-copy small {
+    font-size: 10px;
+  }
+
+  .settings-panel--settings .settings-row > span {
+    font-size: 10px;
+  }
+
+  .mobile-player-details__queue-index {
+    font-size: 10px;
+  }
+
+  .mobile-player-details__queue-copy small {
+    font-size: 9px;
+  }
+
+  .mobile-player-details__queue-status {
+    font-size: 8px;
+  }
+
+  .mobile-player-details__empty p {
+    font-size: 10px;
+  }
+}
