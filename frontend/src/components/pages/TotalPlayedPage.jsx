@@ -27,8 +27,9 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const offsetRef = useRef(0);
   const requestRef = useRef(0);
   const appendInFlightRef = useRef(false);
+  const loadMoreSentinelRef = useRef(null);
 
-  const loadPage = useCallback(async ({ append = false } = {}) =>    {
+  const loadPage = useCallback(async ({ append = false } = {}) => {
     if (!currentUser || !online || (append && appendInFlightRef.current)) return;
     const requestId = requestRef.current;
     const requestOffset = append ? offsetRef.current : 0;
@@ -73,6 +74,20 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       requestRef.current += 1;
     };
   }, [currentUser?.id, online, loadPage]);
+
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel || !online || !hasMore || loading || loadingMore) return undefined;
+    if (typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting) && !appendInFlightRef.current) {
+        void loadPage({ append: true });
+      }
+    }, { rootMargin: "600px 0px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, online, loadPage]);
 
   const play = (track) => player.playTrack(track.id, {
     audioUrl: track.audio_url,
@@ -137,10 +152,8 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
               ))}
             </div>
             {hasMore ? (
-              <div className="hs-total-played-load-more">
-                <button type="button" className="hs-search-primary-action" disabled={loadingMore} onClick={() => void loadPage({ append: true })}>
-                  {loadingMore ? "Loading…" : `Load more · ${tracks.length.toLocaleString()} songs`}
-                </button>
+              <div className="hs-total-played-scroll-sentinel" ref={loadMoreSentinelRef} aria-live="polite">
+                {loadingMore ? <span className="hs-playlist-shimmer" aria-label="Loading more songs" /> : null}
               </div>
             ) : null}
           </>
