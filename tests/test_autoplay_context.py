@@ -323,13 +323,19 @@ def test_autoplay_request_model_accepts_stale_mixed_browser_state() -> None:
     )
 
 
-def test_autoplay_cold_start_returns_global_popular_order_and_respects_exclusions() -> None:
+def test_cold_start_uses_popularity_and_exclusions() -> None:
+    from uuid import UUID
+
     from backend.app.services.autoplay import _cold_start_tracks
 
-    popular = [
-        cast(Track, SimpleNamespace(id="popular-1")),
-        cast(Track, SimpleNamespace(id="popular-2")),
-        cast(Track, SimpleNamespace(id="popular-3")),
+    popular_ids = [
+        UUID("11111111-1111-4111-8111-111111111111"),
+        UUID("22222222-2222-4222-8222-222222222222"),
+        UUID("33333333-3333-4333-8333-333333333333"),
     ]
-    selected = _cold_start_tracks(popular, {"popular-2"}, 2)
-    assert [track.id for track in selected] == ["popular-1", "popular-3"]
+    popular = [
+        cast(Track, SimpleNamespace(id=track_id))
+        for track_id in popular_ids
+    ]
+    selected = _cold_start_tracks(popular, {popular_ids[1]}, 2)
+    assert [track.id for track in selected] == [popular_ids[0], popular_ids[2]]
