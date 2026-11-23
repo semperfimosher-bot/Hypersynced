@@ -11,6 +11,6 @@ test("profile avatars use a bounded persistent cache and eager image loading", (
   assert.match(cache, /MAX_AVATAR_BYTES\s*=\s*2\s*\*\s*1024\s*\*\s*1024/);
   assert.match(avatar, /getProfileAvatarBlob/);
   assert.match(avatar, /putProfileAvatarBlob/);
-  assert.match(avatar, /loading="eager"/);
-  assert.match(avatar, /fetchPriority="high"/);
+  assert.match(avatar, /loading = size === "hero" \? "eager" : "lazy"/);
+  assert.match(avatar, /fetchPriority = size === "hero" \? "high" : "low"/);
 });

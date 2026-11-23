@@ -79,6 +79,9 @@ export default function Avatar({
   cacheKey = "",
   size = "large",
   className = "",
+  cacheProfileImage = size === "hero",
+  loading = size === "hero" ? "eager" : "lazy",
+  fetchPriority = size === "hero" ? "high" : "low",
 }) {
   const resolved = resolveProfileAssetUrl(src);
   const finalSrc = resolved && cacheKey
@@ -91,7 +94,7 @@ export default function Avatar({
   }));
 
   useEffect(() => {
-    if (!finalSrc) {
+    if (!finalSrc || !cacheProfileImage) {
       setCachedImage({ key: "", src: null });
       return undefined;
     }
@@ -116,7 +119,7 @@ export default function Avatar({
     };
     void loadCachedThenRefresh();
     return () => { active = false; };
-  }, [finalSrc]);
+  }, [finalSrc, cacheProfileImage]);
 
   const imageSrc = cachedImage.key === cacheIdentity && cachedImage.src ? cachedImage.src : finalSrc;
   return (
@@ -129,9 +132,9 @@ export default function Avatar({
         <img
           src={imageSrc}
           alt={`${name || "User"} profile`}
-          loading="eager"
+          loading={loading}
           decoding="async"
-          fetchPriority="high"
+          fetchPriority={fetchPriority}
           onError={(event) => { event.currentTarget.style.display = "none"; }}
         />
       ) : null}
