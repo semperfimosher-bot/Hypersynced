@@ -2,7 +2,7 @@ import {
   useCallback,
   useEffect,
   useState,
-
+  useRef,
 } from "react";
 
 import {
@@ -76,6 +76,7 @@ function HomePage({
     ? suggestionsState.tracks : readCachedHomeSuggestions(recentOwner);
   const [suggestionsLoading, setSuggestionsLoading] = useState(suggestedTracks.length === 0);
   const [suggestionsError, setSuggestionsError] = useState("");
+  const suggestionsRequestRef = useRef(0);
   const recentContextKey = recentlyPlayed.map((track) => String(track.id)).join("|");
 
   useEffect(() => {
@@ -99,6 +100,7 @@ function HomePage({
   }, [recentOwner]);
 
   const loadSuggestions = useCallback(async () => {
+    const requestId = ++suggestionsRequestRef.current;
     const cached = readCachedHomeSuggestions(recentOwner);
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     setSuggestionsLoading(cached.length === 0);
@@ -111,17 +113,21 @@ function HomePage({
         contextTrackIds,
         limit: 12,
       });
+      if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       writeCachedHomeSuggestions(recentOwner, tracks);
       setSuggestionsState({ owner: recentOwner, tracks });
     } catch (error) {
-      if (!cached.length) setSuggestionsError(error instanceof Error ? error.message : "Suggestions are temporarily unavailable.");
+      if (requestId === suggestionsRequestRef.current && !cached.length) setSuggestionsError(error instanceof Error ? error.message : "Suggestions are temporarily unavailable.");
     } finally {
-      setSuggestionsLoading(false);
+      if (requestId === suggestionsRequestRef.current) setSuggestionsLoading(false);
     }
   }, [recentOwner, recentContextKey]);
 
-  useEffect(() => { void loadSuggestions(); }, [loadSuggestions]);
+  useEffect(() => {
+    void loadSuggestions();
+    return () => { suggestionsRequestRef.current += 1; };
+  }, [loadSuggestions]);
 
   const playTrack = async (
     trackId,
