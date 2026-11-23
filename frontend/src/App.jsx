@@ -173,6 +173,9 @@ function preloadPage(page) {
     case "admin":
       request = import("./components/pages/AdminDashboardPage.jsx");
       break;
+    case "admin-devices":
+      request = import("./components/pages/AdminVisitorDevicesPage.jsx");
+      break;
     case "admin-uploads":
       request = import("./components/pages/AdminUploadsPage.jsx");
       break;
@@ -199,6 +202,7 @@ const PublicProfilePage = lazy(() => import("./components/pages/PublicProfilePag
 const AdminUploadsPage = lazy(() => import("./components/pages/AdminUploadsPage.jsx"));
 const AdminCatalogPage = lazy(() => import("./components/pages/AdminCatalogPage.jsx"));
 const AdminDashboardPage = lazy(() => import("./components/pages/AdminDashboardPage.jsx"));
+const AdminVisitorDevicesPage = lazy(() => import("./components/pages/AdminVisitorDevicesPage.jsx"));
 // -----------------------------------------------------------------------------
 // Pages
 // -----------------------------------------------------------------------------
@@ -294,6 +298,10 @@ function MainPage({
             }
           />
         );
+      }
+
+      if (page === "admin-devices") {
+        return <AdminVisitorDevicesPage onNavigate={onNavigate} />;
       }
 
       if (
