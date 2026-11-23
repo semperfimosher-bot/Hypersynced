@@ -14,6 +14,10 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.match(entry, /@import "\.\/styles\/surfaceConsistency\.css";/);
   assert.ok(entry.indexOf("surfaceConsistency.css") > entry.indexOf("./styles/search.css"));
   assert.match(shared, /--hs-surface:\s*#012036/i);
+  assert.match(shared, /@media \(min-width:\s*980px\)[\s\S]*--hs-surface:\s*#000F1A/i);
+  assert.ok(shared.includes(".hs-search-console__surface-group"));
+  assert.ok(shared.includes(".hs-library-console__surface-group"));
+  assert.ok(shared.includes(".hs-messages-console__surface-group"));
   assert.match(shared, /--hs-surface-hover:\s*#004573/i);
   assert.ok(base.includes("background: var(--hs-surface);"));
   assert.ok(search.includes("background: var(--hs-surface);"));
@@ -24,7 +28,7 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.match(shared, /\.hs-search-page[\s\S]*background:\s*transparent/);
   assert.ok(shared.includes(".hs-search-console__heading"));
   assert.ok(shared.includes("background: var(--hs-surface);"));
-  assert.match(shared, /\.hs-total-played-table-head[\s\S]*border-radius:\s*12px/);
+  assert.match(shared, /\.hs-total-played-list[\s\S]*gap:\s*0/);
   assert.match(shared, /\.hs-search-track-list[\s\S]*border-radius:\s*12px/);
   assert.ok(shared.includes("border-bottom: 1px solid var(--hs-shared-row-divider);"));
   assert.ok(shared.includes(".hs-search-track:hover"));
@@ -58,5 +62,8 @@ test("main list pages reuse shared row classes", () => {
   for (const [path, className] of pages) {
     const source = fs.readFileSync(new URL(path, import.meta.url), "utf8");
     assert.ok(source.includes(className), path + " missing shared class " + className);
+    if (path.includes("SearchPage")) assert.ok(source.includes("hs-search-console__surface-group"));
+    if (path.includes("LibraryPage")) assert.ok(source.includes("hs-library-console__surface-group"));
+    if (path.includes("MessagesPage")) assert.ok(source.includes("hs-messages-console__surface-group"));
   }
 });
