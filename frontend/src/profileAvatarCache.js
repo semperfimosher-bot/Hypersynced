@@ -55,7 +55,7 @@ async function pruneProfileAvatarCache(db) {
     const store = transaction.objectStore(STORE_NAME);
     const request = store.getAll();
     request.onsuccess = () => {
-      const records = (request.result ?? []).sort((a, b) => Number(b.cachedAt) - Number(a.cachedAt);
+      const records = (request.result ?? []).sort((a, b) => Number(b.cachedAt) - Number(a.cachedAt));
       for (const record of records.slice(MAX_AVATAR_ENTRIES)) store.delete(record.url);
     };
     request.onerror = () => transaction.abort();
