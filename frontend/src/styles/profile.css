@@ -3432,7 +3432,6 @@ button.hs-profile-stat:hover,
     gap: 10px;
     min-height: 66px;
     padding: 9px 12px;
-    background: rgba(8, 32, 49, 0.92) !important;
   }
   .hs-search-track.hs-total-played-track .hs-search-track__rank,
   .hs-search-track.hs-total-played-track .hs-search-track__play { display: none; }
