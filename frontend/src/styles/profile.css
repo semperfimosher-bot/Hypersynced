@@ -3334,6 +3334,20 @@ button.hs-profile-stat:hover,
   grid-template-columns: 28px 46px minmax(0, 1fr) minmax(112px, 160px) 44px 31px;
   min-height: 64px;
   padding: 8px 11px;
+  background: linear-gradient(90deg, rgba(8, 32, 49, 0.92), rgba(4, 16, 27, 0.88));
+}
+.hs-search-track.hs-total-played-track:hover {
+  background: linear-gradient(90deg, rgba(14, 55, 79, 0.96), rgba(5, 20, 32, 0.92));
+}
+.hs-total-played-scroll-sentinel {
+  display: grid;
+  min-height: 16px;
+  place-items: center;
+  padding: 8px;
+}
+.hs-total-played-scroll-sentinel .hs-playlist-shimmer {
+  width: 100%;
+  min-height: 4px;
 }
 .hs-search-track.hs-total-played-track .track-artwork-shell,
 .hs-search-track.hs-total-played-track .track-artwork,
@@ -3406,6 +3420,10 @@ button.hs-profile-stat:hover,
     gap: 8px;
     min-height: 60px;
     padding: 7px 10px;
+    background: linear-gradient(90deg, rgba(8, 32, 49, 0.92), rgba(4, 16, 27, 0.88));
+  }
+  .hs-search-track.hs-total-played-track:hover {
+    background: linear-gradient(90deg, rgba(14, 55, 79, 0.96), rgba(5, 20, 32, 0.92));
   }
   .hs-search-track.hs-total-played-track .track-artwork-shell,
   .hs-search-track.hs-total-played-track .track-artwork,
