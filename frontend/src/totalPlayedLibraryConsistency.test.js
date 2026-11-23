@@ -38,5 +38,5 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(page, /hs-total-played-scroll-sentinel/);
   assert.doesNotMatch(page, /Load more/);
   assert.match(page, /Retry loading history/);
-  assert.match(page, /error \\? null : undefined/);
+  assert.match(page, /loadingMore \\|\\| error/);
 });
