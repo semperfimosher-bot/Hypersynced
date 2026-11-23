@@ -39,7 +39,7 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(page, /void loadPage\(\)/);
   assert.match(page, /const PAGE_SIZE = 100/);
   assert.match(page, /IntersectionObserver/);
-  assert.match(page, /rootMargin: "600px 0px"/);
+  assert.match(page, /rootMargin: "1400px 0px"/);
   assert.match(page, /hs-total-played-scroll-sentinel/);
   assert.doesNotMatch(page, /Load more/);
   assert.match(page, /Retry loading history/);
