@@ -78,7 +78,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
 
   useEffect(() => {
     const sentinel = loadMoreSentinelRef.current;
-    if (!sentinel || !online || !hasMore || loading || loadingMore) return undefined;
+    if (!sentinel || !online || !hasMore || loading || loadingMore || error) return undefined;
     if (typeof IntersectionObserver === "undefined") return undefined;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting) && !appendInFlightRef.current) {
@@ -87,7 +87,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
     }, { rootMargin: "600px 0px" });
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, online, loadPage]);
+  }, [error, hasMore, loading, loadingMore, online, loadPage]);
 
   const play = (track) => player.playTrack(track.id, {
     audioUrl: track.audio_url,
@@ -125,7 +125,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       <section className="hs-total-played-list" aria-label="All played songs">
         {!online ? (
           <OfflineNotice compact title="Go online to load Total Played" description="Your account listening history needs an internet connection." />
-        ) : error ? (
+        ) : error && !tracks.length ? (
           <div className="hs-empty-card" role="alert">{error}</div>
         ) : tracks.length ? (
           <>
@@ -151,6 +151,12 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
                 </button>
               ))}
             </div>
+            {error ? (
+              <div className="hs-total-played-load-error" role="alert">
+                <span>{error}</span>
+                <button type="button" onClick={() => void loadPage({ append: true })}>Retry loading history</button>
+              </div>
+            ) : null}
             {hasMore ? (
               <div className="hs-total-played-scroll-sentinel" ref={loadMoreSentinelRef} aria-live="polite">
                 {loadingMore ? <span className="hs-playlist-shimmer" aria-label="Loading more songs" /> : null}
