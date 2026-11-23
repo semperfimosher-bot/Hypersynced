@@ -859,21 +859,32 @@ export default function AdminDashboardPage({
           </div>
         </article>
 
-        <article className="admin-panel admin-device-summary admin-panel--interactive">
-          <button type="button" className="admin-device-summary__open" onClick={() => onNavigate("admin-devices")}>
-            <div className="admin-panel__heading">
-              <div><span>VISITOR MONITOR</span><h3>Devices</h3></div>
-              <span className="admin-status admin-status--online">REGISTRY</span>
+        <article className="admin-panel admin-health-panel admin-device-summary admin-panel--interactive">
+          <div className="admin-panel__heading">
+            <div>
+              <span>VISITOR MONITOR</span>
+              <h3>Devices</h3>
             </div>
-            <div className="admin-device-summary__counts" aria-label="Device counts">
-              <div><span>REGISTERED</span><strong>{visitorDeviceSummary?.total_count ?? "—"}</strong></div>
-              <div><span>ONLINE NOW</span><strong>{visitorDeviceSummary?.online_count ?? "—"}</strong></div>
-            </div>
-            <div className="admin-device-summary__footer">
-              <span>Guests · accounts · IP history</span>
-              <span>Open devices page <Icon name="chevron-right" /></span>
-            </div>
-          </button>
+            <span className="admin-status admin-status--online">
+              {visitorDeviceSummary ? "LIVE" : "LOADING"}
+            </span>
+          </div>
+          <div className="admin-health-list admin-device-summary__rows">
+            <AdminHealthRow
+              label="Registered devices"
+              value={visitorDeviceSummary?.total_count ?? "Loading"}
+              healthy={Boolean(visitorDeviceSummary)}
+            />
+            <AdminHealthRow
+              label="Online now"
+              value={visitorDeviceSummary?.online_count ?? "Loading"}
+              healthy={Boolean(visitorDeviceSummary?.online_count)}
+            />
+            <button type="button" className="admin-health-row admin-device-summary__open-row" onClick={() => onNavigate("admin-devices")}>
+              <span>Visitor registry</span>
+              <div><strong>Open devices</strong><Icon name="chevron-right" /></div>
+            </button>
+          </div>
         </article>
       </section>
 
