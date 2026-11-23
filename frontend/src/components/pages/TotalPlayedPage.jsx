@@ -33,14 +33,14 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const appendInFlightRef = useRef(false);
   const loadMoreSentinelRef = useRef(null);
 
-  const loadPage = useCallback(async ({ append = false, silent = false } = {}) => {
+  const loadPage = useCallback(async ({ append = false } = {}) => {
     if (!currentUser || !online || (append && appendInFlightRef.current)) return;
     const requestId = requestRef.current;
     const requestOffset = append ? offsetRef.current : 0;
     if (append) {
       appendInFlightRef.current = true;
       setLoadingMore(true);
-    } else if (!silent) {
+    } else {
       setLoading(true);
     }
     setError("");
@@ -63,7 +63,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       }
     } finally {
       if (requestId === requestRef.current) {
-        if (!silent) setLoading(false);
+        setLoading(false);
         setLoadingMore(false);
         appendInFlightRef.current = false;
       }
@@ -81,7 +81,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
     setLoadingMore(false);
     setHasMore(cached.hasMore || cached.tracks.length >= PAGE_SIZE);
     setError("");
-    if (ownerKey && online) void loadPage({ silent: cached.tracks.length > 0 });
+    if (ownerKey && online) void loadPage();
     return () => {
       requestRef.current += 1;
     };
