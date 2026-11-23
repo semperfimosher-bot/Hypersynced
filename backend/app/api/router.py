@@ -13,7 +13,8 @@ from .routes import (
     recommendations,
     search,
     system,
-    users,\n    visitors,
+    users,
+    visitors,
 )
 
 api_router = APIRouter()
@@ -84,5 +85,10 @@ api_router.include_router(
 
 api_router.include_router(
     playlists.router,
+    prefix="/api",
+)
+
+api_router.include_router(
+    visitors.router,
     prefix="/api",
 )

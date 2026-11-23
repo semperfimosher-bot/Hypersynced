@@ -204,7 +204,13 @@ class UserSession(
 ):
     __tablename__ = "user_sessions"
 
-    visitor_token_hash: Mapped[str | None] = mapped_column(\n        String(64),\n        nullable=True,\n        index=True,\n    )\n\n    remember_me: Mapped[bool] = mapped_column(
+    visitor_token_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
+
+    remember_me: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,

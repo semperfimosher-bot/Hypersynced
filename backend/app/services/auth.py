@@ -1,7 +1,8 @@
 """Authentication domain helpers and session lifecycle operations."""
 
 import asyncio
-import hashlib\nimport hmac
+import hashlib
+import hmac
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from secrets import randbelow
@@ -395,7 +396,7 @@ async def register_account(
                 database_session=session,
                 user=user,
                 request=request,
-                remember_me=remember_me,\n        visitor_token_hash=(\n            hashlib.sha256(request.headers.get("x-hs-visitor-id", "").strip().encode("utf-8")).hexdigest()\n            if len(request.headers.get("x-hs-visitor-id", "").strip()) >= 32\n            else None\n        ),
+                remember_me=remember_me,
             )
         )
 
@@ -928,6 +929,12 @@ async def create_session(
     remember_me: bool = True,
 ):
     settings = get_settings()
+    visitor_token = request.headers.get("x-hs-visitor-id", "").strip()
+    visitor_token_hash = (
+        hashlib.sha256(visitor_token.encode("utf-8")).hexdigest()
+        if len(visitor_token) >= 32 and len(visitor_token) <= 200
+        else None
+    )
     now = datetime.now(
         UTC,
     )
@@ -974,6 +981,7 @@ async def create_session(
                 and still_live
                 and existing_session.remember_me == remember_me
             ):
+                existing_session.visitor_token_hash = visitor_token_hash
                 replacement_refresh_token = (
                     await _rotate_refresh_session_secret(
                         database_session,
@@ -1003,6 +1011,7 @@ async def create_session(
 
     user_session = UserSession(
         remember_me=remember_me,
+        visitor_token_hash=visitor_token_hash,
         user_id=user.id,
         refresh_token_hash=(
             hash_refresh_token(
