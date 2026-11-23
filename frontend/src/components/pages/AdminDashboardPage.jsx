@@ -880,10 +880,6 @@ export default function AdminDashboardPage({
           </div>
         </article>
 
-
-      </section>
-
-      <section className="admin-dashboard-grid admin-dashboard-grid--revamped admin-dashboard-grid--devices">
         <article className="admin-panel admin-device-summary admin-panel--interactive">
           <button type="button" className="admin-device-summary__open" onClick={() => { setVisitorModalOpen(true); void loadVisitorDevices(); }}>
             <div className="admin-panel__heading">
