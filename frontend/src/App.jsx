@@ -664,6 +664,15 @@ export default function App() {
 
   const [activePage, setActivePage] =
     useState(() => startupAppView?.activePage ?? "home");
+  const totalPlayedScrollPositionRef = useRef(0);
+  useEffect(() => {
+    if (activePage !== "total-played") return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const main = document.querySelector(".main-content");
+      if (main) main.scrollTop = totalPlayedScrollPositionRef.current;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activePage]);
 
   // Invalidates asynchronous saved-view/session restores after user navigation.
   const navigationGenerationRef = useRef(0);
@@ -2267,7 +2276,9 @@ const clearPlaylistToOpen =
           }}
         />
 
-        <main className="main-content">
+        <main className="main-content" onScroll={(event) => {
+          if (activePage === "total-played") totalPlayedScrollPositionRef.current = event.currentTarget.scrollTop;
+        }}>
           <MainPage
             activePage={activePage}
             currentUser={currentUser}
