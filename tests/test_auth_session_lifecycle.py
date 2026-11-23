@@ -18,8 +18,8 @@ from backend.app.models.account import (
     UserRole,
     UserSession,
 )
-from backend.app.models.visitor import VisitorDevice
 from backend.app.models.base import Base
+from backend.app.models.visitor import VisitorDevice
 from backend.app.security.tokens import (
     create_refresh_token,
     decode_access_token,
