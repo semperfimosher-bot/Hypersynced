@@ -3206,3 +3206,76 @@
   .admin-device-modal__header { flex-wrap: wrap !important; }
   .admin-device-modal__header button { flex: 0 0 auto !important; }
 }
+
+/* Inline device registry: library-style rows, not a modal/overlay. */
+.admin-device-registry {
+  width: 100%;
+  min-width: 0;
+  margin: 18px 0;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(43, 166, 222, .18);
+  background: linear-gradient(160deg, rgba(4, 18, 29, .98), rgba(2, 9, 16, .98));
+  box-shadow: inset 0 1px 0 rgba(150, 223, 255, .03);
+}
+.admin-device-registry__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(52, 144, 189, .12);
+}
+.admin-device-registry__header > div:first-child { min-width: 0; }
+.admin-device-registry__header span:first-child {
+  color: #35c8ff; font-size: 8px; font-weight: 850; letter-spacing: .16em;
+}
+.admin-device-registry__header h2 {
+  margin: 5px 0; color: #e8f7fc; font-size: clamp(18px, 2vw, 23px); letter-spacing: -.035em;
+}
+.admin-device-registry__header p { margin: 0; color: #728a97; font-size: 10px; line-height: 1.5; }
+.admin-device-registry__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-device-registry__stats {
+  display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 20px;
+  border-bottom: 1px solid rgba(52, 144, 189, .12);
+}
+.admin-device-registry__stats > div {
+  min-width: 110px; display: grid; gap: 3px; padding: 10px 13px;
+  border: 1px solid rgba(51, 145, 191, .13); border-radius: 10px;
+  background: rgba(4, 18, 29, .8);
+}
+.admin-device-registry__stats strong { color: #e7f7fc; font-size: 24px; line-height: 1; }
+.admin-device-registry__stats span { color: #6e8996; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.admin-device-registry__list { display: grid; gap: 0; min-width: 0; }
+.admin-device-registry__row {
+  display: grid; grid-template-columns: minmax(160px, .8fr) minmax(0, 2fr) minmax(130px, auto);
+  gap: 14px; align-items: center; min-width: 0; padding: 14px 18px;
+  border-bottom: 1px solid rgba(54, 132, 173, .11);
+  background: rgba(2, 11, 18, .24);
+}
+.admin-device-registry__row:hover { background: rgba(5, 26, 40, .72); }
+.admin-device-registry__identity { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.admin-device-registry__identity strong { color: #dff4fb; font-size: 11px; }
+.admin-device-registry__identity .admin-status { flex: 0 0 auto; }
+.admin-device-registry__data { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; min-width: 0; }
+.admin-device-registry__data > div { display: grid; gap: 4px; min-width: 0; }
+.admin-device-registry__data b { color: #4e788b; font-size: 7px; letter-spacing: .1em; }
+.admin-device-registry__data span { color: #b7d0db; font-size: 9px; overflow-wrap: anywhere; }
+.admin-device-registry__ua { grid-column: 1 / -1; margin: 0; color: #607d8a; font-size: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-device-registry__revoke { min-height: 34px; padding: 0 10px; font-size: 9px; }
+@media (max-width: 1000px) {
+ .admin-device-registry__row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+ .admin-device-registry__data { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ .admin-device-registry__ua { grid-column: auto; }
+ .admin-device-registry__revoke { justify-self: start; }
+}
+@media (max-width: 600px) {
+ .admin-device-registry__header { padding: 14px; align-items: flex-start; }
+ .admin-device-registry__actions { width: 100%; }
+ .admin-device-registry__actions button { flex: 1 1 auto; }
+ .admin-device-registry__stats { padding: 10px 12px; }
+ .admin-device-registry__stats > div { min-width: 90px; padding: 9px 11px; }
+ .admin-device-registry__row { padding: 12px; }
+ .admin-device-registry__data { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}

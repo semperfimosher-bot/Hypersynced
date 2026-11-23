@@ -5,8 +5,6 @@ import {
   useState,
 } from "react";
 
-import { createPortal } from "react-dom";
-
 import * as player from "../../audioPlayer.js";
 
 import {
@@ -902,49 +900,52 @@ export default function AdminDashboardPage({
         </article>
       </section>
 
-      {visitorModalOpen ? createPortal(
-        <div className="admin-device-modal-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) { setVisitorModalOpen(false); setVisitorContextMenu(null); } }}>
-          <section className="admin-device-modal" role="dialog" aria-modal="true" aria-label="Visitor device registry">
-            <header className="admin-device-modal__header">
-              <div><span>VISITOR REGISTRY</span><h2>Devices & Sessions</h2><p>Online status updates every 20 seconds. IP history is retained for a limited period.</p></div>
-              <button type="button" className="secondary-admin-button" onClick={() => setVisitorModalOpen(false)}>Close</button>
-            </header>
-            <div className="admin-device-modal__stats">
-              <div><strong>{visitorDevices?.online_count ?? 0}</strong><span>Online</span></div>
-              <div><strong>{visitorDevices?.total_count ?? 0}</strong><span>Total tracked</span></div>
+      {visitorModalOpen ? (
+        <section className="admin-device-registry admin-panel admin-panel--interactive" aria-label="Visitor device registry">
+          <header className="admin-device-registry__header">
+            <div>
+              <span>VISITOR REGISTRY</span>
+              <h2>Devices & Sessions</h2>
+              <p>Every visitor device, including guests. Live status refreshes every 20 seconds.</p>
+            </div>
+            <div className="admin-device-registry__actions">
               <button type="button" className="secondary-admin-button" onClick={() => void loadVisitorDevices()} disabled={visitorDevicesBusy}>{visitorDevicesBusy ? "Refreshing…" : "Refresh"}</button>
+              <button type="button" className="secondary-admin-button" onClick={() => { setVisitorModalOpen(false); setVisitorContextMenu(null); }}>Close registry</button>
             </div>
-            <div className="admin-device-list">
-              {(visitorDevices?.devices ?? []).map((device) => (
-                <article key={device.device_number} className="admin-device-row" onContextMenu={(event) => { event.preventDefault(); setVisitorContextMenu({ device, x: event.clientX, y: event.clientY }); }}>
-                  <div className="admin-device-row__top">
-                    <span className={device.online ? "admin-device-dot is-online" : "admin-device-dot"} />
-                    <strong>Device #{device.device_number}</strong>
-                    <span className={device.online ? "admin-status admin-status--online" : "admin-status admin-status--offline"}>{device.revoked ? "REVOKED" : device.online ? "ONLINE" : "OFFLINE"}</span>
-                  </div>
-                  <div className="admin-device-row__details">
-                    <span><b>IP</b>{device.ip_address || "Retained no longer"}</span>
-                    <span><b>Account</b>{device.account || "Guest"}</span>
-                    <span><b>Visits</b>{device.visit_count ?? 0}</span>
-                    <span><b>First seen</b>{device.first_seen_at ? new Date(device.first_seen_at).toLocaleString() : "—"}</span>
-                    <span><b>Last seen</b>{device.last_seen_at ? new Date(device.last_seen_at).toLocaleString() : "—"}</span>
-                  </div>
-                  <p className="admin-device-row__ua">{device.user_agent || "Browser details unavailable"}</p>
-                  <small>Right-click for device actions</small>
-                </article>
-              ))}
-              {!visitorDevices?.devices?.length ? <div className="admin-empty-state"><Icon name="monitor-smartphone" /><strong>No visitor devices returned</strong><p>{visitorDevicesBusy ? "Loading registry…" : "Visitor heartbeat integration may not be active yet."}</p></div> : null}
+          </header>
+          <div className="admin-device-registry__stats">
+            <div><strong>{visitorDevices?.online_count ?? 0}</strong><span>Online now</span></div>
+            <div><strong>{visitorDevices?.total_count ?? 0}</strong><span>Total tracked</span></div>
+          </div>
+          <div className="admin-device-registry__list">
+            {(visitorDevices?.devices ?? []).map((device) => (
+              <article key={device.device_number} className="admin-device-registry__row" onContextMenu={(event) => { event.preventDefault(); setVisitorContextMenu({ device, x: event.clientX, y: event.clientY }); }}>
+                <div className="admin-device-registry__identity">
+                  <span className={device.online ? "admin-device-dot is-online" : "admin-device-dot"} />
+                  <strong>Device #{device.device_number}</strong>
+                  <span className={device.online ? "admin-status admin-status--online" : "admin-status admin-status--offline"}>{device.revoked ? "REVOKED" : device.online ? "ONLINE" : "OFFLINE"}</span>
+                </div>
+                <div className="admin-device-registry__data">
+                  <div><b>IP ADDRESS</b><span>{device.ip_address || "Retention expired"}</span></div>
+                  <div><b>ACCOUNT</b><span>{device.account || "Guest"}</span></div>
+                  <div><b>VISITS</b><span>{device.visit_count ?? 0}</span></div>
+                  <div><b>FIRST SEEN</b><span>{device.first_seen_at ? new Date(device.first_seen_at).toLocaleString() : "—"}</span></div>
+                  <div><b>LAST SEEN</b><span>{device.last_seen_at ? new Date(device.last_seen_at).toLocaleString() : "—"}</span></div>
+                </div>
+                <p className="admin-device-registry__ua">{device.user_agent || "Browser details unavailable"}</p>
+                <button type="button" className="admin-device-registry__revoke danger-button" onClick={() => void revokeVisitorDevice(device)} disabled={visitorDeleteBusy !== null}>{visitorDeleteBusy === device.device_number ? "Revoking…" : "Revoke sessions"}</button>
+              </article>
+            ))}
+            {!visitorDevices?.devices?.length ? <div className="admin-empty-state"><Icon name="monitor-smartphone" /><strong>No visitor devices returned</strong><p>{visitorDevicesBusy ? "Loading registry…" : "Visitor tracking data is not available yet."}</p></div> : null}
+          </div>
+          {visitorContextMenu ? (
+            <div className="admin-device-context-menu" style={{ left: Math.min(visitorContextMenu.x, window.innerWidth - 230), top: Math.min(visitorContextMenu.y, window.innerHeight - 100) }}>
+              <strong>Device #{visitorContextMenu.device.device_number}</strong>
+              <button type="button" className="danger-button" disabled={visitorDeleteBusy !== null} onClick={() => void revokeVisitorDevice(visitorContextMenu.device)}>{visitorDeleteBusy === visitorContextMenu.device.device_number ? "Revoking…" : "Revoke device & sessions"}</button>
+              <button type="button" className="secondary-admin-button" onClick={() => setVisitorContextMenu(null)}>Cancel</button>
             </div>
-            {visitorContextMenu ? (
-              <div className="admin-device-context-menu" style={{ left: Math.min(visitorContextMenu.x, window.innerWidth - 230), top: Math.min(visitorContextMenu.y, window.innerHeight - 100) }}>
-                <strong>Device #{visitorContextMenu.device.device_number}</strong>
-                <button type="button" className="danger-button" disabled={visitorDeleteBusy !== null} onClick={() => void revokeVisitorDevice(visitorContextMenu.device)}>{visitorDeleteBusy === visitorContextMenu.device.device_number ? "Revoking…" : "Revoke device & sessions"}</button>
-                <button type="button" className="secondary-admin-button" onClick={() => setVisitorContextMenu(null)}>Cancel</button>
-              </div>
-            ) : null}
-          </section>
-        </div>,
-        document.body,
+          ) : null}
+        </section>
       ) : null}
 
       <section className="admin-tool-deck">
