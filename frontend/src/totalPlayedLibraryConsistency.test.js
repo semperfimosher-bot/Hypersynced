@@ -42,6 +42,7 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(page, /rootMargin: "1400px 0px"/);
   assert.match(page, /previous\.title !== track\.title/);
   assert.match(page, /if \(historyChanged \|\| cached\.hasMore !== nextHasMore\)/);
+  assert.match(page, /if \(isActive && !wasActiveRef\.current\) void loadPage\(\)/);
   assert.match(page, /hs-total-played-scroll-sentinel/);
   assert.doesNotMatch(page, /Load more/);
   assert.match(page, /Retry loading history/);
