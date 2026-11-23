@@ -1900,15 +1900,19 @@ useEffect(() => {
       return;
     }
     const targets = [...ownedPlaylists, ...savedPlaylists];
-    const unique = [...new Map(
-      targets.filter((playlist) => playlist?.id)
-        .map((playlist) => [String(playlist.id), playlist]),
-    ).values()];
+    const unique = sortPinnedPlaylists(
+      [...new Map(
+        targets.filter((playlist) => playlist?.id)
+          .map((playlist) => [String(playlist.id), playlist]),
+      ).values()],
+      pinnedPlaylistIds,
+    );
     let cancelled = false;
     let nextIndex = 0;
 
-    // Warm all playlist details in the background. Two workers provide useful
-    // ahead-of-click coverage without flooding the API. Cache hits are skipped.
+    // Prioritize pinned playlists and warm several in parallel so the
+    // persistent snapshots are ready before users open them. Cache hits skip
+    // network; request deduplication still prevents duplicate API work.
     async function worker() {
       while (!cancelled && nextIndex < unique.length) {
         const playlist = unique[nextIndex++];
@@ -1916,7 +1920,7 @@ useEffect(() => {
       }
     }
 
-    void Promise.all([worker(), worker()]);
+    void Promise.all([worker(), worker(), worker(), worker()]);
     return () => {
       cancelled = true;
     };

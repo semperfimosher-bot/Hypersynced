@@ -14,7 +14,7 @@ test("Library playlist detail requests are shared and persisted for instant reop
   assert.match(source, /getCachedPlaylistAsync\(libraryCacheKey, playlistId\)/);
 });
 
-test("playlist hover and keyboard focus warm details and background warming uses two workers", () => {
+test("playlist hover and keyboard focus warm details and background warming uses four workers and prioritizes pinned playlists", () => {
   assert.match(source, /onMouseEnter=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
   assert.match(source, /onFocus=\{\(\) => \{\s*void prefetchPlaylistDetails\(playlist\.id\)/);
   assert.match(source, /void Promise\.all\(\[worker\(\), worker\(\)\]\)/);
