@@ -3459,57 +3459,56 @@ button.hs-profile-stat:hover,
 .hs-total-played-keepalive.is-active { display: contents; }
 
 
-/* Use the same neutral navy surface as the Library page panel across the
-   entire row-list area, not only the individual row elements. */
-.hs-total-played-list,
-.hs-total-played-rows,
-.hs-admin-device-list,
-.hs-admin-device-rows,
-.hs-admin-device-footer,
-.hs-search-track.hs-total-played-track,
-.hs-search-track.hs-admin-device-row {
-  background-color: #030a11;
-}
-
-.hs-search-track.hs-total-played-track:hover,
-.hs-search-track.hs-total-played-track.is-selected,
-.hs-search-track.hs-admin-device-row:hover,
-.hs-search-track.hs-admin-device-row.is-selected {
-  background: linear-gradient(
+/* One shared list surface for Search, Library, Messages, Devices, and Total Played. */
+:root {
+  --hs-list-surface: rgb(2, 10, 16);
+  --hs-list-hover: linear-gradient(
     90deg,
     rgba(28, 177, 218, 0.075),
     rgba(23, 127, 165, 0.018)
   );
 }
 
-
-/* Keep page-header panels and the Library console on the exact row-surface navy. */
-.hs-search-playlist-view__hero.hs-total-played-hero,
-.hs-library-console {
-  background: #030a11;
-}
-
-
-/* Shared dark row/header surface for Search, Library, and Messages. */
+/* Match the Library row base color exactly, including list gutters and headers. */
 .hs-search-track,
+.hs-library-track-row,
 .library-track-row,
+.hs-total-played-track,
+.hs-admin-device-row,
 .hs-message-conversation,
 .hs-search-console,
 .hs-library-console,
+.hs-search-section,
+.hs-total-played-list,
+.hs-total-played-rows,
+.hs-total-played-table-head,
+.hs-total-played-hero,
+.hs-admin-device-list,
+.hs-admin-device-rows,
+.hs-admin-device-head,
+.hs-admin-device-footer,
 .hs-messages-list__heading,
 .hs-message-thread__header {
-  background-color: rgb(2, 10, 16);
+  background-color: var(--hs-list-surface);
 }
 
-/* Keep the existing cyan highlight treatment consistent across all rows. */
+/* Preserve the same hover/selected highlight across every track/conversation row. */
 .hs-search-track:hover,
 .hs-search-track.is-selected,
+.hs-library-track-row:hover,
 .library-track-row:hover,
+.hs-total-played-track:hover,
+.hs-total-played-track.is-selected,
+.hs-admin-device-row:hover,
+.hs-admin-device-row.is-selected,
 .hs-message-conversation:hover,
 .hs-message-conversation.is-active {
-  background: linear-gradient(
-    90deg,
-    rgba(28, 177, 218, 0.075),
-    rgba(23, 127, 165, 0.018)
-  );
+  background: var(--hs-list-hover);
+}
+
+/* Keep transparent nested list wrappers from creating darker patches. */
+.hs-total-played-rows,
+.hs-admin-device-rows,
+.hs-admin-device-footer {
+  background-color: var(--hs-list-surface);
 }
