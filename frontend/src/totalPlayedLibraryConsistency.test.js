@@ -32,4 +32,9 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*grid-template-columns/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*min-height: 64px/);
   assert.match(profileStyles, /\.hs-total-played-heading\s*\{[\s\S]*margin: 0/);
+  assert.match(profileStyles, /rgba\\(8, 32, 49, 0\\.92\\)/);
+  assert.match(page, /IntersectionObserver/);
+  assert.match(page, /rootMargin: "600px 0px"/);
+  assert.match(page, /hs-total-played-scroll-sentinel/);
+  assert.doesNotMatch(page, /Load more/);
 });
