@@ -2,7 +2,7 @@
    Individual page styles normalize their own surface declarations to these tokens. */
 :root {
   --hs-surface: #012036;
-  --hs-surface-hover: #004573;
+  --hs-surface-hover: #012036;
   --hs-shared-surface: var(--hs-surface);
   --hs-shared-border: rgba(67, 180, 224, 0.16);
   --hs-shared-row-divider: rgba(114, 165, 190, 0.16);
@@ -10,21 +10,7 @@
   --hs-shared-row-highlight-shadow: none;
 }
 
-@media (min-width: 980px) {
-  :root {
-    --hs-surface: #000F1A;
-    --panel: #000F1A;
-    --panel-strong: #000F1A;
-    --panel-soft: #000F1A;
-  }
-  .hs-search-page,
-  .hs-library-page,
-  .hs-messages-page,
-  .hs-total-played-route {
-    --hs-panel: var(--hs-surface);
-    --hs-panel-raised: var(--hs-surface);
-  }
-}
+/* Desktop and mobile use the same requested surface color. */
 
 /* Preserve the existing page canvas; only UI surfaces receive the theme. */
 .hs-search-page,
@@ -69,7 +55,7 @@
 .admin-device-registry__header,
 .admin-device-registry__stats {
   background: var(--hs-surface);
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 @media (min-width: 980px) {
@@ -79,9 +65,9 @@
 .hs-messages-console__surface-group {
   display: grid;
   gap: 10px;
-  padding: 12px;
+  padding: 8px;
   border: 1px solid var(--hs-shared-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--hs-surface);
 }
 .hs-search-console__surface-group .hs-search-console__heading,
@@ -124,7 +110,7 @@
 }
 }
 
-/* Connected rows: thin separators, no row gaps, 12px list outer corners. */
+/* Connected rows: thin separators, no row gaps, 8px list outer corners. */
 .hs-search-track-list,
 .library-track-list,
 .hs-message-conversation-list,
@@ -135,7 +121,7 @@
   gap: 0;
   background: var(--hs-surface);
   border: 1px solid var(--hs-shared-border);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -163,10 +149,10 @@
 /* Transparent shells use a small, deliberate gap between separate blocks. */
 .hs-search-section {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   border: 0;
   box-shadow: none;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .hs-search-console,
@@ -175,7 +161,7 @@
 .hs-messages-search-section,
 .hs-messages-directory {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   border: 0;
   box-shadow: none;
   padding: 0;
@@ -188,7 +174,7 @@
 }
 
 .hs-search-section__heading {
-  padding: 12px;
+  padding: 8px;
   margin: 0;
   border: 1px solid var(--hs-shared-border);
 }
@@ -197,7 +183,7 @@
 .hs-total-played-hero {
   padding: 16px;
   border: 1px solid var(--hs-shared-border);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 @media (min-width: 980px) {
@@ -206,7 +192,7 @@
   gap: 0;
   background: var(--hs-surface);
   border: 1px solid var(--hs-shared-border);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 .hs-total-played-table-head,
@@ -215,7 +201,7 @@
   border: 0;
   border-bottom: 1px solid var(--hs-shared-row-divider);
   border-radius: 0;
-  padding: 12px;
+  padding: 8px;
 }
 .hs-total-played-rows,
 .hs-admin-device-rows {
@@ -236,7 +222,7 @@
   min-width: 0;
 }
 
-/* 12px corners on UI cards, headers, popup surfaces and buttons. */
+/* 8px corners on UI cards, headers, popup surfaces and buttons. */
 .mobile-header,
 .desktop-sidebar,
 .desktop-topbar,
@@ -335,7 +321,7 @@
 .bot-status-card,
 .hs-profile-badges > span,
 .hs-total-played-load-error button {
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 /* Ordinary interactive surfaces share the requested hover color.
@@ -497,5 +483,74 @@
 @media (prefers-reduced-motion: reduce) {
   .hs-playing-indicator > span {
     animation: none;
+  }
+}
+
+
+/* Responsive page fit and slightly reduced mobile typography. */
+@media (max-width: 979px) {
+  :root {
+    --hs-mobile-text-scale: 0.96;
+  }
+  .main-content,
+  .page-content,
+  .hs-search-page,
+  .hs-library-page,
+  .hs-messages-page,
+  .hs-total-played-route,
+  .admin-dashboard-page,
+  .admin-bot-page {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .main-content,
+  .page-content {
+    box-sizing: border-box;
+  }
+  .hs-search-console,
+  .hs-library-console,
+  .hs-messages-console,
+  .hs-messages-search-section,
+  .hs-messages-directory,
+  .hs-search-section,
+  .hs-total-played-list,
+  .hs-search-track-list,
+  .library-track-list,
+  .hs-message-conversation-list,
+  .hs-admin-device-list,
+  .admin-device-registry {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hs-search-console__surface-group,
+  .hs-library-console__surface-group,
+  .hs-messages-console__surface-group {
+    gap: 8px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .hs-search-track,
+  .hs-library-track-row,
+  .library-track-row,
+  .hs-message-conversation,
+  .hs-admin-device-row,
+  .admin-device-registry__row {
+    min-width: 0;
+  }
+  input, textarea, select, button {
+    max-width: 100%;
+  }
+  .hs-search-track__copy,
+  .hs-library-track-row__copy,
+  .library-track-row__copy,
+  .hs-message-conversation__copy {
+    min-width: 0;
+  }
+  .hs-search-track__copy strong,
+  .hs-library-track-row__copy strong,
+  .library-track-row__copy strong,
+  .hs-message-conversation__copy strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
