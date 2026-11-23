@@ -19,4 +19,10 @@ test("ProfilePage receives navigation callback for Total Played stat", () => {
 
   assert.match(profileRender, /onNavigate\s*=\s*\{\s*onNavigate\s*\}/);
   assert.match(profileSource, /label="Total Played"[\s\S]*?onClick=\{\s*\(\)\s*=>\s*onNavigate\?\.\("total-played"\)/);
+  assert.match(appSource, /totalPlayedVisited/);
+  assert.match(appSource, /hs-total-played-keepalive/);
+  assert.match(appSource, /<TotalPlayedPage currentUser=\{currentUser\} onNavigate=\{onNavigate\} \/>/);
+  const totalPlayedSource = fs.readFileSync(new URL("./components/pages/TotalPlayedPage.jsx", import.meta.url), "utf8");
+  assert.match(totalPlayedSource, /rootMargin: "1400px 0px"/);
+  assert.match(totalPlayedSource, /tracksRef\.current/);
 });
