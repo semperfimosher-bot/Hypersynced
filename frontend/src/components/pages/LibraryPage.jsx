@@ -3533,9 +3533,6 @@ useEffect(() => {
           </div>
 
         </div>
-
-
-        </div>
       </section>
       <section className="hs-search-message">
 

@@ -1178,7 +1178,6 @@ export default function MessagesPage({
         </label>
 
         </div>
-        </div>
       </section>
 
 

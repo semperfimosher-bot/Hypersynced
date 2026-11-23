@@ -97,3 +97,16 @@ test("mobile Search and Library width containment prevents zoom and bottom-nav o
   assert.match(shared, /\.mobile-bottom-nav[\s\S]*max-width:100vw/);
   assert.match(shared, /\.hs-search-track__actions,[\s\S]*flex-wrap:wrap/);
 });
+
+
+test("Library albums and artists render as playlist-style rows", () => {
+  const library = fs.readFileSync(new URL("./components/pages/LibraryPage.jsx", import.meta.url), "utf8");
+  const shared = fs.readFileSync(new URL("./styles/search.css", import.meta.url), "utf8");
+  assert.ok(library.includes("hs-library-entity-row hs-search-track"));
+  assert.ok(library.includes("hs-search-track__rank"));
+  assert.ok(library.includes("hs-search-track__art"));
+  assert.ok(library.includes("hs-search-track__copy"));
+  assert.ok(shared.includes(".hs-library-entity-row {"));
+  assert.match(shared, /\.hs-library-entity-row[\s\S]*grid-template-columns:\s*28px\s+46px\s+minmax\(0,\s*1fr\)\s+18px/);
+  assert.doesNotMatch(library, /className="hs-search-entity-card hs-library-entity-card"/);
+});

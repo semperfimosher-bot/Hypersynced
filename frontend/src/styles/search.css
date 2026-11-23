@@ -8438,3 +8438,32 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .hs-playing-indicator > span { animation: none; }
 }
+
+
+/* Library albums and artists use the same compact list-row geometry as playlists. */
+.hs-library-entity-row {
+  grid-template-columns: 28px 46px minmax(0, 1fr) 18px;
+  min-height: 64px;
+  padding: 8px 11px;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(66, 128, 154, 0.065);
+  background: var(--hs-surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hs-library-entity-row:last-child { border-bottom: 0; }
+.hs-library-entity-row .hs-search-track__art { width: 46px; height: 46px; }
+.hs-library-entity-row .hs-search-track__copy { min-width: 0; gap: 3px; }
+.hs-library-entity-row .hs-search-track__copy strong,
+.hs-library-entity-row .hs-search-track__copy small {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hs-library-entity-row .hs-search-track__copy small { color: var(--hs-muted, #697f89); font-size: 8px; }
+.hs-library-entity-row > svg { color: #526c7b; transition: transform 120ms ease; }
+.hs-library-entity-row:hover > svg { transform: translateX(2px); }
+@media (max-width: 760px) {
+  .hs-library-entity-row { grid-template-columns: 24px 46px minmax(0, 1fr) 16px; min-height: 62px; padding: 8px 10px; gap: 8px; }
+}
