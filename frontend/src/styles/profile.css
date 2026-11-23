@@ -3481,3 +3481,10 @@ button.hs-profile-stat:hover,
     rgba(23, 127, 165, 0.018)
   );
 }
+
+
+/* Keep page-header panels and the Library console on the exact row-surface navy. */
+.hs-search-playlist-view__hero.hs-total-played-hero,
+.hs-library-console {
+  background: #030a11;
+}
