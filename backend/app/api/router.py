@@ -13,7 +13,7 @@ from .routes import (
     recommendations,
     search,
     system,
-    users,
+    users,\n    visitors,
 )
 
 api_router = APIRouter()

@@ -1,7 +1,7 @@
 """Authentication domain helpers and session lifecycle operations."""
 
 import asyncio
-import hmac
+import hashlib\nimport hmac
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from secrets import randbelow
@@ -395,7 +395,7 @@ async def register_account(
                 database_session=session,
                 user=user,
                 request=request,
-                remember_me=remember_me,
+                remember_me=remember_me,\n        visitor_token_hash=(\n            hashlib.sha256(request.headers.get("x-hs-visitor-id", "").strip().encode("utf-8")).hexdigest()\n            if len(request.headers.get("x-hs-visitor-id", "").strip()) >= 32\n            else None\n        ),
             )
         )
 
