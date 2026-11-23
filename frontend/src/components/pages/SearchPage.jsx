@@ -2562,6 +2562,7 @@ async function downloadOpenedPlaylist() {
   />
 
 
+  <div className="hs-search-console__surface-group">
   <div className="hs-search-console__heading">
 
     <div className="hs-search-console__intro">
@@ -2678,6 +2679,7 @@ async function downloadOpenedPlaylist() {
           : "SMART MATCHING"}
     </span>
 
+  </div>
   </div>
 
 </section>
