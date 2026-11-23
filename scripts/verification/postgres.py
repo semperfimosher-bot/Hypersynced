@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -12,7 +13,7 @@ from .models import CheckResult
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def migration_predecessor(down_revision: str | re.Sequence[str] | None) -> str:
+def migration_predecessor(down_revision: str | Sequence[str] | None) -> str:
     if down_revision is None:
         raise RuntimeError("Expected a migration predecessor")
     predecessors = (down_revision,) if isinstance(down_revision, str) else tuple(down_revision)
