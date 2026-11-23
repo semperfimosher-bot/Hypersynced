@@ -17,7 +17,7 @@ function formatLastPlayed(value) {
   return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString();
 }
 
-export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth }) {
+export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth, isActive = false }) {
   const online = useOnlineStatus();
   const trackActionMenu = useTrackActionMenu();
   const ownerKey = currentUser?.id ?? currentUser?.username ?? null;
@@ -34,6 +34,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const requestRef = useRef(0);
   const appendInFlightRef = useRef(false);
   const loadMoreSentinelRef = useRef(null);
+  const wasActiveRef = useRef(isActive);
 
   const loadPage = useCallback(async ({ append = false } = {}) => {
     if (!currentUser || !online || (append && appendInFlightRef.current)) return;
@@ -95,6 +96,11 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
     };
   }, [ownerKey, online, loadPage]);
 
+
+  useEffect(() => {
+    if (isActive && !wasActiveRef.current) void loadPage();
+    wasActiveRef.current = isActive;
+  }, [isActive, loadPage]);
 
   useEffect(() => {
     const sentinel = loadMoreSentinelRef.current;
