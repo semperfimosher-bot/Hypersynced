@@ -5099,10 +5099,8 @@ useEffect(() => {
                 return (
                   <button
                     type="button"
-                    className="hs-search-entity-card hs-library-entity-card"
-                    key={
-                      entity.key
-                    }
+                    className="hs-library-entity-row hs-search-track"
+                    key={entity.key}
                     {...collectionActionMenu.getTriggerProps({
                       key:
                         `${isArtist ? "artist" : "album"}:${entity.key}`,
@@ -5126,111 +5124,64 @@ useEffect(() => {
                         null,
                       actions: [
                         {
-                          id:
-                            "open",
-                          label:
-                            isArtist
-                              ? "Open artist"
-                              : "Open album",
-                          icon:
-                            isArtist
-                              ? "music"
-                              : "disc",
-                          onSelect:
-                            () => {
-                              setSelectedLibraryEntity({
-                                kind:
-                                  isArtist
-                                    ? "artist"
-                                    : "album",
-                                key:
-                                  entity.key,
-                              });
-                            },
+                          id: "open",
+                          label: isArtist ? "Open artist" : "Open album",
+                          icon: isArtist ? "music" : "disc",
+                          onSelect: () => {
+                            setSelectedLibraryEntity({
+                              kind: isArtist ? "artist" : "album",
+                              key: entity.key,
+                            });
+                          },
                         },
                         {
-                          id:
-                            "play",
-                          label:
-                            isArtist
-                              ? "Play artist"
-                              : "Play album",
-                          icon:
-                            "play",
-                          onSelect:
-                            () => {
-                              playLibraryTrackCollection(
-                                entity.tracks,
-                                0,
-                              );
-                            },
+                          id: "play",
+                          label: isArtist ? "Play artist" : "Play album",
+                          icon: "play",
+                          onSelect: () => {
+                            playLibraryTrackCollection(
+                              entity.tracks,
+                              0,
+                            );
+                          },
                         },
                       ],
                     })}
                     onClick={() => {
                       setSelectedLibraryEntity({
-                        kind:
-                          isArtist
-                            ? "artist"
-                            : "album",
-                        key:
-                          entity.key,
+                        kind: isArtist ? "artist" : "album",
+                        key: entity.key,
                       });
                     }}
                   >
-                    <span className="hs-search-entity-card__art">
+                    <span className="hs-search-track__rank">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
 
+                    <span className="hs-search-track__art">
                       {artwork ? (
-                        <img
-                          src={artwork}
-                          alt=""
-                        />
+                        <img src={artwork} alt="" />
                       ) : (
                         <Icon
-                          name={
-                            isArtist
-                              ? "music"
-                              : "disc"
-                          }
+                          name={isArtist ? "music" : "disc"}
                           size={26}
                         />
                       )}
-
                     </span>
 
-                    <span>
-
+                    <span className="hs-search-track__copy">
+                      <strong>
+                        {isArtist ? entity.name : entity.title}
+                      </strong>
                       <small>
                         {isArtist
-                          ? "ARTIST"
-                          : "ALBUM"}
+                          ? `${entity.track_count} songs · ${entity.album_count} albums · ${offlineTrackCount}/${entity.track_count} offline`
+                          : `${entity.artist || "Album"} · ${entity.track_count} songs · ${offlineTrackCount}/${entity.track_count} offline`}
                       </small>
-
-                      <strong>
-                        {isArtist
-                          ? entity.name
-                          : entity.title}
-                      </strong>
-
-                      <em>
-                        {isArtist
-                          ? (
-                              `${entity.track_count} ${entity.track_count === 1 ? "song" : "songs"} • ${entity.album_count} ${entity.album_count === 1 ? "album" : "albums"} • ${offlineTrackCount}/${entity.track_count} offline`
-                            )
-                          : (
-                              `${entity.artist} • ${entity.track_count} ${entity.track_count === 1 ? "song" : "songs"} • ${offlineTrackCount}/${entity.track_count} offline`
-                            )}
-                      </em>
-
                     </span>
 
-                    <Icon
-                      name="chevron"
-                      size={16}
-                    />
-
+                    <Icon name="chevron" size={16} />
                   </button>
-                );
               },
             )}
 
