@@ -14,6 +14,7 @@ from backend.app.database import (
 )
 from backend.app.main import app
 from backend.app.models.account import (
+    User,
     UserRole,
     UserSession,
 )
@@ -931,10 +932,8 @@ async def test_admin_device_revoke_invalidates_linked_access_session() -> None:
         async with session_factory() as session:
             user_session = await session.get(UserSession, claims.session_id)
             assert user_session is not None
-            user = await session.get(UserSession, claims.session_id)
-            assert user is not None
             user_session.visitor_token_hash = token_hash
-            account = await session.get(__import__("backend.app.models.account", fromlist=["User"]).User, claims.user_id)
+            account = await session.get(User, claims.user_id)
             assert account is not None
             account.role = UserRole.ADMIN
             device = VisitorDevice(
