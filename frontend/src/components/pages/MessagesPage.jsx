@@ -1131,22 +1131,7 @@ export default function MessagesPage({
         <div className="hs-messages-console__surface-group">
         <div className="hs-search-console__heading">
           <div className="hs-search-console__intro">
-            <div className="hs-search-console__eyebrow-row">
-              <span className="hs-search-eyebrow">
-                <i aria-hidden="true" />
-
-                HYPERSYNCED MESSAGES
-              </span>
-            </div>
-
-            <h2>
-              Your conversations
-            </h2>
-
-            <p className="hs-messages-console__copy">
-              Find someone by username or open one
-              of your existing conversations.
-            </p>
+<h2>Messages</h2>
           </div>
 
           <span className="hs-messages-unread">
@@ -1192,21 +1177,6 @@ export default function MessagesPage({
           />
         </label>
 
-        <div className="hs-search-console__status">
-          <span className="hs-search-status-chip hs-search-status-chip--primary">
-            <i />
-
-            PRIVATE
-          </span>
-
-          <span className="hs-search-status-chip">
-            {conversations.length}
-            {" CONVERSATIONS"}
-          </span>
-
-          <span className="hs-search-status-chip">
-            VIEWED MESSAGES EXPIRE IN 7 DAYS
-          </span>
         </div>
         </div>
       </section>

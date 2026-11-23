@@ -3509,20 +3509,7 @@ useEffect(() => {
 
           <div className="hs-search-console__intro">
 
-            <div className="hs-search-console__eyebrow-row">
-
-              <span className="hs-search-eyebrow">
-                <i aria-hidden="true" />
-
-                HYPERSYNCED LIBRARY
-              </span>
-
-            </div>
-
-
-            <h2>
-              Keep your music together
-            </h2>
+<h2>Library</h2>
 
           </div>
 
@@ -3548,34 +3535,8 @@ useEffect(() => {
         </div>
 
 
-        <div className="hs-search-console__status">
-
-          <span
-            className={
-              "hs-search-status-chip " +
-              "hs-search-status-chip--primary"
-            }
-          >
-            <i />
-
-            ACCOUNT REQUIRED
-          </span>
-
-
-          <span className="hs-search-status-chip">
-            PLAYLIST SYNC
-          </span>
-
-
-          <span className="hs-search-status-chip">
-            CLOUD LIBRARY
-          </span>
-
         </div>
-
       </section>
-
-
       <section className="hs-search-message">
 
         <div>

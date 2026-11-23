@@ -2567,20 +2567,7 @@ async function downloadOpenedPlaylist() {
 
     <div className="hs-search-console__intro">
 
-      <div className="hs-search-console__eyebrow-row">
-
-        <span className="hs-search-eyebrow">
-          <i aria-hidden="true" />
-
-          HYPERSYNCED DISCOVERY
-        </span>
-
-      </div>
-
-
-      <h2>
-       Tune into something new
-      </h2>
+  <h2>Search</h2>
 
 
 
@@ -2635,54 +2622,8 @@ async function downloadOpenedPlaylist() {
   </label>
 
 
-  <div className="hs-search-console__status">
-
-    <span
-      className={
-        "hs-search-status-chip " +
-        "hs-search-status-chip--primary"
-      }
-    >
-      <i
-        className={
-          loading
-            ? "is-scanning"
-            : ""
-        }
-      />
-
-      
-    </span>
-
-
-    <span className="hs-search-status-chip">
-      {normalizedQuery
-        ? `${resultTotal} RESULTS`
-        : "MUSIC INDEX ONLINE"}
-    </span>
-
-
-    <span className="hs-search-status-chip">
-      {looksLikeSmartPlaylistQuery(
-        normalizedQuery,
-      )
-        ? (
-            displayResults.tracks.length
-              ? "GENERATED PLAYLIST READY"
-              : loading
-                ? "BUILDING GENERATED PLAYLIST"
-                : "NO MATCHING MUSIC YET"
-          )
-        : normalizedQuery &&
-            results.processing_ms
-          ? `${results.processing_ms}ms`
-          : "SMART MATCHING"}
-    </span>
-
   </div>
-  </div>
-
-</section>
+  </section>
 
 
       {!openedPlaylist && normalizedQuery && !loading && !searchError && resultTotal === 0 ? (
