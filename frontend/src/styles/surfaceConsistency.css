@@ -645,3 +645,25 @@
   border-top: 0;
   border-radius: 0 0 8px 8px;
 }
+
+
+/* Use one shared surface for console controls and attach the first list section. */
+.hs-search-console__surface-group,
+.hs-library-console__surface-group,
+.hs-messages-console__surface-group {
+  gap: 0;
+  background: var(--hs-surface);
+  border: 1px solid var(--hs-shared-border);
+  border-radius: 8px;
+}
+.hs-search-console:has(.hs-search-console__surface-group),
+.hs-library-console:has(.hs-library-console__surface-group),
+.hs-messages-console:has(.hs-messages-console__surface-group) {
+  border-radius: 8px 8px 0 0;
+  border-bottom: 0;
+}
+.hs-search-console:has(.hs-search-console__surface-group) + .hs-search-section,
+.hs-library-console:has(.hs-library-console__surface-group) + .hs-search-section,
+.hs-messages-console:has(.hs-messages-console__surface-group) + .hs-search-section {
+  gap: 0;
+}

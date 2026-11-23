@@ -911,3 +911,20 @@
   }
 
 }
+
+
+/* Flat, single-color lyric surfaces: remove decorative background gradients. */
+.live-lyrics,
+.live-lyrics__viewport,
+.right-rail-lyrics .live-lyrics__viewport {
+  background: var(--hs-surface) !important;
+}
+.live-lyrics::before,
+.live-lyrics__glow {
+  display: none;
+}
+.live-lyrics__line,
+.live-lyrics__line:hover,
+.live-lyrics__line.is-active {
+  background: transparent !important;
+}

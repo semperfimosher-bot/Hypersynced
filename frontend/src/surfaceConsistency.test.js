@@ -80,3 +80,10 @@ test("uploads page removes the published catalog list while preserving metadata 
   assert.doesNotMatch(uploads, /Published Tracks|admin-upload-catalog|publishedPage|RowPager|deleteCatalogTrack/);
   assert.match(uploads, /Backfill Genre & Year/);
 });
+
+
+test("lyrics lines use a transparent single-color surface", () => {
+  const lyrics = fs.readFileSync(new URL("./styles/lyrics.css", import.meta.url), "utf8");
+  assert.match(lyrics, /\.live-lyrics__line,[\s\S]*background: transparent !important/);
+  assert.match(lyrics, /\.live-lyrics__viewport,[\s\S]*background: var\(--hs-surface\) !important/);
+});
