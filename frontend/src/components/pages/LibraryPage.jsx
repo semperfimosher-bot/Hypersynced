@@ -5179,6 +5179,7 @@ useEffect(() => {
 
                     <Icon name="chevron" size={16} />
                   </button>
+                );
               },
             )}
 
