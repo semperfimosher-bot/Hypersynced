@@ -1,0 +1,33 @@
+{
+  "include": [
+    "backend",
+    "migrations",
+    "scripts",
+    "tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".venv",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    "frontend/dist"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "error",
+  "reportUnusedImport": "error",
+  "reportUnusedVariable": "error",
+  "reportUnnecessaryTypeIgnoreComment": "error",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

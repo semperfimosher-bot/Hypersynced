@@ -1,0 +1,217 @@
+import importlib
+from types import SimpleNamespace
+
+import pytest
+
+
+def load_audio_metadata_module():
+    try:
+        return importlib.import_module(
+            "backend.app.services.audio_metadata",
+        )
+    except ModuleNotFoundError:
+        return None
+
+
+def test_extracts_embedded_audio_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    fake_audio = SimpleNamespace(
+        tags={
+            "title": [
+                "The Meaning",
+            ],
+            "artist": [
+                "FKi 1st & Post Malone",
+            ],
+            "album": [
+                ("First Time for Everything, Pt. 1 - EP"),
+            ],
+        },
+        info=SimpleNamespace(
+            length=207.2,
+        ),
+    )
+
+    monkeypatch.setattr(
+        audio_metadata,
+        "MutagenFile",
+        lambda *args, **kwargs: fake_audio,
+    )
+
+    result = audio_metadata.extract_embedded_audio_metadata(
+        b"fake-audio",
+    )
+
+    assert result == {
+        "title": "The Meaning",
+        "artist": ("FKi 1st & Post Malone"),
+        "album": ("First Time for Everything, Pt. 1 - EP"),
+        "duration_seconds": 207,
+        "genre": None,
+        "release_year": None,
+    }
+
+
+def test_embedded_metadata_wins_when_field_was_not_edited() -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    result = audio_metadata.resolve_track_metadata(
+        submitted_title="Filename Title",
+        submitted_artist=("Filename Artist"),
+        submitted_album="",
+        submitted_duration_seconds=207,
+        title_edited=False,
+        artist_edited=False,
+        album_edited=False,
+        duration_edited=False,
+        embedded={
+            "title": "Real Title",
+            "artist": "Real Artist",
+            "album": "Real Album",
+            "duration_seconds": 208,
+        },
+    )
+
+    assert result == {
+        "title": "Real Title",
+        "artist": "Real Artist",
+        "album": "Real Album",
+        "duration_seconds": 208,
+        "genre": None,
+        "release_year": None,
+    }
+
+
+def test_manual_metadata_wins_over_embedded_metadata() -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    result = audio_metadata.resolve_track_metadata(
+        submitted_title=("Corrected Title"),
+        submitted_artist=("Corrected Artist"),
+        submitted_album=("Corrected Album"),
+        submitted_duration_seconds=210,
+        title_edited=True,
+        artist_edited=True,
+        album_edited=True,
+        duration_edited=True,
+        embedded={
+            "title": "Embedded Title",
+            "artist": "Embedded Artist",
+            "album": "Embedded Album",
+            "duration_seconds": 208,
+        },
+    )
+
+    assert result == {
+        "title": "Corrected Title",
+        "artist": "Corrected Artist",
+        "album": "Corrected Album",
+        "duration_seconds": 210,
+        "genre": None,
+        "release_year": None,
+    }
+
+
+def test_embedded_genre_is_preserved() -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    result = audio_metadata.resolve_track_metadata(
+        submitted_title="Title",
+        submitted_artist="Artist",
+        submitted_album="Album",
+        submitted_duration_seconds=120,
+        title_edited=False,
+        artist_edited=False,
+        album_edited=False,
+        duration_edited=False,
+        embedded={
+            "title": "Title",
+            "artist": "Artist",
+            "album": "Album",
+            "duration_seconds": 120,
+            "genre": "Alternative",
+            "release_year": 2022,
+        },
+    )
+
+    assert result["genre"] == "Alternative"
+    assert result["release_year"] == 2022
+
+
+
+
+def test_extracts_release_year_from_common_date_tags() -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    assert (
+        audio_metadata._release_year(
+            {
+                "date": [
+                    "2021-10-08",
+                ],
+            },
+        )
+        == 2021
+    )
+
+    assert (
+        audio_metadata._release_year(
+            {
+                "year": [
+                    "1999",
+                ],
+            },
+        )
+        == 1999
+    )
+
+    assert (
+        audio_metadata._release_year(
+            {
+                "date": [
+                    "unknown",
+                ],
+            },
+        )
+        is None
+    )
+
+
+def test_artist_credit_split_handles_common_feature_separators() -> None:
+    audio_metadata = load_audio_metadata_module()
+
+    assert audio_metadata is not None
+
+    assert audio_metadata.split_artist_credits(
+        "Morgan Wallen feat. Lil Durk",
+    ) == (
+        "Morgan Wallen",
+        "Lil Durk",
+    )
+
+    assert audio_metadata.split_artist_credits(
+        "Artist One ft. Artist Two",
+    ) == (
+        "Artist One",
+        "Artist Two",
+    )
+
+    assert audio_metadata.split_artist_credits(
+        "Bailey Zimmerman & Brandon Lake",
+    ) == (
+        "Bailey Zimmerman",
+        "Brandon Lake",
+    )

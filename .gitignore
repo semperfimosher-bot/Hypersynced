@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+.env
+.env.*
+!.env.example
+
+frontend/node_modules/
+frontend/dist/
+
+storage/
+verification-results/
+
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.vscode/
+.idea/
+
+# Local development databases
+local_dev.db
+*.sqlite
+*.sqlite3
+
+# Never commit local merge/conflict recovery copies.
+*.conflict-backup
+*.conflict-backup-*
