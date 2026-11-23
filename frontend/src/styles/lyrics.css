@@ -322,8 +322,7 @@
       0.32
     );
 
-  background:
-    var(--hs-surface);;
+  background: transparent;
 
   font-size:
     clamp(
@@ -378,7 +377,8 @@
 }
 
 
-.live-lyrics__line.is-active {
+ .live-lyrics__line.is-active {
+  background: transparent;
   color:
     #f5fdff;
 

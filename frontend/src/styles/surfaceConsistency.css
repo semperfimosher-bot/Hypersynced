@@ -64,7 +64,7 @@
 .hs-library-console__surface-group,
 .hs-messages-console__surface-group {
   display: grid;
-  gap: 10px;
+  gap: 0;
   padding: 8px;
   border: 1px solid var(--hs-shared-border);
   border-radius: 8px;
@@ -343,10 +343,6 @@
 .hs-secondary-button:hover:not(:disabled),
 .hs-request-button:hover:not(:disabled),
 .admin-quick-action:hover:not(:disabled),
-.admin-panel--interactive:hover,
-.admin-stat-card:hover,
-.admin-explorer-folder:hover,
-.admin-explorer-file:hover,
 .hs-search-entity-card:hover,
 .hs-search-person:hover,
 .hs-search-filterbar button:hover,
@@ -399,10 +395,6 @@
   .hs-secondary-button:hover:not(:disabled),
   .hs-request-button:hover:not(:disabled),
   .admin-quick-action:hover:not(:disabled),
-  .admin-panel--interactive:hover,
-  .admin-stat-card:hover,
-  .admin-explorer-folder:hover,
-  .admin-explorer-file:hover,
   .hs-search-entity-card:hover,
   .hs-search-person:hover,
   .hs-search-filterbar button:hover,
@@ -636,4 +628,20 @@
 .library-list-panel, .library-welcome, .category-card, .profile-media-card,
 .settings-panel, .admin-panel, .admin-stat-card, .home-track-card, .home-signal {
   border-radius: 8px;
+}
+
+
+/* Connect section toolbar labels to the row surface immediately below. */
+.hs-search-section:has(.hs-search-section__heading) {
+  gap: 0;
+}
+.hs-search-section__heading {
+  border-radius: 8px 8px 0 0;
+  border-bottom: 0;
+}
+.hs-search-section > .hs-search-track-list,
+.hs-search-section > .library-track-list,
+.hs-search-section > .hs-message-conversation-list {
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
 }

@@ -1,11 +1,9 @@
-import RowPager, { useRowPagination } from "../ui/RowPager.jsx";
 import {
   useEffect,
   useState,
 } from "react";
 
 import {
-  deleteCatalogTrack,
   useCatalogTracks,
 } from "../../catalogStore.js";
 
@@ -84,26 +82,6 @@ export default function AdminUploadsPage() {
     existingTracks:
       uploadedTracks,
   });
-
-  const deleteTrack = async (trackId) => {
-  setCatalogMessage("");
-
-  try {
-    await deleteCatalogTrack(
-      trackId,
-    );
-
-    setCatalogMessage(
-      "Track permanently deleted.",
-    );
-  } catch (error) {
-    setCatalogMessage(
-      error instanceof Error
-        ? error.message
-        : "Failed to delete track.",
-    );
-  }
-};
 
   const backfillMetadata =
     async () => {
@@ -212,8 +190,6 @@ export default function AdminUploadsPage() {
     };
 
 
-  const publishedPage = useRowPagination(uploadedTracks, "published");
-
   const queueProgress =
     queue.length === 0
       ? 0
@@ -316,6 +292,21 @@ export default function AdminUploadsPage() {
           </div>
 
           <div className="upload-stats">
+            <button
+              type="button"
+              className="secondary-admin-button"
+              disabled={
+                metadataBackfillBusy
+                || uploadedTracks.length === 0
+              }
+              onClick={() => {
+                void backfillMetadata();
+              }}
+            >
+              {metadataBackfillBusy
+                ? "Checking tags + Apple catalog..."
+                : "Backfill Genre & Year"}
+            </button>
             <span>
               {queuedCount} queued
             </span>
@@ -398,112 +389,10 @@ export default function AdminUploadsPage() {
         </div>
       </section>
 
-      <section className="admin-upload-list admin-panel admin-upload-catalog">
-        <div className="admin-panel__heading">
-          <div>
-            <span>
-              CATALOG
-            </span>
-
-            <h3>
-              Published Tracks
-            </h3>
-          </div>
-
-          <div className="admin-upload-catalog__actions">
-            <button
-              type="button"
-              className="secondary-admin-button"
-              disabled={
-                metadataBackfillBusy
-                || uploadedTracks.length === 0
-              }
-              onClick={() => {
-                void backfillMetadata();
-              }}
-            >
-              {metadataBackfillBusy
-                ? "Checking tags + Apple catalog..."
-                : "Backfill Genre & Year"}
-            </button>
-
-            <strong className="admin-panel-count">
-              {uploadedTracks.length} total
-            </strong>
-          </div>
-        </div>
-
-        {catalogMessage ? (
-          <p className="upload-item-error">
-            {catalogMessage}
-          </p>
-        ) : null}
-
-        <RowPager view={publishedPage} />
-        {uploadedTracks.length === 0 ? (
-          <div className="admin-empty-state">
-            <strong>
-              No tracks yet
-            </strong>
-
-            <p>
-              Upload music above to start
-              building your catalog.
-            </p>
-          </div>
-        ) : (
-          <div className="upload-list">
-            {publishedPage.items.map(
-              (track) => (
-                <div
-                  key={track.id}
-                  className="upload-item"
-                >
-                  <div>
-                    <strong>
-                      {track.title}
-                    </strong>
-
-                    <small>
-                      {track.artist}
-                      {" • "}
-                      {track.album ||
-                        "No album"}
-                      {" • "}
-                      {track.genre ||
-                        "No genre"}
-                      {" • "}
-                      {track.release_year ||
-                        "No year"}
-                    </small>
-                  </div>
-
-                  <div className="upload-item__actions">
-                    <small>
-                      {track.duration_seconds ??
-                        0}
-                      s
-                    </small>
-
-                    <button
-                      type="button"
-                      className="danger-button"
-                      onClick={() =>
-                        deleteTrack(
-                          track.id,
-                        )
-                      }
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        )}
-        <RowPager view={publishedPage} />
-      </section>
+      {catalogMessage ? (
+        <p className="upload-item-error">{catalogMessage}</p>
+      ) : null}
+on>
     </div>
   );
 }

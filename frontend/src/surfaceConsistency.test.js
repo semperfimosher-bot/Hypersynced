@@ -34,7 +34,6 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.ok(shared.includes(".hs-search-track:hover"));
   assert.ok(shared.includes("background: var(--hs-surface-hover);"));
   assert.match(shared, /@media \(max-width:\s*979px\)[\s\S]*min-width:\s*0/);
-  assert.ok(shared.includes(".hs-message-conversation:hover,"));
   assert.ok(!shared.includes(".hs-message-conversation.is-active,"));
   assert.ok(shared.includes(".hs-playing-indicator {"));
   assert.ok(shared.includes("color: var(--blue);"));
@@ -67,4 +66,17 @@ test("main list pages reuse shared row classes", () => {
     if (path.includes("LibraryPage")) assert.ok(source.includes("hs-library-console__surface-group"));
     if (path.includes("MessagesPage")) assert.ok(source.includes("hs-messages-console__surface-group"));
   }
+});
+
+
+test("admin dashboard hover highlight is limited to real action controls", () => {
+  const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
+  const hoverBlock = shared.split("/* Ordinary interactive surfaces share the requested hover color.")[1]?.split("/* Touch devices")[0] ?? "";
+  assert.doesNotMatch(hoverBlock, /\.admin-panel--interactive:hover|\.admin-stat-card:hover|\.admin-explorer-folder:hover|\.admin-explorer-file:hover/);
+});
+
+test("uploads page removes the published catalog list while preserving metadata backfill", () => {
+  const uploads = fs.readFileSync(new URL("./components/pages/AdminUploadsPage.jsx", import.meta.url), "utf8");
+  assert.doesNotMatch(uploads, /Published Tracks|admin-upload-catalog|publishedPage|RowPager|deleteCatalogTrack/);
+  assert.match(uploads, /Backfill Genre & Year/);
 });

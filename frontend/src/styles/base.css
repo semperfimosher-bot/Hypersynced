@@ -486,13 +486,11 @@ svg {
   position: absolute;
   top: 6px;
   right: 6px;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--hs-surface);;
-  box-shadow:
-    0 0 8px
-    rgba(27, 217, 255, 0.9);
+  background: #1b8cff;
+  box-shadow: 0 0 8px rgba(27, 140, 255, 0.95);
 }
 
 .desktop-sidebar,
