@@ -41,6 +41,7 @@ import {
 
 import Icon from
   "../ui/Icon.jsx";
+import PlayingIndicator from "../ui/PlayingIndicator.jsx";
 
 import useOnlineStatus from
   "../../hooks/useOnlineStatus.js";
@@ -341,20 +342,15 @@ function LibraryPage({
         )
       : null,
 );
-
+const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
+  () => Boolean(player.getState()?.trackId && !player.getState()?.paused),
+);
 
 useEffect(() => {
-  return player.subscribe(
-    (nextState) => {
-      setCurrentTrackId(
-        nextState?.trackId
-          ? String(
-              nextState.trackId,
-            )
-          : null,
-      );
-    },
-  );
+  return player.subscribe((nextState) => {
+    setCurrentTrackId(nextState?.trackId ? String(nextState.trackId) : null);
+    setCurrentTrackIsPlaying(Boolean(nextState?.trackId && !nextState?.paused));
+  });
 }, []);
   const [
     activeTab,
@@ -3054,9 +3050,8 @@ useEffect(() => {
                   "hs-search-track",
                   "hs-library-track-row",
 
-                  isCurrentTrack
-                    ? "is-current-track"
-                    : "",
+                  isCurrentTrack ? "is-current-track" : "",
+                  isCurrentTrack && currentTrackIsPlaying ? "is-playing-track" : "",
                   isOfflineUnavailableTrack(
                     track,
                     offlineMode,
@@ -3183,6 +3178,7 @@ useEffect(() => {
                 </span>
 
                 <span className="hs-search-track__play">
+                  {isCurrentTrack && currentTrackIsPlaying ? <PlayingIndicator /> : null}
                   <Icon
                     name="play"
                     size={16}
@@ -4178,9 +4174,8 @@ useEffect(() => {
                         "hs-search-track--playlist-download",
                         "hs-library-track-row",
 
-                        isCurrentTrack
-                          ? "is-current-track"
-                          : "",
+                        isCurrentTrack ? "is-current-track" : "",
+                  isCurrentTrack && currentTrackIsPlaying ? "is-playing-track" : "",
                         isOfflineUnavailableTrack(
                           track,
                           offlineMode,
@@ -4379,6 +4374,7 @@ useEffect(() => {
 
 
                       <span className="hs-search-track__play">
+                  {isCurrentTrack && currentTrackIsPlaying ? <PlayingIndicator /> : null}
                         <Icon
                           name="play"
                           size={16}
@@ -4811,9 +4807,8 @@ useEffect(() => {
                       !downloadedTrackIds.has(String(track.id)) && offlineMode
                         ? "is-offline-unavailable"
                         : "",
-                      isCurrentTrack
-                        ? "is-current-track"
-                        : "",
+                      isCurrentTrack ? "is-current-track" : "",
+                  
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -4901,6 +4896,7 @@ useEffect(() => {
                     </span>
 
                     <span className="hs-search-track__play">
+
                       {!focusedLibraryTrack ? (
                         <button
                           type="button"

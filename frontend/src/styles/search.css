@@ -8536,3 +8536,43 @@ button:disabled {
     min-width: 28px;
   }
 }
+
+/* Mobile current-track equalizer indicator (replaces hover affordance). */
+.hs-playing-indicator {
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 13px;
+  height: 15px;
+}
+.hs-playing-indicator > span {
+  width: 2px;
+  min-height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: hs-playing-bars 720ms ease-in-out infinite;
+}
+.hs-playing-indicator > span:nth-child(1) { height: 5px; animation-delay: -180ms; }
+.hs-playing-indicator > span:nth-child(2) { height: 12px; animation-delay: -420ms; }
+.hs-playing-indicator > span:nth-child(3) { height: 8px; animation-delay: -90ms; }
+.hs-playing-indicator > span:nth-child(4) { height: 6px; animation-delay: -320ms; }
+@keyframes hs-playing-bars {
+  0%, 100% { transform: scaleY(.28); }
+  45% { transform: scaleY(1); }
+  70% { transform: scaleY(.52); }
+}
+@media (max-width: 979px) and (pointer: coarse) {
+  .hs-search-track.is-playing-track .hs-search-track__play > svg,
+  .hs-total-played-track.is-playing-track .hs-search-track__play > svg {
+    display: none;
+  }
+  .hs-search-track.is-playing-track .hs-playing-indicator,
+  .hs-total-played-track.is-playing-track .hs-playing-indicator {
+    display: flex;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-playing-indicator > span { animation: none; }
+}

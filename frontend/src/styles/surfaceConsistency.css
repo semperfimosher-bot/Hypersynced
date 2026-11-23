@@ -114,3 +114,10 @@
     box-shadow: var(--hs-shared-row-highlight-shadow);
   }
 }
+
+/* Show the mobile equalizer in Total Played's otherwise-hidden play slot. */
+@media (max-width: 979px) and (pointer: coarse) {
+  .hs-total-played-track.is-playing-track .hs-search-track__play {
+    display: grid;
+  }
+}

@@ -25,7 +25,7 @@ export default function AdminVisitorDevicesPage({ onNavigate }) {
   }, []);
 
   useEffect(() => { void loadDevices(); }, [loadDevices]);
-  useQuietRefresh(loadDevices, { intervalMs: 20_000, enabled: true });
+  useQuietRefresh(loadDevices, { intervalMs: 60_000, enabled: true });
 
   const revoke = async (device) => {
     if (!window.confirm(`Revoke device #${device.device_number} and remove its linked login sessions?`)) return;

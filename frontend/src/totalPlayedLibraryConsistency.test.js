@@ -24,7 +24,7 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(page, /hs-search-playlist-view__nav/);
   assert.match(page, /hs-search-playlist-view__hero hs-total-played-hero/);
   assert.match(page, /hs-search-playlist-view__copy hs-total-played-heading/);
-  assert.match(page, /hs-search-track hs-library-track-row hs-total-played-track/);
+  assert.match(page, /"hs-search-track", "hs-library-track-row", "hs-total-played-track"/);
   assert.match(page, /tracks\.map\(\(track, index\) =>/);
   assert.match(page, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
   assert.match(page, /hs-search-track__rank/);

@@ -78,6 +78,7 @@ import ArtistProfilePage from
 
 import Icon from
   "../ui/Icon.jsx";
+import PlayingIndicator from "../ui/PlayingIndicator.jsx";
 
 import OfflineNotice from
   "../ui/OfflineNotice.jsx";
@@ -468,6 +469,9 @@ useEffect(() => {
         )
       : null,
   );
+const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
+  () => Boolean(player.getState()?.trackId && !player.getState()?.paused),
+  );
 
   const [
     results,
@@ -744,17 +748,10 @@ useEffect(() => {
   ]);
 
   useEffect(() => {
-  return player.subscribe(
-    (nextState) => {
-      setCurrentTrackId(
-        nextState?.trackId
-          ? String(
-              nextState.trackId,
-            )
-          : null,
-      );
-    },
-  );
+  return player.subscribe((nextState) => {
+    setCurrentTrackId(nextState?.trackId ? String(nextState.trackId) : null);
+    setCurrentTrackIsPlaying(Boolean(nextState?.trackId && !nextState?.paused));
+  });
 }, []);
 
 
@@ -3086,9 +3083,8 @@ async function downloadOpenedPlaylist() {
                   "hs-search-track",
                   "hs-search-track--playlist-download",
 
-                  isCurrentTrack
-                    ? "is-current-track"
-                    : "",
+                  isCurrentTrack ? "is-current-track" : "",
+                  isCurrentTrack && currentTrackIsPlaying ? "is-playing-track" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -3285,6 +3281,7 @@ async function downloadOpenedPlaylist() {
 
 
                 <span className="hs-search-track__play">
+                  {isCurrentTrack && currentTrackIsPlaying ? <PlayingIndicator /> : null}
                   <Icon
                     name="play"
                     size={16}
@@ -3494,9 +3491,8 @@ async function downloadOpenedPlaylist() {
                               trackIndex
                               ? "is-selected"
                               : "",
-                            isCurrentTrack
-                              ? "is-current-track"
-                              : "",
+                            isCurrentTrack ? "is-current-track" : "",
+                  isCurrentTrack && currentTrackIsPlaying ? "is-playing-track" : "",
                           ]
                             .filter(Boolean)
                             .join(" ")}
@@ -3616,9 +3612,10 @@ async function downloadOpenedPlaylist() {
                           </span>
 
                           <span className="hs-search-track__play">
+                  {isCurrentTrack && currentTrackIsPlaying ? <PlayingIndicator /> : null}
                             <Icon
                               name={
-                                isCurrentTrack
+                                isCurrentTrack && currentTrackIsPlaying
                                   ? "pause"
                                   : "play"
                               }
@@ -4068,9 +4065,8 @@ displayResults.tracks.length > 0 ? (
                         ? "is-selected"
                         : "",
 
-                        isCurrentTrack
-                        ? "is-current-track"
-                        : "",
+                        isCurrentTrack ? "is-current-track" : "",
+                  isCurrentTrack && currentTrackIsPlaying ? "is-playing-track" : "",
                         ]
                         .filter(Boolean)
                         .join(" ")}
@@ -4200,6 +4196,7 @@ displayResults.tracks.length > 0 ? (
 
 
                         <span className="hs-search-track__play">
+                  {isCurrentTrack && currentTrackIsPlaying ? <PlayingIndicator /> : null}
                           <Icon
                             name="play"
                             size={16}

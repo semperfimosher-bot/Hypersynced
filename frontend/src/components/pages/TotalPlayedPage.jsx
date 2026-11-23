@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as player from "../../audioPlayer.js";
 import { getMyTotalPlayed } from "../../profileApi.js";
 import Icon from "../ui/Icon.jsx";
+import PlayingIndicator from "../ui/PlayingIndicator.jsx";
 import TrackArtwork from "../ui/TrackArtwork.jsx";
 import OfflineNotice from "../ui/OfflineNotice.jsx";
 import TrackActionMenu from "../music/TrackActionMenu.jsx";
@@ -23,6 +24,12 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const ownerKey = currentUser?.id ?? currentUser?.username ?? null;
   const initialCache = readTotalPlayedCache(ownerKey);
   const [tracksState, setTracksState] = useState(() => ({ owner: ownerKey, tracks: initialCache.tracks }));
+  const [currentTrackId, setCurrentTrackId] = useState(() => player.getState()?.trackId ? String(player.getState().trackId) : null);
+  const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(() => Boolean(player.getState()?.trackId && !player.getState()?.paused));
+  useEffect(() => player.subscribe((nextState) => {
+    setCurrentTrackId(nextState?.trackId ? String(nextState.trackId) : null);
+    setCurrentTrackIsPlaying(Boolean(nextState?.trackId && !nextState?.paused));
+  }), []);
   const tracks = tracksState.owner === ownerKey ? tracksState.tracks : readTotalPlayedCache(ownerKey).tracks;
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
@@ -160,7 +167,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
             </div>
             <div className="hs-total-played-rows">
               {tracks.map((track, index) => (
-                <button type="button" key={track.id} className="hs-search-track hs-library-track-row hs-total-played-track"
+                <button type="button" key={track.id} className={["hs-search-track", "hs-library-track-row", "hs-total-played-track", String(track.id) === currentTrackId ? "is-current-track" : "", String(track.id) === currentTrackId && currentTrackIsPlaying ? "is-playing-track" : ""].filter(Boolean).join(" ")}
                   {...trackActionMenu.getTriggerProps(track)} onClick={() => play(track)}>
                   <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
                   <span className="hs-search-track__art">
@@ -173,7 +180,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
                   </span>
                   <span className="hs-total-played-last">{formatLastPlayed(track.last_played_at)}</span>
                   <span className="hs-total-played-count">{Number(track.play_count ?? 0).toLocaleString()}</span>
-                  <span className="hs-search-track__play" aria-hidden="true"><Icon name="play" size={14} /></span>
+                  <span className="hs-search-track__play" aria-hidden="true">{String(track.id) === currentTrackId && currentTrackIsPlaying ? <PlayingIndicator /> : null}<Icon name="play" size={14} /></span>
                 </button>
               ))}
             </div>

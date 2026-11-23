@@ -12,7 +12,7 @@ from ...services.admin_notifications import record_admin_activity
 from ..dependencies import AdminUser, DatabaseSession, OptionalCurrentUser
 
 router = APIRouter(prefix="/visitors", tags=["visitor devices"])
-ONLINE_WINDOW_SECONDS = 90
+ONLINE_WINDOW_SECONDS = 180
 IP_RETENTION_DAYS = 30
 
 
@@ -44,6 +44,18 @@ async def visitor_heartbeat(
     if device is not None and device.revoked_at is not None:
         return {"registered": False, "revoked": True}
     is_new = device is None
+    if device is not None:
+        current_ip = _client_ip(request)
+        current_user_agent = request.headers.get("user-agent", "")[:1200]
+        current_account_id = user.id if user else device.account_user_id
+        heartbeat_cutoff = now - timedelta(seconds=90)
+        if (
+            device.last_seen_at >= heartbeat_cutoff
+            and device.ip_address == current_ip
+            and device.user_agent == current_user_agent
+            and device.account_user_id == current_account_id
+        ):
+            return {"registered": True, "device_number": device.id, "online": True}
     if device is None:
         device = VisitorDevice(
             token_hash=hashed,

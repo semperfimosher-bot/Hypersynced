@@ -10,6 +10,7 @@ import {
 
 import * as player from "./audioPlayer.js";
 import { apiRequest } from "./api/client.js";
+import { shouldSendVisitorHeartbeat } from "./visitorHeartbeat.js";
 import { bindAccountPlayback } from "./accountPlayback.js";
 
 import {
@@ -665,15 +666,19 @@ export default function App() {
     } catch {
       return undefined;
     }
+    let lastHeartbeatAttempt = 0;
     const sendHeartbeat = () => {
       if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (!shouldSendVisitorHeartbeat(lastHeartbeatAttempt, now)) return;
+      lastHeartbeatAttempt = now;
       void apiRequest("/visitors/heartbeat", {
         method: "POST",
         headers: { "X-HS-Visitor-Id": visitorToken },
       }).catch(() => {});
     };
     sendHeartbeat();
-    const timer = window.setInterval(sendHeartbeat, 45_000);
+    const timer = window.setInterval(sendHeartbeat, 120_000);
     const onVisibility = () => sendHeartbeat();
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
