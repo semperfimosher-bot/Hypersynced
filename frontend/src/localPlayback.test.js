@@ -86,7 +86,7 @@ test("Total Played opens the dedicated full-page account listening history", () 
   assert.ok(page.includes("PLAYS"));
   assert.ok(page.includes("IntersectionObserver"));
   assert.ok(page.includes("hs-total-played-scroll-sentinel"));
-  assert.ok(page.includes("rootMargin: \"600px 0px\""));
+  assert.ok(page.includes("rootMargin: \"1400px 0px\""));
   assert.ok(!page.includes("Load more"));
   assert.ok(page.includes("Retry loading history"));
   assert.ok(page.includes("TrackActionMenu"));
