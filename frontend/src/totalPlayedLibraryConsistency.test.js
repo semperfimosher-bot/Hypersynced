@@ -32,7 +32,7 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*grid-template-columns/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*min-height: 64px/);
   assert.match(profileStyles, /\.hs-total-played-heading\s*\{[\s\S]*margin: 0/);
-  assert.doesNotMatch(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[\s\S]*?background:/);
+  assert.doesNotMatch(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[^}]*background:/);
   assert.match(libraryStyles, /\.hs-search-track:hover[\s\S]*inset 2px 0/);
   assert.match(profileStyles, /grid-template-columns: 42px minmax\(0, 1fr\) 48px/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track \.hs-search-track__rank[\s\S]*display: none/);
