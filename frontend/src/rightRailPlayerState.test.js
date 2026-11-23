@@ -117,3 +117,6 @@ test(
     );
   },
 );
+
+
+test("right rail recognizes metadata-backed playback before source loads",()=>{const s=selectRightRailPlayerState({trackId:"42",title:"She's a Dream",src:null});assert.equal(s.trackId,"42");assert.equal(s.title,"She's a Dream");});

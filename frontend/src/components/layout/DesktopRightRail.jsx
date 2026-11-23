@@ -127,10 +127,7 @@ function DesktopRightRail({
     state.title
     || "No track selected";
 
-  const hasTrack =
-    Boolean(
-      state.src,
-    );
+  const hasTrack = Boolean(state.trackId || state.src || state.title);
 
   const upcomingQueue =
     useMemo(
@@ -323,25 +320,7 @@ function DesktopRightRail({
   {upcomingQueue.length >
   0 ? (
     <>
-      <div
-        className={
-          "right-rail-queue__heading"
-        }
-      >
-        <span>
-          UP NEXT
-        </span>
-
-        <small>
-          {
-            upcomingQueue.length
-          }{" "}
-          {upcomingQueue.length ===
-          1
-            ? "track"
-            : "tracks"}
-        </small>
-      </div>
+      <div className="right-rail-queue__heading"><div className="right-rail-queue__heading-copy"><span>UP NEXT</span><small>{upcomingQueue.length} {upcomingQueue.length===1?"track":"tracks"}</small></div><div className="right-rail-queue__actions"><button type="button" onClick={()=>player.shuffleUpcomingQueue()} disabled={upcomingQueue.length<2}>Shuffle</button><button type="button" onClick={()=>player.clearUpcomingQueue()} disabled={!upcomingQueue.length}>Clear</button></div></div>
 
       <div
         className={
