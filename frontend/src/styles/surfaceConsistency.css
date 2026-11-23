@@ -10,6 +10,22 @@
   --hs-shared-row-highlight-shadow: none;
 }
 
+@media (min-width: 980px) {
+  :root {
+    --hs-surface: #000F1A;
+    --panel: #000F1A;
+    --panel-strong: #000F1A;
+    --panel-soft: #000F1A;
+  }
+  .hs-search-page,
+  .hs-library-page,
+  .hs-messages-page,
+  .hs-total-played-route {
+    --hs-panel: var(--hs-surface);
+    --hs-panel-raised: var(--hs-surface);
+  }
+}
+
 /* Preserve the existing page canvas; only UI surfaces receive the theme. */
 .hs-search-page,
 .hs-library-page,
@@ -54,6 +70,58 @@
 .admin-device-registry__stats {
   background: var(--hs-surface);
   border-radius: 12px;
+}
+
+@media (min-width: 980px) {
+/* Desktop page-console groups keep headings and controls connected. */
+.hs-search-console__surface-group,
+.hs-library-console__surface-group,
+.hs-messages-console__surface-group {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--hs-shared-border);
+  border-radius: 12px;
+  background: var(--hs-surface);
+}
+.hs-search-console__surface-group .hs-search-console__heading,
+.hs-library-console__surface-group .hs-search-console__heading,
+.hs-messages-console__surface-group .hs-search-console__heading {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.hs-messages-console__surface-group .hs-search-console__heading {
+  min-height: 0;
+  align-items: center;
+  gap: 10px;
+}
+.hs-messages-console__surface-group .hs-search-console__heading h2 {
+  font-size: clamp(17px, 1.5vw, 19px);
+  line-height: 1.1;
+}
+.hs-messages-console__surface-group .hs-messages-console__copy {
+  margin-top: 3px;
+}
+.hs-library-console__surface-group .hs-search-filterbar {
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+}
+.hs-library-console__surface-group .hs-search-filterbar button {
+  background: transparent;
+}
+.hs-library-console__surface-group .hs-search-filterbar button.is-active {
+  background: #000911;
+  border-color: var(--hs-shared-border);
+}
+.hs-library-console__surface-group .hs-search-filterbar button:hover:not(.is-active) {
+  background: var(--hs-surface-hover);
+}
 }
 
 /* Connected rows: thin separators, no row gaps, 12px list outer corners. */
@@ -132,21 +200,29 @@
   margin-bottom: 12px;
 }
 
+@media (min-width: 980px) {
 .hs-total-played-list {
   display: grid;
-  gap: 12px;
-  border: 0;
-  border-radius: 12px;
-}
-
-.hs-total-played-table-head {
-  margin: 0;
+  gap: 0;
+  background: var(--hs-surface);
   border: 1px solid var(--hs-shared-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.hs-total-played-table-head,
+.hs-admin-device-head {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--hs-shared-row-divider);
+  border-radius: 0;
   padding: 12px;
 }
-
-.hs-total-played-rows {
-  border-color: var(--hs-shared-border);
+.hs-total-played-rows,
+.hs-admin-device-rows {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 }
 
 .hs-message-conversation-list,
