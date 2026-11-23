@@ -3459,10 +3459,16 @@ button.hs-profile-stat:hover,
 .hs-total-played-keepalive.is-active { display: contents; }
 
 
-/* Match Total Played and visitor-device row surfaces to the dark page header. */
+/* Match Total Played and visitor-device rows, plus their top/bottom gutters,
+   to the slightly lifted dark header surface. */
+.hs-total-played-list,
+.hs-total-played-rows,
+.hs-admin-device-list,
+.hs-admin-device-rows,
+.hs-admin-device-footer,
 .hs-search-track.hs-total-played-track,
 .hs-search-track.hs-admin-device-row {
-  background: rgba(4, 11, 17, 0.96);
+  background-color: rgba(8, 16, 24, 0.97);
 }
 
 .hs-search-track.hs-total-played-track:hover,
