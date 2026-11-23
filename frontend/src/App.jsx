@@ -240,6 +240,11 @@ function MainPage({
   installState,
   onInstallApp,
 }) {
+  const [totalPlayedVisited, setTotalPlayedVisited] = useState(activePage === "total-played");
+  useEffect(() => {
+    if (activePage === "total-played") setTotalPlayedVisited(true);
+  }, [activePage]);
+
   function renderPage(
     page,
     cachedProfileUsername,
@@ -459,7 +464,7 @@ function MainPage({
 
 
     if (page === "total-played") {
-      return <TotalPlayedPage currentUser={currentUser} onNavigate={onNavigate} />;
+      return null;
     }
 
     if (
@@ -572,6 +577,11 @@ function MainPage({
         }
       >
         {renderPage(activePage, profileUsername)}
+        {totalPlayedVisited ? (
+          <div className={`hs-total-played-keepalive${activePage === "total-played" ? " is-active" : ""}`} aria-hidden={activePage !== "total-played"}>
+            <TotalPlayedPage currentUser={currentUser} onNavigate={onNavigate} />
+          </div>
+        ) : null}
       </Suspense>
     </PageErrorBoundary>
   );
