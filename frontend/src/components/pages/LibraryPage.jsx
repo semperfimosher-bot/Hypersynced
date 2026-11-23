@@ -4499,6 +4499,7 @@ useEffect(() => {
       />
 
 
+      <div className="hs-library-console__surface-group">
       <div className="hs-search-console__heading">
 
         <div className="hs-search-console__intro">
@@ -4650,6 +4651,7 @@ useEffect(() => {
         </span>
 
       </div>
+        </div>
 
     </section>
 
