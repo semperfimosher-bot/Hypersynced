@@ -3457,3 +3457,21 @@ button.hs-profile-stat:hover,
 /* Keep Total Played mounted across page navigation to preserve cache, rows, and scroll. */
 .hs-total-played-keepalive { display: none; }
 .hs-total-played-keepalive.is-active { display: contents; }
+
+
+/* Match Total Played and visitor-device row surfaces to the dark page header. */
+.hs-search-track.hs-total-played-track,
+.hs-search-track.hs-admin-device-row {
+  background: rgba(4, 11, 17, 0.96);
+}
+
+.hs-search-track.hs-total-played-track:hover,
+.hs-search-track.hs-total-played-track.is-selected,
+.hs-search-track.hs-admin-device-row:hover,
+.hs-search-track.hs-admin-device-row.is-selected {
+  background: linear-gradient(
+    90deg,
+    rgba(28, 177, 218, 0.075),
+    rgba(23, 127, 165, 0.018)
+  );
+}
