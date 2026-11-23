@@ -31,6 +31,7 @@ import Icon from "../ui/Icon.jsx";
 
 import useQuietRefresh from
   "../../hooks/useQuietRefresh.js";
+import { getVisitorDevicesCache, setVisitorDevicesCache } from "../../adminVisitorDevicesCache.js";
 
 
 export default function AdminDashboardPage({
@@ -40,6 +41,8 @@ export default function AdminDashboardPage({
     diagnostics,
     setDiagnostics,
   ] = useState(null);
+
+  const [visitorDeviceSummary, setVisitorDeviceSummary] = useState(getVisitorDevicesCache());
 
   const [
     duplicates,
@@ -206,6 +209,17 @@ export default function AdminDashboardPage({
       wipeConfirmation,
     ],
   );
+
+
+  const loadVisitorDeviceSummary = useCallback(async () => {
+    try {
+      const result = await apiRequest("/visitors/admin");
+      setVisitorDevicesCache(result);
+      setVisitorDeviceSummary(result);
+    } catch {
+      // Keep the cached visitor counts visible if the summary request fails.
+    }
+  }, []);
 
 
   const loadDashboard =
@@ -553,6 +567,9 @@ export default function AdminDashboardPage({
     },
   );
 
+  useEffect(() => { void loadVisitorDeviceSummary(); }, [loadVisitorDeviceSummary]);
+  useQuietRefresh(loadVisitorDeviceSummary, { intervalMs: 30_000 });
+
 
   const trackCount =
     Number(
@@ -848,9 +865,9 @@ export default function AdminDashboardPage({
               <div><span>VISITOR MONITOR</span><h3>Devices</h3></div>
               <span className="admin-status admin-status--online">REGISTRY</span>
             </div>
-            <div className="admin-device-metrics">
-              <div><strong>All</strong><span>Visitor devices</span></div>
-              <div><strong>Live</strong><span>Sessions & history</span></div>
+            <div className="admin-device-summary__counts" aria-label="Device counts">
+              <div><span>REGISTERED</span><strong>{visitorDeviceSummary?.total_count ?? "—"}</strong></div>
+              <div><span>ONLINE NOW</span><strong>{visitorDeviceSummary?.online_count ?? "—"}</strong></div>
             </div>
             <div className="admin-device-summary__footer">
               <span>Guests · accounts · IP history</span>

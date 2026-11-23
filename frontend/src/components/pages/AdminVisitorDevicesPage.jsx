@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../../api/client.js";
 import Icon from "../ui/Icon.jsx";
 import useQuietRefresh from "../../hooks/useQuietRefresh.js";
+import { getVisitorDevicesCache, setVisitorDevicesCache } from "../../adminVisitorDevicesCache.js";
 
 export default function AdminVisitorDevicesPage({ onNavigate }) {
-  const [devices, setDevices] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [devices, setDevices] = useState(getVisitorDevicesCache());
+  const [busy, setBusy] = useState(getVisitorDevicesCache() === null);
   const [deleteBusy, setDeleteBusy] = useState(null);
   const [error, setError] = useState("");
 
@@ -13,6 +14,7 @@ export default function AdminVisitorDevicesPage({ onNavigate }) {
     setBusy(true);
     try {
       const result = await apiRequest("/visitors/admin");
+      setVisitorDevicesCache(result);
       setDevices(result);
       setError("");
     } catch (err) {
