@@ -18,7 +18,7 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.ok(shared.includes(".hs-search-console__surface-group"));
   assert.ok(shared.includes(".hs-library-console__surface-group"));
   assert.ok(shared.includes(".hs-messages-console__surface-group"));
-  assert.match(shared, /--hs-surface-hover:\s*#004573/i);
+  assert.match(shared, /--hs-surface-hover:\s*#012036/i);
   assert.ok(base.includes("background: var(--hs-surface);"));
   assert.ok(search.includes("background: var(--hs-surface);"));
   assert.ok(profile.includes("background: var(--hs-surface);"));
@@ -29,10 +29,11 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.ok(shared.includes(".hs-search-console__heading"));
   assert.ok(shared.includes("background: var(--hs-surface);"));
   assert.match(shared, /\.hs-total-played-list[\s\S]*gap:\s*0/);
-  assert.match(shared, /\.hs-search-track-list[\s\S]*border-radius:\s*12px/);
+  assert.match(shared, /\.hs-search-track-list[\s\S]*border-radius:\s*8px/);
   assert.ok(shared.includes("border-bottom: 1px solid var(--hs-shared-row-divider);"));
   assert.ok(shared.includes(".hs-search-track:hover"));
   assert.ok(shared.includes("background: var(--hs-surface-hover);"));
+  assert.match(shared, /@media \(max-width:\s*979px\)[\s\S]*min-width:\s*0/);
   assert.ok(shared.includes(".hs-message-conversation:hover,"));
   assert.ok(!shared.includes(".hs-message-conversation.is-active,"));
   assert.ok(shared.includes(".hs-playing-indicator {"));
