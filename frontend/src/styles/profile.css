@@ -3345,6 +3345,24 @@ button.hs-profile-stat:hover,
   place-items: center;
   padding: 8px;
 }
+.hs-total-played-load-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  color: #9bb2c1;
+  font-size: 0.75rem;
+}
+.hs-total-played-load-error button {
+  border: 1px solid rgba(84, 221, 255, 0.22);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #b9e8f6;
+  background: rgba(8, 32, 49, 0.92);
+  cursor: pointer;
+}
 .hs-total-played-scroll-sentinel .hs-playlist-shimmer {
   width: 100%;
   min-height: 4px;
