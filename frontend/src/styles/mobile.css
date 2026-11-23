@@ -3349,15 +3349,4 @@
   background: rgba(0, 153, 235, 0.04);
 }
 
-/* Share Total Played's exact row surface with visitor device rows.
-   Reuse the same row selector values rather than independent device colors. */
-.hs-search-track.hs-total-played-track,
-.hs-search-track.hs-admin-device-row {
-  background: rgba(8, 32, 49, 0.92) !important;
-}
-.hs-search-track.hs-total-played-track:hover,
-.hs-search-track.hs-total-played-track.is-selected,
-.hs-search-track.hs-admin-device-row:hover,
-.hs-search-track.hs-admin-device-row.is-selected {
-  background: rgba(14, 55, 79, 0.96) !important;
-}
+/* Total Played and device rows inherit the exact shared Library row surface and hover. */
