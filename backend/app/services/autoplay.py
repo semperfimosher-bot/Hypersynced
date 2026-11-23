@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import (
     UTC,
     datetime,
@@ -42,7 +43,7 @@ RECENT_SESSION_DECAY = 0.90
 
 
 def _cold_start_tracks(
-    popular_tracks: list[Track],
+    popular_tracks: Sequence[Track],
     excluded: set[UUID],
     limit: int,
 ) -> list[Track]:
