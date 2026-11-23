@@ -24,6 +24,8 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
   const initialCache = readTotalPlayedCache(ownerKey);
   const [tracksState, setTracksState] = useState(() => ({ owner: ownerKey, tracks: initialCache.tracks }));
   const tracks = tracksState.owner === ownerKey ? tracksState.tracks : readTotalPlayedCache(ownerKey).tracks;
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -52,8 +54,8 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
       const nextTracks = append
         ? mergeTotalPlayedTracks(cached.tracks, batch)
         : mergeTotalPlayedTracks(batch, batch.length === PAGE_SIZE ? cached.tracks.slice(PAGE_SIZE) : []);
-      const historyChanged = nextTracks.length !== tracks.length || nextTracks.some((track, index) => {
-        const previous = tracks[index];
+      const historyChanged = nextTracks.length !== tracksRef.current.length || nextTracks.some((track, index) => {
+        const previous = tracksRef.current[index];
         return !previous || previous.id !== track.id || previous.play_count !== track.play_count || previous.last_played_at !== track.last_played_at;
       });
       if (historyChanged) setTracksState({ owner: ownerKey, tracks: nextTracks });
@@ -72,7 +74,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
         appendInFlightRef.current = false;
       }
     }
-  }, [ownerKey, online, tracks]);
+  }, [ownerKey, online]);
 
   useEffect(() => {
     requestRef.current += 1;
