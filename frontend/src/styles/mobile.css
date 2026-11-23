@@ -3309,11 +3309,6 @@
 .hs-admin-device-footer button {
   background: transparent;
 }
-.hs-admin-device-row,
-.hs-admin-device-row:hover {
-  background: transparent !important;
-  border-bottom-color: rgba(66, 128, 154, 0.065);
-}
 
 
 /* Devices panel mirrors Service Matrix structure and row separators. */

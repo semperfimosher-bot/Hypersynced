@@ -15,6 +15,10 @@ test("Total Played reuses Library page shell, typography, and track row styling"
     new URL("./styles/search.css", import.meta.url),
     "utf8",
   );
+  const mobileStyles = fs.readFileSync(
+    new URL("./styles/mobile.css", import.meta.url),
+    "utf8",
+  );
 
   assert.match(page, /hs-search-page hs-library-page hs-total-played-route/);
   assert.match(page, /hs-search-playlist-view__nav/);
@@ -34,6 +38,8 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   assert.match(profileStyles, /\.hs-total-played-heading\s*\{[\s\S]*margin: 0/);
   assert.doesNotMatch(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[^}]*background:/);
   assert.match(libraryStyles, /\.hs-search-track:hover[\s\S]*inset 2px 0/);
+  assert.doesNotMatch(mobileStyles, /\.hs-admin-device-row,\s*\.hs-admin-device-row:hover\s*\{[^}]*background:/);
+  assert.doesNotMatch(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[^}]*background:/);
   assert.match(profileStyles, /grid-template-columns: 42px minmax\(0, 1fr\) 48px/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track \.hs-search-track__rank[\s\S]*display: none/);
   assert.match(profileStyles, /\.hs-search-track\.hs-total-played-track \.hs-search-track__play[\s\S]*display: none/);
