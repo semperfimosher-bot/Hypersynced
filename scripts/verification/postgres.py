@@ -12,6 +12,16 @@ from .models import CheckResult
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def migration_predecessor(down_revision: str | re.Sequence[str] | None) -> str:
+    if down_revision is None:
+        raise RuntimeError("Expected a migration predecessor")
+    predecessors = (down_revision,) if isinstance(down_revision, str) else tuple(down_revision)
+    if not predecessors:
+        raise RuntimeError("Expected a migration predecessor")
+    # Preserve the populated session table before the remember-me migration.
+    return "ca91b5e7d204" if "ca91b5e7d204" in predecessors else predecessors[0]
+
+
 def validate_target(database_url: str, run_id: str) -> str:
     target = urlsplit(database_url)
     if (
@@ -60,21 +70,11 @@ async def _exercise(database_url: str, run_id: str, log: Path) -> None:
         head = script.get_current_head()
         assert head is not None
         revision = script.get_revision(head)
-        if revision is None or revision.down_revision is None:
+        if revision is None:
             raise RuntimeError("Expected a migration predecessor")
-        predecessors = (
-            (revision.down_revision,)
-            if isinstance(revision.down_revision, str)
-            else tuple(revision.down_revision)
-        )
-        # For merge revisions, start from the session-history branch so the
-        # populated pre-remember-me session survives while the other branch
-        # (visitor-device schema) is applied during the final upgrade.
-        predecessor = (
-            "ca91b5e7d204"
-            if "ca91b5e7d204" in predecessors
-            else predecessors[0]
-        )
+        # The selected branch allows verification to seed pre-remember-me
+        # sessions; upgrading to head also applies the other merge branch.
+        predecessor = migration_predecessor(revision.down_revision)
 
         async def migrate(target: str) -> None:
             async with engine.begin() as connection:
