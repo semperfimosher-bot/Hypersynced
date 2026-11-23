@@ -3303,7 +3303,6 @@ button.hs-profile-stat:hover,
   overflow: hidden;
   border: 1px solid rgba(67, 180, 224, 0.13);
   border-radius: 10px;
-  background: rgba(4, 13, 21, 0.56);
 }
 .hs-total-played-table-head {
   display: grid;
@@ -3458,57 +3457,3 @@ button.hs-profile-stat:hover,
 .hs-total-played-keepalive { display: none; }
 .hs-total-played-keepalive.is-active { display: contents; }
 
-
-/* One shared list surface for Search, Library, Messages, Devices, and Total Played. */
-:root {
-  --hs-list-surface: rgb(2, 10, 16);
-  --hs-list-hover: linear-gradient(
-    90deg,
-    rgba(28, 177, 218, 0.075),
-    rgba(23, 127, 165, 0.018)
-  );
-}
-
-/* Match the Library row base color exactly, including list gutters and headers. */
-.hs-search-track,
-.hs-library-track-row,
-.library-track-row,
-.hs-total-played-track,
-.hs-admin-device-row,
-.hs-message-conversation,
-.hs-search-console,
-.hs-library-console,
-.hs-search-section,
-.hs-total-played-list,
-.hs-total-played-rows,
-.hs-total-played-table-head,
-.hs-total-played-hero,
-.hs-admin-device-list,
-.hs-admin-device-rows,
-.hs-admin-device-head,
-.hs-admin-device-footer,
-.hs-messages-list__heading,
-.hs-message-thread__header {
-  background: var(--hs-list-surface);
-}
-
-/* Preserve the same hover/selected highlight across every track/conversation row. */
-.hs-search-track:hover,
-.hs-search-track.is-selected,
-.hs-library-track-row:hover,
-.library-track-row:hover,
-.hs-total-played-track:hover,
-.hs-total-played-track.is-selected,
-.hs-admin-device-row:hover,
-.hs-admin-device-row.is-selected,
-.hs-message-conversation:hover,
-.hs-message-conversation.is-active {
-  background: var(--hs-list-hover);
-}
-
-/* Keep transparent nested list wrappers from creating darker patches. */
-.hs-total-played-rows,
-.hs-admin-device-rows,
-.hs-admin-device-footer {
-  background-color: var(--hs-list-surface);
-}

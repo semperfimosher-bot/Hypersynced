@@ -73,12 +73,7 @@
 
   color: var(--hs-text);
 
-  background:
-    linear-gradient(
-      180deg,
-      rgba(8, 18, 29, 0.97),
-      rgba(4, 11, 19, 0.985)
-    );
+
 
   box-shadow:
     inset 0 1px 0
@@ -87,6 +82,18 @@
       rgba(0, 0, 0, 0.17);
 }
 
+
+
+/* Only the signal/error cards keep their gradient; page panels use the shared surface. */
+.hs-search-top-signal,
+.hs-search-standby,
+.hs-search-message {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 18, 29, 0.97),
+    rgba(4, 11, 19, 0.985)
+  );
+}
 
 /* ============================================================
    SEARCH CONSOLE
@@ -1073,8 +1080,7 @@ button.is-active strong {
     1px solid
     rgba(69, 137, 166, 0.1);
 
-  background:
-    rgba(255, 255, 255, 0.008);
+
 }
 
 
@@ -1166,7 +1172,7 @@ button.is-active strong {
 
   color: inherit;
 
-  background: transparent;
+
 
   text-align: left;
 
@@ -1182,20 +1188,6 @@ button.is-active strong {
   border-bottom: 0;
 }
 
-
-.hs-search-track:hover,
-.hs-search-track.is-selected {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(28, 177, 218, 0.075),
-      rgba(23, 127, 165, 0.018)
-    );
-
-  box-shadow:
-    inset 2px 0
-    rgba(77, 227, 255, 0.92);
-}
 
 
 .hs-search-track:focus-visible {
@@ -3240,30 +3232,6 @@ button.is-active strong {
   }
 
 
-  /* ----------------------------------------------------------
-     Track lift
-     ---------------------------------------------------------- */
-
-  .hs-search-track:hover {
-    z-index: 2;
-
-    transform:
-      translateY(-2px);
-
-    background:
-      linear-gradient(
-        90deg,
-        rgba(28, 177, 218, 0.105),
-        rgba(23, 127, 165, 0.025)
-      );
-
-    box-shadow:
-      inset 2px 0
-        rgba(77, 227, 255, 0.96),
-      0 9px 20px
-        rgba(0, 0, 0, 0.16);
-  }
-
 
   .hs-search-track:hover
   .hs-search-track__art {
@@ -3693,8 +3661,7 @@ button.is-active strong {
     transform:
       scale(0.985);
 
-    background:
-      rgba(31, 174, 211, 0.075);
+
   }
 
 
@@ -3769,11 +3736,9 @@ button.is-active strong {
     transform:
       none;
 
-    background:
-      transparent;
 
-    box-shadow:
-      none;
+
+
   }
 
 

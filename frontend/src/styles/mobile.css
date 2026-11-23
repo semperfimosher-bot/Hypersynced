@@ -3243,7 +3243,7 @@
 .admin-device-registry__stats > div {
   min-width: 110px; display: grid; gap: 3px; padding: 10px 13px;
   border: 1px solid rgba(51, 145, 191, .13); border-radius: 10px;
-  background: rgba(4, 18, 29, .8);
+
 }
 .admin-device-registry__stats strong { color: #e7f7fc; font-size: 24px; line-height: 1; }
 .admin-device-registry__stats span { color: #6e8996; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -3252,9 +3252,9 @@
   display: grid; grid-template-columns: minmax(160px, .8fr) minmax(0, 2fr) minmax(130px, auto);
   gap: 14px; align-items: center; min-width: 0; padding: 14px 18px;
   border-bottom: 1px solid rgba(54, 132, 173, .11);
-  background: rgba(2, 11, 18, .24);
+
 }
-.admin-device-registry__row:hover { background: rgba(5, 26, 40, .72); }
+
 .admin-device-registry__identity { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .admin-device-registry__identity strong { color: #dff4fb; font-size: 11px; }
 .admin-device-registry__identity .admin-status { flex: 0 0 auto; }
@@ -3302,13 +3302,9 @@
   overflow: hidden;
   border: 1px solid rgba(67, 180, 224, 0.13);
   border-radius: 10px;
-  background: rgba(4, 13, 21, 0.56);
+
 }
-.hs-admin-device-head,
-.hs-admin-device-footer,
-.hs-admin-device-footer button {
-  background: transparent;
-}
+
 
 
 /* Devices panel mirrors Service Matrix structure and row separators. */

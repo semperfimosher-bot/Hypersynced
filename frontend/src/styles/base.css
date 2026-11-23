@@ -4576,10 +4576,6 @@ button.is-active span {
   border-bottom: 0;
 }
 
-.library-track-row:hover {
-  background:
-    rgba(0, 148, 215, 0.045);
-}
 
 .library-track-index,
 .library-track-duration {
@@ -5572,11 +5568,6 @@ button.is-active span {
     background 140ms ease;
 }
 
-
-.library-track-row:hover {
-  background:
-    rgba(0, 145, 215, 0.045);
-}
 
 
 /* index */
@@ -7188,9 +7179,6 @@ button.hs-shared-music-card:active {
   border-bottom:
     1px solid
     rgba(70, 151, 186, 0.08);
-
-  background:
-    rgba(4, 14, 21, 0.97);
 }
 
 .hs-messages-list__heading span {
@@ -7238,7 +7226,7 @@ button.hs-shared-music-card:active {
 
   color: inherit;
 
-  background: transparent;
+
 
   text-align: left;
 
@@ -7247,19 +7235,6 @@ button.hs-shared-music-card:active {
     box-shadow 120ms ease;
 }
 
-.hs-message-conversation:hover,
-.hs-message-conversation.is-active {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(28, 177, 218, 0.08),
-      rgba(23, 127, 165, 0.015)
-    );
-
-  box-shadow:
-    inset 2px 0
-    rgba(77, 227, 255, 0.88);
-}
 
 .hs-message-conversation__copy {
   display: grid;
@@ -7399,9 +7374,6 @@ button.hs-shared-music-card:active {
   border-bottom:
     1px solid
     rgba(70, 151, 186, 0.08);
-
-  background:
-    rgba(4, 14, 21, 0.88);
 }
 
 .hs-message-thread__person {

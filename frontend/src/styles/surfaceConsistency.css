@@ -1,0 +1,116 @@
+/* Shared surfaces for Search, Library, Messages, Devices, and Total Played.
+   Imported last so page-specific legacy CSS cannot override the common palette. */
+:root {
+  --hs-shared-surface: rgb(2, 10, 16);
+  --hs-shared-border: rgba(67, 180, 224, 0.13);
+  --hs-shared-row-divider: rgba(66, 128, 154, 0.065);
+  --hs-shared-row-highlight: linear-gradient(
+    90deg,
+    rgba(28, 177, 218, 0.075),
+    rgba(23, 127, 165, 0.018)
+  );
+  --hs-shared-row-highlight-shadow: inset 2px 0 rgba(77, 227, 255, 0.88);
+}
+
+/* Page backgrounds, panel surfaces, and list gutters all use one base color. */
+.hs-search-page,
+.hs-library-page,
+.hs-messages-page,
+.hs-total-played-route,
+.hs-total-played-header,
+.hs-search-console,
+.hs-library-console,
+.hs-search-section,
+.hs-messages-console,
+.hs-messages-search-section,
+.hs-messages-directory,
+.hs-total-played-hero,
+.hs-total-played-list,
+.hs-total-played-table-head,
+.hs-total-played-rows,
+.hs-admin-device-list,
+.hs-admin-device-head,
+.hs-admin-device-rows,
+.hs-admin-device-footer,
+.hs-message-thread,
+.hs-message-thread__header,
+.hs-messages-list__heading,
+.hs-search-section__heading,
+.hs-search-track-list,
+.hs-message-conversation-list,
+.library-track-list,
+.admin-device-registry,
+.admin-device-registry__header,
+.admin-device-registry__stats,
+.admin-device-registry__stats > div,
+.admin-device-registry__list {
+  background: var(--hs-shared-surface);
+}
+
+/* Track/conversation rows have identical base surfaces and separators. */
+.hs-search-track,
+.library-track-row,
+.hs-message-conversation,
+.admin-device-registry__row {
+  background: var(--hs-shared-surface);
+  border-bottom-color: var(--hs-shared-row-divider);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+/* Shared container borders and header separators. */
+.hs-search-console,
+.hs-library-console,
+.hs-search-section,
+.hs-messages-console,
+.hs-messages-search-section,
+.hs-messages-directory,
+.hs-total-played-list,
+.hs-admin-device-list,
+.admin-device-registry {
+  border-color: var(--hs-shared-border);
+}
+
+.hs-total-played-table-head,
+.hs-admin-device-head,
+.hs-messages-list__heading,
+.hs-message-thread__header,
+.hs-search-section__heading,
+.admin-device-registry__header,
+.admin-device-registry__stats {
+  border-bottom-color: var(--hs-shared-border);
+}
+
+/* Identical hover/selected treatment on every ordinary row.
+   The currently-playing track keeps its distinct playback state. */
+.hs-search-track:hover:not(.is-current-track),
+.hs-search-track.is-selected:not(.is-current-track),
+.library-track-row:hover,
+.hs-message-conversation:hover,
+.hs-message-conversation.is-active,
+.hs-admin-device-row:hover,
+.hs-admin-device-row.is-selected,
+.admin-device-registry__row:hover {
+  background: var(--hs-shared-row-highlight);
+  box-shadow: var(--hs-shared-row-highlight-shadow);
+  transform: none;
+}
+ 
+/* Touch input uses the shared pressed state instead of sticky hover. */
+@media (hover: none) and (pointer: coarse) {
+  .hs-search-track:hover:not(.is-selected):not(.is-current-track),
+  .library-track-row:hover,
+  .hs-message-conversation:hover:not(.is-active),
+  .hs-admin-device-row:hover:not(.is-selected),
+  .admin-device-registry__row:hover {
+    background: var(--hs-shared-surface);
+    box-shadow: none;
+  }
+
+  .hs-search-track:active:not(.is-current-track),
+  .library-track-row:active,
+  .hs-message-conversation:active,
+  .admin-device-registry__row:active {
+    background: var(--hs-shared-row-highlight);
+    box-shadow: var(--hs-shared-row-highlight-shadow);
+  }
+}
