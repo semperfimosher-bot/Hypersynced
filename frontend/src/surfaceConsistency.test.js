@@ -13,7 +13,7 @@ test("shared design tokens use requested surfaces without changing the page canv
 
   assert.match(entry, /@import "\.\/styles\/surfaceConsistency\.css";/);
   assert.ok(entry.indexOf("surfaceConsistency.css") > entry.indexOf("./styles/search.css"));
-  assert.match(shared, /--hs-surface:\s*#012036/i);
+  assert.match(shared, /--hs-surface:\s*#020A10/i);
   assert.doesNotMatch(shared, /--hs-surface:\s*#000F1A/i);
   assert.ok(shared.includes(".hs-search-console__surface-group"));
   assert.ok(shared.includes(".hs-library-console__surface-group"));
@@ -39,9 +39,9 @@ test("shared design tokens use requested surfaces without changing the page canv
   assert.ok(shared.includes(".hs-playing-indicator {"));
   assert.ok(shared.includes("color: var(--blue);"));
   assert.match(shared, /prefers-reduced-motion/);
-  assert.match(base, /--panel:\s*#012036/i);
-  assert.match(search, /--hs-panel:\s*#012036/i);
-  assert.match(profile, /--hs-panel:\s*#012036/i);
+  assert.match(base, /--panel:\s*#020a10/i);
+  assert.match(search, /--hs-panel:\s*#020A10/i);
+  assert.match(profile, /--hs-panel:\s*#020A10/i);
   assert.match(desktop, /\.desktop-sidebar/);
   assert.doesNotMatch(base, /\.hs-messages-list__heading\s*\{[^}]*background:/);
   assert.doesNotMatch(base, /\.hs-message-thread__header\s*\{[^}]*background:/);

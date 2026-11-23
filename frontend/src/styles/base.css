@@ -8,9 +8,9 @@
   text-rendering: optimizeLegibility;
 
   --bg: #03070b;
-  --panel: #012036;
-  --panel-strong: #012036;
-  --panel-soft: #012036;
+  --panel: #020a10;
+  --panel-strong: #020a10;
+  --panel-soft: #020a10;
   --line: rgba(126, 198, 235, 0.2);
   --line-soft: rgba(255, 255, 255, 0.075);
   --text: #f6f8fb;

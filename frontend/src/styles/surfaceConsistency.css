@@ -1,7 +1,7 @@
 /* HyperSynced global surface tokens and shared connected-list structure.
    Individual page styles normalize their own surface declarations to these tokens. */
 :root {
-  --hs-surface: #012036;
+  --hs-surface: #020A10;
   --hs-surface-hover: #012036;
   --hs-shared-surface: var(--hs-surface);
   --hs-shared-border: rgba(67, 180, 224, 0.16);
@@ -553,4 +553,87 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
+
+
+/* Mobile width containment and responsive form sizing. */
+@media (max-width: 979px) {
+  html, body, #root, .app-shell, .main-workspace, .main-content, .page-stack,
+  .page-content, .hs-search-page, .hs-library-page, .hs-messages-page,
+  .hs-total-played-route, .admin-dashboard-page, .admin-bot-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .app-shell, .main-workspace, .main-content, .page-stack, .page-content {
+    box-sizing: border-box;
+  }
+  .main-content {
+    padding-left: clamp(10px, 3.5vw, 16px);
+    padding-right: clamp(10px, 3.5vw, 16px);
+  }
+  .page-stack, .hs-search-page, .hs-library-page, .hs-search-console,
+  .hs-library-console, .hs-search-section, .hs-library-console__surface-group,
+  .hs-search-console__surface-group, .hs-search-track-list, .library-track-list,
+  .hs-search-track, .hs-library-track-row, .library-track-row {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hs-search-page, .hs-library-page, .hs-search-console, .hs-library-console {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hs-search-page > *, .hs-library-page > *, .hs-search-console > *,
+  .hs-library-console > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hs-search-track-list, .library-track-list {
+    width: 100%;
+    overflow: hidden;
+  }
+  .hs-search-track, .hs-library-track-row, .library-track-row {
+    overflow: hidden;
+  }
+  .hs-search-track__copy, .hs-library-track-row__copy, .library-track-row__copy {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .hs-search-track__copy strong, .hs-library-track-row__copy strong, .library-track-row__copy strong,
+  .hs-search-track__copy span, .hs-library-track-row__copy span, .library-track-row__copy span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hs-search-filterbar, .library-tabs {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .hs-search-filterbar::-webkit-scrollbar, .library-tabs::-webkit-scrollbar { display: none; }
+  input, textarea, select { min-width: 0; font-size: 16px; }
+  button, [role="button"] { min-width: 0; }
+  img, video, canvas, svg { max-width: 100%; }
+  .profile-card-grid, .category-grid, .admin-stat-grid, .admin-dashboard-grid, .admin-bot-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  }
+}
+@media (max-width: 420px) {
+  .main-content { padding-left: 10px; padding-right: 10px; }
+  .hs-search-console__heading, .hs-search-section__heading, .hs-library-console__heading {
+    padding: 10px; gap: 8px;
+  }
+  .hs-search-track, .hs-library-track-row, .library-track-row { gap: 8px; }
+}
+/* Normalize shared surfaces to the Library's 8px geometry. */
+.hs-search-console__heading, .hs-search-section__heading, .hs-library-console__heading,
+.hs-library-console__surface-group, .hs-search-console__surface-group,
+.hs-search-track-list, .library-track-list, .hs-search-playlist-view__hero,
+.hs-total-played-hero, .hs-message-conversation-list, .hs-total-played-list,
+.hs-admin-device-list, .admin-device-registry, .hs-profile-section,
+.hs-empty-card, .hs-locked-card, .empty-content-card, .search-empty-panel,
+.library-list-panel, .library-welcome, .category-card, .profile-media-card,
+.settings-panel, .admin-panel, .admin-stat-card, .home-track-card, .home-signal {
+  border-radius: 8px;
 }
