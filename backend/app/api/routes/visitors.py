@@ -5,10 +5,9 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import delete, select, update
-from sqlalchemy.orm import selectinload
 
-from ...models.visitor import VisitorDevice
 from ...models.account import User, UserSession
+from ...models.visitor import VisitorDevice
 from ...services.admin_notifications import record_admin_activity
 from ..dependencies import AdminUser, DatabaseSession, OptionalCurrentUser
 
@@ -34,7 +33,10 @@ async def visitor_heartbeat(
 ):
     token = request.headers.get("x-hs-visitor-id", "").strip()
     if len(token) < 32 or len(token) > 200:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Visitor token is missing or invalid.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Visitor token is missing or invalid.",
+        )
     hashed = token_hash(token)
     now = datetime.now(UTC)
     result = await session.execute(select(VisitorDevice).where(VisitorDevice.token_hash == hashed))
@@ -64,7 +66,12 @@ async def visitor_heartbeat(
         await record_admin_activity(
             kind="new_visitor_device",
             title="New browser/device visit",
-            body=f"Visitor device #{device.id} was seen for the first time. IP: {device.ip_address or 'Unavailable'}. Browser details: {device.user_agent or 'Unknown'}. Account: {user.username if user and user.username else 'Guest'}",
+            body=(
+                f"Visitor device #{device.id} was seen for the first time. "
+                f"IP: {device.ip_address or 'Unavailable'}. "
+                f"Browser details: {device.user_agent or 'Unknown'}. "
+                f"Account: {user.username if user and user.username else 'Guest'}"
+            ),
             actor_user_id=user.id if user else None,
             actor_username=user.username if user else "Guest",
         )
@@ -93,7 +100,11 @@ async def list_visitor_devices(
     rows = result.all()
     await session.commit()
     return {
-        "online_count": sum(1 for device, _ in rows if device.revoked_at is None and device.last_seen_at >= cutoff_online),
+        "online_count": sum(
+            1
+            for device, _ in rows
+            if device.revoked_at is None and device.last_seen_at >= cutoff_online
+        ),
         "total_count": len(rows),
         "devices": [
             {
@@ -121,8 +132,17 @@ async def revoke_visitor_device(
     result = await session.execute(select(VisitorDevice).where(VisitorDevice.id == device_number))
     device = result.scalar_one_or_none()
     if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visitor device not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Visitor device not found.",
+        )
     device.revoked_at = datetime.now(UTC)
-    await session.execute(delete(UserSession).where(UserSession.visitor_token_hash == device.token_hash))
+    await session.execute(
+        delete(UserSession).where(UserSession.visitor_token_hash == device.token_hash)
+    )
     await session.commit()
-    return {"success": True, "device_number": device_number, "message": "Device record revoked and linked login sessions removed."}
+    return {
+        "success": True,
+        "device_number": device_number,
+        "message": "Device record revoked and linked login sessions removed.",
+    }

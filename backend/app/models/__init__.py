@@ -31,11 +31,11 @@ from .playlist import (
     PlaylistTrack,
     SavedPlaylist,
 )
-from .visitor import VisitorDevice
 from .system import (
     RateLimitBucket,
     SystemResetState,
 )
+from .visitor import VisitorDevice
 
 __all__ = [
     "AccountType",
