@@ -43,7 +43,7 @@ test("Total Played reuses Library page shell, typography, and track row styling"
   );
   assert.ok(sharedSurfaces.includes(".hs-search-track:hover"));
   assert.ok(sharedSurfaces.includes("background: var(--hs-surface-hover);"));
-  assert.match(sharedSurfaces, /--hs-surface-hover:\s*#004573/);
+  assert.match(sharedSurfaces, /--hs-surface-hover:\s*#012036/);
   assert.match(sharedSurfaces, /--hs-shared-row-divider:/);
   assert.doesNotMatch(mobileStyles, /\.hs-admin-device-row,\s*\.hs-admin-device-row:hover\s*\{[^}]*background:/);
   assert.doesNotMatch(profileStyles, /\.hs-search-track\.hs-total-played-track\s*\{[^}]*background:/);
