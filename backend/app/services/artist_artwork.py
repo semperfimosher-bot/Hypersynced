@@ -19,8 +19,8 @@ USER_AGENT = "HyperSynced/1.0 (artist artwork attribution; https://hypersynced.a
 MAX_ART_BYTES = 4 * 1024 * 1024
 ARTIST_TYPES = {"Q639669", "Q215380", "Q2088357", "Q483501"}
 ALLOWED_LICENSES = {
-    "cc0", "cc-by", "cc-by-sa", "cc-by-4.0", "cc-by-sa-4.0",
-    "public domain", "public domain mark", "pd",
+    "cc0", "cc-by", "cc-by-sa", "cc-by-3.0", "cc-by-4.0",
+    "cc-by-sa-3.0", "cc-by-sa-4.0", "public domain", "public domain mark", "pd",
 }
 _active_artist_jobs: set[str] = set()
 
@@ -110,16 +110,19 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
         source_page = image_info.get("descriptionurl")
         if not image_url or not source_page:
             return None
-        image_response = await client.get(image_url)
-        image_response.raise_for_status()
-        content_type = image_response.headers.get("content-type", "").split(";", 1)[0].lower()
-        if content_type not in {"image/jpeg", "image/png", "image/webp"}:
-            return None
         content = bytearray()
-        async for chunk in image_response.aiter_bytes():
-            content.extend(chunk)
-            if len(content) > MAX_ART_BYTES:
+        async with client.stream("GET", image_url) as image_response:
+            image_response.raise_for_status()
+            content_type = image_response.headers.get("content-type", "").split(";", 1)[0].lower()
+            if content_type not in {"image/jpeg", "image/png", "image/webp"}:
                 return None
+            content_length = image_response.headers.get("content-length")
+            if content_length and int(content_length) > MAX_ART_BYTES:
+                return None
+            async for chunk in image_response.aiter_bytes():
+                content.extend(chunk)
+                if len(content) > MAX_ART_BYTES:
+                    return None
         if not content:
             return None
         return {
