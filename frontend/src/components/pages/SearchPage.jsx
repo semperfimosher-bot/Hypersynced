@@ -797,6 +797,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       setResults(
         EMPTY_RESULTS,
       );
+      setCompletedSearchQuery("");
 
       setLoading(false);
       setSearchError("");
@@ -829,7 +830,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     if (!quietRefresh) {
       setLoading(true);
       setSearchError("");
-
+      setCompletedSearchQuery("");
     }
 
     const setLocalResults =
@@ -857,6 +858,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
         searchLoadKeyRef.current =
           searchKey;
+        setCompletedSearchQuery(normalizedQuery);
       };
 
     const timer =
@@ -939,6 +941,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
                       people: freshData?.people || [],
                       playlists: freshData?.playlists || [],
                     });
+                    setCompletedSearchQuery(normalizedQuery);
                     setSearchError("");
                   },
                 },
@@ -987,6 +990,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
             searchLoadKeyRef.current =
               searchKey;
+            setCompletedSearchQuery(normalizedQuery);
 
             setSearchError(
               "",
