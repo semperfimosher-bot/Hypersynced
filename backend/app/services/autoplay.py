@@ -61,137 +61,38 @@ def _text_key(
     )
 
 
-def _genre_family(
-    value: str | None,
-) -> str:
-    key = _text_key(
-        value,
-    )
+def _genre_similarity(
+    left: str | None,
+    right: str | None,
+) -> float:
+    """Compare catalog genre labels without hardcoded genre taxonomies."""
+    left_key = _text_key(left)
+    right_key = _text_key(right)
+    if not left_key or not right_key:
+        return 0.0
+    if left_key == right_key:
+        return 1.0
 
-    if not key:
-        return ""
+    left_tokens = {
+        token
+        for token in __import__("re").split(r"[^\\w]+", left_key)
+        if token
+    }
+    right_tokens = {
+        token
+        for token in __import__("re").split(r"[^\\w]+", right_key)
+        if token
+    }
+    if not left_tokens or not right_tokens:
+        return 0.0
 
-    families = (
-        (
-            "country",
-            (
-                "country",
-                "americana",
-                "bluegrass",
-                "western",
-            ),
-        ),
-        (
-            "hip-hop",
-            (
-                "hip hop",
-                "hip-hop",
-                "rap",
-                "trap",
-            ),
-        ),
-        (
-            "r&b",
-            (
-                "r&b",
-                "rnb",
-                "soul",
-                "neo soul",
-            ),
-        ),
-        (
-            "electronic",
-            (
-                "electronic",
-                "edm",
-                "dance",
-                "house",
-                "techno",
-                "trance",
-                "dubstep",
-            ),
-        ),
-        (
-            "rock",
-            (
-                "rock",
-                "alternative",
-                "indie rock",
-                "classic rock",
-            ),
-        ),
-        (
-            "metal",
-            (
-                "metal",
-                "metalcore",
-                "deathcore",
-            ),
-        ),
-        (
-            "punk",
-            (
-                "punk",
-                "pop punk",
-                "hardcore",
-            ),
-        ),
-        (
-            "pop",
-            (
-                "pop",
-                "dance pop",
-                "synthpop",
-            ),
-        ),
-        (
-            "latin",
-            (
-                "latin",
-                "reggaeton",
-                "bachata",
-                "salsa",
-            ),
-        ),
-        (
-            "folk",
-            (
-                "folk",
-                "singer-songwriter",
-            ),
-        ),
-        (
-            "jazz",
-            (
-                "jazz",
-                "bebop",
-            ),
-        ),
-        (
-            "classical",
-            (
-                "classical",
-                "orchestral",
-            ),
-        ),
-        (
-            "gospel",
-            (
-                "gospel",
-                "christian",
-                "worship",
-            ),
-        ),
-    )
+    shared = len(left_tokens & right_tokens)
+    union = len(left_tokens | right_tokens)
+    overlap = shared / union if union else 0.0
+    if left_key in right_key or right_key in left_key:
+        return max(overlap, 0.7)
+    return overlap
 
-    for family, aliases in families:
-        if any(
-            alias in key
-            for alias in aliases
-        ):
-            return family
-
-    return key
 
 
 def _bounded(
@@ -461,13 +362,7 @@ async def recommend_autoplay_tracks(
         else ""
     )
 
-    current_genre_family = (
-        _genre_family(
-            current_track.genre,
-        )
-        if current_track
-        else ""
-    )
+
 
 
     artist_affinity: dict[
@@ -1649,25 +1544,15 @@ async def recommend_autoplay_tracks(
         # need strong evidence from the
         # recent 12-song session to enter.
         if current_genre:
-            candidate_family = (
-                _genre_family(
-                    track.genre,
-                )
+            genre_similarity = _genre_similarity(
+                current_track.genre if current_track else None,
+                track.genre,
             )
 
-            if (
-                genre_key
-                == current_genre
-            ):
+            if genre_key == current_genre:
                 score += 52.0
-
-            elif (
-                current_genre_family
-                and candidate_family
-                == current_genre_family
-            ):
-                score += 30.0
-
+            elif genre_similarity >= 0.45:
+                score += 30.0 * genre_similarity
             elif (
                 session_genre_affinity.get(
                     genre_key,
@@ -1889,11 +1774,10 @@ async def recommend_autoplay_tracks(
                     item[1].genre,
                 )
                 != current_genre
-                and current_genre_family
-                and _genre_family(
+                and _genre_similarity(
+                    current_track.genre if current_track else None,
                     item[1].genre,
-                )
-                == current_genre_family
+                ) >= 0.45
             )
         ]
 
@@ -1945,11 +1829,10 @@ async def recommend_autoplay_tracks(
             == last_artist
             and artist_streak >= 2
             and not (
-                current_genre_family
-                and _genre_family(
+                _genre_similarity(
+                    current_track.genre if current_track else None,
                     track.genre,
-                )
-                == current_genre_family
+                ) >= 0.45
             )
         ):
             deferred.append(
