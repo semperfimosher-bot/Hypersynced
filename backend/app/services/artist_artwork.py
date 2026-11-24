@@ -369,8 +369,15 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
         async with factory() as session:
             profile = await session.get(ArtistProfile, profile_id)
             if profile:
+                # Persist verified source and attribution before showing the temporary
+                # image or starting the B2 upload, so the UI can credit it immediately.
                 profile.artwork_status = "uploading"
                 profile.artwork_temporary_url = candidate["source_url"]
+                profile.artwork_artist_qid = candidate["artist_qid"]
+                profile.artwork_source_url = candidate["source_url"]
+                profile.artwork_source_page_url = candidate["source_page_url"]
+                profile.artwork_license = candidate["license"]
+                profile.artwork_credit = candidate["credit"]
                 profile.artwork_lease_until = datetime.now(UTC) + timedelta(minutes=10)
                 await session.commit()
         from .b2 import get_b2_s3_client
