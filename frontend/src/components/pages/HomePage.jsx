@@ -4,6 +4,7 @@ import * as player from "../../audioPlayer.js";
 import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 import { readCachedHomeSuggestions, writeCachedHomeSuggestions } from "../../homeSuggestions.js";
+import { warmTrackArtwork } from "../../artworkWarmCache.js";
 import { getSuggestedMusic } from "../../profileApi.js";
 import {
   getHomeRecentlyPlayedForOwner,
@@ -28,7 +29,7 @@ function trackMatchesDownloadedArtist(track, artistNames) {
 
 const MEMBER_SLIDE_LABELS = ["On Repeat", "Find Your Next Favorite", "Your Music Vault", "Made for Your Mood"];
 
-function HomeCarousel({ recent, suggestions, pickedTracks, onNavigate, guest, onOpenAuth, onPlay, onPlayPicked, onOpenArtist }) {
+function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, onNavigate, guest, onOpenAuth, onPlay, onPlayPicked, onOpenArtist }) {
   const slideLabels = guest ? ["Welcome", "Discover Your Sound", "Artists in Your Orbit", "Made for Your Mood"] : MEMBER_SLIDE_LABELS;
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -46,8 +47,18 @@ function HomeCarousel({ recent, suggestions, pickedTracks, onNavigate, guest, on
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setPaused(false), 10000);
   };
-  const memberSlideTracks = [recent[0], suggestions[0], recent[1] ?? suggestions[1], suggestions[4] ?? suggestions[0]];
-  const slideTracks = guest ? [null, suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]] : memberSlideTracks;
+  const memberSlideTracks = [
+    recent[0] ?? suggestions[0] ?? fallbackTracks[0],
+    suggestions[0] ?? fallbackTracks[0] ?? recent[0],
+    recent[1] ?? suggestions[1] ?? fallbackTracks[1] ?? recent[0],
+    suggestions[4] ?? suggestions[0] ?? fallbackTracks[2] ?? recent[0],
+  ];
+  const slideTracks = guest ? [
+    null,
+    suggestions[0] ?? fallbackTracks[0] ?? recent[0],
+    suggestions[2] ?? fallbackTracks[1] ?? recent[1] ?? suggestions[0],
+    suggestions[4] ?? suggestions[0] ?? fallbackTracks[2] ?? fallbackTracks[0],
+  ] : memberSlideTracks;
   const contentIndex = active;
   const firstRecent = recent[0];
   const discover = suggestions[0];
@@ -61,7 +72,7 @@ function HomeCarousel({ recent, suggestions, pickedTracks, onNavigate, guest, on
           <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">
-              {! (guest && index === 0) ? (slideTracks[index] ? [slideTracks[index], recent[index % Math.max(1, recent.length)] ?? suggestions[index + 1], suggestions[index + 2]].filter((track, artworkIndex, all) => track?.artwork_url && all.findIndex((candidate) => candidate?.id && String(candidate.id) === String(track.id)) === artworkIndex).slice(0, 3).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} />) : null) : null}
+              {! (guest && index === 0) ? (slideTracks[index] ? [slideTracks[index], recent[index % Math.max(1, recent.length)] ?? suggestions[index + 1], fallbackTracks[index] ?? suggestions[index + 2], ...fallbackTracks].filter((track, artworkIndex, all) => track?.artwork_url && all.findIndex((candidate) => candidate?.id && String(candidate.id) === String(track.id)) === artworkIndex).slice(0, 3).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} />) : null) : null}
             </div>
             <div className={`home-carousel__content ${guest && index === 0 ? "home-carousel__content--guest-image-only" : ""}`}>
               <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "BACK IN THE GROOVE" : contentIndex === 1 ? "FRESH FINDS" : contentIndex === 2 ? (guest ? "ARTISTS IN YOUR ORBIT" : "YOUR MUSIC, YOUR RULES") : "TUNED TO YOU"}</span>
@@ -195,11 +206,13 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 12);
   const quickPickPool = [...homeRecentFallback, ...suggestedTracks, ...recentlyAdded, ...discoveryFallback];
   const quickPicks = quickPickPool.filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
+  const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
+  useEffect(() => { warmTrackArtwork(artworkWarmTracks, 18); }, [quickPicks, recentlyPlayed, suggestedTracks, recentlyAdded]);
 
   return (
     <div className="page-stack home-page">
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
-      <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onPlayPicked={(tracks) => { void player.playTrackQueue(tracks); }} pickedTracks={discovery} onOpenArtist={onOpenArtist} />
+      <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} fallbackTracks={recentlyAdded} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onPlayPicked={(tracks) => { void player.playTrackQueue(tracks); }} pickedTracks={discovery} onOpenArtist={onOpenArtist} />
       {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
