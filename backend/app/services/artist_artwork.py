@@ -453,7 +453,16 @@ async def run_artist_artwork_worker() -> None:
                     result = await session.execute(
                         select(ArtistProfile.id).where(
                             ArtistProfile.artwork_object_key.is_(None),
-                            ArtistProfile.artwork_status.in_(["missing", "failed"]),
+                            (
+                                ArtistProfile.artwork_status.in_(["missing", "failed"])
+                                | (
+                                    ArtistProfile.artwork_status.in_(["fetching", "uploading"])
+                                    & (
+                                        ArtistProfile.artwork_lease_until.is_(None)
+                                        | (ArtistProfile.artwork_lease_until <= now)
+                                    )
+                                )
+                            ),
                             (ArtistProfile.artwork_next_retry_at.is_(None)) | (ArtistProfile.artwork_next_retry_at <= now),
                         ).order_by(ArtistProfile.updated_at.asc()).limit(8)
                     )
