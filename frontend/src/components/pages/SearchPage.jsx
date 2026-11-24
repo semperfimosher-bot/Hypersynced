@@ -649,6 +649,15 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     },
   );
 
+  useEffect(() => {
+    if (!preferenceReady || !normalizedQuery) return undefined;
+    const handleCatalogUpdated = () => {
+      setQuietSearchVersion((current) => current + 1);
+    };
+    window.addEventListener("hypersynced:catalog-updated", handleCatalogUpdated);
+    return () => window.removeEventListener("hypersynced:catalog-updated", handleCatalogUpdated);
+  }, [preferenceReady, normalizedQuery]);
+
 
   useQuietRefresh(
     async () => {
