@@ -4,9 +4,11 @@ import asyncio
 import re
 import time
 from urllib.parse import urlsplit
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import httpx
+from sqlalchemy import select
 
 from ..config import get_settings
 from ..database import get_session_factory
@@ -323,6 +325,9 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             if not profile or profile.artwork_object_key:
                 return
             artist_name = profile.name
+            profile.artwork_status = "fetching"
+            profile.artwork_lease_until = datetime.now(UTC) + timedelta(minutes=10)
+            await session.commit()
 
         try:
             candidate = await find_reusable_artist_image(artist_name)
@@ -330,6 +335,13 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         if not candidate:
+            async with factory() as session:
+                profile = await session.get(ArtistProfile, profile_id)
+                if profile:
+                    profile.artwork_status = "missing"
+                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=14)
+                    profile.artwork_lease_until = None
+                    await session.commit()
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
 
@@ -338,6 +350,13 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         object_key = f"artist-artwork/{profile_id}/{candidate['artist_qid']}"
+        async with factory() as session:
+            profile = await session.get(ArtistProfile, profile_id)
+            if profile:
+                profile.artwork_status = "uploading"
+                profile.artwork_temporary_url = candidate["source_url"]
+                profile.artwork_lease_until = datetime.now(UTC) + timedelta(minutes=10)
+                await session.commit()
         from .b2 import get_b2_s3_client
 
         await asyncio.to_thread(
@@ -354,6 +373,11 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             if not profile or profile.artwork_object_key:
                 return
             profile.artwork_object_key = object_key
+            profile.has_profile_picture = True
+            profile.artwork_status = "ready"
+            profile.artwork_temporary_url = None
+            profile.artwork_next_retry_at = None
+            profile.artwork_lease_until = None
             profile.artwork_artist_qid = candidate["artist_qid"]
             profile.artwork_source_url = candidate["source_url"]
             profile.artwork_source_page_url = candidate["source_page_url"]
@@ -364,6 +388,17 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             if len(_artist_artwork_retry_after) > 1000:
                 _artist_artwork_retry_after.clear()
     except Exception as exc:
+        try:
+            async with get_session_factory()() as session:
+                profile = await session.get(ArtistProfile, profile_id)
+                if profile and not profile.artwork_object_key:
+                    profile.artwork_status = "failed"
+                    profile.artwork_attempts = (profile.artwork_attempts or 0) + 1
+                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=min(30, 2 ** min(profile.artwork_attempts, 5)))
+                    profile.artwork_lease_until = None
+                    await session.commit()
+        except Exception:
+            pass
         # Artwork is optional. Provider or storage failures do not break artist pages.
         _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
         print(
@@ -372,3 +407,55 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
         )
     finally:
         _active_artist_jobs.discard(job_key)
+
+async def enqueue_artist_artwork(profile_id: UUID | str) -> bool:
+    """Persist an artwork request while deduplicating queued or active work."""
+    async with get_session_factory()() as session:
+        profile = await session.get(ArtistProfile, profile_id)
+        if not profile or profile.artwork_object_key:
+            return False
+        now = datetime.now(UTC)
+        if profile.artwork_status in {"queued", "fetching", "verifying", "uploading"} and profile.artwork_lease_until and profile.artwork_lease_until > now:
+            return False
+        if profile.artwork_next_retry_at and profile.artwork_next_retry_at > now:
+            return False
+        profile.artwork_status = "queued"
+        profile.artwork_lease_until = None
+        await session.commit()
+        return True
+
+
+async def run_artist_artwork_worker() -> None:
+    """Low-duty-cycle artwork queue with small backfill batches."""
+    factory = get_session_factory()
+    backfill_at = datetime.now(UTC)
+    while True:
+        now = datetime.now(UTC)
+        try:
+            if now >= backfill_at:
+                async with factory() as session:
+                    result = await session.execute(
+                        select(ArtistProfile.id).where(
+                            ArtistProfile.artwork_object_key.is_(None),
+                            ArtistProfile.artwork_status.in_(["missing", "failed"]),
+                            (ArtistProfile.artwork_next_retry_at.is_(None)) | (ArtistProfile.artwork_next_retry_at <= now),
+                        ).order_by(ArtistProfile.updated_at.asc()).limit(8)
+                    )
+                    batch = list(result.scalars())
+                for aid in batch:
+                    await enqueue_artist_artwork(aid)
+                backfill_at = now + timedelta(minutes=10)
+            async with factory() as session:
+                result = await session.execute(select(ArtistProfile.id).where(
+                    ArtistProfile.artwork_object_key.is_(None), ArtistProfile.artwork_status == "queued"
+                ).order_by(ArtistProfile.updated_at.asc()).limit(1))
+                job_id = result.scalar_one_or_none()
+            if job_id:
+                await fetch_and_store_artist_artwork(job_id)
+                await asyncio.sleep(30)
+            else:
+                await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            await asyncio.sleep(120)

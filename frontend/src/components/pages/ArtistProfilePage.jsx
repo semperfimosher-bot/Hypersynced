@@ -228,7 +228,8 @@ export default function ArtistProfilePage({
   useEffect(() => {
     if (
       !profile
-      || profile.artwork_source_page_url
+      || profile.artwork_status === "ready"
+      || profile.artwork_status === "missing"
       || !online
     ) {
       return undefined;
@@ -251,12 +252,12 @@ export default function ArtistProfilePage({
         // Keep the existing artist profile and retry only a few times.
       }
 
-      if (!cancelled && attempts < 3) {
-        timer = window.setTimeout(refreshArtwork, 10_000);
+      if (!cancelled && attempts < 5) {
+        timer = window.setTimeout(refreshArtwork, 8_000);
       }
     };
 
-    timer = window.setTimeout(refreshArtwork, 10_000);
+    timer = window.setTimeout(refreshArtwork, 5_000);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);

@@ -33,6 +33,7 @@ from .security.tokens import (
 from .services.admin_notifications import (
     record_admin_activity,
 )
+from .services.artist_artwork import run_artist_artwork_worker
 from .services.artists import (
     backfill_missing_artist_profiles,
 )
@@ -355,6 +356,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if settings.maintenance_worker_enabled else None
     )
 
+    artist_artwork_task = asyncio.create_task(run_artist_artwork_worker())
+
     media_identity_task = asyncio.create_task(
         run_media_identity_backfill(),
     )
@@ -362,6 +365,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        artist_artwork_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await artist_artwork_task
+
         if maintenance_task is not None:
             maintenance_task.cancel()
             with suppress(asyncio.CancelledError):

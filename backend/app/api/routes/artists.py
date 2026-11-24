@@ -29,7 +29,7 @@ from ...models.artist import (
     ArtistProfile,
 )
 from ...models.media import Track
-from ...services.artist_artwork import fetch_and_store_artist_artwork
+from ...services.artist_artwork import enqueue_artist_artwork
 from ...services.artists import (
     ensure_artist_profile,
     load_published_artist_tracks,
@@ -87,6 +87,8 @@ class ArtistProfileResponse(BaseModel):
     artwork_license: str | None = None
     artwork_credit: str | None = None
     artwork_source_page_url: str | None = None
+    artwork_status: str = "missing"
+    has_profile_picture: bool = False
     followers_count: int
     is_following: bool
     track_count: int
@@ -440,9 +442,9 @@ async def _artist_profile_response(
         create_presigned_download_url(profile.artwork_object_key)
         if profile.artwork_object_key
         else (
-            _track_artwork_url(tracks[0])
-            if tracks
-            else None
+            profile.artwork_temporary_url
+            if profile.artwork_status == "uploading" and profile.artwork_temporary_url
+            else (_track_artwork_url(tracks[0]) if tracks else None)
         )
     )
 
@@ -454,6 +456,8 @@ async def _artist_profile_response(
         artwork_license=profile.artwork_license,
         artwork_credit=profile.artwork_credit,
         artwork_source_page_url=profile.artwork_source_page_url,
+        artwork_status=profile.artwork_status,
+        has_profile_picture=profile.has_profile_picture,
         followers_count=(
             followers_count
         ),
@@ -491,10 +495,7 @@ async def get_artist_profile(
     )
 
     if not profile.artwork_object_key:
-        background_tasks.add_task(
-            fetch_and_store_artist_artwork,
-            profile.id,
-        )
+        await enqueue_artist_artwork(profile.id)
 
     return await _artist_profile_response(
         session,
