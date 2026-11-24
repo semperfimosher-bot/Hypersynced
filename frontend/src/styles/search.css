@@ -9004,3 +9004,28 @@ button:disabled {
 @media (max-width: 760px) {
   .hs-search-discovery__tile-icon.hs-search-discovery__tile-art { width: 40px; height: 40px; min-width: 40px; }
 }
+
+
+/* Discovery shortcut collages: compact, layered and gently tilted like the home deck. */
+.hs-search-discovery__tile-art > .playlist-artwork-collage {
+  overflow: visible;
+  transform: rotate(-5deg) scale(1.06);
+  filter: drop-shadow(0 5px 7px rgba(0, 4, 14, .38));
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile {
+  border: 1px solid rgba(135, 220, 255, .16);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(1) {
+  transform: rotate(-3deg) translate(-1px, 0);
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(2) {
+  transform: rotate(3deg) translate(1px, -1px);
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(3) {
+  transform: rotate(2deg) translate(-1px, 1px);
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(4) {
+  transform: rotate(-2deg) translate(1px, 1px);
+}
