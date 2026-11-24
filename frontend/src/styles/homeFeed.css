@@ -141,3 +141,20 @@
 .home-carousel__slide--guest-welcome::after{display:none!important}
 .home-carousel__slide--guest-welcome .home-carousel__art{inset:0;filter:none!important;opacity:1!important;transform:none!important;background-position:center;background-size:cover}
 .home-carousel__slide--guest-welcome .home-carousel__artwork,.home-carousel__slide--guest-welcome .home-carousel__content{display:none!important}
+
+/* Home polish: collage covers, no slide counter, and quick picks are standalone buttons. */
+.home-carousel__artwork{overflow:visible!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.home-carousel__artwork-cover{position:absolute;display:block;width:74%;height:74%;object-fit:cover;border:1px solid rgba(180,220,255,.22);border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.46);transition:transform .35s ease}
+.home-carousel__artwork-cover--1{z-index:3;left:13%;top:13%;transform:rotate(-5deg)}
+.home-carousel__artwork-cover--2{z-index:2;left:0;top:6%;transform:rotate(-13deg)}
+.home-carousel__artwork-cover--3{z-index:1;right:0;bottom:3%;transform:rotate(9deg)}
+.home-carousel__slide.is-active .home-carousel__artwork-cover--1{transform:rotate(-3deg) translateY(-2px)}
+.home-carousel__slide.is-active .home-carousel__artwork-cover--2{transform:rotate(-12deg) translate(-2px,1px)}
+.home-carousel__slide.is-active .home-carousel__artwork-cover--3{transform:rotate(10deg) translate(2px,1px)}
+.home-carousel__counter{display:none!important}
+.home-quick-picks__grid .home-track-tile-wrap{display:contents}
+.home-quick-picks__grid .home-track-tile__next{display:none!important}
+.home-quick-picks__grid .home-track-tile{min-height:61px;touch-action:manipulation}
+.home-quick-picks__grid .home-track-tile:hover{background:#012036}
+@media(max-width:979px){.home-carousel__artwork-cover{width:77%;height:77%}.home-carousel__artwork-cover--2{left:-1%;top:3%}.home-carousel__artwork-cover--3{right:-1%;bottom:1%}}
+@media(prefers-reduced-motion:reduce){.home-carousel__artwork-cover{transition:none}}
