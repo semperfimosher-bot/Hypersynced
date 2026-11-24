@@ -462,8 +462,8 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     assert b2_client_calls == 1, f"worker stopped before B2 client; stage={stage}"
     assert thread_calls == 1, f"worker stopped before B2 upload; stage={stage}"
     assert not thread_errors, f"B2 upload failed in test double: {thread_errors}"
-    assert session_calls == 2
-    assert commit_count == 1
+    assert session_calls == 3  # fetching, temporary uploading state, final ready state
+    assert commit_count == 3
     assert uploaded["Bucket"] == "test-bucket"
     assert uploaded["Key"] == expected_key
     assert uploaded["Body"] == b"verified-image"
@@ -474,3 +474,6 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     assert profile.artwork_source_page_url == candidate["source_page_url"]
     assert profile.artwork_license == candidate["license"]
     assert profile.artwork_credit == candidate["credit"]
+    assert profile.artwork_status == "ready"
+    assert profile.has_profile_picture is True
+    assert profile.artwork_temporary_url is None
