@@ -128,3 +128,7 @@
 .home-mood-card[aria-pressed="true"] .home-mood-card__copy::after{content:"SELECTED";color:#73ceff;font-size:8px;font-weight:800;letter-spacing:.12em}
 .home-mood-fallback-note{margin:0;color:#91aec3;font-size:10px;line-height:1.5}
 @media(prefers-reduced-motion:reduce){.home-mood-card.is-active{transform:none}}
+
+/* Mobile carousel keeps the desktop side-by-side artwork/content layout and is slightly shorter. */
+@media(max-width:979px){.home-carousel__viewport{min-height:260px;height:260px}.home-carousel__slide::after{background:linear-gradient(90deg,rgba(2,8,15,.98) 0%,rgba(2,10,18,.84) 54%,rgba(2,10,18,.2) 100%),linear-gradient(0deg,rgba(2,8,15,.45),transparent 60%)}.home-carousel__artwork{top:50%;right:12px;width:min(29%,112px);transform:translateY(-50%)}.home-carousel__content{align-content:center;width:66%;padding:14px;gap:7px}.home-carousel__content h2{font-size:clamp(17px,4.5vw,20px)}.home-carousel__content p{font-size:9px;line-height:1.35;-webkit-line-clamp:2}.home-carousel__track-meta{max-width:100%}.home-carousel__action{padding:8px 10px;font-size:9px}.home-carousel__counter{bottom:10px;right:10px}}
+@media(max-width:380px){.home-carousel__viewport{min-height:250px;height:250px}.home-carousel__content{padding:11px;width:68%}.home-carousel__artwork{width:27%;right:10px}.home-carousel__content h2{font-size:17px}}
