@@ -16,6 +16,7 @@ import {
 } from "./mediaCache.js";
 
 import {
+  appendAutoplayQueueEntries,
   appendQueueEntry,
   buildTrackQueue,
   catalogTrackIdOrNull,
@@ -820,67 +821,16 @@ function ensureCurrentTrackInQueue() {
 function appendAutoplayTracks(
   tracks,
 ) {
-  const incoming =
-    buildTrackQueue(
-      tracks,
-    );
-
-  if (!incoming.length) {
-    return 0;
-  }
-
-  const existing =
-    new Set(
-      currentQueue.map(
-        (entry) =>
-          String(
-            entry.id,
-          ),
-      ),
-    );
-
-
-  const unique =
-    incoming.filter(
-      (entry) => {
-        const id =
-          String(
-            entry.id,
-          );
-
-        if (
-          existing.has(
-            id,
-          )
-        ) {
-          return false;
-        }
-
-        existing.add(
-          id,
-        );
-
-        return true;
-      },
-    );
-
-
-  if (!unique.length) {
-    return 0;
-  }
-
-
-  currentQueue = [
-    ...currentQueue,
-    ...unique,
-  ];
+  const beforeLength = currentQueue.length;
+  currentQueue = appendAutoplayQueueEntries(currentQueue, tracks);
+  const addedCount = currentQueue.length - beforeLength;
+  if (!addedCount) return 0;
 
   persistQueueSnapshot();
   notify();
 
-  // Autoplay tracks arrive in batches while the current track is still
-  // playing. Warm the first upcoming track immediately instead of waiting
-  // until the current song is nearly over.
+  // Autoplay suggestions are appended after every queued collection track.
+  // Warm the next track in sequence, not a recommendation that jumps the playlist.
   const nextIndex = getNextQueueIndex(currentQueue, currentQueueIndex);
   if (nextIndex >= 0) {
     const nextEntry = currentQueue[nextIndex];
@@ -889,9 +839,8 @@ function appendAutoplayTracks(
     ).catch(() => {});
   }
 
-  return unique.length;
+  return addedCount;
 }
-
 
 async function ensureAutoplayQueue({
   force = false,
