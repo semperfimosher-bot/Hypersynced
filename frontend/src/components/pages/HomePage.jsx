@@ -26,7 +26,7 @@ function trackMatchesDownloadedArtist(track, artistNames) {
   return candidates.some((candidate) => artistNames.has(normalizedArtistKey(candidate)));
 }
 
-const MEMBER_SLIDE_LABELS = ["Recently played", "Find your next favorites", "Artists to explore", "Finally made for you mixes"];
+const MEMBER_SLIDE_LABELS = ["Recently played", "Find your next favorites", "Library", "Made for you"];
 
 function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPlay, onOpenArtist }) {
   const slideLabels = guest ? ["Welcome", "Discover", "Artists to explore", "Finally made for you mixes"] : MEMBER_SLIDE_LABELS;
@@ -46,7 +46,7 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setPaused(false), 10000);
   };
-  const memberSlideTracks = [recent[0], suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]];
+  const memberSlideTracks = [recent[0], suggestions[0], recent[1] ?? suggestions[1], suggestions[4] ?? suggestions[0]];
   const slideTracks = guest ? [null, suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]] : memberSlideTracks;
   const contentIndex = active;
   const firstRecent = recent[0];
@@ -62,11 +62,11 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index) ? <img src={coverFor(index)} alt="" loading={index === active ? "eager" : "lazy"} /> : null}</div>
             <div className={`home-carousel__content ${guest && index === 0 ? "home-carousel__content--guest-image-only" : ""}`}>
-              <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "RECENTLY PLAYED" : contentIndex === 1 ? "YOUR NEXT FAVORITE" : contentIndex === 2 ? "ARTISTS TO EXPLORE" : "MADE FOR YOU MIXES"}</span>
-              <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Recently played" : contentIndex === 1 ? "Find your next favorite" : contentIndex === 2 ? "Discover artists that fit your sound" : "Finally made for you mixes"}</h2>
-              <p>{guest && index === 0 ? "Discover music, find your favorites, and make HyperSynced your own." : contentIndex === 0 ? "Pick up right where you left off." : contentIndex === 1 ? "Discover tracks picked to fit your taste." : contentIndex === 2 ? "Find artists based on music you have been listening to." : "Personalized mixes built around your listening."}</p>
+              <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "RECENTLY PLAYED" : contentIndex === 1 ? "YOUR NEXT FAVORITE" : contentIndex === 2 ? (guest ? "ARTISTS TO EXPLORE" : "YOUR LIBRARY") : "MADE FOR YOU"}</span>
+              <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Recently played" : contentIndex === 1 ? "Find your next favorite" : contentIndex === 2 ? (guest ? "Discover artists that fit your sound" : "Your Library") : "Made for you"}</h2>
+              <p>{guest && index === 0 ? "Discover music, find your favorites, and make HyperSynced your own." : contentIndex === 0 ? "Pick up right where you left off." : contentIndex === 1 ? "Discover tracks picked to fit your taste." : contentIndex === 2 ? (guest ? "Find artists based on music you have been listening to." : "Your saved tracks, albums, and playlists in one place.") : "Personalized mixes built around your listening."}</p>
               {activeTrack && !(guest && index === 0) ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
-              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? onOpenArtist?.(suggestions[2]?.artist) : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Play recent" : "Get started") : contentIndex === 1 ? (discover ? "Play discovery" : "Explore music") : contentIndex === 2 ? "Explore artists" : "Explore mixes"} <span>▶</span></button>
+              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? (guest ? onOpenArtist?.(suggestions[2]?.artist) : onNavigate?.("library")) : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Play recent" : "Get started") : contentIndex === 1 ? (discover ? "Play discovery" : "Explore music") : contentIndex === 2 ? (guest ? "Explore artists" : "Open library") : "Explore mixes"} <span>▶</span></button>
             </div>
           </article>
         ))}
@@ -192,7 +192,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const homeDiscoveryPool = [...suggestedTracks, ...discoveryFallback].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 12);
   const homeRecentFallback = recentlyPlayed.slice(0, 12);
   const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 12);
-  const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
+  const quickPickPool = [...homeRecentFallback, ...suggestedTracks, ...recentlyAdded, ...discoveryFallback];
+  const quickPicks = quickPickPool.filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
   return (
     <div className="page-stack home-page">
