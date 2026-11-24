@@ -1,8 +1,8 @@
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
-    is_safe_wikimedia_url,
     license_is_reusable,
+    is_safe_wikimedia_url,
     musicbrainz_identity_matches,
     musicbrainz_artist_id,
     verified_artist_entity_candidates,
@@ -73,8 +73,16 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
         {"id": "Q2", "label": "Sample Artist"},
     ]
     claims = {
-        "Q1": {"P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q639669"}}}}], "P18": [{}]},
-        "Q2": {"P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}], "P18": [{}]},
+        "Q1": {
+            "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q639669"}}}}],
+            "P18": [{}],
+            "P434": [{"mainsnak": {"datavalue": {"value": "mbid-q1"}}}],
+        },
+        "Q2": {
+            "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}],
+            "P18": [{}],
+            "P434": [{"mainsnak": {"datavalue": {"value": "mbid-q2"}}}],
+        },
     }
 
     assert verified_artist_entity_candidates("Sample Artist", search_results, claims) == []
