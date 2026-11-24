@@ -338,7 +338,10 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
                 if profile:
                     profile.artwork_status = "failed"
                     profile.artwork_attempts += 1
-                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=min(30, 2 ** min(profile.artwork_attempts, 5)))
+                    retry_days = min(30, 2 ** min(profile.artwork_attempts, 5))
+                    profile.artwork_next_retry_at = (
+                        datetime.now(UTC) + timedelta(days=retry_days)
+                    )
                     profile.artwork_lease_until = None
                     await session.commit()
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
@@ -418,7 +421,10 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
                 if profile and not profile.artwork_object_key:
                     profile.artwork_status = "failed"
                     profile.artwork_attempts = (profile.artwork_attempts or 0) + 1
-                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=min(30, 2 ** min(profile.artwork_attempts, 5)))
+                    retry_days = min(30, 2 ** min(profile.artwork_attempts, 5))
+                    profile.artwork_next_retry_at = (
+                        datetime.now(UTC) + timedelta(days=retry_days)
+                    )
                     profile.artwork_lease_until = None
                     await session.commit()
         except Exception:
@@ -439,7 +445,10 @@ async def enqueue_artist_artwork(profile_id: UUID | str) -> bool:
         if not profile or profile.artwork_object_key:
             return False
         now = datetime.now(UTC)
-        if profile.artwork_status in {"queued", "fetching", "verifying", "uploading"} and profile.artwork_lease_until and profile.artwork_lease_until > now:
+        active_status = profile.artwork_status in {
+            "queued", "fetching", "verifying", "uploading"
+        }
+        if active_status and profile.artwork_lease_until and profile.artwork_lease_until > now:
             return False
         if profile.artwork_next_retry_at and profile.artwork_next_retry_at > now:
             return False
@@ -473,8 +482,13 @@ async def run_artist_artwork_worker() -> None:
                                     )
                                 )
                             ),
-                            (ArtistProfile.artwork_next_retry_at.is_(None)) | (ArtistProfile.artwork_next_retry_at <= now),
-                        ).order_by(ArtistProfile.updated_at.asc()).limit(8)
+                            (
+                                ArtistProfile.artwork_next_retry_at.is_(None)
+                                | (ArtistProfile.artwork_next_retry_at <= now)
+                            ),
+                        ).order_by(
+                            ArtistProfile.updated_at.asc()
+                        ).limit(8)
                     )
                     batch = list(result.scalars())
                 for aid in batch:
