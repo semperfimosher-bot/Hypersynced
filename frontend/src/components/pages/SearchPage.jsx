@@ -2622,7 +2622,7 @@ async function downloadOpenedPlaylist() {
 
     <div className="hs-search-console__intro">
 
-  <h2>Search</h2>
+  <h2>Tune into something new</h2>
 
 
 
@@ -4457,46 +4457,7 @@ displayResults.tracks.length > 0 ? (
         </>
       ) : (
 
-        <section className="hs-search-standby">
-
-          <div className="hs-search-standby__symbol">
-            <Icon
-              name="search"
-              size={34}
-            />
-          </div>
-
-          <span>
-            SEARCH ARRAY STANDBY
-          </span>
-
-          <h3>
-            Try searching for something you love or use one of the quick commands below.
-          </h3>
-
-          <p>
-            Try typing a song title, artist, album, or username. HyperSynced will prioritize the strongest music matches first.
-          </p>
-
-          <div className="hs-search-quick-commands">
-
-            {SEARCH_QUICK_COMMANDS.map(
-  (command) => (
-    <button
-      type="button"
-      key={command.id}
-      onClick={() => {
-        runQuickCommand(
-          command,
-        );
-      }}
-    >
-      {command.label}
-    </button>
-  ),
-)}
-          </div>
-        </section>
+        <></>
       )}
 
       {typeof navigator !== "undefined" && navigator.onLine === false && downloadedMusicCount === 0 ? (
