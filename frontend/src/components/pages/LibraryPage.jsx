@@ -2988,6 +2988,14 @@ useEffect(() => {
         : [];
 
 
+  function openLibraryEntity(kind, key) {
+    setSelectedPlaylist(null);
+    setFocusedLibraryTrack(null);
+    setActiveTab(kind === "artist" ? "Artists" : "Albums");
+    setSelectedLibraryEntity({ kind, key });
+  }
+
+
   function renderLibraryEntityTracks(
     entity,
   ) {
@@ -5125,10 +5133,10 @@ useEffect(() => {
                           label: isArtist ? "Open artist" : "Open album",
                           icon: isArtist ? "music" : "disc",
                           onSelect: () => {
-                            setSelectedLibraryEntity({
-                              kind: isArtist ? "artist" : "album",
-                              key: entity.key,
-                            });
+                            openLibraryEntity(
+                              isArtist ? "artist" : "album",
+                              entity.key,
+                            );
                           },
                         },
                         {
@@ -5145,10 +5153,10 @@ useEffect(() => {
                       ],
                     })}
                     onClick={() => {
-                      setSelectedLibraryEntity({
-                        kind: isArtist ? "artist" : "album",
-                        key: entity.key,
-                      });
+                      openLibraryEntity(
+                        isArtist ? "artist" : "album",
+                        entity.key,
+                      );
                     }}
                   >
                     <span className="hs-search-track__rank">
