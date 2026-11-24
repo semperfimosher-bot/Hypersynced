@@ -11,7 +11,7 @@ import {TrackTile,TrackRow,QuickPicks,ArtistRow,MoodCards} from "../home/HomeFee
 
 function matchMood(track,mood){if(mood==="All")return true;const tags=Array.isArray(track?.moods)?track.moods.join(" "):track?.moods??track?.mood_tags??track?.mood??"";return String(tags).toLowerCase().split(/[|, ]+/).filter(Boolean).includes(mood.toLowerCase());}
 const SLIDE_LABELS=["Your music","Discover","Quick access","Find your mood"];
-function HomeCarousel({recent,suggestions,onNavigate,onRecent,onDiscover,onMood,guest,onOpenAuth,onPlay,onWarm,getMenuProps}){
+function HomeCarousel({recent,suggestions,onNavigate,onRecent,onDiscover,onMood,guest,onOpenAuth,onPlay,onWarm,getMenuProps,onOpenArtist}){
  const [active,setActive]=useState(0),[paused,setPaused]=useState(false),timer=useRef(null);
  useEffect(()=>{if(paused)return;timer.current=window.setInterval(()=>setActive(current=>(current+1)%4),5000);return()=>window.clearInterval(timer.current);},[paused]);
  const moveTo=index=>{setActive(index);setPaused(true);window.clearTimeout(timer.current);timer.current=window.setTimeout(()=>setPaused(false),10000);};
@@ -26,7 +26,7 @@ function HomeCarousel({recent,suggestions,onNavigate,onRecent,onDiscover,onMood,
      <span className="home-carousel__eyebrow">{index===0?"PICK UP WHERE YOU LEFT OFF":index===1?"YOUR NEXT FAVORITE":index===2?"YOUR LIBRARY":"SET THE TONE"}</span>
      <h2>{index===0?(guest?"Welcome to HyperSynced":"Your sound, right where you left it") :index===1?"Find your next favorite":index===2?"All your music, one tap away":"Set the mood. Press play."}</h2>
      <p>{index===0?"A quick look at music you've been playing lately.":index===1?"Explore recommendations shaped by listening and music you haven't tried.":index===2?"Jump straight into playlists, favorites, recent listening and more.":"Pick a mood and let the music take it from there."}</p>
-     {activeTrack?<div className="home-carousel__track-meta"><span>{activeTrack.title||"Featured track"}</span><button type="button" onClick={()=>onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist||"Unknown artist"}</button></div>:null}
+     {activeTrack?<div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={()=>onPlay?.(activeTrack)}>{activeTrack.title||"Featured track"}</button><button type="button" onClick={()=>onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist||"Unknown artist"}</button></div>:null}
      <button className="home-carousel__action" type="button" onClick={()=>index===0?(firstRecent?onPlay(firstRecent):onOpenAuth?.()):index===1?(discover?onPlay(discover):onDiscover()):index===2?onNavigate?.("library"):onMood("Chill")}>{index===0?(firstRecent?"Play recent":"Get started"):index===1?(discover?"Play discovery":"Explore music"):index===2?"Open library":"Explore moods"} <span>▶</span></button>
     </div>
    </article>)}
@@ -58,6 +58,8 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  const releaseIds=new Set(releases.map(track=>String(track.id)));
  const discovery=suggestedTracks.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
  const quickPicks=[...recentlyPlayed,...suggestedTracks].filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,4);
+ const allShelfIds=new Set([...recentIds,...releaseIds,...discovery.map(track=>String(track.id))]);
+ const pickedForYou=filtered.filter(track=>!allShelfIds.has(String(track.id)));
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
  <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={scrollSuggestions} onDiscover={()=>onNavigate?.("search")} onMood={onMoodSection} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps} onOpenArtist={onOpenArtist}/>
@@ -68,7 +70,7 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate}/>
  <MoodCards tracks={suggestedTracks} onChange={onMoodSection}/>
  <section id="home-suggested-music" className="home-music-section home-feed-row"><SectionHeading title="Suggested Music" actionLabel="Explore" onAction={()=>onNavigate?.("search")}/>
- {filtered.length?<div className="home-horizontal-scroll home-scroll-fade" aria-busy={loading}>{filtered.map(track=><TrackTile key={track.id} track={track} onPlay={play} onWarm={warm} menuProps={menuProps(track)}/>)}</div>:loading?<div className="home-track-grid home-track-grid--loading" aria-busy="true" aria-label="Loading suggestions">{Array.from({length:6},(_,i)=><div className="home-track-card home-track-card--skeleton" key={i} aria-hidden="true"><div className="home-track-card__art home-skeleton-block"/><div className="home-track-card__info"><span className="home-skeleton-line home-skeleton-line--title"/><span className="home-skeleton-line home-skeleton-line--artist"/></div></div>)}</div>:error?<div className="empty-content-card"><div><strong>Suggested music unavailable</strong><p>{error}</p></div></div>:<div className="home-empty-state"><div className="home-empty-state__icon">♫</div><div><strong>Suggestions are warming up</strong><p>Play a few songs to help Hypersynced build a mix that fits your listening.</p></div></div>}
+ {pickedForYou.length?<div className="home-horizontal-scroll home-scroll-fade" aria-busy={loading}>{pickedForYou.map(track=><TrackTile key={track.id} track={track} onPlay={play} onWarm={warm} menuProps={menuProps(track)}/>)}</div>:loading?<div className="home-track-grid home-track-grid--loading" aria-busy="true" aria-label="Loading suggestions">{Array.from({length:6},(_,i)=><div className="home-track-card home-track-card--skeleton" key={i} aria-hidden="true"><div className="home-track-card__art home-skeleton-block"/><div className="home-track-card__info"><span className="home-skeleton-line home-skeleton-line--title"/><span className="home-skeleton-line home-skeleton-line--artist"/></div></div>)}</div>:error?<div className="empty-content-card"><div><strong>Suggested music unavailable</strong><p>{error}</p></div></div>:<div className="home-empty-state"><div className="home-empty-state__icon">♫</div><div><strong>Suggestions are warming up</strong><p>Play a few songs to help Hypersynced build a mix that fits your listening.</p></div></div>}
  </section><TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth}/></div>;
 }
 export default HomePage;

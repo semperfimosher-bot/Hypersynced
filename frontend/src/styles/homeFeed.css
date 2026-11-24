@@ -119,3 +119,5 @@
  .home-mood-card{aspect-ratio:1.4}
 }
 @media(prefers-reduced-motion:reduce){.home-artist-chip{transition:none}}
+
+.home-carousel__track-title{padding:0;border:0;background:transparent;color:#e9f6ff;font-size:12px;font-weight:760;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.home-carousel__track-title:hover{color:#fff;text-decoration:underline}
