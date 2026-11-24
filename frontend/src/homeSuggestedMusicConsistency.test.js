@@ -20,11 +20,11 @@ test("Home renders cached personalized suggestions and keeps mood filtering conn
   assert.match(page, /personalizedSuggestions/);
   assert.match(page, /recentlyPlayed/);
   assert.match(page, /suggestionsRequestRef/);
-  assert.match(page, /requestId !== suggestionsRequestRef\\.current/);
-  assert.match(page, /seedQueueFromSuggestions\\(suggestedTracks\\)/);
+  assert.match(page, /requestId !== suggestionsRequestRef\.current/);
+  assert.match(page, /seedQueueFromSuggestions\(suggestedTracks\)/);
   assert.match(page, /setMood/);
   assert.match(page, /moodRecommendations/);
   assert.match(sections, /activeMood/);
   assert.match(sections, /onChange/);
-  assert.match(api, /recommendations\\/autoplay/);
+  assert.match(api, /recommendations\/autoplay/);
 });
