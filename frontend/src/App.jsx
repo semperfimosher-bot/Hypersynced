@@ -858,7 +858,9 @@ export default function App() {
     try { snapshot = { ...snapshot, ...(JSON.parse(localStorage.getItem(storageKey) || "{}")) }; } catch {}
     const unsubscribe = player.subscribe((state) => {
       if (state?.phase !== "playing" || !state.trackId) return;
-      const duration = Number(state.duration) || 0;\n      const threshold = duration > 0 ? Math.min(30, duration * 0.5) : 30;\n      if ((Number(state.currentTime) || 0) < threshold) return;
+      const duration = Number(state.duration) || 0;
+      const threshold = duration > 0 ? Math.min(30, duration * 0.5) : 30;
+      if ((Number(state.currentTime) || 0) < threshold) return;
       const trackKey = String(state.trackId);
       if (trackKey === lastCountedTrack || trackKey === String(snapshot.lastTrackId ?? "")) return;
       lastCountedTrack = trackKey;
