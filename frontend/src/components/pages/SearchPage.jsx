@@ -2696,10 +2696,15 @@ async function downloadOpenedPlaylist() {
             <div><span>EXPLORE HYPERSYNCED</span><h3>Find your next favorite</h3></div>
           </div>
           <div className="hs-search-discovery__tiles">
-            {SEARCH_QUICK_COMMANDS.map((command, index) => (
+            {[
+              { id: "newly-released", label: "Newly Released", query: "new releases", filter: "tracks", icon: "sparkles" },
+              { id: "find-people", label: "Find People", query: "music", filter: "people", icon: "people" },
+              { id: "find-new-tunes", label: "Find New Tunes", query: "new music", filter: "tracks", icon: "music" },
+              ...SEARCH_QUICK_COMMANDS.map((command) => ({ ...command, icon: command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play" })),
+            ].map((command) => (
               <button type="button" key={command.id} className="hs-search-discovery__tile" onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
-                <span className="hs-search-discovery__tile-icon"><Icon name={command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play"} size={19} /></span>
+                <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
               </button>
             ))}
           </div>
