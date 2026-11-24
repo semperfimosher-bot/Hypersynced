@@ -62,7 +62,8 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  // then remaining recommendation results, and finally listening-history tracks.
  const moodRecommendations=filtered.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
  const remainingRecommendations=suggestedTracks.filter(track=>!recentIds.has(String(track.id)));
- const moodHasMatches=mood==="All"||moodRecommendations.length>0;\n const bottomSuggestions=mood==="All"?(discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed):(moodRecommendations.length?moodRecommendations:discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed);
+ const moodHasMatches=mood==="All"||moodRecommendations.length>0;
+ const bottomSuggestions=mood==="All"?(discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed):(moodRecommendations.length?moodRecommendations:discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed);
  const personalizedSuggestions=bottomSuggestions.filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,12);
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
