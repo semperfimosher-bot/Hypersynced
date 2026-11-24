@@ -433,3 +433,34 @@ test("search cache survives a module reload and returns the saved result immedia
   assert.equal(second.tracks[0].audio_url, undefined, "persistent snapshots must not retain expiring signed audio URLs");
   assert.equal(fetchCount, 1, "a fresh persistent snapshot should not trigger another request");
 });
+
+
+test("stale persistent search results render immediately and refresh in the background", async (t) => {
+  globalThis.localStorage.clear?.();
+  setCachedProfile("search-swr-user");
+  const api = await loadSearchApi();
+  let fetchCount = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    fetchCount += 1;
+    return responseFor({ revision: fetchCount, tracks: [{ id: "revision-" + fetchCount }] });
+  });
+  const initial = await api.searchHypersync("cached updates", "smart");
+  assert.equal(initial.revision, 1);
+  const indexKey = "hypersynced.search-cache.v1:index";
+  const keys = JSON.parse(globalThis.localStorage.getItem(indexKey) || "[]");
+  const cacheKey = keys.find((key) => key !== indexKey);
+  assert.ok(cacheKey, "persistent search entry should be indexed");
+  const snapshot = JSON.parse(globalThis.localStorage.getItem(cacheKey));
+  snapshot.savedAt = Date.now() - 60_000;
+  globalThis.localStorage.setItem(cacheKey, JSON.stringify(snapshot));
+  const reloadedApi = await loadSearchApi();
+  let refreshed = null;
+  const stale = await reloadedApi.searchHypersync("cached updates", "smart", {
+    onRefresh(value) { refreshed = value; },
+  });
+  assert.equal(stale.revision, 1, "cached result should be returned without waiting for network");
+  await waitForTurn();
+  assert.equal(fetchCount, 2);
+  assert.equal(refreshed?.revision, 2, "background response should notify the visible page");
+  assert.equal((await reloadedApi.searchHypersync("cached updates", "smart")).revision, 2);
+});
