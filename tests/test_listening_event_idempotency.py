@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -15,7 +15,7 @@ async def test_offline_listening_event_sync_is_idempotent_for_same_owner_and_tra
     track_id = uuid4()
     event_id = uuid4()
     existing = SimpleNamespace(id=event_id, user_id=owner_id, track_id=track_id)
-    session = SimpleNamespace(get=AsyncMock(return_value=existing), execute=AsyncMock())
+    session = SimpleNamespace(get=AsyncMock(return_value=existing), execute=AsyncMock(), add=Mock())
 
     response = await record_listening(
         ListeningRequest(track_id=track_id, event_id=event_id),
@@ -37,7 +37,7 @@ async def test_offline_listening_event_sync_is_idempotent_for_same_owner_and_tra
 async def test_offline_listening_event_sync_rejects_id_collision():
     event_id = uuid4()
     existing = SimpleNamespace(id=event_id, user_id=uuid4(), track_id=uuid4())
-    session = SimpleNamespace(get=AsyncMock(return_value=existing), execute=AsyncMock())
+    session = SimpleNamespace(get=AsyncMock(return_value=existing), execute=AsyncMock(), add=Mock())
 
     with pytest.raises(HTTPException) as error:
         await record_listening(
@@ -60,7 +60,7 @@ async def test_offline_listening_event_sync_preserves_client_timestamp():
     session = SimpleNamespace(
         get=AsyncMock(return_value=None),
         execute=AsyncMock(return_value=SimpleNamespace(scalar_one_or_none=lambda: track)),
-        add=AsyncMock(),
+        add=Mock(),
         flush=AsyncMock(),
         commit=AsyncMock(),
     )
