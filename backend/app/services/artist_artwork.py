@@ -522,7 +522,7 @@ async def run_artist_artwork_worker() -> None:
             else:
                 try:
                     await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=60)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
         except asyncio.CancelledError:
             raise
