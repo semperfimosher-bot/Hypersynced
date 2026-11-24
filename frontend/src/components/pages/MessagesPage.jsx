@@ -1148,10 +1148,7 @@ export default function MessagesPage({
 <h2>Messages</h2>
           </div>
 
-          <span className="hs-messages-unread">
-            {unreadCount}
-            {" unread"}
-          </span>
+          
         </div>
 
         <label className="hs-search-input hs-messages-search">
