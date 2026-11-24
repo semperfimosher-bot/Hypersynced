@@ -145,7 +145,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       console.warn("[HyperSynced] Home playback failed.", error);
     }
   };
-  const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
+  const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track, { warmBytes: 256 * 1024 }); };
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
