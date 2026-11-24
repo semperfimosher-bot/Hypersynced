@@ -328,6 +328,10 @@ export async function deleteCatalogTracks(
       ),
     );
 
+    if (deletedTrackIds.length > 0) {
+      globalThis.window?.dispatchEvent(new Event("hypersynced:catalog-updated"));
+    }
+
     if (
       Array.isArray(
         result?.failed,
@@ -416,6 +420,8 @@ await Promise.allSettled([
     deletedTrackId,
   ),
 ]);
+
+globalThis.window?.dispatchEvent(new Event("hypersynced:catalog-updated"));
 
 return result;
 
