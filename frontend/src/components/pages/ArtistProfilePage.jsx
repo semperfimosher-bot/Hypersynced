@@ -245,9 +245,14 @@ export default function ArtistProfilePage({
       try {
         const refreshed = await getArtistProfile(artistName);
         if (cancelled) return;
-        if (refreshed?.artwork_source_page_url) {
+        if (
+          refreshed?.artwork_status === "uploading"
+          || refreshed?.artwork_status === "ready"
+        ) {
           setProfile(refreshed);
-          return;
+          if (refreshed.artwork_status === "ready") {
+            return;
+          }
         }
       } catch {
         // Keep the existing artist profile and retry only a few times.
