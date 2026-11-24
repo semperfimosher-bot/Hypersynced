@@ -8,10 +8,10 @@ from uuid import UUID
 
 import httpx
 
+from .b2 import get_b2_s3_client
 from ..config import get_settings
 from ..database import get_session_factory
 from ..models.artist import ArtistProfile
-from .b2 import get_b2_s3_client
 
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
