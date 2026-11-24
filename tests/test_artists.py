@@ -88,6 +88,7 @@ async def test_artist_profile_is_unique_and_reports_stats_and_follow_state() -> 
 
         session.add(
             listener,
+            BackgroundTasks(),
         )
 
         release_base = datetime(
@@ -274,6 +275,7 @@ async def test_existing_catalog_artist_is_created_lazily() -> None:
             "Legacy Artist",
             session,
             None,
+            BackgroundTasks(),
         )
 
         assert response.name == "Legacy Artist"
@@ -353,12 +355,14 @@ async def test_artist_profiles_include_collaboration_credits() -> None:
             "Bailey Zimmerman",
             session,
             None,
+            BackgroundTasks(),
         )
 
         brandon = await artist_routes.get_artist_profile(
             "Brandon Lake",
             session,
             None,
+            BackgroundTasks(),
         )
 
         assert bailey.track_count == 1
