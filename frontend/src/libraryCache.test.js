@@ -4,7 +4,7 @@ import test from "node:test";
 import "fake-indexeddb/auto";
 import {
   applySavedPlaylistMembership, settleSavedPlaylistMembership,
-  assert.match(libraryPageSource, /getCachedLibraryAsync\(\s*libraryCacheKey\s*\)/);
+  assert.match(libraryPageSource, /getCachedLibraryAsync\(\s*libraryCacheKey,?\s*\)/);
   getCachedLibraryPageAsync, getCachedPlaylistAsync,
   setCachedLibrary, setCachedLibraryPageAsync, setCachedPlaylist,
 } from "./libraryCache.js";
