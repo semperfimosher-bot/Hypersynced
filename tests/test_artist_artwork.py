@@ -482,3 +482,57 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     assert profile.artwork_status == "ready"
     assert profile.has_profile_picture is True
     assert profile.artwork_temporary_url is None
+
+
+@pytest.mark.asyncio
+async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> None:
+    from datetime import UTC, datetime
+    import uuid
+
+    from backend.app.services import artist_artwork
+
+    profile = type(
+        "Profile",
+        (),
+        {
+            "id": uuid.uuid4(),
+            "artwork_object_key": None,
+            "artwork_status": "missing",
+            "artwork_lease_until": None,
+            "artwork_next_retry_at": None,
+        },
+    )()
+    commits = 0
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, model, requested_id):
+            assert requested_id == profile.id
+            return profile
+
+        async def commit(self):
+            nonlocal commits
+            commits += 1
+
+    monkeypatch.setattr(
+        artist_artwork,
+        "get_session_factory",
+        lambda: lambda: FakeSession(),
+    )
+    artist_artwork._artist_artwork_queue_event.clear()
+
+    assert await artist_artwork.enqueue_artist_artwork(profile.id) is True
+    assert profile.artwork_status == "queued"
+    assert commits == 1
+    assert artist_artwork._artist_artwork_queue_event.is_set()
+
+    # Requests already queued/active are deduplicated without another commit.
+    profile.artwork_lease_until = datetime.now(UTC)
+    assert await artist_artwork.enqueue_artist_artwork(profile.id) is True
+
+    artist_artwork._artist_artwork_queue_event.clear()
