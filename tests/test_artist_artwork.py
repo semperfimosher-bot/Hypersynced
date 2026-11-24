@@ -321,6 +321,9 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     from backend.app.services import artist_artwork
 
     profile_id = uuid.uuid4()
+    job_key = str(profile_id)
+    artist_artwork._active_artist_jobs.discard(job_key)
+    artist_artwork._artist_artwork_retry_after.pop(job_key, None)
     profile = type(
         "Profile",
         (),
@@ -345,12 +348,16 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
 
     class FakeSession:
         async def __aenter__(self):
+            nonlocal stage
+            stage = "session-enter"
             return self
 
         async def __aexit__(self, exc_type, exc, tb):
             return False
 
         async def get(self, model, requested_id):
+            nonlocal stage
+            stage = "session-get"
             assert requested_id == profile_id
             return profile
 
@@ -359,8 +366,9 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
             commit_count += 1
 
     def session_factory():
-        nonlocal session_calls
+        nonlocal session_calls, stage
         session_calls += 1
+        stage = "session-factory"
         return FakeSession()
 
     class FakeB2Client:
