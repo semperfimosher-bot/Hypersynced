@@ -4,15 +4,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from fastapi import (
-    APIRouter,
-)
+from fastapi import APIRouter
+from pydantic import BaseModel, Field
 from sqlalchemy import select
-
-from pydantic import (
-    BaseModel,
-    Field,
-)
 
 from ...models.account import ListeningEvent
 from ...models.media import Track
