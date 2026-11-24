@@ -14,6 +14,16 @@ const searchPageSource =
     "utf8",
   );
 
+const searchStylesSource = readFileSync(
+  new URL("../styles/search.css", import.meta.url),
+  "utf8",
+);
+
+const messagesPageSource = readFileSync(
+  new URL("./components/pages/MessagesPage.jsx", import.meta.url),
+  "utf8",
+);
+
 
 test(
   "search result sections preserve the current discovery layout",
@@ -142,3 +152,13 @@ test(
     assert.match(timerBody, /\},\s*0,\s*\);/);
   },
 );
+
+
+test("search shortcut polish and instant social cache are present", () => {
+  assert.match(searchPageSource, /is-newly-released/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile\.is-newly-released::before/);
+  assert.match(searchStylesSource, /min-height: 82px/);
+  assert.match(searchStylesSource, /hs-library-console \.hs-search-primary-action/);
+  assert.match(searchStylesSource, /hs-library-console \.hs-search-filterbar/);
+  assert.doesNotMatch(messagesPageSource, /hs-messages-unread/);
+});
