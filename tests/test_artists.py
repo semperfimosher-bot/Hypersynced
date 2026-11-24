@@ -5,6 +5,7 @@ from datetime import (
     datetime,
     timedelta,
 )
+from fastapi import BackgroundTasks
 
 import pytest
 from sqlalchemy import select
