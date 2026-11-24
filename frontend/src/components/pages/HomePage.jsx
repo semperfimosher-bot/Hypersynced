@@ -110,7 +110,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 12 });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 20 });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       writeCachedHomeSuggestions(recentOwner, tracks);
@@ -154,9 +154,9 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   return (
     <div className="page-stack home-page">
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
-      <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
+      <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
-      {recentlyPlayed.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {homeRecentFallback.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
