@@ -149,6 +149,7 @@ import {
 // Search playlist data is kept warm for this page-module lifetime.
 const searchPlaylistCache = new Map();
 const searchPlaylistRequests = new Map();
+const discoveryArtworkCache = new Map();
 
 function SearchPage({
   query,
@@ -502,6 +503,25 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     const next = saveRecentSearch(value, recentSearchOwner);
     setRecentSearches(next);
   };
+
+  // Warm a small personalized artwork set for discovery tiles without delaying the search UI.
+  useEffect(() => {
+    if (normalizedQuery || discoveryMode) return undefined;
+    const ownerKey = String(currentUser?.id ?? currentUser?.username ?? "guest");
+    const cached = discoveryArtworkCache.get(ownerKey);
+    if (cached?.length) setDiscoveryTracks(cached);
+    let cancelled = false;
+    getSuggestedMusic({ limit: 12, homeExplore: false })
+      .then((tracks) => {
+        if (cancelled || !Array.isArray(tracks) || !tracks.length) return;
+        discoveryArtworkCache.set(ownerKey, tracks);
+        setDiscoveryTracks(tracks);
+      })
+      .catch(() => {
+        // Discovery artwork is decorative; keep the shortcuts functional with icons.
+      });
+    return () => { cancelled = true; };
+  }, [normalizedQuery, discoveryMode, currentUser?.id, currentUser?.username]);
 
   const [downloadedMusicCount, setDownloadedMusicCount] = useState(null);
 
