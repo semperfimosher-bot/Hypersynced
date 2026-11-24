@@ -437,7 +437,15 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
             thread_errors.append(f"{type(exc).__name__}: {exc}")
             raise
 
-    monkeypatch.setattr(artist_artwork.asyncio, "to_thread", fake_to_thread)
+    from types import SimpleNamespace
+
+    # Replace the service's asyncio reference instead of patching the shared
+    # module: SQLAlchemy and pytest also use asyncio during this test.
+    monkeypatch.setattr(
+        artist_artwork,
+        "asyncio",
+        SimpleNamespace(to_thread=fake_to_thread),
+    )
 
     await artist_artwork.fetch_and_store_artist_artwork(profile_id)
 
