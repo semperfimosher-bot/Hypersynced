@@ -4,8 +4,10 @@ import asyncio
 import re
 import time
 from uuid import UUID
+from urllib.parse import urlsplit
 
 import httpx
+
 from ..config import get_settings
 from ..database import get_session_factory
 from ..models.artist import ArtistProfile
@@ -44,6 +46,43 @@ def has_artist_entity_type(claims: dict) -> bool:
         in ARTIST_TYPES
         for claim in instance_claims
         if isinstance(claim, dict)
+    )
+
+
+def verified_artist_entity_candidates(
+    artist_name: str,
+    search_results: list[dict],
+    claims_by_entity: dict[str, dict],
+) -> list[dict]:
+    """Return exact-label, typed music artists that have a portrait claim."""
+    return [
+        candidate
+        for candidate in exact_artist_entity_candidates(
+            artist_name,
+            search_results,
+        )
+        if has_artist_entity_type(
+            claims_by_entity.get(candidate["id"], {}),
+        )
+        and claims_by_entity.get(candidate["id"], {}).get("P18")
+    ]
+
+
+def is_safe_wikimedia_url(value: str | None) -> bool:
+    try:
+        parsed = urlsplit(str(value or ""))
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname in {
+            "commons.wikimedia.org",
+            "upload.wikimedia.org",
+            "www.wikidata.org",
+            "wikidata.org",
+        }
+        and parsed.username is None
+        and parsed.password is None
     )
 
 
@@ -97,8 +136,10 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             },
         )
         candidates = exact_artist_entity_candidates(clean_name, search_data.get("search") or [])
-        verified = []
-        for candidate in candidates[:6]:
+        if len(candidates) > 6:
+            return None
+        claims_by_entity: dict[str, dict] = {}
+        for candidate in candidates:
             entity_data = await _request_json(
                 client,
                 (
@@ -108,13 +149,17 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
                 {},
             )
             entity = entity_data.get("entities", {}).get(candidate["id"], {})
-            claims = entity.get("claims") or {}
-            if has_artist_entity_type(claims) and claims.get("P18"):
-                verified.append((candidate, claims))
+            claims_by_entity[candidate["id"]] = entity.get("claims") or {}
+        verified = verified_artist_entity_candidates(
+            clean_name,
+            candidates,
+            claims_by_entity,
+        )
         if len(verified) != 1:
             return None
 
-        candidate, claims = verified[0]
+        candidate = verified[0]
+        claims = claims_by_entity[candidate["id"]]
         image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
         if not isinstance(image_value, str) or not image_value:
             return None
@@ -139,7 +184,12 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             return None
         image_url = image_info.get("thumburl") or image_info.get("url")
         source_page = image_info.get("descriptionurl")
-        if not image_url or not source_page:
+        if (
+            not image_url
+            or not source_page
+            or not is_safe_wikimedia_url(image_url)
+            or not is_safe_wikimedia_url(source_page)
+        ):
             return None
         content = bytearray()
         async with client.stream("GET", image_url) as image_response:
@@ -199,6 +249,7 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
 
         settings = get_settings()
         if not settings.b2_bucket_name:
+            _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         object_key = f"artist-artwork/{profile_id}/{candidate['artist_qid']}"
         await asyncio.to_thread(
@@ -222,6 +273,8 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             profile.artwork_credit = candidate["credit"]
             await session.commit()
             _artist_artwork_retry_after.pop(job_key, None)
+            if len(_artist_artwork_retry_after) > 1000:
+                _artist_artwork_retry_after.clear()
     except Exception as exc:
         # Artwork is optional. Provider or storage failures do not break artist pages.
         _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
