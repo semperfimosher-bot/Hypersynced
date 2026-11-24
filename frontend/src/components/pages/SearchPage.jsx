@@ -151,6 +151,7 @@ const searchPlaylistCache = new Map();
 const searchPlaylistRequests = new Map();
 const discoveryArtworkCache = new Map();
 const discoveryPeopleCache = new Map();
+const discoveryReleaseCache = new Map();
 
 function SearchPage({
   query,
@@ -464,6 +465,7 @@ useEffect(() => {
   const [completedSearchQuery, setCompletedSearchQuery] = useState("");
   const [discoveryTracks, setDiscoveryTracks] = useState([]);
   const [discoveryPeople, setDiscoveryPeople] = useState([]);
+  const [discoveryReleaseResults, setDiscoveryReleaseResults] = useState({ albums: [], tracks: [] });
   const [discoveryLoading, setDiscoveryLoading] = useState(false);
   const [discoveryError, setDiscoveryError] = useState("");
 
@@ -542,6 +544,31 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
         // People collage is decorative and should not affect search availability.
       });
     return () => { cancelled = true; };
+  }, [normalizedQuery, discoveryMode, currentUser?.id, currentUser?.username]);
+  
+  // Warm actual release-query artwork in the background instead of borrowing
+  // personalized artwork for the Newly Released shortcut.
+  useEffect(() => {
+    if (normalizedQuery || discoveryMode) return undefined;
+    const ownerKey = String(currentUser?.id ?? currentUser?.username ?? "guest");
+    const cached = discoveryReleaseCache.get(ownerKey);
+    if (cached) setDiscoveryReleaseResults(cached);
+    const controller = new AbortController();
+    searchHypersync("new releases", "smart", { signal: controller.signal })
+      .then((data) => {
+        if (controller.signal.aborted || !data) return;
+        const next = {
+          albums: Array.isArray(data.albums) ? data.albums : [],
+          tracks: Array.isArray(data.tracks) ? data.tracks : [],
+        };
+        if (!next.albums.length && !next.tracks.length) return;
+        discoveryReleaseCache.set(ownerKey, next);
+        setDiscoveryReleaseResults(next);
+      })
+      .catch(() => {
+        // Keep the cached release collage if this background request fails.
+      });
+    return () => controller.abort();
   }, [normalizedQuery, discoveryMode, currentUser?.id, currentUser?.username]);
 
   const [downloadedMusicCount, setDownloadedMusicCount] = useState(null);
@@ -2835,7 +2862,7 @@ async function downloadOpenedPlaylist() {
               ...SEARCH_QUICK_COMMANDS.map((command) => ({ ...command, icon: command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play" })),
             ].map((command) => {
               const musicPool = discoveryTracks.length ? discoveryTracks : (results?.tracks ?? []);
-              const releasePool = (results?.albums ?? []).map((album) => album?.artwork_url).filter(Boolean);
+              const releasePool = discoveryReleaseResults.albums.map((album) => album?.artwork_url).filter(Boolean);
               const profilePool = discoveryPeople.map((person) => person?.avatar_url ?? person?.avatar ?? person?.profile_image_url ?? person?.image_url ?? person?.photo_url).filter(Boolean);
               const quickCommandIndex = SEARCH_QUICK_COMMANDS.findIndex((item) => item.id === command.id);
               const quickCommandTracks = musicPool.length
@@ -2844,7 +2871,7 @@ async function downloadOpenedPlaylist() {
               const tileArtwork = command.id === "find-people"
                 ? profilePool.slice(0, 4)
                 : command.id === "newly-released"
-                  ? releasePool.slice(0, 4).length ? releasePool.slice(0, 4) : musicPool.slice(0, 4).map((track) => track?.artwork_url).filter(Boolean)
+                  ? releasePool.slice(0, 4).length ? releasePool.slice(0, 4) : discoveryReleaseResults.tracks.slice(0, 4).map((track) => track?.artwork_url).filter(Boolean)
                   : command.id === "find-new-tunes"
                     ? musicPool.slice(4, 8).map((track) => track?.artwork_url).filter(Boolean)
                     : quickCommandTracks.map((track) => track?.artwork_url).filter(Boolean);
