@@ -1607,12 +1607,15 @@ async def search_users(
     q: str,
     session: DatabaseSession,
 ):
-    term = q.strip()
-
-    if not term:
-        return []
-
+    term = (q or "").strip()
     pattern = f"%{term}%"
+
+    filters = [User.is_active.is_(True)]
+    if term:
+        filters.append(
+            User.username.ilike(pattern)
+            | UserProfile.display_name.ilike(pattern)
+        )
 
     result = await session.execute(
         select(User)
@@ -1625,21 +1628,11 @@ async def search_users(
                 User.profile,
             ),
         )
-        .where(
-            User.is_active.is_(True),
-            (
-                User.username.ilike(
-                    pattern,
-                )
-                | UserProfile.display_name.ilike(
-                    pattern,
-                )
-            ),
-        )
+        .where(*filters)
         .order_by(
             User.username.asc(),
         )
-        .limit(20)
+        .limit(100 if not term else 20)
     )
 
     users = result.scalars().all()
