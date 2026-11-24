@@ -7,6 +7,7 @@ from datetime import (
 )
 
 import pytest
+from fastapi import BackgroundTasks
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
