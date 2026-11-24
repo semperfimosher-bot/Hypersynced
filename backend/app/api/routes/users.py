@@ -26,6 +26,7 @@ from pydantic import (
     Field,
 )
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -914,7 +915,30 @@ async def record_listening(
         ),
     )
     session.add(event)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        if payload.event_id is not None:
+            duplicate = await session.get(
+                ListeningEvent,
+                payload.event_id,
+            )
+            if (
+                duplicate is not None
+                and duplicate.user_id == user.id
+                and duplicate.track_id == track.id
+            ):
+                return {
+                    "recorded": True,
+                    "duplicate": True,
+                    "event_id": str(duplicate.id),
+                    "track_id": str(duplicate.track_id),
+                }
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Listening event ID conflicts with an existing event.",
+        )
     event_id = event.id
     await session.commit()
     return {
