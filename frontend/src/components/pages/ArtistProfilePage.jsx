@@ -222,6 +222,51 @@ export default function ArtistProfilePage({
   }, [
     load,
   ]);
+  
+  // Artist portraits are fetched in the API background after the first profile response.
+  // Refresh the lightweight profile payload a few times to reveal the portrait when ready.
+  useEffect(() => {
+    if (
+      !profile
+      || profile.artwork_source_page_url
+      || !online
+    ) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer;
+
+    const refreshArtwork = async () => {
+      attempts += 1;
+      try {
+        const refreshed = await getArtistProfile(artistName);
+        if (cancelled) return;
+        if (refreshed?.artwork_source_page_url) {
+          setProfile(refreshed);
+          return;
+        }
+      } catch {
+        // Keep the existing artist profile and retry only a few times.
+      }
+
+      if (!cancelled && attempts < 3) {
+        timer = window.setTimeout(refreshArtwork, 10_000);
+      }
+    };
+
+    timer = window.setTimeout(refreshArtwork, 10_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    artistName,
+    online,
+    profile?.id,
+    profile?.artwork_source_page_url,
+  ]);
 
 
   useEffect(() => {
