@@ -48,7 +48,7 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
   };
   const memberSlideTracks = [recent[0], suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]];
   const slideTracks = guest ? [null, suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]] : memberSlideTracks;
-  const contentIndex = guest ? active - 1 : active;
+  const contentIndex = active;
   const firstRecent = recent[0];
   const discover = suggestions[0];
   const coverFor = (index) => resolveArtworkUrl(slideTracks[index]?.artwork_url);
