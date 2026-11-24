@@ -1,0 +1,183 @@
+from __future__ import annotations
+
+import asyncio
+import re
+from uuid import UUID
+
+import httpx
+from sqlalchemy import select
+
+from ..config import get_settings
+from ..database import get_session_factory
+from ..models.artist import ArtistProfile
+from .b2 import get_b2_s3_client
+
+
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+USER_AGENT = "HyperSynced/1.0 (artist artwork attribution; https://hypersynced.app)"
+MAX_ART_BYTES = 4 * 1024 * 1024
+ARTIST_TYPES = {"Q639669", "Q215380", "Q2088357", "Q483501"}
+ALLOWED_LICENSES = {
+    "cc0", "cc-by", "cc-by-sa", "cc-by-4.0", "cc-by-sa-4.0",
+    "public domain", "public domain mark", "pd",
+}
+_active_artist_jobs: set[str] = set()
+
+
+def exact_artist_entity_candidates(artist_name: str, search_results: list[dict]) -> list[dict]:
+    """Keep exact case-folded label matches only; fuzzy matches are never accepted."""
+    target = " ".join(str(artist_name or "").split()).casefold()
+    if not target:
+        return []
+    return [
+        item for item in search_results
+        if " ".join(str(item.get("label") or "").split()).casefold() == target
+        and item.get("id")
+    ]
+
+
+def has_artist_entity_type(claims: dict) -> bool:
+    instance_claims = claims.get("P31") or []
+    return any(
+        claim.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id")
+        in ARTIST_TYPES
+        for claim in instance_claims
+        if isinstance(claim, dict)
+    )
+
+
+def license_is_reusable(value: str | None) -> bool:
+    normalized = re.sub(r"[^a-z0-9.+-]", "", str(value or "").casefold())
+    return normalized in {re.sub(r"[^a-z0-9.+-]", "", item) for item in ALLOWED_LICENSES}
+
+
+async def _request_json(client: httpx.AsyncClient, url: str, params: dict) -> dict:
+    response = await client.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict):
+        raise ValueError("Provider returned an unexpected response.")
+    return data
+
+
+async def find_reusable_artist_image(artist_name: str) -> dict | None:
+    """Resolve a single exact-name Wikidata music-artist entity and a licensed Commons image.
+
+    Ambiguous exact-name artist entities are rejected instead of guessing. Only Commons
+    files with a known permissive license are returned, with source/credit metadata.
+    """
+    clean_name = " ".join(str(artist_name or "").split())
+    if not clean_name:
+        return None
+
+    headers = {"User-Agent": USER_AGENT}
+    async with httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(8.0), follow_redirects=True) as client:
+        search_data = await _request_json(
+            client, WIKIDATA_API,
+            {"action": "wbsearchentities", "search": clean_name, "language": "en", "format": "json", "limit": 20},
+        )
+        candidates = exact_artist_entity_candidates(clean_name, search_data.get("search") or [])
+        verified = []
+        for candidate in candidates[:6]:
+            entity_data = await _request_json(
+                client, f"https://www.wikidata.org/wiki/Special:EntityData/{candidate['id']}.json", {},
+            )
+            entity = entity_data.get("entities", {}).get(candidate["id"], {})
+            claims = entity.get("claims") or {}
+            if has_artist_entity_type(claims) and claims.get("P18"):
+                verified.append((candidate, claims))
+        if len(verified) != 1:
+            return None
+
+        candidate, claims = verified[0]
+        image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
+        if not isinstance(image_value, str) or not image_value:
+            return None
+        file_title = "File:" + image_value.replace(" ", "_")
+        commons_data = await _request_json(
+            client, COMMONS_API,
+            {"action": "query", "titles": file_title, "prop": "imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": 1200, "format": "json"},
+        )
+        pages = commons_data.get("query", {}).get("pages", {})
+        page = next(iter(pages.values()), {})
+        image_info = (page.get("imageinfo") or [{}])[0]
+        ext = image_info.get("extmetadata") or {}
+        license_name = ext.get("LicenseShortName", {}).get("value", "")
+        if not license_is_reusable(license_name):
+            return None
+        image_url = image_info.get("thumburl") or image_info.get("url")
+        source_page = image_info.get("descriptionurl")
+        if not image_url or not source_page:
+            return None
+        image_response = await client.get(image_url)
+        image_response.raise_for_status()
+        content_type = image_response.headers.get("content-type", "").split(";", 1)[0].lower()
+        if content_type not in {"image/jpeg", "image/png", "image/webp"}:
+            return None
+        content = bytearray()
+        async for chunk in image_response.aiter_bytes():
+            content.extend(chunk)
+            if len(content) > MAX_ART_BYTES:
+                return None
+        if not content:
+            return None
+        return {
+            "artist_qid": candidate["id"],
+            "image_bytes": bytes(content),
+            "content_type": content_type,
+            "source_url": image_info.get("url") or image_url,
+            "source_page_url": source_page,
+            "license": license_name,
+            "credit": ext.get("Artist", {}).get("value") or ext.get("Credit", {}).get("value") or "",
+        }
+
+
+async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
+    job_key = str(profile_id)
+    if job_key in _active_artist_jobs:
+        return
+    _active_artist_jobs.add(job_key)
+    try:
+        factory = get_session_factory()
+        async with factory() as session:
+            profile = await session.get(ArtistProfile, profile_id)
+            if not profile or profile.artwork_object_key:
+                return
+            artist_name = profile.name
+
+        try:
+            candidate = await find_reusable_artist_image(artist_name)
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            return
+        if not candidate:
+            return
+
+        settings = get_settings()
+        if not settings.b2_bucket_name:
+            return
+        object_key = f"artist-artwork/{profile_id}/{candidate['artist_qid']}"
+        await asyncio.to_thread(
+            get_b2_s3_client().put_object,
+            Bucket=settings.b2_bucket_name,
+            Key=object_key,
+            Body=candidate["image_bytes"],
+            ContentType=candidate["content_type"],
+            CacheControl="public, max-age=2592000",
+        )
+
+        async with factory() as session:
+            profile = await session.get(ArtistProfile, profile_id)
+            if not profile or profile.artwork_object_key:
+                return
+            profile.artwork_object_key = object_key
+            profile.artwork_source_url = candidate["source_url"]
+            profile.artwork_source_page_url = candidate["source_page_url"]
+            profile.artwork_license = candidate["license"]
+            profile.artwork_credit = candidate["credit"]
+            await session.commit()
+    except Exception as exc:
+        # Artwork is optional. Provider or storage failures do not break artist pages.
+        print(f"[artist-artwork] fetch/store failed for {profile_id}: {type(exc).__name__}")
+    finally:
+        _active_artist_jobs.discard(job_key)
