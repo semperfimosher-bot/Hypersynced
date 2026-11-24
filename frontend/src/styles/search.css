@@ -8877,6 +8877,13 @@ button:disabled {
   border-radius: 11px;
   background: linear-gradient(135deg, #087bbd, #125aa8 72%, #17447f);
 }
+.hs-search-discovery__tile.tone-1,
+.hs-search-discovery__tile.tone-2,
+.hs-search-discovery__tile.tone-3,
+.hs-search-discovery__tile.tone-4,
+.hs-search-discovery__tile.tone-5 {
+  background: linear-gradient(135deg, #087bbd, #125aa8 72%, #17447f);
+}
 
 .hs-search-discovery__tile::after {
   background: radial-gradient(circle at 86% 12%, rgba(90, 200, 255, .14), transparent 44%);
@@ -8931,7 +8938,12 @@ button:disabled {
   .hs-search-console__heading h2 {
     font-size: 20px;
   }
-  .hs-search-discovery__tile {
+  .hs-search-discovery__tile,
+  .hs-search-discovery__tile.tone-1,
+  .hs-search-discovery__tile.tone-2,
+  .hs-search-discovery__tile.tone-3,
+  .hs-search-discovery__tile.tone-4,
+  .hs-search-discovery__tile.tone-5 {
     min-height: 72px;
     padding: 10px 11px;
   }
