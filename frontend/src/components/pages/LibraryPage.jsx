@@ -5075,7 +5075,7 @@ useEffect(() => {
           <div className="hs-search-entity-grid hs-library-entity-grid">
 
             {renderedActiveLibraryCollection.map(
-              (entity) => {
+              (entity, index) => {
                 const artwork =
                   resolveArtworkUrl(
                     entity.artwork_url,
