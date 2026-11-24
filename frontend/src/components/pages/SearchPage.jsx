@@ -1061,7 +1061,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
             }
           }
         },
-        65,
+        0,
       );
 
     return () => {
