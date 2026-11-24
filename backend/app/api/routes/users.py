@@ -26,8 +26,8 @@ from pydantic import (
     Field,
 )
 from sqlalchemy import func, select
-from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import flag_modified
 
