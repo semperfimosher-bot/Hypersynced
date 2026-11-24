@@ -25,6 +25,8 @@ ALLOWED_LICENSES = {
 }
 _active_artist_jobs: set[str] = set()
 _artist_artwork_retry_after: dict[str, float] = {}
+_musicbrainz_lock = asyncio.Lock()
+_last_musicbrainz_request_at = 0.0
 
 
 def exact_artist_entity_candidates(artist_name: str, search_results: list[dict]) -> list[dict]:
@@ -65,7 +67,80 @@ def verified_artist_entity_candidates(
             claims_by_entity.get(candidate["id"], {}),
         )
         and claims_by_entity.get(candidate["id"], {}).get("P18")
+        and musicbrainz_artist_id(
+            claims_by_entity.get(candidate["id"], {}),
+        )
     ]
+
+
+def musicbrainz_artist_id(claims: dict) -> str | None:
+    identifiers = claims.get("P434") or []
+    for claim in identifiers:
+        value = (
+            claim.get("mainsnak", {})
+            .get("datavalue", {})
+            .get("value")
+        )
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def wikidata_qid_from_musicbrainz_relations(response: dict) -> str | None:
+    for relation in response.get("relations") or []:
+        if relation.get("type") != "wikidata":
+            continue
+        resource = relation.get("url", {}).get("resource", "")
+        match = re.search(r"(?:^|/)(Q[0-9]+)$", resource)
+        if match:
+            return match.group(1)
+    return None
+
+
+def musicbrainz_identity_matches(
+    artist_name: str,
+    wikidata_qid: str,
+    response: dict,
+) -> bool:
+    normalized_name = " ".join(
+        str(response.get("name") or "").split(),
+    ).casefold()
+    requested_name = " ".join(
+        str(artist_name or "").split(),
+    ).casefold()
+    return (
+        normalized_name == requested_name
+        and response.get("type") in {"Person", "Group"}
+        and wikidata_qid_from_musicbrainz_relations(response)
+        == wikidata_qid
+    )
+
+
+async def _verify_musicbrainz_link(
+    client: httpx.AsyncClient,
+    artist_name: str,
+    wikidata_qid: str,
+    mbid: str,
+) -> bool:
+    global _last_musicbrainz_request_at
+    async with _musicbrainz_lock:
+        delay = max(
+            0.0,
+            1.1 - (time.monotonic() - _last_musicbrainz_request_at),
+        )
+        if delay:
+            await asyncio.sleep(delay)
+        response = await _request_json(
+            client,
+            f"https://musicbrainz.org/ws/2/artist/{mbid}",
+            {"inc": "url-rels", "fmt": "json"},
+        )
+        _last_musicbrainz_request_at = time.monotonic()
+    return musicbrainz_identity_matches(
+        artist_name,
+        wikidata_qid,
+        response,
+    )
 
 
 def is_safe_wikimedia_url(value: str | None) -> bool:
@@ -160,6 +235,14 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
 
         candidate = verified[0]
         claims = claims_by_entity[candidate["id"]]
+        mbid = musicbrainz_artist_id(claims)
+        if not mbid or not await _verify_musicbrainz_link(
+            client,
+            clean_name,
+            candidate["id"],
+            mbid,
+        ):
+            return None
         image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
         if not isinstance(image_value, str) or not image_value:
             return None
