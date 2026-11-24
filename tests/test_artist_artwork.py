@@ -338,7 +338,6 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     session_calls = 0
     commit_count = 0
     find_calls = 0
-    settings_calls = 0
     b2_client_calls = 0
     thread_calls = 0
     stage = "initial"
@@ -391,11 +390,17 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         "find_reusable_artist_image",
         fake_find_image,
     )
+    def fake_settings():
+        nonlocal stage
+        stage = "settings"
+        return type("Settings", (), {"b2_bucket_name": "test-bucket"})()
+
     monkeypatch.setattr(
         artist_artwork,
         "get_settings",
-        lambda: type("Settings", (), {"b2_bucket_name": "test-bucket"})(),
+        fake_settings,
     )
+
     def fake_get_b2_client():
         nonlocal b2_client_calls, stage
         b2_client_calls += 1
@@ -425,6 +430,9 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     await artist_artwork.fetch_and_store_artist_artwork(profile_id)
 
     expected_key = f"artist-artwork/{profile_id}/Q100"
+    assert find_calls == 1, f"worker stopped before provider lookup; stage={stage}"
+    assert b2_client_calls == 1, f"worker stopped before B2 client; stage={stage}"
+    assert thread_calls == 1, f"worker stopped before B2 upload; stage={stage}"
     assert not thread_errors, f"B2 upload failed in test double: {thread_errors}"
     assert session_calls == 2
     assert commit_count == 1
