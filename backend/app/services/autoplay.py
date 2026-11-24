@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import re
-
 from collections import defaultdict
 from collections.abc import Sequence
+import re
 from datetime import (
     UTC,
     datetime,
@@ -94,7 +93,6 @@ def _genre_similarity(
     if left_key in right_key or right_key in left_key:
         return max(overlap, 0.7)
     return overlap
-
 
 
 def _bounded(
@@ -363,9 +361,6 @@ async def recommend_autoplay_tracks(
         if current_track
         else ""
     )
-
-
-
 
     artist_affinity: dict[
         str,
