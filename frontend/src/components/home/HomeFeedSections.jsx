@@ -60,7 +60,7 @@ export function TrackTile({ track, onPlay, onWarm, menuProps, onPlayNext, simple
   const button = (
     <button type="button" className="home-track-tile" {...menuProps} onMouseDown={() => onWarm?.(track)} onMouseEnter={() => onWarm?.(track)} onFocus={() => onWarm?.(track)} onClick={() => onPlay?.(track)} aria-label={`Play ${track.title || "track"}`}>
       <span className="home-track-tile__cover">{art ? <img src={art} alt="" loading={simple ? "eager" : "lazy"} decoding="async" fetchPriority={simple ? "high" : "auto"} /> : <span className="home-track-tile__placeholder">♫</span>}<span className="home-track-tile__play">▶</span></span>
-      <span className="home-track-tile__copy"><strong>{track.title || "Untitled track"}</strong><small>{track.artist || "Unknown artist"}</small></span>
+      <span className="home-track-tile__copy"><strong>{track.title || "Untitled track"}</strong><small>{track.artist || "Unknown artist"}</small></span>{simple ? <span className="home-track-tile__sparkles" aria-hidden="true"><i>✦</i><i>✧</i><i>✦</i></span> : null}
     </button>
   );
   if (simple) return button;
