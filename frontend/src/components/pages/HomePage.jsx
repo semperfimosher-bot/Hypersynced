@@ -148,8 +148,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
   const menuProps = (track) => menu.getTriggerProps(track);
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const homeRecentFallback = [...recentlyPlayed, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
-  const discovery = suggestedTracks.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 6);
+  const homeDiscoveryPool = [...suggestedTracks, ...recentlyAdded].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);\n  const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
+  const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 6);
   const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
   return (
@@ -160,7 +160,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       {homeRecentFallback.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
-      <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
+      <ArtistRow tracks={homeDiscoveryPool} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
     </div>
   );
