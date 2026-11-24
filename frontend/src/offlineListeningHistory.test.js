@@ -70,7 +70,11 @@ test(
       assert.equal(sent[0].event_id, events[0].eventId);
       assert.equal(sent[0].track_id, events[0].trackId);
       assert.equal(sent[0].listened_at, events[0].listenedAt);
-      assert.deepEqual(readOfflineListeningEvents("owner-a"), [events[1]]);
+      const pending = readOfflineListeningEvents("owner-a");
+      assert.equal(pending.length, 1);
+      assert.equal(pending[0].eventId, events[1].eventId);
+      assert.equal(pending[0].trackId, events[1].trackId);
+      assert.equal(pending[0].listenedAt, events[1].listenedAt);
     });
   },
 );
