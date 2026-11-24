@@ -12,7 +12,6 @@ from ..config import get_settings
 from ..database import get_session_factory
 from ..models.artist import ArtistProfile
 
-
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 USER_AGENT = "HyperSynced/1.0 (artist artwork attribution; https://hypersynced.app)"
