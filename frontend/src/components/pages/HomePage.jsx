@@ -147,9 +147,10 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   };
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
   const menuProps = (track) => menu.getTriggerProps(track);
-  const recentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const discovery = suggestedTracks.filter((track) => !recentIds.has(String(track.id)));
-  const quickPicks = [...recentlyPlayed, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
+  const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
+  const homeRecentFallback = [...recentlyPlayed, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
+  const discovery = suggestedTracks.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 6);
+  const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
   return (
     <div className="page-stack home-page">
