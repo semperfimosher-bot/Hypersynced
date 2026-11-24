@@ -7,7 +7,7 @@ import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 import {readCachedHomeSuggestions,writeCachedHomeSuggestions} from "../../homeSuggestions.js";
 import {getSuggestedMusic} from "../../profileApi.js";
 import {getHomeRecentlyPlayedForOwner,applyOptimisticRecentlyPlayed,readCachedHomeRecentlyPlayed,writeCachedHomeRecentlyPlayed,subscribeListeningHistoryChanged} from "../../homeRecentlyPlayed.js";
-import {TrackTile,TrackRow,QuickPicks,ArtistRow,MoodCards} from "../home/HomeFeedSections.jsx";
+import {TrackRow,QuickPicks,ArtistRow} from "../home/HomeFeedSections.jsx";
 
 function matchMood(track,mood){if(mood==="All")return true;const tags=Array.isArray(track?.moods)?track.moods.join(" "):track?.moods??track?.mood_tags??track?.mood??"";return String(tags).toLowerCase().split(/[|, ]+/).filter(Boolean).includes(mood.toLowerCase());}
 const SLIDE_LABELS=["Your music","Discover","Quick access","Find your mood"];
@@ -42,8 +42,8 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  const setRecentlyPlayed=next=>setRecentlyPlayedState(current=>({owner:recentOwner,tracks:typeof next==="function"?next(current.owner===recentOwner?current.tracks:readCachedHomeRecentlyPlayed(recentOwner)):next}));
  const [suggestionsState,setSuggestionsState]=useState(()=>({owner:recentOwner,tracks:readCachedHomeSuggestions(recentOwner)}));
  const suggestedTracks=suggestionsState.owner===recentOwner?suggestionsState.tracks:readCachedHomeSuggestions(recentOwner);
- const [loading,setLoading]=useState(!suggestedTracks.length),[error,setError]=useState(""),[mood,setMood]=useState("All");
- const suggestionsRequestRef=useRef(0),context=recentlyPlayed.map(track=>String(track.id)).join("|"),filtered=suggestedTracks.filter(track=>matchMood(track,mood));
+ const [loading,setLoading]=useState(!suggestedTracks.length),[error,setError]=useState("");
+ const suggestionsRequestRef=useRef(0),context=recentlyPlayed.map(track=>String(track.id)).join("|");
  useEffect(()=>{setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));},[recentOwner]);
  useEffect(()=>subscribeListeningHistoryChanged(event=>{const detail=event?.detail??{};if(detail.owner&&String(detail.owner)!==String(recentOwner??""))return;if(detail.type==="optimistic-play"&&detail.track?.id){const cached=readCachedHomeRecentlyPlayed(recentOwner),instant=applyOptimisticRecentlyPlayed(cached, detail.track, 12, {incrementPlayCount:false});writeCachedHomeRecentlyPlayed(recentOwner, instant);setRecentlyPlayed(instant);return;}setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));}),[recentOwner]);
  const loadSuggestions=useCallback(async()=>{const requestId=++suggestionsRequestRef.current,cached=readCachedHomeSuggestions(recentOwner);setSuggestionsState({owner:recentOwner,tracks:cached});setLoading(!cached.length);setError("");const contextTrackIds=context.split("|").filter(Boolean).slice(0,12);try{const response=await getSuggestedMusic({currentTrackId:contextTrackIds[0]??null,excludeTrackIds:contextTrackIds,contextTrackIds,limit:12});if (requestId !== suggestionsRequestRef.current) return;const tracks=Array.isArray(response)?response:[];writeCachedHomeSuggestions(recentOwner,tracks);setSuggestionsState({owner:recentOwner,tracks});}catch(err){if(requestId===suggestionsRequestRef.current&&!cached.length)setError(err instanceof Error?err.message:"Suggestions unavailable.");}finally{if(requestId===suggestionsRequestRef.current)setLoading(false);}},[recentOwner,context]);
@@ -58,16 +58,10 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  const releaseIds=new Set(releases.map(track=>String(track.id)));
  const discovery=suggestedTracks.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
  const quickPicks=[...recentlyPlayed,...suggestedTracks].filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,4);
- // Keep the bottom personalized shelf populated: use fresh recommendations first,
- // then remaining recommendation results, and finally listening-history tracks.
- const moodRecommendations=filtered.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
- const remainingRecommendations=suggestedTracks.filter(track=>!recentIds.has(String(track.id)));
- const moodHasMatches=mood==="All"||moodRecommendations.length>0;
- const bottomSuggestions=mood==="All"?(discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed):(moodRecommendations.length?moodRecommendations:discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed);
- const personalizedSuggestions=bottomSuggestions.filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,12);
+
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
- <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={scrollSuggestions} onDiscover={()=>onNavigate?.("search")} onMood={onMoodSection} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps} onOpenArtist={onOpenArtist}/>
+ <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={()=>onNavigate?.("search")} onDiscover={()=>onNavigate?.("search")} onMood={()=>onNavigate?.("search")} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps} onOpenArtist={onOpenArtist}/>
  {quickPicks.length?<QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
  {recentlyPlayed.length?<TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
  {releases.length?<TrackRow title="New & recently released" eyebrow="FRESH MUSIC" tracks={releases} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
