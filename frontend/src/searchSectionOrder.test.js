@@ -174,3 +174,17 @@ test("search history appears only as matching suggestions while typing and disco
   assert.match(searchStylesSource, /hs-search-history-suggestions/);
   assert.match(searchStylesSource, /hs-search-discovery__tile-art/);
 });
+
+
+test("discovery shortcuts use distinct collage sources including real profile photos", () => {
+  assert.match(searchPageSource, /discoveryPeopleCache/);
+  assert.match(searchPageSource, /searchUsers\(""\)/);
+  assert.match(searchPageSource, /profilePool\.slice\(0, 4\)/);
+  assert.match(searchPageSource, /releasePool\.slice\(0, 4\)/);
+  assert.match(searchPageSource, /musicPool\.slice\(4, 8\)/);
+  assert.match(searchPageSource, /artworkUrls=\{tileArtwork\}/);
+  assert.match(searchPageSource, /command\.id === "find-people"/);
+  assert.match(searchPageSource, /command\.id === "newly-released"/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile-art \.playlist-artwork-collage/);
+  assert.match(searchStylesSource, /transform: rotate\(-[0-9]+deg\)/);
+});
