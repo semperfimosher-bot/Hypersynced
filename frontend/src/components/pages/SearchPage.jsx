@@ -2713,6 +2713,38 @@ async function downloadOpenedPlaylist() {
   </section>
 
 
+      {!normalizedQuery && !openedPlaylist ? (
+        <section className="hs-search-discovery" aria-label="Search discovery">
+          {recentSearches.length ? (
+            <div className="hs-search-discovery__recent">
+              <div className="hs-search-discovery__section-head">
+                <div><span>YOUR HISTORY</span><h3>Recent searches</h3></div>
+                <button type="button" onClick={() => { try { localStorage.removeItem(`hypersynced.recent-searches.v1:${encodeURIComponent(String(recentSearchOwner || "guest"))}`); } catch {} setRecentSearches([]); }}>Clear</button>
+              </div>
+              <div className="hs-search-discovery__recent-row">
+                {recentSearches.slice(0, 8).map((item, index) => (
+                  <button type="button" className="hs-search-discovery__recent-item" key={item} onClick={() => { rememberSearch(item); onQueryChange(item); }}>
+                    <span className={`hs-search-discovery__recent-art tone-${index % 6}`}><Icon name="search" size={18} /></span>
+                    <span title={item}>{item}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="hs-search-discovery__section-head hs-search-discovery__browse-head">
+            <div><span>EXPLORE HYPERSYNCED</span><h3>Find your next favorite</h3></div>
+          </div>
+          <div className="hs-search-discovery__tiles">
+            {SEARCH_QUICK_COMMANDS.map((command, index) => (
+              <button type="button" key={command.id} className={`hs-search-discovery__tile tone-${index % 6}`} onClick={() => runQuickCommand(command)}>
+                <span className="hs-search-discovery__tile-label">{command.label}</span>
+                <span className="hs-search-discovery__tile-icon"><Icon name={command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play"} size={19} /></span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {!openedPlaylist && normalizedQuery && !loading && !searchError && resultTotal === 0 ? (
         <div className="hs-search-no-results-banner" role="status" aria-live="polite">
           <span className="hs-search-no-results-banner__icon"><Icon name="search" size={16} /></span>
