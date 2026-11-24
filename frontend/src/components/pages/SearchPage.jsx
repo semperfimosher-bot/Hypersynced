@@ -2787,7 +2787,7 @@ async function downloadOpenedPlaylist() {
   </section>
 
 
-      {normalizedQuery && !openedPlaylist && recentSearches.length ? (
+      {normalizedQuery && !openedPlaylist && recentSearches.some((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())) ? (
         <div className="hs-search-history-suggestions" role="listbox" aria-label="Recent search suggestions">
           {recentSearches
             .filter((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()))
