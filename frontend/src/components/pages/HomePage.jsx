@@ -13,6 +13,7 @@ import {
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
+import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";
 
 const SLIDE_LABELS = ["Your music", "Discover", "Quick access", "Explore"];
 
@@ -74,9 +75,19 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const [suggestionsState, setSuggestionsState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeSuggestions(recentOwner) }));
   const suggestedTracks = suggestionsState.owner === recentOwner ? suggestionsState.tracks : readCachedHomeSuggestions(recentOwner);
   const suggestionsRequestRef = useRef(0);
+  const [recentlyAdded, setRecentlyAdded] = useState(() => readCachedHomeRecentlyAdded());
   const context = recentlyPlayed.map((track) => String(track.id)).join("|");
 
   useEffect(() => { setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner)); }, [recentOwner]);
+  useEffect(() => {
+    let active = true;
+    void refreshHomeRecentlyAdded().then((tracks) => {
+      if (active) setRecentlyAdded(tracks);
+    }).catch(() => {
+      // Keep cached newest-added tracks when the network is unavailable.
+    });
+    return () => { active = false; };
+  }, []);
   useEffect(() => subscribeListeningHistoryChanged((event) => {
     const detail = event?.detail ?? {};
     if (detail.owner && String(detail.owner) !== String(recentOwner ?? "")) return;
@@ -134,9 +145,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
   const menuProps = (track) => menu.getTriggerProps(track);
   const recentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const releases = suggestedTracks.filter((track) => Number(track.release_year) >= new Date().getFullYear() - 1 && !recentIds.has(String(track.id))).sort((a, b) => (Number(b.release_year) || 0) - (Number(a.release_year) || 0));
-  const releaseIds = new Set(releases.map((track) => String(track.id)));
-  const discovery = suggestedTracks.filter((track) => !recentIds.has(String(track.id)) && !releaseIds.has(String(track.id)));
+  const discovery = suggestedTracks.filter((track) => !recentIds.has(String(track.id)));
   const quickPicks = [...recentlyPlayed, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
   return (
@@ -145,7 +154,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {recentlyPlayed.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
-      {releases.length ? <TrackRow title="New & recently released" eyebrow="FRESH MUSIC" tracks={releases} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {recentlyAdded.length ? <TrackRow title="New & recently released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
