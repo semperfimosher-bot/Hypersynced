@@ -12,6 +12,11 @@ import {
   getFollowRequests,
 } from "../../profileApi.js";
 
+import {
+  readCachedSocialList,
+  writeCachedSocialList,
+} from "../../socialCache.js";
+
 import Avatar from "./Avatar.jsx";
 import Icon from "../ui/Icon.jsx";
 
@@ -67,28 +72,18 @@ export default function SocialModal({
   onChanged,
   onOpenProfile,
 }) {
-  const cacheKey = mode === "requests" ? null : `hypersynced.social-cache.v1:${String(username ?? "").trim().toLowerCase()}:${mode}`;
-  const readCache = (key) => {
-    if (!key) return null;
-    try {
-      const cached = JSON.parse(globalThis.localStorage?.getItem(key) || "null");
-      return Array.isArray(cached?.items) && Number.isFinite(cached?.savedAt) ? cached.items : null;
-    } catch {
-      return null;
-    }
-  };
   const [items, setItems] =
-    useState(() => readCache(cacheKey) ?? []);
+    useState(() => readCachedSocialList(username, mode) ?? []);
 
   const [loading, setLoading] =
-    useState(() => readCache(cacheKey) === null);
+    useState(() => readCachedSocialList(username, mode) === null);
 
   const [error, setError] =
     useState("");
 
   const load = useCallback(
     async () => {
-      const cachedItems = readCache(cacheKey);
+      const cachedItems = readCachedSocialList(username, mode);
       if (cachedItems !== null) {
         setItems(cachedItems);
         setLoading(false);
@@ -121,17 +116,10 @@ export default function SocialModal({
 
         const nextItems = data || [];
         setItems(nextItems);
-        if (cacheKey) {
-          try {
-            const serialized = JSON.stringify({ savedAt: Date.now(), items: nextItems });
-            if (serialized.length <= 100_000) globalThis.localStorage?.setItem(cacheKey, serialized);
-          } catch {
-            // Social cache is an optional speed optimization.
-          }
-        }
+        writeCachedSocialList(username, mode, nextItems);
 
       } catch (loadError) {
-        if (readCache(cacheKey) === null) {
+        if (readCachedSocialList(username, mode) === null) {
           setError(
             loadError instanceof Error
               ? loadError.message
@@ -144,7 +132,6 @@ export default function SocialModal({
       }
     },
     [
-      cacheKey,
       mode,
       username,
     ],
