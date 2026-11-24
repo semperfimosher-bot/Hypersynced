@@ -850,8 +850,8 @@ export default function App() {
 
   // Count meaningful playback per play session, including repeat plays of the same track.
   useEffect(() => {
-    const owner = currentUser?.id ?? currentUser?.username;
-    if (!owner || currentUser?.offline_only) return undefined;
+    const owner = currentUser?.id ?? currentUser?.username ?? "guest-device";
+    if (currentUser?.offline_only) return undefined;
     const storageKey = `hypersynced.stream-milestones.v1:${encodeURIComponent(String(owner))}`;
     let activeTrackId = null;
     let countedThisSession = false;
