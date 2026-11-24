@@ -208,7 +208,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
             return None
 
         async def aiter_bytes(self):
-            yield b"\\xff\\xd8\\xffsample"
+            yield b"\xff\xd8\xffsample"
 
     class FakeStream:
         async def __aenter__(self):
@@ -239,7 +239,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
     assert result is not None
     assert result["artist_qid"] == "Q100"
     assert result["content_type"] == "image/jpeg"
-    assert result["image_bytes"] == b"\\xff\\xd8\\xffsample"
+    assert result["image_bytes"] == b"\xff\xd8\xffsample"
     assert result["license"] == "CC BY-SA 4.0"
     assert result["credit"] == "Photographer"
     assert result["source_page_url"].startswith("https://commons.wikimedia.org/")
