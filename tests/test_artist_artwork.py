@@ -55,8 +55,8 @@ def test_artist_image_requires_reusable_license() -> None:
 def test_image_bytes_must_match_declared_image_format() -> None:
     from backend.app.services.artist_artwork import image_bytes_match_mime
 
-    assert image_bytes_match_mime(b"\\xff\\xd8\\xffsample", "image/jpeg")
-    assert image_bytes_match_mime(b"\\x89PNG\\r\\n\\x1a\\nsample", "image/png")
+    assert image_bytes_match_mime(b"\xff\xd8\xffsample", "image/jpeg")
+    assert image_bytes_match_mime(b"\x89PNG\r\n\x1a\nsample", "image/png")
     assert image_bytes_match_mime(b"RIFFxxxxWEBPsample", "image/webp")
     assert not image_bytes_match_mime(b"not an image", "image/jpeg")
-    assert not image_bytes_match_mime(b"\\xff\\xd8\\xffsample", "image/png")
+    assert not image_bytes_match_mime(b"\xff\xd8\xffsample", "image/png")
