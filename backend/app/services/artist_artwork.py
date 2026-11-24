@@ -24,6 +24,7 @@ ALLOWED_LICENSES = {
     "cc-by-sa-3.0", "cc-by-sa-4.0", "public domain", "public domain mark", "pd",
 }
 _active_artist_jobs: set[str] = set()
+_artist_artwork_queue_event = asyncio.Event()
 _artist_artwork_retry_after: dict[str, float] = {}
 _musicbrainz_lock = asyncio.Lock()
 _last_musicbrainz_request_at = 0.0
@@ -445,6 +446,7 @@ async def enqueue_artist_artwork(profile_id: UUID | str) -> bool:
         profile.artwork_status = "queued"
         profile.artwork_lease_until = None
         await session.commit()
+        _artist_artwork_queue_event.set()
         return True
 
 
@@ -453,6 +455,7 @@ async def run_artist_artwork_worker() -> None:
     factory = get_session_factory()
     backfill_at = datetime.now(UTC)
     while True:
+        _artist_artwork_queue_event.clear()
         now = datetime.now(UTC)
         try:
             if now >= backfill_at:
@@ -498,9 +501,15 @@ async def run_artist_artwork_worker() -> None:
                     await session.commit()
             if job_id:
                 await fetch_and_store_artist_artwork(job_id)
-                await asyncio.sleep(30)
+                try:
+                    await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=2)
+                except asyncio.TimeoutError:
+                    pass
             else:
-                await asyncio.sleep(60)
+                try:
+                    await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=60)
+                except asyncio.TimeoutError:
+                    pass
         except asyncio.CancelledError:
             raise
         except Exception:
