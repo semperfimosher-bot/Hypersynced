@@ -9,6 +9,9 @@ def test_visitor_heartbeat_activity_is_never_notified_to_admins() -> None:
         "visitor_heartbeat_ping",
         "VisitorHeartbeat",
         "admin_visitor_heartbeat",
+        "visitor_device_heartbeat",
+        "heartbeat_ping",
+        "visitor_online_heartbeat",
     ):
         assert should_record_admin_activity(kind) is False
 
