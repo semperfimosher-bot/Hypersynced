@@ -158,6 +158,8 @@ class ListeningOutcomeRequest(
 
 class ListeningRequest(BaseModel):
     track_id: UUID
+    event_id: UUID | None = None
+    listened_at: datetime | None = None
 
 
 class TrackSummary(BaseModel):
@@ -854,56 +856,59 @@ async def record_listening(
     user: CurrentUser,
     session: DatabaseSession,
 ):
+    if payload.event_id is not None:
+        existing = await session.get(
+            ListeningEvent,
+            payload.event_id,
+        )
+        if existing is not None:
+            if existing.user_id != user.id or existing.track_id != payload.track_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Listening event ID conflicts with an existing event.",
+                )
+            return {
+                "recorded": True,
+                "duplicate": True,
+                "event_id": str(existing.id),
+                "track_id": str(existing.track_id),
+            }
+
     track_result = await session.execute(
         select(Track).where(
             Track.id == payload.track_id,
-            Track.is_published.is_(
-                True,
-            ),
+            Track.is_published.is_(True),
         )
     )
-
-    track = (
-        track_result
-        .scalar_one_or_none()
-    )
-
+    track = track_result.scalar_one_or_none()
     if track is None:
         raise HTTPException(
-            status_code=(
-                status.HTTP_404_NOT_FOUND
-            ),
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Track not found.",
         )
 
+    listened_at = payload.listened_at
+    if listened_at is not None:
+        if listened_at.tzinfo is None:
+            listened_at = listened_at.replace(tzinfo=UTC)
+        if listened_at > datetime.now(UTC) + timedelta(minutes=5):
+            listened_at = datetime.now(UTC)
 
     event = ListeningEvent(
+        **({"id": payload.event_id} if payload.event_id is not None else {}),
         user_id=user.id,
         track_id=track.id,
+        **({"listened_at": listened_at} if listened_at is not None else {}),
     )
-
-    session.add(
-        event,
-    )
-
+    session.add(event)
     await session.flush()
-
     event_id = event.id
-
     await session.commit()
-
-
-
     return {
         "recorded": True,
-
-        "event_id": str(
-            event_id,
-        ),
-
-        "track_id": str(
-            track.id,
-        ),
+        "duplicate": False,
+        "event_id": str(event_id),
+        "track_id": str(track.id),
     }
 
 @router.patch(
