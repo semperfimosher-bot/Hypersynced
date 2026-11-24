@@ -700,3 +700,98 @@
     max-width:100%; min-width:0; font-size:clamp(10px, 3vw, 12px); padding-inline:clamp(6px, 2vw, 9px);
   }
 }
+
+
+/* Improve contrast on dark-filled controls without changing the overall theme. */
+:root {
+  --hs-button-surface: #0b1b26;
+  --hs-button-surface-raised: #102431;
+  --hs-button-text: #e5f3fb;
+}
+.primary-button,
+.secondary-button,
+.home-button,
+.home-hero-button,
+.hs-primary-button,
+.hs-secondary-button,
+.hs-request-button,
+.admin-quick-action,
+.admin-refresh-button,
+.secondary-admin-button,
+.admin-inline-button,
+.upload-browse-button,
+.upload-item-action,
+.library-primary-action,
+.library-play-action,
+.library-action-button,
+.library-track-actions button,
+.hs-library-track-actions button,
+.hs-search-quick-commands button,
+.hs-search-filterbar button,
+.hs-search-playlist-primary,
+.hs-search-playlist-back,
+.hs-search-playlist-action,
+.hs-search-generated-playlist__actions button,
+.hs-total-played-load-error button,
+.admin-explorer-selection-bar__actions button {
+  color: var(--hs-button-text);
+}
+.primary-button,
+.hs-primary-button,
+.home-button,
+.home-hero-button,
+.hs-search-playlist-primary,
+.library-primary-action,
+.library-play-action {
+  background-color: var(--hs-button-surface);
+}
+.secondary-button,
+.hs-secondary-button,
+.hs-request-button,
+.admin-quick-action,
+.admin-refresh-button,
+.secondary-admin-button,
+.admin-inline-button,
+.upload-browse-button,
+.upload-item-action,
+.library-action-button,
+.library-track-actions button,
+.hs-library-track-actions button,
+.hs-search-quick-commands button,
+.hs-search-filterbar button,
+.hs-search-playlist-back,
+.hs-search-playlist-action,
+.hs-search-generated-playlist__actions button,
+.hs-total-played-load-error button,
+.admin-explorer-selection-bar__actions button {
+  background-color: var(--hs-button-surface);
+}
+.primary-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled),
+.home-button:hover:not(:disabled),
+.home-hero-button:hover:not(:disabled),
+.hs-primary-button:hover:not(:disabled),
+.hs-secondary-button:hover:not(:disabled),
+.hs-request-button:hover:not(:disabled),
+.admin-quick-action:hover:not(:disabled),
+.admin-refresh-button:hover:not(:disabled),
+.secondary-admin-button:hover:not(:disabled),
+.admin-inline-button:hover:not(:disabled),
+.upload-browse-button:hover:not(:disabled),
+.upload-item-action:hover:not(:disabled),
+.library-primary-action:hover:not(:disabled),
+.library-play-action:hover:not(:disabled),
+.library-action-button:hover:not(:disabled),
+.library-track-actions button:hover:not(:disabled),
+.hs-library-track-actions button:hover:not(:disabled),
+.hs-search-quick-commands button:hover:not(:disabled),
+.hs-search-filterbar button:hover:not(:disabled),
+.hs-search-playlist-primary:hover:not(:disabled),
+.hs-search-playlist-back:hover:not(:disabled),
+.hs-search-playlist-action:hover:not(:disabled),
+.hs-search-generated-playlist__actions button:hover:not(:disabled),
+.hs-total-played-load-error button:hover:not(:disabled),
+.admin-explorer-selection-bar__actions button:hover:not(:disabled) {
+  background-color: var(--hs-button-surface-raised);
+  color: #f4fbff;
+}
