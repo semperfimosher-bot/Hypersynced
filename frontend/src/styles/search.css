@@ -9029,3 +9029,13 @@ button:disabled {
 .hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(4) {
   transform: rotate(-2deg) translate(1px, 1px);
 }
+
+/* Discovery shortcut cards: no thumbnails; reveal a small sparkle cluster on hover/focus. */
+.hs-search-discovery__tile-icon { position: relative; overflow: visible; }
+.hs-search-discovery__tile-sparkles { position: absolute; inset: -7px; pointer-events: none; opacity: 0; transform: scale(.72) rotate(-12deg); transition: opacity 150ms ease, transform 220ms ease; }
+.hs-search-discovery__tile-sparkles i { position: absolute; color: #b9f3ff; font-style: normal; line-height: 1; text-shadow: 0 0 8px rgba(83,220,255,.9), 0 0 16px rgba(48,161,255,.4); }
+.hs-search-discovery__tile-sparkles i:nth-child(1) { right: -5px; top: -5px; font-size: 13px; }
+.hs-search-discovery__tile-sparkles i:nth-child(2) { left: -4px; bottom: 0; font-size: 10px; color: #e5fbff; }
+.hs-search-discovery__tile-sparkles i:nth-child(3) { right: 2px; bottom: -5px; font-size: 7px; }
+.hs-search-discovery__tile:hover .hs-search-discovery__tile-sparkles, .hs-search-discovery__tile:focus-visible .hs-search-discovery__tile-sparkles { opacity: 1; transform: scale(1) rotate(0); }
+@media (prefers-reduced-motion: reduce) { .hs-search-discovery__tile-sparkles { transition: none; } }
