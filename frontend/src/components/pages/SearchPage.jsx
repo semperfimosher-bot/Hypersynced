@@ -2613,8 +2613,9 @@ async function downloadOpenedPlaylist() {
   <div className="hs-search-console__heading">
 
     <div className="hs-search-console__intro">
-
+  <span className="hs-search-console__eyebrow">DISCOVER YOUR NEXT SOUND</span>
   <h2>Tune into something new</h2>
+  <p>Find the music for whatever mood you’re in.</p>
 
 
 
@@ -2684,7 +2685,7 @@ async function downloadOpenedPlaylist() {
               <div className="hs-search-discovery__recent-row">
                 {recentSearches.slice(0, 8).map((item, index) => (
                   <button type="button" className="hs-search-discovery__recent-item" key={item} onClick={() => { rememberSearch(item); onQueryChange(item); }}>
-                    <span className={`hs-search-discovery__recent-art tone-${index % 6}`}><Icon name="search" size={18} /></span>
+                    <span className="hs-search-discovery__recent-art"><Icon name="search" size={18} /></span>
                     <span title={item}>{item}</span>
                   </button>
                 ))}
@@ -2696,7 +2697,7 @@ async function downloadOpenedPlaylist() {
           </div>
           <div className="hs-search-discovery__tiles">
             {SEARCH_QUICK_COMMANDS.map((command, index) => (
-              <button type="button" key={command.id} className={`hs-search-discovery__tile tone-${index % 6}`} onClick={() => runQuickCommand(command)}>
+              <button type="button" key={command.id} className="hs-search-discovery__tile" onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
                 <span className="hs-search-discovery__tile-icon"><Icon name={command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play"} size={19} /></span>
               </button>
