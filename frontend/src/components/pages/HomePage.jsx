@@ -28,7 +28,7 @@ function trackMatchesDownloadedArtist(track, artistNames) {
 
 const MEMBER_SLIDE_LABELS = ["On Repeat", "Find Your Next Favorite", "Your Music Vault", "Made for Your Mood"];
 
-function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPlay, onOpenArtist }) {
+function HomeCarousel({ recent, suggestions, pickedTracks, onNavigate, guest, onOpenAuth, onPlay, onPlayPicked, onOpenArtist }) {
   const slideLabels = guest ? ["Welcome", "Discover Your Sound", "Artists in Your Orbit", "Made for Your Mood"] : MEMBER_SLIDE_LABELS;
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -68,7 +68,7 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
               <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Pick up where you left off" : contentIndex === 1 ? "Find Your Next Favorite" : contentIndex === 2 ? (guest ? "Artists in Your Orbit" : "Your Music Vault") : "Made for Your Mood"}</h2>
               <p>{guest && index === 0 ? "Discover music, find your favorites, and make HyperSynced your own." : contentIndex === 0 ? "Jump back into the tracks you can’t stop playing." : contentIndex === 1 ? "Fresh tracks that might become your new favorites." : contentIndex === 2 ? (guest ? "Meet artists that match the sound you love." : "All your saved tracks, albums, and playlists—together.") : "Mixes shaped around your sound, your habits, and your vibe."}</p>
               {activeTrack && !(guest && index === 0) ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
-              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? (guest ? onOpenArtist?.(suggestions[2]?.artist) : onNavigate?.("library")) : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Recently played" : "Get started") : contentIndex === 1 ? (discover ? "Give it a spin" : "Explore music") : contentIndex === 2 ? (guest ? "Meet the artists" : "Open your library") : "Find your mix"} <span>▶</span></button>
+              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? (guest ? onOpenArtist?.(suggestions[2]?.artist) : onNavigate?.("library")) : (pickedTracks?.length ? onPlayPicked?.(pickedTracks) : onNavigate?.("search"))}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Recently played" : "Get started") : contentIndex === 1 ? (discover ? "Give it a spin" : "Explore music") : contentIndex === 2 ? (guest ? "Meet the artists" : "Open your library") : "Find your mix"} <span>▶</span></button>
             </div>
           </article>
         ))}
@@ -199,7 +199,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   return (
     <div className="page-stack home-page">
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
-      <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
+      <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onPlayPicked={(tracks) => { void player.playTrackQueue(tracks); }} pickedTracks={discovery} onOpenArtist={onOpenArtist} />
       {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
