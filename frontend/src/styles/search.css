@@ -8987,49 +8987,6 @@ button:disabled {
   background: rgba(21, 125, 190, .18);
 }
 .hs-search-history-suggestions__icon { display: grid; place-items: center; color: #63d7ff; }
-.hs-search-discovery__tile-icon.hs-search-discovery__tile-art {
-  display: block;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
-  padding: 0;
-  overflow: visible;
-  border-radius: 8px;
-  background: transparent;
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage { width: 100%; height: 100%; }
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile { min-width: 0; min-height: 0; }
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile img { width: 100%; height: 100%; object-fit: cover; }
-.hs-search-discovery__tile-art > svg { display: block; width: 100%; height: 100%; padding: 11px; }
-@media (max-width: 760px) {
-  .hs-search-discovery__tile-icon.hs-search-discovery__tile-art { width: 40px; height: 40px; min-width: 40px; }
-}
-
-
-/* Discovery shortcut collages: compact, layered and gently tilted like the home deck. */
-.hs-search-discovery__tile-art > .playlist-artwork-collage {
-  overflow: visible;
-  transform: rotate(-5deg) scale(1.06);
-  filter: drop-shadow(0 5px 7px rgba(0, 4, 14, .38));
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile {
-  border: 1px solid rgba(135, 220, 255, .16);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(1) {
-  transform: rotate(-3deg) translate(-1px, 0);
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(2) {
-  transform: rotate(3deg) translate(1px, -1px);
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(3) {
-  transform: rotate(2deg) translate(-1px, 1px);
-}
-.hs-search-discovery__tile-art .playlist-artwork-collage__tile:nth-child(4) {
-  transform: rotate(-2deg) translate(1px, 1px);
-}
-
 /* Discovery shortcut cards: no thumbnails; reveal a small sparkle cluster on hover/focus. */
 .hs-search-discovery__tile-icon { position: relative; overflow: visible; }
 .hs-search-discovery__tile-sparkles { position: absolute; inset: -7px; pointer-events: none; opacity: 0; transform: scale(.72) rotate(-12deg); transition: opacity 150ms ease, transform 220ms ease; }
