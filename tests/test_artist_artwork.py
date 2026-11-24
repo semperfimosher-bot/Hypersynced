@@ -491,17 +491,18 @@ async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> 
 
     from backend.app.services import artist_artwork
 
-    profile = type(
-        "Profile",
-        (),
-        {
-            "id": uuid.uuid4(),
-            "artwork_object_key": None,
-            "artwork_status": "missing",
-            "artwork_lease_until": None,
-            "artwork_next_retry_at": None,
-        },
-    )()
+    from types import SimpleNamespace
+
+    profile = cast(
+        ArtistProfile,
+        SimpleNamespace(
+            id=uuid.uuid4(),
+            artwork_object_key=None,
+            artwork_status="missing",
+            artwork_lease_until=None,
+            artwork_next_retry_at=None,
+        ),
+    )
     commits = 0
 
     class FakeSession:
