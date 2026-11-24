@@ -337,6 +337,11 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     )()
     session_calls = 0
     commit_count = 0
+    find_calls = 0
+    settings_calls = 0
+    b2_client_calls = 0
+    thread_calls = 0
+    stage = "initial"
     uploaded: dict = {}
 
     class FakeSession:
@@ -374,6 +379,9 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     }
 
     async def fake_find_image(name):
+        nonlocal find_calls, stage
+        find_calls += 1
+        stage = "provider"
         assert name == "Verified Artist"
         return candidate
 
@@ -388,15 +396,24 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         "get_settings",
         lambda: type("Settings", (), {"b2_bucket_name": "test-bucket"})(),
     )
+    def fake_get_b2_client():
+        nonlocal b2_client_calls, stage
+        b2_client_calls += 1
+        stage = "client"
+        return FakeB2Client()
+
     monkeypatch.setattr(
         artist_artwork,
         "get_b2_s3_client",
-        lambda: FakeB2Client(),
+        fake_get_b2_client,
     )
 
     thread_errors: list[str] = []
 
     async def fake_to_thread(func, *args, **kwargs):
+        nonlocal thread_calls, stage
+        thread_calls += 1
+        stage = "thread"
         try:
             return func(*args, **kwargs)
         except Exception as exc:
