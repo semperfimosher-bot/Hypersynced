@@ -8600,5 +8600,3 @@ button:disabled {
   }
 }
 
-/* Ensure the play affordance is a true square circle, not stretched into an oval. */
-.hs-search-track__play{width:28px;height:28px;min-width:28px;min-height:28px;aspect-ratio:1/1;box-sizing:border-box;border-radius:50%;padding:0;display:grid;place-items:center;flex:0 0 28px;}
