@@ -159,6 +159,23 @@ export function buildTrackQueue(
 }
 
 
+export function appendAutoplayQueueEntries(
+  queue,
+  tracks,
+) {
+  const source = Array.isArray(queue) ? queue : [];
+  const existing = new Set(source.map((entry) => String(entry?.id ?? "")));
+  const incoming = buildTrackQueue(tracks);
+  const additions = incoming.filter((entry) => {
+    const id = String(entry.id);
+    if (existing.has(id)) return false;
+    existing.add(id);
+    return true;
+  });
+  return additions.length ? [...source, ...additions] : source;
+}
+
+
 export function insertQueueEntryAsNext(
   queue,
   currentIndex,
