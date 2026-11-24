@@ -2837,12 +2837,17 @@ async function downloadOpenedPlaylist() {
               const musicPool = discoveryTracks.length ? discoveryTracks : (results?.tracks ?? []);
               const releasePool = (results?.albums ?? []).map((album) => album?.artwork_url).filter(Boolean);
               const profilePool = discoveryPeople.map((person) => person?.avatar_url ?? person?.avatar ?? person?.profile_image_url ?? person?.image_url ?? person?.photo_url).filter(Boolean);
-              const trackSlice = command.id === "find-new-tunes" ? musicPool.slice(4, 8) : musicPool.slice(0, 4);
+              const quickCommandIndex = SEARCH_QUICK_COMMANDS.findIndex((item) => item.id === command.id);
+              const quickCommandTracks = musicPool.length
+                ? Array.from({ length: Math.min(4, musicPool.length) }, (_, index) => musicPool[(Math.max(quickCommandIndex, 0) + index) % musicPool.length])
+                : [];
               const tileArtwork = command.id === "find-people"
                 ? profilePool.slice(0, 4)
                 : command.id === "newly-released"
                   ? releasePool.slice(0, 4).length ? releasePool.slice(0, 4) : musicPool.slice(0, 4).map((track) => track?.artwork_url).filter(Boolean)
-                  : trackSlice.map((track) => track?.artwork_url).filter(Boolean);
+                  : command.id === "find-new-tunes"
+                    ? musicPool.slice(4, 8).map((track) => track?.artwork_url).filter(Boolean)
+                    : quickCommandTracks.map((track) => track?.artwork_url).filter(Boolean);
               return (
               <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
