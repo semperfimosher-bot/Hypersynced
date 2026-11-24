@@ -486,7 +486,7 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
 
 @pytest.mark.asyncio
 async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> None:
-    from datetime import UTC, datetime
+    from datetime import UTC, datetime, timedelta
     import uuid
 
     from backend.app.services import artist_artwork
@@ -532,7 +532,9 @@ async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> 
     assert artist_artwork._artist_artwork_queue_event.is_set()
 
     # Requests already queued/active are deduplicated without another commit.
-    profile.artwork_lease_until = datetime.now(UTC)
-    assert await artist_artwork.enqueue_artist_artwork(profile.id) is True
+    profile.artwork_status = "fetching"
+    profile.artwork_lease_until = datetime.now(UTC) + timedelta(minutes=1)
+    assert await artist_artwork.enqueue_artist_artwork(profile.id) is False
+    assert commits == 1
 
     artist_artwork._artist_artwork_queue_event.clear()
