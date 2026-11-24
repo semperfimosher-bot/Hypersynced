@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from backend.app.api.routes.users import ListeningRequest, record_listening
 
@@ -87,3 +88,35 @@ async def test_offline_listening_event_sync_preserves_client_timestamp():
     assert response["duplicate"] is False
     assert response["event_id"] == str(event_id)
     session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_offline_event_upload_returns_existing_event():
+    owner_id = uuid4()
+    track_id = uuid4()
+    event_id = uuid4()
+    duplicate = SimpleNamespace(id=event_id, user_id=owner_id, track_id=track_id)
+    track = SimpleNamespace(id=track_id, is_published=True)
+    session = SimpleNamespace(
+        get=AsyncMock(side_effect=[None, duplicate]),
+        execute=AsyncMock(
+            return_value=SimpleNamespace(
+                scalar_one_or_none=lambda: track,
+            ),
+        ),
+        add=Mock(),
+        flush=AsyncMock(side_effect=IntegrityError("insert", {}, Exception("duplicate"))),
+        rollback=AsyncMock(),
+        commit=AsyncMock(),
+    )
+
+    response = await record_listening(
+        ListeningRequest(track_id=track_id, event_id=event_id),
+        SimpleNamespace(id=owner_id),
+        session,
+    )
+
+    assert response["duplicate"] is True
+    assert response["event_id"] == str(event_id)
+    session.rollback.assert_awaited_once()
+    session.commit.assert_not_awaited()
