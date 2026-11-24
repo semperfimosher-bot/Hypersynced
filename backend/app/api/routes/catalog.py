@@ -240,6 +240,30 @@ async def catalog_status() -> dict[str, int | str | None]:
 
 
 @router.get(
+    "/recently-added",
+    response_model=list[TrackResponse],
+)
+async def list_recently_added_tracks() -> list[TrackResponse]:
+    """Return the newest 12 published tracks added to HyperSynced."""
+    async with get_session_factory()() as session:
+        result = await session.execute(
+            select(Track)
+            .where(Track.is_published.is_(True))
+            .order_by(
+                Track.created_at.desc(),
+                Track.id.desc(),
+            )
+            .limit(12)
+        )
+        tracks = result.scalars().all()
+
+    return await asyncio.to_thread(
+        _catalog_track_responses,
+        tracks,
+    )
+
+
+@router.get(
     "/tracks",
     response_model=list[TrackResponse] | CatalogPageResponse,
 )
