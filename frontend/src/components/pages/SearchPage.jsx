@@ -2767,24 +2767,22 @@ async function downloadOpenedPlaylist() {
   </section>
 
 
+      {normalizedQuery && !openedPlaylist && recentSearches.length ? (
+        <div className="hs-search-history-suggestions" role="listbox" aria-label="Recent search suggestions">
+          {recentSearches
+            .filter((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()))
+            .slice(0, 6)
+            .map((item) => (
+              <button type="button" role="option" aria-selected="false" key={item} onClick={() => { rememberSearch(item); onQueryChange(item); }}>
+                <span className="hs-search-history-suggestions__icon"><Icon name="search" size={14} /></span>
+                <span>{item}</span>
+              </button>
+            ))}
+        </div>
+      ) : null}
+
       {!normalizedQuery && !openedPlaylist ? (
         <section className="hs-search-discovery" aria-label="Search discovery">
-          {recentSearches.length ? (
-            <div className="hs-search-discovery__recent">
-              <div className="hs-search-discovery__section-head">
-                <div><span>YOUR HISTORY</span><h3>Recent searches</h3></div>
-                <button type="button" onClick={() => { try { localStorage.removeItem(`hypersynced.recent-searches.v1:${encodeURIComponent(String(recentSearchOwner || "guest"))}`); } catch {} setRecentSearches([]); }}>Clear</button>
-              </div>
-              <div className="hs-search-discovery__recent-row">
-                {recentSearches.slice(0, 8).map((item, index) => (
-                  <button type="button" className="hs-search-discovery__recent-item" key={item} onClick={() => { rememberSearch(item); onQueryChange(item); }}>
-                    <span className="hs-search-discovery__recent-art"><Icon name="search" size={18} /></span>
-                    <span title={item}>{item}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
           <div className="hs-search-discovery__section-head hs-search-discovery__browse-head">
             <div><span>EXPLORE HYPERSYNCED</span><h3>Find your next favorite</h3></div>
           </div>
@@ -2797,7 +2795,14 @@ async function downloadOpenedPlaylist() {
             ].map((command) => (
               <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
-                <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
+                <span className="hs-search-discovery__tile-icon hs-search-discovery__tile-art">
+                  <PlaylistArtwork
+                    tracks={(discoveryTracks.length ? discoveryTracks : results?.tracks ?? []).slice(0, 4)}
+                    artworkUrls={(results?.albums ?? []).slice(0, 4).map((album) => album?.artwork_url).filter(Boolean)}
+                    fallbackSize={18}
+                  />
+                  {!discoveryTracks.length && !(results?.tracks?.length) && !(results?.albums?.length) ? <Icon name={command.icon} size={19} /> : null}
+                </span>
               </button>
             ))}
           </div>
