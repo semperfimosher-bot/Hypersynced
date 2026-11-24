@@ -8861,6 +8861,7 @@ button:disabled {
 /* ============================================================
    SEARCH / LIBRARY SPEED + LAYOUT POLISH
    ============================================================
+   */
 
 .hs-search-console__heading h2 {
   font-size: clamp(18px, 1.75vw, 22px);
