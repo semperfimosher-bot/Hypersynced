@@ -110,7 +110,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 20 });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 20, homeExplore: true });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       writeCachedHomeSuggestions(recentOwner, tracks);
@@ -148,7 +148,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
   const menuProps = (track) => menu.getTriggerProps(track);
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const homeDiscoveryPool = [...suggestedTracks, ...recentlyAdded].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);
+  const homeDiscoveryPool = (suggestedTracks.length ? suggestedTracks : recentlyAdded).filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);
   const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
   const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 6);
   const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
