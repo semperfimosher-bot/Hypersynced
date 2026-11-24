@@ -394,6 +394,11 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         lambda: FakeB2Client(),
     )
 
+    async def fake_to_thread(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    monkeypatch.setattr(artist_artwork.asyncio, "to_thread", fake_to_thread)
+
     await artist_artwork.fetch_and_store_artist_artwork(profile_id)
 
     expected_key = f"artist-artwork/{profile_id}/Q100"
