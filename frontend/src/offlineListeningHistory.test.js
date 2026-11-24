@@ -66,6 +66,7 @@ test(
     assert.equal(sent[0].track_id, events[0].trackId);
     assert.equal(sent[0].listened_at, events[0].listenedAt);
     assert.deepEqual(readOfflineListeningEvents("owner-a"), [events[1]]);
+    });
   },
 );
 
