@@ -129,6 +129,7 @@ export default function ArtistProfilePage({
   currentUser,
   onOpenAuth,
   onBack,
+  onOpenRelease,
 }) {
   const online =
     useOnlineStatus();
@@ -1023,10 +1024,12 @@ export default function ArtistProfilePage({
         <div className="hs-artist-albums">
           {(profile.albums ?? []).map(
             (album) => (
-              <article
-                key={
-                  album.title
-                }
+              <button
+                type="button"
+                className="hs-artist-release-card"
+                key={album.title}
+                onClick={() => onOpenRelease?.(`${album.title} ${profile.name}`)}
+                aria-label={`Search ${album.track_count === 1 ? "single" : "album"} ${album.title} by ${profile.name}`}
               >
                 <div className="hs-artist-albums__art">
                   {resolveArtworkUrl(
@@ -1053,13 +1056,9 @@ export default function ArtistProfilePage({
                 </strong>
 
                 <span>
-                  {album.track_count}
-                  {" "}
-                  {album.track_count === 1
-                    ? "song"
-                    : "songs"}
+                  {album.track_count === 1 ? "Single" : `${album.track_count} songs`}
                 </span>
-              </article>
+              </button>
             ),
           )}
         </div>
