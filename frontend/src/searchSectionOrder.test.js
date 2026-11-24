@@ -24,6 +24,11 @@ const messagesPageSource = readFileSync(
   "utf8",
 );
 
+const artistProfilePageSource = readFileSync(
+  new URL("./components/pages/ArtistProfilePage.jsx", import.meta.url),
+  "utf8",
+);
+
 
 test(
   "search result sections preserve the current discovery layout",
@@ -189,4 +194,12 @@ test("discovery shortcuts use distinct collage sources including real profile ph
   assert.match(searchPageSource, /command\.id === "newly-released"/);
   assert.match(searchStylesSource, /hs-search-discovery__tile-art \.playlist-artwork-collage/);
   assert.match(searchStylesSource, /transform: rotate\(-[0-9]+deg\)/);
+});
+
+
+test("artist profiles quietly refresh to reveal fetched portraits", () => {
+  assert.match(artistProfilePageSource, /profile\.artwork_source_page_url/);
+  assert.match(artistProfilePageSource, /getArtistProfile\(artistName\)/);
+  assert.match(artistProfilePageSource, /attempts < 3/);
+  assert.match(artistProfilePageSource, /10_000/);
 });
