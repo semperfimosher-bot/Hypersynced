@@ -13,7 +13,17 @@ import {
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
-import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";
+import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";\nimport { getDownloadedArtistNames, getOfflineOwnerKey } from "../../offlineDownloads.js";\nimport DownloadedArtistTrackNotice from "../home/DownloadedArtistTrackNotice.jsx";
+
+function normalizedArtistKey(value) {
+  return String(value ?? "").toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+}
+
+function trackMatchesDownloadedArtist(track, artistNames) {
+  const artistText = String(track?.artist ?? "");
+  const candidates = [artistText, ...artistText.split(/[,;&]|\\b(?:feat(?:uring)?|ft|with|and)\\b/gi)];
+  return candidates.some((candidate) => artistNames.has(normalizedArtistKey(candidate)));
+}
 
 const MEMBER_SLIDE_LABELS = ["Your music", "Discover", "Artists to explore", "Explore"];
 
@@ -78,19 +88,42 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const [suggestionsState, setSuggestionsState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeSuggestions(recentOwner) }));
   const suggestedTracks = suggestionsState.owner === recentOwner ? suggestionsState.tracks : readCachedHomeSuggestions(recentOwner);
   const suggestionsRequestRef = useRef(0);
-  const [recentlyAdded, setRecentlyAdded] = useState(() => readCachedHomeRecentlyAdded());
+  const [recentlyAdded, setRecentlyAdded] = useState(() => readCachedHomeRecentlyAdded());\n  const [downloadedArtistNotice, setDownloadedArtistNotice] = useState(null);
   const context = recentlyPlayed.map((track) => String(track.id)).join("|");
 
   useEffect(() => { setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner)); }, [recentOwner]);
   useEffect(() => {
     let active = true;
-    void refreshHomeRecentlyAdded().then((tracks) => {
-      if (active) setRecentlyAdded(tracks);
+    const seenKey = "hypersynced.catalog-seen-track-ids.v1";
+    const cachedBeforeRefresh = readCachedHomeRecentlyAdded();
+    let storedSeen = null;
+    try {
+      const saved = localStorage.getItem(seenKey);
+      if (saved !== null) storedSeen = JSON.parse(saved);
+    } catch {}
+    const baseline = new Set(
+      Array.isArray(storedSeen) ? storedSeen.map(String) : cachedBeforeRefresh.map((track) => String(track.id)),
+    );
+    const hasBaseline = storedSeen !== null || cachedBeforeRefresh.length > 0;
+    const ownerKey = getOfflineOwnerKey(currentUser);
+    const artistNamesPromise = currentUser && ownerKey
+      ? getDownloadedArtistNames(ownerKey).catch(() => [])
+      : Promise.resolve([]);
+    void Promise.all([refreshHomeRecentlyAdded(), artistNamesPromise]).then(([tracks, downloadedArtists]) => {
+      if (!active) return;
+      setRecentlyAdded(tracks);
+      const currentIds = tracks.map((track) => String(track.id));
+      const knownIds = new Set([...baseline, ...currentIds]);
+      try { localStorage.setItem(seenKey, JSON.stringify([...knownIds].slice(-1200))); } catch {}
+      if (!hasBaseline || !downloadedArtists.length) return;
+      const normalizedArtists = new Set(downloadedArtists.map(normalizedArtistKey).filter(Boolean));
+      const newMatch = tracks.find((track) => !baseline.has(String(track.id)) && trackMatchesDownloadedArtist(track, normalizedArtists));
+      if (newMatch) setDownloadedArtistNotice(newMatch);
     }).catch(() => {
       // Keep cached newest-added tracks when the network is unavailable.
     });
     return () => { active = false; };
-  }, []);
+  }, [currentUser?.id, currentUser?.username]);
   useEffect(() => subscribeListeningHistoryChanged((event) => {
     const detail = event?.detail ?? {};
     if (detail.owner && String(detail.owner) !== String(recentOwner ?? "")) return;
@@ -158,7 +191,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     <div className="page-stack home-page">
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
       <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
-      {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
+      {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}\n      {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {discovery.length >= 6 ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
