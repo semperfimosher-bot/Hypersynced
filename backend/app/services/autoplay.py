@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import (
@@ -75,12 +77,12 @@ def _genre_similarity(
 
     left_tokens = {
         token
-        for token in __import__("re").split(r"[^\\w]+", left_key)
+        for token in re.split(r"[^\w]+", left_key)
         if token
     }
     right_tokens = {
         token
-        for token in __import__("re").split(r"[^\\w]+", right_key)
+        for token in re.split(r"[^\w]+", right_key)
         if token
     }
     if not left_tokens or not right_tokens:
