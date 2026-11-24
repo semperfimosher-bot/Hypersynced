@@ -1,9 +1,12 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import cast
+from uuid import UUID, uuid4
 
 import pytest
 
 from backend.app.api.routes import users as user_routes
+from backend.app.dependencies import DatabaseSession
 
 
 class _FakeUsersResult:
@@ -38,21 +41,26 @@ class _FakeSearchSession:
         return _FakeCountsResult(self.counts)
 
 
-def _fake_user(username: str):
-    return type(
-        "SearchUser",
-        (),
-        {
-            "id": uuid4(),
-            "username": username,
-            "profile": type(
-                "SearchProfile",
-                (),
-                {"display_name": f"{username} Display"},
-            )(),
-            "created_at": datetime.now(UTC),
-        },
-    )()
+@dataclass
+class _FakeProfile:
+    display_name: str
+
+
+@dataclass
+class _FakeUser:
+    id: UUID
+    username: str
+    profile: _FakeProfile
+    created_at: datetime
+
+
+def _fake_user(username: str) -> _FakeUser:
+    return _FakeUser(
+        id=uuid4(),
+        username=username,
+        profile=_FakeProfile(display_name=f"{username} Display"),
+        created_at=datetime.now(UTC),
+    )
 
 
 @pytest.mark.asyncio
@@ -68,7 +76,7 @@ async def test_empty_user_search_is_bounded_and_batches_follower_counts(
         lambda user: f"avatar:{user.username}",
     )
 
-    results = await user_routes.search_users("", session)
+    results = await user_routes.search_users("", cast(DatabaseSession, session))
 
     assert len(results) == 16
     assert session.statements[0]._limit_clause.value == 16
@@ -101,7 +109,7 @@ async def test_typed_user_search_keeps_standard_search_batch_limit(
         lambda user: None,
     )
 
-    results = await user_routes.search_users("search-term", session)
+    results = await user_routes.search_users("search-term", cast(DatabaseSession, session))
 
     assert results == []
     assert session.statements[0]._limit_clause.value == 20
