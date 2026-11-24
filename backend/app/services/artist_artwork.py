@@ -478,10 +478,24 @@ async def run_artist_artwork_worker() -> None:
                     await enqueue_artist_artwork(aid)
                 backfill_at = now + timedelta(minutes=10)
             async with factory() as session:
-                result = await session.execute(select(ArtistProfile.id).where(
-                    ArtistProfile.artwork_object_key.is_(None), ArtistProfile.artwork_status == "queued"
-                ).order_by(ArtistProfile.updated_at.asc()).limit(1))
-                job_id = result.scalar_one_or_none()
+                result = await session.execute(
+                    select(ArtistProfile)
+                    .where(
+                        ArtistProfile.artwork_object_key.is_(None),
+                        ArtistProfile.artwork_status == "queued",
+                    )
+                    .order_by(ArtistProfile.updated_at.asc())
+                    .limit(1)
+                    .with_for_update(skip_locked=True)
+                )
+                claimed = result.scalar_one_or_none()
+                job_id = claimed.id if claimed else None
+                if claimed:
+                    # Claim under a row lock and persist a lease before releasing it;
+                    # another worker replica cannot process this queued row at once.
+                    claimed.artwork_status = "fetching"
+                    claimed.artwork_lease_until = now + timedelta(minutes=10)
+                    await session.commit()
             if job_id:
                 await fetch_and_store_artist_artwork(job_id)
                 await asyncio.sleep(30)
