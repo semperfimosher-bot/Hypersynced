@@ -1,4 +1,7 @@
 import pytest
+from typing import cast
+
+from backend.app.models.artist import ArtistProfile
 
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
@@ -325,20 +328,23 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     job_key = str(profile_id)
     artist_artwork._active_artist_jobs.discard(job_key)
     artist_artwork._artist_artwork_retry_after.pop(job_key, None)
-    profile = type(
-        "Profile",
-        (),
-        {
-            "id": profile_id,
-            "name": "Verified Artist",
-            "artwork_object_key": None,
-            "artwork_artist_qid": None,
-            "artwork_source_url": None,
-            "artwork_source_page_url": None,
-            "artwork_license": None,
-            "artwork_credit": None,
-        },
-    )()
+    profile = cast(
+        ArtistProfile,
+        type(
+            "Profile",
+            (),
+            {
+                "id": profile_id,
+                "name": "Verified Artist",
+                "artwork_object_key": None,
+                "artwork_artist_qid": None,
+                "artwork_source_url": None,
+                "artwork_source_page_url": None,
+                "artwork_license": None,
+                "artwork_credit": None,
+            },
+        )(),
+    )
     session_calls = 0
     commit_count = 0
     find_calls = 0
