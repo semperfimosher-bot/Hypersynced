@@ -3,7 +3,6 @@ from typing import cast
 import pytest
 
 from backend.app.models.artist import ArtistProfile
-
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
