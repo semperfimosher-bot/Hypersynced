@@ -2656,6 +2656,7 @@ async function downloadOpenedPlaylist() {
       autoComplete="off"
       spellCheck="false"
       onFocus={() => setSearchSuggestionsOpen(true)}
+      onBlur={() => setSearchSuggestionsOpen(false)}
       onChange={(event) => {
         onQueryChange(
           event.target.value,
