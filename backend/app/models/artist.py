@@ -43,6 +43,31 @@ class ArtistProfile(
         nullable=True,
     )
 
+    artwork_object_key: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    artwork_source_url: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    artwork_source_page_url: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    artwork_license: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
+
+    artwork_credit: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
 
 class ArtistFollow(
     TimestampMixin,
