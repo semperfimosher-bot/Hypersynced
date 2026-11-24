@@ -181,6 +181,7 @@ test("search history suggestions and discovery shortcuts are lightweight and spa
   assert.match(discoveryTiles, /hs-search-discovery__tile-sparkles/);
   assert.match(searchStylesSource, /hs-search-history-suggestions/);
   assert.match(searchStylesSource, /hs-search-discovery__tile-sparkles/);
+  assert.doesNotMatch(searchStylesSource, /hs-search-discovery__tile-art/);
 });
 
 test("home quick picks have right-side sparkle accents and Library playlist action is right-aligned", () => {
