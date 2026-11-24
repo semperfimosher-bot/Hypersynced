@@ -83,6 +83,12 @@ export default function AdminUploadsPage() {
       uploadedTracks,
   });
 
+  useEffect(() => {
+    if (successCount > 0) {
+      globalThis.window?.dispatchEvent(new Event("hypersynced:catalog-updated"));
+    }
+  }, [successCount]);
+
   const backfillMetadata =
     async () => {
       if (metadataBackfillBusy) {
