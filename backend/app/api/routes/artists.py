@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     HTTPException,
     status,
 )
@@ -33,6 +34,8 @@ from ...services.artists import (
     load_published_artist_tracks,
     normalize_artist_name,
 )
+from ...services.artist_artwork import fetch_and_store_artist_artwork
+from ...services.b2 import create_presigned_download_url
 from ..dependencies import (
     CurrentUser,
     DatabaseSession,
@@ -81,6 +84,9 @@ class ArtistProfileResponse(BaseModel):
     name: str
     bio: str | None = None
     artwork_url: str | None = None
+    artwork_license: str | None = None
+    artwork_credit: str | None = None
+    artwork_source_page_url: str | None = None
     followers_count: int
     is_following: bool
     track_count: int
@@ -431,11 +437,13 @@ async def _artist_profile_response(
     ]
 
     artwork_url = (
-        _track_artwork_url(
-            tracks[0],
+        create_presigned_download_url(profile.artwork_object_key)
+        if profile.artwork_object_key
+        else (
+            _track_artwork_url(tracks[0])
+            if tracks
+            else None
         )
-        if tracks
-        else None
     )
 
     return ArtistProfileResponse(
@@ -443,6 +451,9 @@ async def _artist_profile_response(
         name=profile.name,
         bio=profile.bio,
         artwork_url=artwork_url,
+        artwork_license=profile.artwork_license,
+        artwork_credit=profile.artwork_credit,
+        artwork_source_page_url=profile.artwork_source_page_url,
         followers_count=(
             followers_count
         ),
@@ -472,11 +483,18 @@ async def get_artist_profile(
     artist_name: str,
     session: DatabaseSession,
     viewer: OptionalCurrentUser,
+    background_tasks: BackgroundTasks,
 ) -> ArtistProfileResponse:
     profile = await _artist_entity(
         session,
         artist_name,
     )
+
+    if not profile.artwork_object_key:
+        background_tasks.add_task(
+            fetch_and_store_artist_artwork,
+            profile.id,
+        )
 
     return await _artist_profile_response(
         session,
