@@ -71,6 +71,11 @@ import {
   readCachedHomeRecentlyPlayed,
   writeCachedHomeRecentlyPlayed,
 } from "./homeRecentlyPlayed.js";
+import {
+  createListeningEventId,
+  enqueueOfflineListeningEvent,
+  setOfflineListeningOwner,
+} from "./offlineListeningHistory.js";
 
 
 const audio =
@@ -393,16 +398,18 @@ function beginListeningEvent(
   trackId,
   meta = {},
 ) {
-  if (!canRecordListeningHistory(getAccessToken(), hasStoredSession())) {
-    activeListeningEvent =
-      null;
-
+  const offline = globalThis.navigator?.onLine === false;
+  const canRecordOnline = canRecordListeningHistory(getAccessToken(), hasStoredSession());
+  if (!canRecordOnline && !(offline && activePlaybackOwnerId)) {
+    activeListeningEvent = null;
     return;
   }
 
   const event = {
     trackId: String(trackId),
     eventId: null,
+    clientEventId: createListeningEventId(),
+    listenedAt: new Date().toISOString(),
     request: null,
     listenedSeconds: 0,
     lastMediaTime: getSafeCurrentTime(),
@@ -412,84 +419,66 @@ function beginListeningEvent(
     historyNotified: false,
   };
 
+  const queueOfflineEvent = () => {
+    const queued = enqueueOfflineListeningEvent(activePlaybackOwnerId, {
+      eventId: event.clientEventId,
+      trackId: event.trackId,
+      listenedAt: event.listenedAt,
+    });
+    if (queued) {
+      notifyListeningHistoryChanged({ type: "offline-history-queued", owner: activePlaybackOwnerId });
+    }
+    return null;
+  };
 
-  event.request =
-    apiRequest(
-      "/users/me/listening",
-      {
-        method:
-          "POST",
-
-        body:
-          JSON.stringify({
-            track_id:
-              String(
-                trackId,
-              ),
-          }),
-      },
-    )
-      .then(
-        (data) => {
-          const eventId =
-            data?.event_id ??
-            null;
-
+  event.request = offline
+    ? Promise.resolve(queueOfflineEvent())
+    : apiRequest("/users/me/listening", {
+        method: "POST",
+        body: JSON.stringify({
+          track_id: event.trackId,
+          event_id: event.clientEventId,
+          listened_at: event.listenedAt,
+        }),
+      })
+        .then((data) => {
+          const eventId = data?.event_id ?? null;
           if (eventId) {
             event.historyNotified = true;
             notifyListeningHistoryChanged({
               type: "confirmed-play",
-              trackId: String(trackId),
+              trackId: event.trackId,
             });
           }
-
           return eventId;
-        },
-      )
-      .catch(
-        (error) => {
-          console.error(
-            "[HyperSynced] Listening history event was not saved.",
-            error,
-          );
-          // Reconcile any optimistic UI update if the authoritative write failed.
+        })
+        .catch((error) => {
+          console.warn("[HyperSynced] Listening history will sync when connection returns.", error);
+          queueOfflineEvent();
           notifyListeningHistoryChanged({ type: "write-failed" });
           return null;
-        },
-      );
+        });
 
+  activeListeningEvent = event;
 
-  activeListeningEvent =
-    event;
-
-  // Add the track to the shared owner-scoped recent cache immediately,
-  // then notify mounted Home/Profile pages. The Neon write remains authoritative.
   const owner = activePlaybackOwnerId;
   if (owner) {
     const cachedRecent = readCachedHomeRecentlyPlayed(owner);
     writeCachedHomeRecentlyPlayed(
       owner,
-      applyOptimisticRecentlyPlayed(cachedRecent, { id: String(trackId), ...meta }, 12, {
+      applyOptimisticRecentlyPlayed(cachedRecent, { id: event.trackId, ...meta }, 12, {
         incrementPlayCount: false,
       }),
     );
   }
   notifyListeningHistoryChanged({
     type: "optimistic-play",
-    track: { id: String(trackId), ...meta },
+    track: { id: event.trackId, ...meta },
   });
 
-  void event.request.then(
-    (eventId) => {
-      if (
-        activeListeningEvent
-        === event
-      ) {
-        event.eventId =
-          eventId;
-      }
-    },
-  );
+  void event.request.then((eventId) => {
+    if (activeListeningEvent === event) event.eventId = eventId;
+  });
 }
 
 function sampleListeningProgress() {
@@ -3004,6 +2993,7 @@ export function setPlaybackPersistenceOwner(userId) {
 
   // Playback restoration is driven by this device's local playback snapshot.
   activePlaybackOwnerId = nextOwner;
+  setOfflineListeningOwner(nextOwner);
 
   const cachedQueue = readPlayerQueueSnapshot(nextOwner);
   if (cachedQueue) {
