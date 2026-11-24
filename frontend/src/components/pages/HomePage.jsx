@@ -15,18 +15,19 @@ import {
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
 import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";
 
-const SLIDE_LABELS = ["Your music", "Discover", "Quick access", "Explore"];
+const MEMBER_SLIDE_LABELS = ["Your music", "Discover", "Quick access", "Explore"];
 
 function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPlay, onOpenArtist }) {
+  const slideLabels = guest ? ["Welcome", "Your music", "Discover", "Quick access", "Explore"] : MEMBER_SLIDE_LABELS;
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const timer = useRef(null);
 
   useEffect(() => {
     if (paused) return undefined;
-    timer.current = window.setInterval(() => setActive((current) => (current + 1) % SLIDE_LABELS.length), 5000);
+    timer.current = window.setInterval(() => setActive((current) => (current + 1) % slideLabels.length), 5000);
     return () => window.clearInterval(timer.current);
-  }, [paused]);
+  }, [paused, slideLabels.length]);
 
   const moveTo = (index) => {
     setActive(index);
@@ -34,7 +35,9 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setPaused(false), 10000);
   };
-  const slideTracks = [recent[0], suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]];
+  const memberSlideTracks = [recent[0], suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]];
+  const slideTracks = guest ? [null, ...memberSlideTracks] : memberSlideTracks;
+  const contentIndex = guest ? active - 1 : active;
   const firstRecent = recent[0];
   const discover = suggestions[0];
   const coverFor = (index) => resolveArtworkUrl(slideTracks[index]?.artwork_url);
@@ -43,22 +46,22 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
   return (
     <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
       <div className="home-carousel__viewport">
-        {SLIDE_LABELS.map((label, index) => (
+        {slideLabels.map((label, index) => (
           <article key={label} className={`home-carousel__slide ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index) ? <img src={coverFor(index)} alt="" loading={index === active ? "eager" : "lazy"} /> : null}</div>
             <div className="home-carousel__content">
-              <span className="home-carousel__eyebrow">{index === 0 ? "PICK UP WHERE YOU LEFT OFF" : index === 1 ? "YOUR NEXT FAVORITE" : index === 2 ? "YOUR LIBRARY" : "EXPLORE MUSIC"}</span>
-              <h2>{index === 0 ? (guest ? "Welcome to HyperSynced" : "Your sound, right where you left it") : index === 1 ? "Find your next favorite" : index === 2 ? "All your music, one tap away" : "Explore something new"}</h2>
-              <p>{index === 0 ? "A quick look at music you've been playing lately." : index === 1 ? "Explore music and discover something new to listen to." : index === 2 ? "Jump straight into playlists, favorites, recent listening and more." : "Browse music, artists, albums and playlists."}</p>
-              {activeTrack ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
-              <button className="home-carousel__action" type="button" onClick={() => index === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : index === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : index === 2 ? onNavigate?.("library") : onNavigate?.("search")}>{index === 0 ? (firstRecent ? "Play recent" : "Get started") : index === 1 ? (discover ? "Play discovery" : "Explore music") : index === 2 ? "Open library" : "Explore music"} <span>▶</span></button>
+              <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "PICK UP WHERE YOU LEFT OFF" : contentIndex === 1 ? "YOUR NEXT FAVORITE" : contentIndex === 2 ? "YOUR LIBRARY" : "EXPLORE MUSIC"}</span>
+              <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Your sound, right where you left it" : contentIndex === 1 ? "Find your next favorite" : contentIndex === 2 ? "All your music, one tap away" : "Explore something new"}</h2>
+              <p>{guest && index === 0 ? "Discover music, find your favorites, and make HyperSynced your own." : contentIndex === 0 ? "A quick look at music you’ve been playing lately." : contentIndex === 1 ? "Explore music and discover something new to listen to." : contentIndex === 2 ? "Jump straight into playlists, favorites, recent listening and more." : "Browse music, artists, albums and playlists."}</p>
+              {activeTrack && !(guest && index === 0) ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
+              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? onNavigate?.("library") : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Play recent" : "Get started") : contentIndex === 1 ? (discover ? "Play discovery" : "Explore music") : contentIndex === 2 ? "Open library" : "Explore music"} <span>▶</span></button>
             </div>
           </article>
         ))}
       </div>
-      <div className="home-carousel__controls" aria-label="Slide controls">{SLIDE_LABELS.map((label, index) => <button key={label} type="button" aria-label={`Show slide ${index + 1}: ${label}`} aria-current={active === index ? "true" : undefined} className={active === index ? "is-active" : ""} onClick={() => moveTo(index)} />)}</div>
-      <span className="home-carousel__counter">{active + 1} / {SLIDE_LABELS.length}</span>
+      <div className="home-carousel__controls" aria-label="Slide controls">{slideLabels.map((label, index) => <button key={label} type="button" aria-label={`Show slide ${index + 1}: ${label}`} aria-current={active === index ? "true" : undefined} className={active === index ? "is-active" : ""} onClick={() => moveTo(index)} />)}</div>
+      <span className="home-carousel__counter">{active + 1} / {slideLabels.length}</span>
     </section>
   );
 }
