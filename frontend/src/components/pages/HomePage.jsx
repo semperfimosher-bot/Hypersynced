@@ -63,6 +63,20 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
   const firstRecent = recent[0];
   const coverFor = (index) => resolveArtworkUrl(slideTracks[index]?.artwork_url);
   const activeTrack = slideTracks[active];
+  const artworkForSlide = (index) => {
+    if (guest && index === 0) return [];
+    const candidates = [
+      slideTracks[index],
+      recent[index % Math.max(1, recent.length)] ?? suggestions[index + 1],
+      fallbackTracks[index] ?? suggestions[index + 2],
+      ...fallbackTracks,
+    ];
+    return candidates.filter((track, candidateIndex, all) =>
+      track?.artwork_url && all.findIndex((candidate) =>
+        candidate?.id && String(candidate.id) === String(track.id)
+      ) === candidateIndex
+    ).slice(0, 3);
+  };
 
   return (
     <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
@@ -71,7 +85,7 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
           <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">
-              {! (guest && index === 0) ? (slideTracks[index] ? [slideTracks[index], recent[index % Math.max(1, recent.length)] ?? suggestions[index + 1], fallbackTracks[index] ?? suggestions[index + 2], ...fallbackTracks].filter((track, artworkIndex, all) => track?.artwork_url && all.findIndex((candidate) => candidate?.id && String(candidate.id) === String(track.id)) === artworkIndex).slice(0, 3).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} decoding="async" fetchPriority={index === active ? "high" : "low"} />) : null) : null}
+              {artworkForSlide(index).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} decoding="async" fetchPriority={index === active ? "high" : "low"} />)}
             </div>
             <div className={`home-carousel__content ${guest && index === 0 ? "home-carousel__content--guest-image-only" : ""}`}>
               <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "BACK IN THE GROOVE" : contentIndex === 1 ? "FRESH FINDS" : contentIndex === 2 ? (guest ? "ARTISTS IN YOUR ORBIT" : "YOUR MUSIC, YOUR RULES") : "TUNED TO YOU"}</span>
