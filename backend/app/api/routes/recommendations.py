@@ -263,7 +263,7 @@ async def autoplay(
             and str(track.artist or "").strip().casefold()
             not in recent_artist_keys
         ]
-        tracks = tracks[:6]
+        # Return the filtered candidate pool; Home renders at most 12.
 
     return [
         AutoplayTrackResponse(
