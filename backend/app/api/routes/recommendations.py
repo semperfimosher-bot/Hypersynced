@@ -231,7 +231,13 @@ async def autoplay(
             ),
             limit=(
                 _autoplay_limit(
-       # Home discovery avoids tracks and artists listened to during the last two weeks.
+                    payload.limit
+                )
+            ),
+        )
+    )
+
+    # Home discovery avoids tracks and artists listened to during the last two weeks.
     if user is not None and payload.home_explore:
         cutoff = datetime.now(UTC) - timedelta(days=14)
         recent_result = await session.execute(
@@ -245,15 +251,19 @@ async def autoplay(
         )
         recent_rows = recent_result.all()
         recent_track_ids = {row.id for row in recent_rows}
-        recent_artist_keys = {str(row.artist or "").strip().casefold() for row in recent_rows if str(row.artist or "").strip()}
-        tracks = [track for track in tracks if track.id not in recent_track_ids and str(track.artist or "").strip().casefold() not in recent_artist_keys]
+        recent_artist_keys = {
+            str(row.artist or "").strip().casefold()
+            for row in recent_rows
+            if str(row.artist or "").strip()
+        }
+        tracks = [
+            track
+            for track in tracks
+            if track.id not in recent_track_ids
+            and str(track.artist or "").strip().casefold()
+            not in recent_artist_keys
+        ]
         tracks = tracks[:6]
-
-                 payload.limit
-                )
-            ),
-        )
-    )
 
     return [
         AutoplayTrackResponse(
