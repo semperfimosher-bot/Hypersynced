@@ -161,6 +161,10 @@ jobs:
         run: |
           python -m ruff check --fix backend/app/services/artist_artwork.py
           git diff -- backend/app/services/artist_artwork.py
+      - name: Diagnose artist artwork import ordering
+        run: |
+          python -m ruff check --fix backend/app/services/artist_artwork.py
+          git diff -- backend/app/services/artist_artwork.py
       - name: Lint backend, scripts, and tests
         run: python -m ruff check backend scripts tests
 
