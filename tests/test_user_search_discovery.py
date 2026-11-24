@@ -92,7 +92,7 @@ async def test_empty_user_search_skips_follower_query_when_no_users(
 ) -> None:
     session = _FakeSearchSession([], [])
 
-    results = await user_routes.search_users("", session)
+    results = await user_routes.search_users("", cast(DatabaseSession, session))
 
     assert results == []
     assert len(session.statements) == 1
