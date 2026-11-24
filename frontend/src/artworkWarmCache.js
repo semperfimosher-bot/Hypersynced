@@ -1,5 +1,7 @@
 import { resolveArtworkUrl } from "./artworkUrl.js";
 
+const MAX_WARMED_ARTWORK_URLS = 600;
+
 const warmedArtworkUrls = new Set();
 const MAX_ARTWORKS_PER_BATCH = 24;
 
@@ -20,7 +22,11 @@ export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH) {
     const image = new Image();
     image.decoding = "async";
     image.fetchPriority = "low";
+    image.onerror = () => warmedArtworkUrls.delete(url);
     image.src = url;
+    while (warmedArtworkUrls.size > MAX_WARMED_ARTWORK_URLS) {
+      warmedArtworkUrls.delete(warmedArtworkUrls.values().next().value);
+    }
     warmed += 1;
   }
   return warmed;
