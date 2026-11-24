@@ -170,7 +170,7 @@ test("search shortcut polish and instant social cache are present", () => {
 
 
 test("search history suggestions and discovery shortcuts are lightweight and sparkle on hover", () => {
-  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\\.some/);
+  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\.some/);
   assert.match(searchPageSource, /hs-search-history-suggestions/);
   assert.doesNotMatch(searchPageSource, /YOUR HISTORY/);
   const discoveryTiles = searchPageSource.slice(
