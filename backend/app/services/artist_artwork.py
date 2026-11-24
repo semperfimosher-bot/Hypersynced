@@ -57,7 +57,7 @@ def verified_artist_entity_candidates(
     claims_by_entity: dict[str, dict],
 ) -> list[dict]:
     """Return exact-label, typed music artists that have a portrait claim."""
-    return [
+    candidates = [
         candidate
         for candidate in exact_artist_entity_candidates(
             artist_name,
@@ -71,6 +71,8 @@ def verified_artist_entity_candidates(
             claims_by_entity.get(candidate["id"], {}),
         )
     ]
+    # Exact-name matches can still collide across people/groups. Fail closed.
+    return candidates if len(candidates) == 1 else []
 
 
 def musicbrainz_artist_id(claims: dict) -> str | None:
@@ -162,8 +164,11 @@ def is_safe_wikimedia_url(value: str | None) -> bool:
 
 
 def license_is_reusable(value: str | None) -> bool:
-    normalized = re.sub(r"[^a-z0-9.+-]", "", str(value or "").casefold())
-    return normalized in {re.sub(r"[^a-z0-9.+-]", "", item) for item in ALLOWED_LICENSES}
+    normalized = re.sub(r"[^a-z0-9]", "", str(value or "").casefold())
+    return normalized in {
+        re.sub(r"[^a-z0-9]", "", item)
+        for item in ALLOWED_LICENSES
+    }
 
 
 def image_bytes_match_mime(content: bytes, content_type: str) -> bool:
