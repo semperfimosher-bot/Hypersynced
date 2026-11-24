@@ -405,6 +405,7 @@ function beginListeningEvent(
     return;
   }
 
+  const owner = activePlaybackOwnerId;
   const event = {
     trackId: String(trackId),
     eventId: null,
@@ -420,13 +421,13 @@ function beginListeningEvent(
   };
 
   const queueOfflineEvent = () => {
-    const queued = enqueueOfflineListeningEvent(activePlaybackOwnerId, {
+    const queued = enqueueOfflineListeningEvent(owner, {
       eventId: event.clientEventId,
       trackId: event.trackId,
       listenedAt: event.listenedAt,
     });
     if (queued) {
-      notifyListeningHistoryChanged({ type: "offline-history-queued", owner: activePlaybackOwnerId });
+      notifyListeningHistoryChanged({ type: "offline-history-queued", owner });
     }
     return null;
   };
@@ -461,7 +462,6 @@ function beginListeningEvent(
 
   activeListeningEvent = event;
 
-  const owner = activePlaybackOwnerId;
   if (owner) {
     const cachedRecent = readCachedHomeRecentlyPlayed(owner);
     writeCachedHomeRecentlyPlayed(
