@@ -22,7 +22,7 @@ function HomeCarousel({recent,suggestions,onNavigate,onRecent,onDiscover,onMood,
     <div className="home-carousel__art" style={cover?{backgroundImage:`url("${cover}")`}:undefined}/>
     <div className="home-carousel__content">
      <span className="home-carousel__eyebrow">{index===0?"PICK UP WHERE YOU LEFT OFF":index===1?"YOUR NEXT FAVORITE":index===2?"YOUR LIBRARY":"SET THE TONE"}</span>
-     <h2>{index===0?(guest?"Welcome to HyperSynced":"Welcome back") :index===1?"Discover something new":index===2?"Everything you love":"Music for the moment"}</h2>
+     <h2>{index===0?(guest?"Welcome to HyperSynced":"Your sound, right where you left it") :index===1?"Find your next favorite":index===2?"All your music, one tap away":"Set the mood. Press play."}</h2>
      <p>{index===0?"A quick look at music you've been playing lately.":index===1?"Explore recommendations shaped by listening and music you haven't tried.":index===2?"Jump straight into playlists, favorites, recent listening and more.":"Pick a mood and let the music take it from there."}</p>
      {index===0&&firstRecent?<div className="home-carousel__featured"><TrackTile track={firstRecent} onPlay={onPlay} onWarm={onWarm} menuProps={getMenuProps?.(firstRecent)}/></div>:null}
      {index===1&&discover?<div className="home-carousel__featured"><TrackTile track={discover} onPlay={onPlay} onWarm={onWarm} menuProps={getMenuProps?.(discover)}/></div>:null}
@@ -52,7 +52,7 @@ function HomePage({currentUser,onNavigate,onOpenAuth}){
  const warm=track=>{if(track?.id)void player.warmTrackForPlayback(track.id,track);};
  const menuProps=track=>menu.getTriggerProps(track),scrollSuggestions=()=>document.getElementById("home-suggested-music")?.scrollIntoView({behavior:"smooth",block:"start"});
  const discovery=suggestedTracks.filter(track=>!recentlyPlayed.some(recent=>String(recent.id)===String(track.id)));
- const releases=suggestedTracks.filter(track=>Number(track.release_year)>=2023).sort((a,b)=>(Number(b.release_year)||0)-(Number(a.release_year)||0));
+ const releases=suggestedTracks.filter(track=>Number(track.release_year)>=new Date().getFullYear()-1).sort((a,b)=>(Number(b.release_year)||0)-(Number(a.release_year)||0));
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
  <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={scrollSuggestions} onDiscover={()=>onNavigate?.("search")} onMood={setMood} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>
