@@ -15,7 +15,11 @@ async def test_offline_listening_event_sync_is_idempotent_for_same_owner_and_tra
     track_id = uuid4()
     event_id = uuid4()
     existing = SimpleNamespace(id=event_id, user_id=owner_id, track_id=track_id)
-    session = SimpleNamespace(get=AsyncMock(return_value=existing), execute=AsyncMock(), add=Mock())
+    session = SimpleNamespace(
+        get=AsyncMock(return_value=existing),
+        execute=AsyncMock(),
+        add=Mock(),
+    )
 
     response = await record_listening(
         ListeningRequest(track_id=track_id, event_id=event_id),
@@ -59,7 +63,11 @@ async def test_offline_listening_event_sync_preserves_client_timestamp():
     track = SimpleNamespace(id=track_id, is_published=True)
     session = SimpleNamespace(
         get=AsyncMock(return_value=None),
-        execute=AsyncMock(return_value=SimpleNamespace(scalar_one_or_none=lambda: track)),
+        execute=AsyncMock(
+            return_value=SimpleNamespace(
+                scalar_one_or_none=lambda: track,
+            ),
+        ),
         add=Mock(),
         flush=AsyncMock(),
         commit=AsyncMock(),
