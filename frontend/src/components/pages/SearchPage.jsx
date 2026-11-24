@@ -33,6 +33,7 @@ import {
   saveSearchPreferences,
   searchHypersync,
 } from "../../searchApi.js";
+import { getSuggestedMusic, searchUsers } from "../../profileApi.js";
 
 
 
@@ -457,6 +458,10 @@ useEffect(() => {
     activeFilter,
     setActiveFilter,
   ] = useState("all");
+  const [discoveryMode, setDiscoveryMode] = useState("");
+  const [discoveryTracks, setDiscoveryTracks] = useState([]);
+  const [discoveryLoading, setDiscoveryLoading] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState("");
 
   const [
     selectedTrackIndex,
@@ -1064,6 +1069,60 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     sortMode,
   ]);
 
+  useEffect(() => {
+    if (discoveryMode !== "people" || normalizedQuery) return undefined;
+    let cancelled = false;
+    setLoading(true);
+    searchUsers("")
+      .then((people) => {
+        if (cancelled) return;
+        setResults({
+          ...EMPTY_RESULTS,
+          people: Array.isArray(people) ? people : [],
+          counts: { ...EMPTY_RESULTS.counts, people: Array.isArray(people) ? people.length : 0 },
+        });
+        setSearchError("");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSearchError(error instanceof Error ? error.message : "Unable to load people.");
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [discoveryMode, normalizedQuery]);
+
+  useEffect(() => {
+    if (discoveryMode !== "tunes") return undefined;
+    let cancelled = false;
+    setDiscoveryLoading(true);
+    setDiscoveryError("");
+    const currentTrack = player.getState()?.trackId ?? null;
+    getSuggestedMusic({
+      currentTrackId: currentTrack,
+      contextTrackIds: currentTrack ? [currentTrack] : [],
+      excludeTrackIds: currentTrack ? [currentTrack] : [],
+      limit: 40,
+      homeExplore: false,
+    })
+      .then((tracks) => {
+        if (cancelled) return;
+        const normalized = Array.isArray(tracks) ? tracks : [];
+        setDiscoveryTracks(normalized);
+        setResults({
+          ...EMPTY_RESULTS,
+          tracks: normalized,
+          counts: { ...EMPTY_RESULTS.counts, tracks: normalized.length },
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setDiscoveryTracks([]);
+        setDiscoveryError(error instanceof Error ? error.message : "Unable to load personalized picks.");
+      })
+      .finally(() => { if (!cancelled) setDiscoveryLoading(false); });
+    return () => { cancelled = true; };
+  }, [discoveryMode, currentUser?.id, currentUser?.username]);
+
   const combinedResults = results;
 
   // Reflect optimistic Library saves immediately in Search results and detail.
@@ -1131,21 +1190,30 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     openedPlaylist?.id,
   ]);
 
-    function runQuickCommand(
-  command,
-) {
-  setActiveFilter(
-    command.filter,
-  );
-
-  setSelectedTrackIndex(
-    -1,
-  );
-
-  onQueryChange(
-    command.query,
-  );
-
+    function runQuickCommand(command) {
+  if (command.id === "find-people") {
+    setDiscoveryMode("people");
+    setDiscoveryTracks([]);
+    setDiscoveryError("");
+    setActiveFilter("people");
+    setSelectedTrackIndex(-1);
+    onQueryChange("");
+    return;
+  }
+  if (command.id === "find-new-tunes") {
+    setDiscoveryMode("tunes");
+    setDiscoveryTracks([]);
+    setDiscoveryError("");
+    setActiveFilter("tracks");
+    setSelectedTrackIndex(-1);
+    onQueryChange("");
+    return;
+  }
+  setDiscoveryMode("");
+  setDiscoveryTracks([]);
+  setActiveFilter(command.filter);
+  setSelectedTrackIndex(-1);
+  onQueryChange(command.query);
 }
 
   async function playTrack(
@@ -2615,7 +2683,7 @@ async function downloadOpenedPlaylist() {
     <div className="hs-search-console__intro">
   <span className="hs-search-console__eyebrow">DISCOVER YOUR NEXT SOUND</span>
   <h2>Tune into something new</h2>
-  <p>Find the music for whatever mood you’re in.</p>
+  
 
 
 
@@ -2698,8 +2766,8 @@ async function downloadOpenedPlaylist() {
           <div className="hs-search-discovery__tiles">
             {[
               { id: "newly-released", label: "Newly Released", query: "new releases", filter: "tracks", icon: "sparkles" },
-              { id: "find-people", label: "Find People", query: "music", filter: "people", icon: "people" },
-              { id: "find-new-tunes", label: "Find New Tunes", query: "new music", filter: "tracks", icon: "music" },
+              { id: "find-people", label: "Find People", query: "", filter: "people", icon: "people" },
+              { id: "find-new-tunes", label: "Find New Tunes", query: "", filter: "tracks", icon: "music" },
               ...SEARCH_QUICK_COMMANDS.map((command) => ({ ...command, icon: command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play" })),
             ].map((command) => (
               <button type="button" key={command.id} className="hs-search-discovery__tile" onClick={() => runQuickCommand(command)}>
