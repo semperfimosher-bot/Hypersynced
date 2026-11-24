@@ -2548,6 +2548,12 @@ async function downloadOpenedPlaylist() {
             "",
           );
         }}
+        onOpenRelease={(releaseQuery) => {
+          setOpenedArtistName("");
+          setOpenedPlaylist(null);
+          setPlaylistSearchQuery("");
+          onQueryChange?.(releaseQuery);
+        }}
       />
     );
   }
