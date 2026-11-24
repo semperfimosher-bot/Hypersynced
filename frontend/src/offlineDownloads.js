@@ -1729,6 +1729,21 @@ export async function getDownloadedTracks(
 }
 
 
+export async function getDownloadedArtistNames(ownerKey) {
+  const normalizedOwnerKey = normalizeOwnerKey(ownerKey);
+  if (!normalizedOwnerKey) return [];
+  const records = await getPinnedMediaRecords();
+  const names = new Set();
+  for (const record of records) {
+    if (!recordBelongsToOwner(record, normalizedOwnerKey)) continue;
+    if (!getMediaPinReferences(record).length) continue;
+    const artist = String(record.artist ?? record.currentTrack?.artist ?? "").trim();
+    if (artist) names.add(artist);
+  }
+  return [...names];
+}
+
+
 export async function getDownloadedPlaylists(
   ownerKey,
 ) {
