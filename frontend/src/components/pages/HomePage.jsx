@@ -146,7 +146,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     }
   };
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
-  const menuProps = (track) => menu.getTriggerProps(track);\n  const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
+  const menuProps = (track) => menu.getTriggerProps(track);
+  const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
   const homeDiscoveryPool = (suggestedTracks.length ? suggestedTracks : recentlyAdded).filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);
   const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 12);
