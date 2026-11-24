@@ -4,7 +4,7 @@ import test from "node:test";
 import "fake-indexeddb/auto";
 import {
   applySavedPlaylistMembership, settleSavedPlaylistMembership,
-  clearCachedLibraryScope, clearCachedLibraryPages, getCachedLibrary, getCachedLibraryAsync,
+  assert.match(libraryPageSource, /getCachedLibraryAsync\(\s*libraryCacheKey\s*\)/);
   getCachedLibraryPageAsync, getCachedPlaylistAsync,
   setCachedLibrary, setCachedLibraryPageAsync, setCachedPlaylist,
 } from "./libraryCache.js";
@@ -115,7 +115,7 @@ test("Library renders a persisted snapshot before validating it with the network
     "utf8",
   );
   assert.match(libraryPageSource, /getCachedLibraryAsync\\(\\s*libraryCacheKey\\s*\\)/);
-  assert.match(libraryPageSource, /if \\(cached && !quiet\\) setLoading\\(false\\)/);
-  assert.match(libraryPageSource, /await Promise\\.all\\(\\s*\\[\\s*setCachedLibrary\\([\\s\\S]*?setCachedLibraryPageAsync\\(/);
-  assert.match(libraryPageSource, /getLibraryTracks\\(\\s*\\{\\s*limit:\s*LIBRARY_TRACKS_PAGE_SIZE,\\s*offset:\s*0/);
+  assert.match(libraryPageSource, /if \(cached && !quiet\) setLoading\(false\)/);
+  assert.match(libraryPageSource, /await Promise\.all\(\s*\[\s*setCachedLibrary\([\s\S]*?setCachedLibraryPageAsync\(/);
+  assert.match(libraryPageSource, /getLibraryTracks\(\s*\{\s*limit:\s*LIBRARY_TRACKS_PAGE_SIZE,\s*offset:\s*0/);
 });
