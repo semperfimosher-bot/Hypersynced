@@ -5,8 +5,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from backend.app.api.routes import users as user_routes
 from backend.app.api.dependencies import DatabaseSession
+from backend.app.api.routes import users as user_routes
 
 
 class _FakeUsersResult:
