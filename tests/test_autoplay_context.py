@@ -12,7 +12,7 @@ from backend.app.services.autoplay import (
     CONTEXT_TRACK_LIMIT,
     RECENT_SESSION_LIMIT,
     _build_context_affinity,
-    _genre_family,
+    _genre_similarity,
     _recent_session_weight,
 )
 
@@ -187,36 +187,12 @@ def test_recent_session_signal_stops_after_twelve_songs() -> None:
     assert _recent_session_weight(12) == 0.0
 
 
-def test_genre_family_keeps_country_away_from_rap() -> None:
-    assert (
-        _genre_family(
-            "Country",
-        )
-        == "country"
-    )
-
-    assert (
-        _genre_family(
-            "Americana / Country",
-        )
-        == "country"
-    )
-
-    assert (
-        _genre_family(
-            "Hip-Hop/Rap",
-        )
-        == "hip-hop"
-    )
-
-    assert (
-        _genre_family(
-            "Country",
-        )
-        != _genre_family(
-            "Hip-Hop/Rap",
-        )
-    )
+def test_genre_similarity_uses_catalog_label_tokens_without_taxonomy() -> None:
+    assert _genre_similarity("Country", "Rap") == 0.0
+    assert _genre_similarity("Hip-Hop/Rap", "Hip Hop") > 0.5
+    assert _genre_similarity("Alternative Rock", "Rock") >= 0.7
+    assert _genre_similarity("Country", "Americana / Country") >= 0.5
+    assert _genre_similarity(None, "Rock") == 0.0
 
 
 def test_autoplay_request_tolerates_temporary_on_demand_ids() -> None:
