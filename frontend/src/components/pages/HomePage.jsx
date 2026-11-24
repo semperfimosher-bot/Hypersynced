@@ -13,7 +13,7 @@ import {
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
-import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";\nimport { getDownloadedArtistNames, getOfflineOwnerKey } from "../../offlineDownloads.js";\nimport DownloadedArtistTrackNotice from "../home/DownloadedArtistTrackNotice.jsx";
+import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";\nimport DownloadedArtistTrackNotice from "../home/DownloadedArtistTrackNotice.jsx";
 
 function normalizedArtistKey(value) {
   return String(value ?? "").toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
