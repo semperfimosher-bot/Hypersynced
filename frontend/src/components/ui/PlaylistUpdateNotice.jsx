@@ -14,7 +14,6 @@ function PlaylistUpdateNotice({ update, variant = "mobile", onDownload, onDismis
       <span className="playlist-update-notice__icon"><Icon name="download" size={16} /></span>
       <span className="playlist-update-notice__copy">
         <strong>{count} {count === 1 ? "new song" : "new songs"}</strong>
-        <small>{update.playlist?.title ?? "Generated playlist"}</small>
         {firstTrack ? <button type="button" className="playlist-update-notice__song" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{firstTrack.title || "View new song details"} · {firstTrack.artist || "Unknown artist"}</button> : null}
       </span>
       {expanded && firstTrack ? <span className="playlist-update-notice__track-detail"><strong>{firstTrack.title || "New song"}</strong><small>{firstTrack.artist || "Unknown artist"}{firstTrack.album ? " · " + firstTrack.album : ""}</small>{firstTrack.genre ? <small>Genre: {firstTrack.genre}</small> : null}{firstTrack.release_year ? <small>Released: {firstTrack.release_year}</small> : null}</span> : null}
