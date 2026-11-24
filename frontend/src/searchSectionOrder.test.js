@@ -186,6 +186,8 @@ test("discovery shortcuts use distinct collage sources including real profile ph
   assert.match(searchPageSource, /searchUsers\(""\)/);
   assert.match(searchPageSource, /profilePool\.slice\(0, 4\)/);
   assert.match(searchPageSource, /releasePool\.slice\(0, 4\)/);
+  assert.match(searchPageSource, /searchHypersync\("new releases", "smart"/);
+  assert.match(searchPageSource, /discoveryReleaseResults\.tracks/);
   assert.match(searchPageSource, /musicPool\.slice\(4, 8\)/);
   assert.match(searchPageSource, /quickCommandIndex/);
   assert.match(searchPageSource, /quickCommandTracks/);
