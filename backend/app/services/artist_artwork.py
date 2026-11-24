@@ -52,6 +52,16 @@ def license_is_reusable(value: str | None) -> bool:
     return normalized in {re.sub(r"[^a-z0-9.+-]", "", item) for item in ALLOWED_LICENSES}
 
 
+def image_bytes_match_mime(content: bytes, content_type: str) -> bool:
+    if content_type == "image/jpeg":
+        return content.startswith(b"\\xff\\xd8\\xff")
+    if content_type == "image/png":
+        return content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+    if content_type == "image/webp":
+        return len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP"
+    return False
+
+
 async def _request_json(client: httpx.AsyncClient, url: str, params: dict) -> dict:
     response = await client.get(url, params=params)
     response.raise_for_status()
@@ -123,6 +133,8 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
                 content.extend(chunk)
                 if len(content) > MAX_ART_BYTES:
                     return None
+        if not image_bytes_match_mime(bytes(content), content_type):
+            return None
         if not content:
             return None
         return {
@@ -174,6 +186,7 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             if not profile or profile.artwork_object_key:
                 return
             profile.artwork_object_key = object_key
+            profile.artwork_artist_qid = candidate["artist_qid"]
             profile.artwork_source_url = candidate["source_url"]
             profile.artwork_source_page_url = candidate["source_page_url"]
             profile.artwork_license = candidate["license"]
