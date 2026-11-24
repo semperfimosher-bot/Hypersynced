@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import "fake-indexeddb/auto";
 import {
@@ -106,4 +107,15 @@ test("optimistic saved-playlist changes update the Library snapshot immediately 
   const persisted = await getCachedLibraryAsync(owner);
   assert.deepEqual(persisted.saved, []);
   assert.deepEqual(persisted.pendingSavedPlaylistChanges, {});
+});
+
+test("Library renders a persisted snapshot before validating it with the network and caches the first server response", () => {
+  const libraryPageSource = readFileSync(
+    new URL("./components/pages/LibraryPage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(libraryPageSource, /getCachedLibraryAsync\\(\\s*libraryCacheKey\\s*\\)/);
+  assert.match(libraryPageSource, /if \\(cached && !quiet\\) setLoading\\(false\\)/);
+  assert.match(libraryPageSource, /await Promise\\.all\\(\\s*\\[\\s*setCachedLibrary\\([\\s\\S]*?setCachedLibraryPageAsync\\(/);
+  assert.match(libraryPageSource, /getLibraryTracks\\(\\s*\\{\\s*limit:\s*LIBRARY_TRACKS_PAGE_SIZE,\\s*offset:\s*0/);
 });
