@@ -399,6 +399,7 @@ function LiveLyrics() {
         )
       }
       aria-label="Live lyrics"
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
 
       <div
