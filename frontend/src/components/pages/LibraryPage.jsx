@@ -1046,6 +1046,8 @@ const [
         libraryChangeTokenRef.current = cached.changeToken ?? null;
         hydratedLibraryOwnerRef.current = libraryCacheKey;
       }
+        // Cached rows are ready to render; do not keep the Library waiting for network validation.
+        if (!quiet) setLoading(false);
 
 
       /*
@@ -1269,7 +1271,8 @@ const [
         // Persist the first complete snapshot and first page without holding the
         // Library's visible loading state hostage to IndexedDB cleanup/writes.
         // The data is already rendered; writes continue asynchronously.
-        void Promise.all([
+        if (!quiet) setLoading(false);
+        await Promise.all([
           setCachedLibrary(
             libraryCacheKey,
             {
