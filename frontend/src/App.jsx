@@ -855,6 +855,7 @@ export default function App() {
     const storageKey = `hypersynced.stream-milestones.v1:${encodeURIComponent(String(owner))}`;
     let activeTrackId = null;
     let countedThisSession = false;
+    let previousTime = 0;
     let snapshot = { count: 0, milestone: 0 };
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -868,23 +869,28 @@ export default function App() {
       if (trackKey !== activeTrackId) {
         activeTrackId = trackKey;
         countedThisSession = false;
-      } else if (countedThisSession && currentTime < 3) {
-        // A restart or replay of the same track starts a new counting session.
+        previousTime = 0;
+      } else if (countedThisSession && previousTime > 8 && currentTime < 3) {
+        // Count a genuine restart only after playback had moved beyond the opening seconds.
         countedThisSession = false;
       }
       const duration = Number(state.duration) || 0;
       const threshold = duration > 0 ? Math.min(30, duration * 0.5) : 30;
+      previousTime = currentTime;
       if (currentTime < threshold || countedThisSession) return;
       countedThisSession = true;
       snapshot.count += 1;
-      const milestone = Math.floor(snapshot.count / 100) * 100;
-      if (milestone > snapshot.milestone) {
-        snapshot.milestone = milestone;
-        setStatusMessage(`🎉 ${milestone} songs streamed! Thanks for supporting HyperSynced and being part of our music community! 💙🎶`);
-      }
+      const milestone = snapshot.count - (snapshot.count % 100);
       try {
         localStorage.setItem(storageKey, JSON.stringify(snapshot));
       } catch {}
+      if (milestone > 0 && snapshot.count % 100 === 0 && milestone > snapshot.milestone) {
+        snapshot.milestone = milestone;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(snapshot));
+        } catch {}
+        setStatusMessage(`🎉 ${milestone} songs streamed! Thanks for supporting HyperSynced and being part of our music community! 💙🎶`);
+      }
     });
     return unsubscribe;
   }, [currentUser?.id, currentUser?.username, currentUser?.offline_only]);
