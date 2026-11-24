@@ -917,7 +917,7 @@ async def record_listening(
     session.add(event)
     try:
         await session.flush()
-    except IntegrityError:
+    except IntegrityError as error:
         await session.rollback()
         if payload.event_id is not None:
             duplicate = await session.get(
@@ -938,7 +938,7 @@ async def record_listening(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Listening event ID conflicts with an existing event.",
-        )
+        ) from error
     event_id = event.id
     await session.commit()
     return {
