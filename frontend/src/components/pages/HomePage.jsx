@@ -58,8 +58,11 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  const releaseIds=new Set(releases.map(track=>String(track.id)));
  const discovery=suggestedTracks.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
  const quickPicks=[...recentlyPlayed,...suggestedTracks].filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,4);
- const allShelfIds=new Set([...recentIds,...releaseIds,...discovery.map(track=>String(track.id))]);
- const pickedForYou=filtered.filter(track=>!allShelfIds.has(String(track.id)));
+ // Keep the bottom personalized shelf populated: use fresh recommendations first,
+ // then remaining recommendation results, and finally listening-history tracks.
+ const remainingRecommendations=suggestedTracks.filter(track=>!recentIds.has(String(track.id)));
+ const bottomSuggestions=discovery.length?discovery:remainingRecommendations.length?remainingRecommendations:recentlyPlayed;
+ const personalizedSuggestions=bottomSuggestions.filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,12);
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
  <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={scrollSuggestions} onDiscover={()=>onNavigate?.("search")} onMood={onMoodSection} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps} onOpenArtist={onOpenArtist}/>
@@ -70,7 +73,7 @@ function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
  <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate}/>
  <MoodCards tracks={suggestedTracks} onChange={onMoodSection}/>
  <section id="home-suggested-music" className="home-music-section home-feed-row"><SectionHeading title="Suggested Music" actionLabel="Explore" onAction={()=>onNavigate?.("search")}/>
- {pickedForYou.length?<div className="home-horizontal-scroll home-scroll-fade" aria-busy={loading}>{pickedForYou.map(track=><TrackTile key={track.id} track={track} onPlay={play} onWarm={warm} menuProps={menuProps(track)}/>)}</div>:loading?<div className="home-track-grid home-track-grid--loading" aria-busy="true" aria-label="Loading suggestions">{Array.from({length:6},(_,i)=><div className="home-track-card home-track-card--skeleton" key={i} aria-hidden="true"><div className="home-track-card__art home-skeleton-block"/><div className="home-track-card__info"><span className="home-skeleton-line home-skeleton-line--title"/><span className="home-skeleton-line home-skeleton-line--artist"/></div></div>)}</div>:error?<div className="empty-content-card"><div><strong>Suggested music unavailable</strong><p>{error}</p></div></div>:<div className="home-empty-state"><div className="home-empty-state__icon">♫</div><div><strong>Suggestions are warming up</strong><p>Play a few songs to help Hypersynced build a mix that fits your listening.</p></div></div>}
+ {personalizedSuggestions.length?<div className="home-horizontal-scroll home-scroll-fade" aria-busy={loading}>{personalizedSuggestions.map(track=><TrackTile key={track.id} track={track} onPlay={play} onWarm={warm} menuProps={menuProps(track)}/>)}</div>:loading?<div className="home-track-grid home-track-grid--loading" aria-busy="true" aria-label="Loading listening-based suggestions">{Array.from({length:6},(_,i)=><div className="home-track-card home-track-card--skeleton" key={i} aria-hidden="true"><div className="home-track-card__art home-skeleton-block"/><div className="home-track-card__info"><span className="home-skeleton-line home-skeleton-line--title"/><span className="home-skeleton-line home-skeleton-line--artist"/></div></div>)}</div>:<div className="home-empty-state"><div className="home-empty-state__icon">♫</div><div><strong>Your listening mix is ready to grow</strong><p>Play a few songs and this shelf will recommend more music based on your listening.</p><button type="button" className="home-carousel__action" onClick={()=>onNavigate?.("search")}>Explore music →</button></div></div>}
  </section><TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth}/></div>;
 }
 export default HomePage;
