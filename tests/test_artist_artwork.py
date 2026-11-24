@@ -392,7 +392,11 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         assert name == "Verified Artist"
         return candidate
 
-    monkeypatch.setattr(artist_artwork, "get_session_factory", session_factory)
+    monkeypatch.setattr(
+        artist_artwork,
+        "get_session_factory",
+        lambda: session_factory,
+    )
     monkeypatch.setattr(
         artist_artwork,
         "find_reusable_artist_image",
