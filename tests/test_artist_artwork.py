@@ -3,7 +3,10 @@ from backend.app.services.artist_artwork import (
     has_artist_entity_type,
     is_safe_wikimedia_url,
     license_is_reusable,
+    musicbrainz_identity_matches,
+    musicbrainz_artist_id,
     verified_artist_entity_candidates,
+    wikidata_qid_from_musicbrainz_relations,
 )
 
 
@@ -83,3 +86,53 @@ def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
     assert not is_safe_wikimedia_url("http://upload.wikimedia.org/example.jpg")
     assert not is_safe_wikimedia_url("https://example.com/image.jpg")
     assert not is_safe_wikimedia_url("https://commons.wikimedia.org@evil.example/image.jpg")
+
+
+def test_artist_identity_requires_matching_musicbrainz_and_wikidata_link() -> None:
+    artist_claims = {
+        "P434": [{"mainsnak": {"datavalue": {"value": "mbid-123"}}}],
+    }
+    mb_response = {
+        "name": "Sample Artist",
+        "type": "Person",
+        "relations": [
+            {
+                "type": "wikidata",
+                "url": {"resource": "https://www.wikidata.org/wiki/Q123"},
+            },
+        ],
+    }
+
+    assert musicbrainz_artist_id(artist_claims) == "mbid-123"
+    assert wikidata_qid_from_musicbrainz_relations(mb_response) == "Q123"
+    assert musicbrainz_identity_matches("sample artist", "Q123", mb_response)
+    assert not musicbrainz_identity_matches("Other Artist", "Q123", mb_response)
+    assert not musicbrainz_identity_matches("Sample Artist", "Q999", mb_response)
+    assert not musicbrainz_identity_matches(
+        "Sample Artist",
+        "Q123",
+        {"name": "Sample Artist", "type": "Person", "relations": []},
+    )
+
+
+def test_verified_entity_candidate_requires_external_musicbrainz_id() -> None:
+    results = [{"id": "Q123", "label": "Verified Artist"}]
+    claims_without_id = {
+        "Q123": {
+            "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q639669"}}}}],
+            "P18": [{}],
+        },
+    }
+    claims_with_id = {
+        "Q123": {
+            **claims_without_id["Q123"],
+            "P434": [{"mainsnak": {"datavalue": {"value": "mbid-verified"}}}],
+        },
+    }
+
+    assert verified_artist_entity_candidates(
+        "Verified Artist", results, claims_without_id,
+    ) == []
+    assert verified_artist_entity_candidates(
+        "Verified Artist", results, claims_with_id,
+    ) == results
