@@ -1449,6 +1449,15 @@ const persistAppView =
   function handleLogout() {
   clearProfileSnapshot(currentUser?.id);
   clearMessagesListSnapshot(currentUser?.id);
+  try {
+    const conversationPrefix = "hypersynced.conversation-snapshot.v1:" + encodeURIComponent(String(currentUser?.id ?? "").trim()) + ":";
+    for (let index = window.sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.sessionStorage.key(index);
+      if (key?.startsWith(conversationPrefix)) window.sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Conversation cache is optional; logout state reset still proceeds.
+  }
   navigationGenerationRef.current += 1;
   cancelPendingSearchSave();
 
