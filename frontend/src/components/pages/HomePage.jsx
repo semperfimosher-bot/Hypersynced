@@ -15,7 +15,7 @@ import {
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
 import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";
 
-const MEMBER_SLIDE_LABELS = ["Your music", "Discover", "Quick access", "Explore"];
+const MEMBER_SLIDE_LABELS = ["Your music", "Discover", "Artists to explore", "Explore"];
 
 function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPlay, onOpenArtist }) {
   const slideLabels = guest ? ["Welcome", "Your music", "Discover", "Quick access", "Explore"] : MEMBER_SLIDE_LABELS;
@@ -47,15 +47,15 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
     <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
       <div className="home-carousel__viewport">
         {slideLabels.map((label, index) => (
-          <article key={label} className={`home-carousel__slide ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
-            <div className="home-carousel__art" style={coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
+          <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
+            <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index) ? <img src={coverFor(index)} alt="" loading={index === active ? "eager" : "lazy"} /> : null}</div>
             <div className="home-carousel__content">
               <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "PICK UP WHERE YOU LEFT OFF" : contentIndex === 1 ? "YOUR NEXT FAVORITE" : contentIndex === 2 ? "YOUR LIBRARY" : "EXPLORE MUSIC"}</span>
               <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Your sound, right where you left it" : contentIndex === 1 ? "Find your next favorite" : contentIndex === 2 ? "All your music, one tap away" : "Explore something new"}</h2>
               <p>{guest && index === 0 ? "Discover music, find your favorites, and make HyperSynced your own." : contentIndex === 0 ? "A quick look at music you’ve been playing lately." : contentIndex === 1 ? "Explore music and discover something new to listen to." : contentIndex === 2 ? "Jump straight into playlists, favorites, recent listening and more." : "Browse music, artists, albums and playlists."}</p>
               {activeTrack && !(guest && index === 0) ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
-              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? onNavigate?.("library") : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Play recent" : "Get started") : contentIndex === 1 ? (discover ? "Play discovery" : "Explore music") : contentIndex === 2 ? "Open library" : "Explore music"} <span>▶</span></button>
+              <button className="home-carousel__action" type="button" onClick={() => guest && index === 0 ? onOpenAuth?.() : contentIndex === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : contentIndex === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : contentIndex === 2 ? onOpenArtist?.(suggestions[2]?.artist) : onNavigate?.("search")}>{guest && index === 0 ? "Get started" : contentIndex === 0 ? (firstRecent ? "Play recent" : "Get started") : contentIndex === 1 ? (discover ? "Play discovery" : "Explore music") : contentIndex === 2 ? "Explore artists" : "Explore music"} <span>▶</span></button>
             </div>
           </article>
         ))}
