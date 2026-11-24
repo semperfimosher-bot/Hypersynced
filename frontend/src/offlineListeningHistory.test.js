@@ -25,7 +25,11 @@ function withLocalStorage(run) {
 
 test("offline listening queue is owner-scoped, bounded, and deduplicates event IDs", () => {
   withLocalStorage(() => {
-    const event = { eventId: createListeningEventId(), trackId: "track-a", listenedAt: "2026-11-23T20:00:00.000Z" };
+    const event = {
+      eventId: createListeningEventId(),
+      trackId: "track-a",
+      listenedAt: "2026-11-23T20:00:00.000Z",
+    };
     assert.equal(enqueueOfflineListeningEvent("owner-a", event), true);
     assert.equal(enqueueOfflineListeningEvent("owner-a", event), true);
     assert.equal(readOfflineListeningEvents("owner-a").length, 1);
@@ -33,11 +37,21 @@ test("offline listening queue is owner-scoped, bounded, and deduplicates event I
   });
 });
 
-test("offline listening sync removes acknowledged events and retains the failed event", async () => {
+test(
+  "offline listening sync removes acknowledged events and retains the failed event",
+  async () => {
   await withLocalStorageAsync(async () => {
     const events = [
-      { eventId: createListeningEventId(), trackId: "track-1", listenedAt: "2026-11-23T20:00:00.000Z" },
-      { eventId: createListeningEventId(), trackId: "track-2", listenedAt: "2026-11-23T20:01:00.000Z" },
+      {
+        eventId: createListeningEventId(),
+        trackId: "track-1",
+        listenedAt: "2026-11-23T20:00:00.000Z",
+      },
+      {
+        eventId: createListeningEventId(),
+        trackId: "track-2",
+        listenedAt: "2026-11-23T20:01:00.000Z",
+      },
     ];
     events.forEach((event) => enqueueOfflineListeningEvent("owner-a", event));
     const sent = [];
@@ -52,8 +66,8 @@ test("offline listening sync removes acknowledged events and retains the failed 
     assert.equal(sent[0].track_id, events[0].trackId);
     assert.equal(sent[0].listened_at, events[0].listenedAt);
     assert.deepEqual(readOfflineListeningEvents("owner-a"), [events[1]]);
-  });
-});
+  },
+);
 
 async function withLocalStorageAsync(run) {
   const original = globalThis.localStorage;
