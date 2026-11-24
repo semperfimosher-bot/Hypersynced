@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import re
+import time
 from uuid import UUID
 
 import httpx
-from sqlalchemy import select
-
 from ..config import get_settings
 from ..database import get_session_factory
 from ..models.artist import ArtistProfile
@@ -23,6 +22,7 @@ ALLOWED_LICENSES = {
     "cc-by-sa-3.0", "cc-by-sa-4.0", "public domain", "public domain mark", "pd",
 }
 _active_artist_jobs: set[str] = set()
+_artist_artwork_retry_after: dict[str, float] = {}
 
 
 def exact_artist_entity_candidates(artist_name: str, search_results: list[dict]) -> list[dict]:
@@ -81,17 +81,31 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
     if not clean_name:
         return None
 
-    headers = {"User-Agent": USER_AGENT}
-    async with httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(8.0), follow_redirects=True) as client:
+    async with httpx.AsyncClient(
+        headers={"User-Agent": USER_AGENT},
+        timeout=httpx.Timeout(8.0),
+        follow_redirects=True,
+    ) as client:
         search_data = await _request_json(
             client, WIKIDATA_API,
-            {"action": "wbsearchentities", "search": clean_name, "language": "en", "format": "json", "limit": 20},
+            {
+                "action": "wbsearchentities",
+                "search": clean_name,
+                "language": "en",
+                "format": "json",
+                "limit": 20,
+            },
         )
         candidates = exact_artist_entity_candidates(clean_name, search_data.get("search") or [])
         verified = []
         for candidate in candidates[:6]:
             entity_data = await _request_json(
-                client, f"https://www.wikidata.org/wiki/Special:EntityData/{candidate['id']}.json", {},
+                client,
+                (
+                    "https://www.wikidata.org/wiki/Special:EntityData/"
+                    f"{candidate['id']}.json"
+                ),
+                {},
             )
             entity = entity_data.get("entities", {}).get(candidate["id"], {})
             claims = entity.get("claims") or {}
@@ -107,7 +121,14 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
         file_title = "File:" + image_value.replace(" ", "_")
         commons_data = await _request_json(
             client, COMMONS_API,
-            {"action": "query", "titles": file_title, "prop": "imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": 1200, "format": "json"},
+            {
+                "action": "query",
+                "titles": file_title,
+                "prop": "imageinfo",
+                "iiprop": "url|extmetadata",
+                "iiurlwidth": 1200,
+                "format": "json",
+            },
         )
         pages = commons_data.get("query", {}).get("pages", {})
         page = next(iter(pages.values()), {})
@@ -144,13 +165,19 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             "source_url": image_info.get("url") or image_url,
             "source_page_url": source_page,
             "license": license_name,
-            "credit": ext.get("Artist", {}).get("value") or ext.get("Credit", {}).get("value") or "",
+            "credit": (
+                ext.get("Artist", {}).get("value")
+                or ext.get("Credit", {}).get("value")
+                or ""
+            ),
         }
 
 
 async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
     job_key = str(profile_id)
     if job_key in _active_artist_jobs:
+        return
+    if _artist_artwork_retry_after.get(job_key, 0) > time.monotonic():
         return
     _active_artist_jobs.add(job_key)
     try:
@@ -164,8 +191,10 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
         try:
             candidate = await find_reusable_artist_image(artist_name)
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         if not candidate:
+            _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
 
         settings = get_settings()
@@ -192,8 +221,13 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             profile.artwork_license = candidate["license"]
             profile.artwork_credit = candidate["credit"]
             await session.commit()
+            _artist_artwork_retry_after.pop(job_key, None)
     except Exception as exc:
         # Artwork is optional. Provider or storage failures do not break artist pages.
-        print(f"[artist-artwork] fetch/store failed for {profile_id}: {type(exc).__name__}")
+        _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
+        print(
+            "[artist-artwork] fetch/store failed for "
+            f"{profile_id}: {type(exc).__name__}"
+        )
     finally:
         _active_artist_jobs.discard(job_key)
