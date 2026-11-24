@@ -158,3 +158,13 @@
 .home-quick-picks__grid .home-track-tile:hover{background:#012036}
 @media(max-width:979px){.home-carousel__artwork-cover{width:77%;height:77%}.home-carousel__artwork-cover--2{left:-1%;top:3%}.home-carousel__artwork-cover--3{right:-1%;bottom:1%}}
 @media(prefers-reduced-motion:reduce){.home-carousel__artwork-cover{transition:none}}
+
+/* Quick-pick cards reveal small stars on their right edge when hovered or focused. */
+.home-quick-picks .home-track-tile { position: relative; overflow: hidden; }
+.home-quick-picks .home-track-tile__sparkles { position: absolute; right: 8px; top: 50%; width: 25px; height: 28px; transform: translateY(-50%) scale(.65) rotate(-10deg); opacity: 0; pointer-events: none; transition: opacity 150ms ease, transform 220ms ease; }
+.home-quick-picks .home-track-tile__sparkles i { position: absolute; color: #b9f3ff; font-style: normal; line-height: 1; text-shadow: 0 0 8px rgba(83,220,255,.95), 0 0 14px rgba(48,161,255,.5); }
+.home-quick-picks .home-track-tile__sparkles i:nth-child(1) { top: 0; right: 1px; font-size: 13px; }
+.home-quick-picks .home-track-tile__sparkles i:nth-child(2) { left: 0; bottom: 2px; font-size: 10px; }
+.home-quick-picks .home-track-tile__sparkles i:nth-child(3) { right: 0; bottom: 0; font-size: 7px; }
+.home-quick-picks .home-track-tile:hover .home-track-tile__sparkles, .home-quick-picks .home-track-tile:focus-visible .home-track-tile__sparkles { opacity: 1; transform: translateY(-50%) scale(1) rotate(0); }
+@media (prefers-reduced-motion: reduce) { .home-quick-picks .home-track-tile__sparkles { transition: none; } }
