@@ -57,29 +57,10 @@ export function MoodFilterBar({ activeMood, onChange }) {
 
 export function TrackTile({ track, onPlay, onWarm, menuProps, onPlayNext }) {
   const art = resolveArtworkUrl(track.artwork_url ?? track.artworkUrl);
-  const [shifted, setShifted] = React.useState(false);
-  const startRef = React.useRef(null);
-  const suppressClick = React.useRef(false);
-  const onPointerDown = (event) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    startRef.current = { x: event.clientX, y: event.clientY };
-    suppressClick.current = false;
-  };
-  const onPointerUp = (event) => {
-    if (!startRef.current) return;
-    const dx = event.clientX - startRef.current.x;
-    const dy = event.clientY - startRef.current.y;
-    startRef.current = null;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      suppressClick.current = true;
-      setShifted(dx < 0);
-      window.setTimeout(() => { suppressClick.current = false; }, 350);
-    }
-  };
   return (
     <div className="home-track-tile-wrap">
-      <button type="button" className="home-track-tile__next" onClick={() => { onPlayNext?.(track); setShifted(false); }} aria-label={`Add ${track.title || "track"} to Play Next`}>＋<span>Play Next</span></button>
-      <button type="button" className={`home-track-tile ${shifted ? "is-shifted" : ""}`} {...menuProps} onPointerDown={(event) => { onPointerDown(event); onWarm?.(track); }} onPointerUp={onPointerUp} onMouseEnter={() => onWarm?.(track)} onFocus={() => onWarm?.(track)} onClick={(event) => { if (suppressClick.current) { event.preventDefault(); return; } onPlay?.(track); }} aria-label={`Play ${track.title || "track"}`}>
+      <button type="button" className="home-track-tile__next" onClick={() => onPlayNext?.(track)} aria-label={`Add ${track.title || "track"} to Play Next`}>＋<span>Play Next</span></button>
+      <button type="button" className="home-track-tile" {...menuProps} onMouseDown={() => onWarm?.(track)} onMouseEnter={() => onWarm?.(track)} onFocus={() => onWarm?.(track)} onClick={() => onPlay?.(track)} aria-label={`Play ${track.title || "track"}`}>
         <span className="home-track-tile__cover">{art ? <img src={art} alt="" loading="lazy" /> : <span className="home-track-tile__placeholder">♫</span>}<span className="home-track-tile__play">▶</span></span>
         <span className="home-track-tile__copy"><strong>{track.title || "Untitled track"}</strong><small>{track.artist || "Unknown artist"}</small></span>
       </button>
