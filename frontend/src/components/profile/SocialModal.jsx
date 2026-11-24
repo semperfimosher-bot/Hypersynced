@@ -67,18 +67,34 @@ export default function SocialModal({
   onChanged,
   onOpenProfile,
 }) {
+  const cacheKey = mode === "requests" ? null : `hypersynced.social-cache.v1:${String(username ?? "").trim().toLowerCase()}:${mode}`;
+  const readCache = (key) => {
+    if (!key) return null;
+    try {
+      const cached = JSON.parse(globalThis.localStorage?.getItem(key) || "null");
+      return Array.isArray(cached?.items) && Number.isFinite(cached?.savedAt) ? cached.items : null;
+    } catch {
+      return null;
+    }
+  };
   const [items, setItems] =
-    useState([]);
+    useState(() => readCache(cacheKey) ?? []);
 
   const [loading, setLoading] =
-    useState(true);
+    useState(() => readCache(cacheKey) === null);
 
   const [error, setError] =
     useState("");
 
   const load = useCallback(
     async () => {
-      setLoading(true);
+      const cachedItems = readCache(cacheKey);
+      if (cachedItems !== null) {
+        setItems(cachedItems);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       setError("");
 
       try {
@@ -103,20 +119,32 @@ export default function SocialModal({
             );
         }
 
-        setItems(data || []);
+        const nextItems = data || [];
+        setItems(nextItems);
+        if (cacheKey) {
+          try {
+            const serialized = JSON.stringify({ savedAt: Date.now(), items: nextItems });
+            if (serialized.length <= 100_000) globalThis.localStorage?.setItem(cacheKey, serialized);
+          } catch {
+            // Social cache is an optional speed optimization.
+          }
+        }
 
       } catch (loadError) {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Unable to load people.",
-        );
+        if (readCache(cacheKey) === null) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Unable to load people.",
+          );
+        }
 
       } finally {
         setLoading(false);
       }
     },
     [
+      cacheKey,
       mode,
       username,
     ],
