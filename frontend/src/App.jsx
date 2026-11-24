@@ -848,30 +848,43 @@ export default function App() {
   const [statusMessage, setStatusMessage] =
     useState("");
 
-  // Count unique track starts per account and celebrate every 100 streams.
+  // Count meaningful playback per play session, including repeat plays of the same track.
   useEffect(() => {
     const owner = currentUser?.id ?? currentUser?.username;
     if (!owner || currentUser?.offline_only) return undefined;
     const storageKey = `hypersynced.stream-milestones.v1:${encodeURIComponent(String(owner))}`;
-    let lastCountedTrack = null;
+    let activeTrackId = null;
+    let countedThisSession = false;
     let snapshot = { count: 0, milestone: 0 };
-    try { snapshot = { ...snapshot, ...(JSON.parse(localStorage.getItem(storageKey) || "{}")) }; } catch {}
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      snapshot.count = Math.max(0, Math.floor(Number(saved.count) || 0));
+      snapshot.milestone = Math.max(0, Math.floor(Number(saved.milestone) || 0));
+    } catch {}
     const unsubscribe = player.subscribe((state) => {
       if (state?.phase !== "playing" || !state.trackId) return;
+      const trackKey = String(state.trackId);
+      const currentTime = Math.max(0, Number(state.currentTime) || 0);
+      if (trackKey !== activeTrackId) {
+        activeTrackId = trackKey;
+        countedThisSession = false;
+      } else if (countedThisSession && currentTime < 3) {
+        // A restart or replay of the same track starts a new counting session.
+        countedThisSession = false;
+      }
       const duration = Number(state.duration) || 0;
       const threshold = duration > 0 ? Math.min(30, duration * 0.5) : 30;
-      if ((Number(state.currentTime) || 0) < threshold) return;
-      const trackKey = String(state.trackId);
-      if (trackKey === lastCountedTrack || trackKey === String(snapshot.lastTrackId ?? "")) return;
-      lastCountedTrack = trackKey;
-      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;
-      snapshot.lastTrackId = trackKey;
+      if (currentTime < threshold || countedThisSession) return;
+      countedThisSession = true;
+      snapshot.count += 1;
       const milestone = Math.floor(snapshot.count / 100) * 100;
       if (milestone > snapshot.milestone) {
         snapshot.milestone = milestone;
         setStatusMessage(`🎉 ${milestone} songs streamed! Thanks for supporting HyperSynced and being part of our music community! 💙🎶`);
       }
-      try { localStorage.setItem(storageKey, JSON.stringify(snapshot)); } catch {}
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(snapshot));
+      } catch {}
     });
     return unsubscribe;
   }, [currentUser?.id, currentUser?.username, currentUser?.offline_only]);
