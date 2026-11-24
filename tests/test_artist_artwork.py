@@ -421,8 +421,10 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         stage = "client"
         return FakeB2Client()
 
+    from backend.app.services import b2
+
     monkeypatch.setattr(
-        artist_artwork,
+        b2,
         "get_b2_s3_client",
         fake_get_b2_client,
     )
