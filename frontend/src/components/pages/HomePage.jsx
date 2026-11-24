@@ -180,6 +180,10 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     }
   };
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track, { warmBytes: 256 * 1024 }); };
+  const firstWarmTrack = recentlyPlayed[0] ?? suggestedTracks[0];
+  useEffect(() => {
+    if (firstWarmTrack?.id) void player.warmTrackForPlayback(firstWarmTrack.id, firstWarmTrack, { warmBytes: 256 * 1024 });
+  }, [firstWarmTrack?.id]);
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
