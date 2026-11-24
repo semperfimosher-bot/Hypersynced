@@ -9419,3 +9419,38 @@ button.hs-shared-music-card:active {
       1fr;
   }
 }
+
+/* Artist album/single cards are interactive search shortcuts. */
+.hs-artist-release-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.hs-artist-release-card:hover,
+.hs-artist-release-card:focus-visible {
+  border-color: rgba(65, 184, 255, .28);
+  background: #012036;
+  outline: none;
+  transform: translateY(-2px);
+}
+.hs-artist-release-card .hs-artist-albums__art {
+  border-radius: 8px;
+  width: 100%;
+}
+.hs-artist-release-card strong,
+.hs-artist-release-card span {
+  padding: 0 5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-artist-release-card { transition: none; }
+  .hs-artist-release-card:hover,
+  .hs-artist-release-card:focus-visible { transform: none; }
+}
