@@ -15,7 +15,7 @@ const searchPageSource =
   );
 
 const searchStylesSource = readFileSync(
-  new URL("../styles/search.css", import.meta.url),
+  new URL("./styles/search.css", import.meta.url),
   "utf8",
 );
 
