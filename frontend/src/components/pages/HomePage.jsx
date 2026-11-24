@@ -4,7 +4,7 @@ import * as player from "../../audioPlayer.js";
 import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 import { readCachedHomeSuggestions, writeCachedHomeSuggestions } from "../../homeSuggestions.js";
-import { getMyRecentlyPlayed, getSuggestedMusic } from "../../profileApi.js";
+import { getSuggestedMusic } from "../../profileApi.js";
 import {
   getHomeRecentlyPlayedForOwner,
   applyOptimisticRecentlyPlayed,
@@ -93,22 +93,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const [downloadedArtistNotice, setDownloadedArtistNotice] = useState(null);
   const context = recentlyPlayed.map((track) => String(track.id)).join("|");
 
-  useEffect(() => {
-    let active = true;
-    const cached = readCachedHomeRecentlyPlayed(recentOwner);
-    setRecentlyPlayed(cached);
-    if (currentUser?.id || currentUser?.username) {
-      void getMyRecentlyPlayed().then((serverTracks) => {
-        if (!active) return;
-        const merged = mergeRecentlyPlayedWithOptimisticCache(serverTracks, readCachedHomeRecentlyPlayed(recentOwner), 12);
-        writeCachedHomeRecentlyPlayed(recentOwner, merged);
-        setRecentlyPlayed(merged);
-      }).catch(() => {
-        // Keep local optimistic history when the server is unavailable.
-      });
-    }
-    return () => { active = false; };
-  }, [recentOwner, currentUser?.id, currentUser?.username]);
+  useEffect(() => { setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner)); }, [recentOwner]);
   useEffect(() => {
     let active = true;
     const seenKey = "hypersynced.catalog-seen-track-ids.v1";
