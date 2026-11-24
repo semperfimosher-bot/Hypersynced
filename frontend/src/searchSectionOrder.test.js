@@ -162,3 +162,15 @@ test("search shortcut polish and instant social cache are present", () => {
   assert.match(searchStylesSource, /hs-library-console \.hs-search-filterbar/);
   assert.doesNotMatch(messagesPageSource, /hs-messages-unread/);
 });
+
+
+test("search history appears only as matching suggestions while typing and discovery tiles warm artwork", () => {
+  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\.length/);
+  assert.match(searchPageSource, /hs-search-history-suggestions/);
+  assert.doesNotMatch(searchPageSource, /YOUR HISTORY/);
+  assert.match(searchPageSource, /discoveryArtworkCache/);
+  assert.match(searchPageSource, /getSuggestedMusic\(\{ limit: 12, homeExplore: false \}\)/);
+  assert.match(searchPageSource, /PlaylistArtwork/);
+  assert.match(searchStylesSource, /hs-search-history-suggestions/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile-art/);
+});
