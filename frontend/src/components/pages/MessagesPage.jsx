@@ -31,6 +31,46 @@ import useQuietRefresh from
 
 import { readMessagesListSnapshot, writeMessagesListSnapshot } from "../../messagesListCache.js";
 
+const CONVERSATION_CACHE_PREFIX = "hypersynced.conversation-snapshot.v1:";
+const CONVERSATION_CACHE_TTL = 2 * 60 * 60 * 1000;
+
+function conversationCacheKey(owner, username) {
+  const ownerId = String(owner ?? "").trim();
+  const name = String(username ?? "").trim().toLowerCase();
+  return ownerId && name ? CONVERSATION_CACHE_PREFIX + encodeURIComponent(ownerId) + ":" + encodeURIComponent(name) : "";
+}
+
+function readConversationSnapshot(owner, username) {
+  const key = conversationCacheKey(owner, username);
+  if (!key) return null;
+  try {
+    const raw = globalThis.sessionStorage?.getItem(key);
+    if (!raw) return null;
+    const snapshot = JSON.parse(raw);
+    const savedAt = Number(snapshot?.savedAt);
+    if (!Number.isFinite(savedAt) || Date.now() - savedAt > CONVERSATION_CACHE_TTL || savedAt > Date.now() + 60000) {
+      globalThis.sessionStorage?.removeItem(key);
+      return null;
+    }
+    const data = snapshot?.data;
+    if (!data || !Array.isArray(data.messages)) return null;
+    return { ...data, messages: data.messages.slice(-200) };
+  } catch {
+    return null;
+  }
+}
+
+function writeConversationSnapshot(owner, username, data) {
+  const key = conversationCacheKey(owner, username);
+  if (!key || !data || !Array.isArray(data.messages)) return;
+  try {
+    const snapshot = { ...data, messages: data.messages.slice(-200) };
+    globalThis.sessionStorage?.setItem(key, JSON.stringify({ savedAt: Date.now(), data: snapshot }));
+  } catch {
+    // Cache is optional; keep the live conversation state.
+  }
+}
+
 
 function formatMessageTime(
   value,
@@ -330,13 +370,9 @@ export default function MessagesPage({
           normalized,
         );
 
-        setConversation(
-          null,
-        );
-
-        setConversationLoading(
-          true,
-        );
+        const cachedConversation = readConversationSnapshot(currentUser?.id, normalized);
+        setConversation(cachedConversation);
+        setConversationLoading(!cachedConversation);
 
         setError(
           "",
@@ -350,9 +386,8 @@ export default function MessagesPage({
 
           if (request !== conversationRequestRef.current) return;
 
-          setConversation(
-            result,
-          );
+          setConversation(result);
+          writeConversationSnapshot(currentUser?.id, normalized, result);
 
           setSearchQuery(
             "",
@@ -386,6 +421,7 @@ export default function MessagesPage({
       [
         loadConversations,
         onUnreadChange,
+        currentUser?.id,
       ],
     );
 
@@ -475,9 +511,8 @@ export default function MessagesPage({
               username,
             );
 
-          setConversation(
-            result,
-          );
+          setConversation(result);
+          writeConversationSnapshot(currentUser?.id, username, result);
         } catch {
           /*
            * Keep the current thread visible
@@ -664,27 +699,15 @@ export default function MessagesPage({
         message.id,
       );
 
-      setConversation(
-        (current) =>
-          current
-            ? {
-                ...current,
-                messages:
-                  (
-                    current.messages
-                    ?? []
-                  ).filter(
-                    (item) =>
-                      String(
-                        item.id,
-                      ) !==
-                      String(
-                        message.id,
-                      ),
-                  ),
-              }
-            : current,
-      );
+      setConversation((current) => {
+        if (!current) return current;
+        const next = {
+          ...current,
+          messages: (current.messages ?? []).filter((item) => String(item.id) !== String(message.id)),
+        };
+        writeConversationSnapshot(currentUser?.id, selectedUsername, next);
+        return next;
+      });
 
       await loadConversations();
 
@@ -739,22 +762,12 @@ export default function MessagesPage({
           sharedMusicToSend,
         );
 
-      setConversation(
-        (current) => (
-          current
-            ? {
-                ...current,
-                messages: [
-                  ...(
-                    current.messages ??
-                    []
-                  ),
-                  sent,
-                ],
-              }
-            : current
-        ),
-      );
+      setConversation((current) => {
+        if (!current) return current;
+        const next = { ...current, messages: [...(current.messages ?? []), sent] };
+        writeConversationSnapshot(currentUser?.id, selectedUsername, next);
+        return next;
+      });
 
       setDraft(
         "",
