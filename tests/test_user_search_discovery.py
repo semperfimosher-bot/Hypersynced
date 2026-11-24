@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from backend.app.api.routes import users as user_routes
-from backend.app.dependencies import DatabaseSession
+from backend.app.api.dependencies import DatabaseSession
 
 
 class _FakeUsersResult:
