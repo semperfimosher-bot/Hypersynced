@@ -61,7 +61,6 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
   ] : memberSlideTracks;
   const contentIndex = active;
   const firstRecent = recent[0];
-  const discover = suggestions[0];
   const coverFor = (index) => resolveArtworkUrl(slideTracks[index]?.artwork_url);
   const activeTrack = slideTracks[active];
 
