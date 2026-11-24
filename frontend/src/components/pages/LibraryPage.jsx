@@ -1266,36 +1266,29 @@ const [
         setHasMoreLibraryTracks(nextHasMore);
 
         libraryChangeTokenRef.current = changeToken;
-        await setCachedLibrary(
-          libraryCacheKey,
-          {
-            owned:
-              nextOwned,
-
-            saved:
-              nextSaved,
-
-            tracks:
-              nextTracks,
-
-            hasMoreLibraryTracks:
-              nextHasMore,
-
-            libraryNextOffset:
-              libraryNextOffsetRef.current,
-
-            changeToken,
-            pendingSavedPlaylistIds:
-              cached?.pendingSavedPlaylistIds ?? [],
-            pendingSavedPlaylistChanges:
-              cached?.pendingSavedPlaylistChanges ?? {},
-          },
-        );
-        await setCachedLibraryPageAsync(
-          libraryCacheKey,
-          0,
-          fetchedTracks,
-        );
+        // Persist the first complete snapshot and first page without holding the
+        // Library's visible loading state hostage to IndexedDB cleanup/writes.
+        // The data is already rendered; writes continue asynchronously.
+        void Promise.all([
+          setCachedLibrary(
+            libraryCacheKey,
+            {
+              owned: nextOwned,
+              saved: nextSaved,
+              tracks: nextTracks,
+              hasMoreLibraryTracks: nextHasMore,
+              libraryNextOffset: libraryNextOffsetRef.current,
+              changeToken,
+              pendingSavedPlaylistIds: cached?.pendingSavedPlaylistIds ?? [],
+              pendingSavedPlaylistChanges: cached?.pendingSavedPlaylistChanges ?? {},
+            },
+          ),
+          setCachedLibraryPageAsync(
+            libraryCacheKey,
+            0,
+            fetchedTracks,
+          ),
+        ]).catch(() => {});
       } catch (requestError) {
         /*
          * If the connection disappeared
