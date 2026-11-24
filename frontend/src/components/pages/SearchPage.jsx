@@ -783,6 +783,13 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
    * no longer waits on an unrelated preferences request.
    */
   useEffect(() => {
+    if (discoveryMode) {
+      searchLoadKeyRef.current = "";
+      setLoading(false);
+      setSearchError("");
+      return undefined;
+    }
+
     if (!normalizedQuery) {
       searchLoadKeyRef.current =
         "";
@@ -1067,10 +1074,11 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     offlineOwnerKey,
     quietSearchVersion,
     sortMode,
+    discoveryMode,
   ]);
 
   useEffect(() => {
-    if (discoveryMode !== "people" || normalizedQuery) return undefined;
+    if (discoveryMode !== "people") return undefined;
     let cancelled = false;
     setLoading(true);
     searchUsers("")
@@ -1197,7 +1205,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     setDiscoveryError("");
     setActiveFilter("people");
     setSelectedTrackIndex(-1);
-    onQueryChange("");
+    onQueryChange("people");
     return;
   }
   if (command.id === "find-new-tunes") {
@@ -1206,7 +1214,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     setDiscoveryError("");
     setActiveFilter("tracks");
     setSelectedTrackIndex(-1);
-    onQueryChange("");
+    onQueryChange("new tunes");
     return;
   }
   setDiscoveryMode("");
@@ -2717,6 +2725,9 @@ async function downloadOpenedPlaylist() {
       autoComplete="off"
       spellCheck="false"
       onChange={(event) => {
+        setDiscoveryMode("");
+        setDiscoveryTracks([]);
+        setDiscoveryError("");
         onQueryChange(
           event.target.value,
         );
