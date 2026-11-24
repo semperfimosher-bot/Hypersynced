@@ -7,7 +7,6 @@ from datetime import (
 )
 
 import pytest
-from fastapi import BackgroundTasks
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -87,10 +86,7 @@ async def test_artist_profile_is_unique_and_reports_stats_and_follow_state() -> 
             password_hash="hash",
         )
 
-        session.add(
-            listener,
-            BackgroundTasks(),
-        )
+        session.add(listener)
 
         release_base = datetime(
             2026,
