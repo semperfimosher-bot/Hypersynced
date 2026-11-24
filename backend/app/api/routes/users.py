@@ -862,10 +862,15 @@ async def record_listening(
             payload.event_id,
         )
         if existing is not None:
-            if existing.user_id != user.id or existing.track_id != payload.track_id:
+            if (
+                existing.user_id != user.id
+                or existing.track_id != payload.track_id
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Listening event ID conflicts with an existing event.",
+                    detail=(
+                        "Listening event ID conflicts with an existing event."
+                    ),
                 )
             return {
                 "recorded": True,
@@ -895,10 +900,18 @@ async def record_listening(
             listened_at = datetime.now(UTC)
 
     event = ListeningEvent(
-        **({"id": payload.event_id} if payload.event_id is not None else {}),
+        **(
+            {"id": payload.event_id}
+            if payload.event_id is not None
+            else {}
+        ),
         user_id=user.id,
         track_id=track.id,
-        **({"listened_at": listened_at} if listened_at is not None else {}),
+        **(
+            {"listened_at": listened_at}
+            if listened_at is not None
+            else {}
+        ),
     )
     session.add(event)
     await session.flush()
@@ -910,6 +923,7 @@ async def record_listening(
         "event_id": str(event_id),
         "track_id": str(track.id),
     }
+
 
 @router.patch(
     "/me/listening/{event_id}",
