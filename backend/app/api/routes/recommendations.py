@@ -137,7 +137,7 @@ def _autoplay_limit(
         1,
         min(
             parsed,
-            20,
+            40,
         ),
     )
 
