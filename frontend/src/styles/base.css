@@ -9454,3 +9454,5 @@ button.hs-shared-music-card:active {
   .hs-artist-release-card:hover,
   .hs-artist-release-card:focus-visible { transform: none; }
 }
+
+.playlist-update-notice__copy strong[role=button]{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(90,180,255,.45);text-underline-offset:2px}.playlist-update-notice__track-detail{grid-column:1/-1;display:grid;gap:3px;padding:8px 10px;border:1px solid rgba(72,164,230,.18);border-radius:7px;background:rgba(3,15,27,.8)}.playlist-update-notice__track-detail strong{color:#e2f3ff;font-size:11px}.playlist-update-notice__track-detail small{color:#8eabc0;font-size:9px}
