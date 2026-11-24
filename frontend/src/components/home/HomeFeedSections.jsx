@@ -33,7 +33,7 @@ export function QuickPicks({ tracks, onPlay, onWarm, getMenuProps, onPlayNext })
     <section className="home-quick-picks" aria-label="Quick picks">
       <div className="home-feed-heading"><div><span>READY TO PLAY</span><h2>Quick picks</h2></div></div>
       <div className="home-quick-picks__grid">
-        {tracks.map((track) => <TrackTile key={track.id} track={track} onPlay={onPlay} onWarm={onWarm} onPlayNext={onPlayNext} menuProps={getMenuProps?.(track)} />)}
+        {tracks.map((track) => <TrackTile key={track.id} track={track} onPlay={onPlay} onWarm={onWarm} menuProps={getMenuProps?.(track)} simple />)}
       </div>
     </section>
   );
@@ -55,19 +55,22 @@ export function MoodFilterBar({ activeMood, onChange }) {
   return <nav className="home-mood-filter" aria-label="Mood filters">{["All", "Chill", "Workout", "Focus"].map((m) => <button key={m} type="button" aria-pressed={activeMood === m} className={activeMood === m ? "is-active" : ""} onClick={() => onChange(m)}>{m}</button>)}</nav>;
 }
 
-export function TrackTile({ track, onPlay, onWarm, menuProps, onPlayNext }) {
+export function TrackTile({ track, onPlay, onWarm, menuProps, onPlayNext, simple = false }) {
   const art = resolveArtworkUrl(track.artwork_url ?? track.artworkUrl);
+  const button = (
+    <button type="button" className="home-track-tile" {...menuProps} onMouseDown={() => onWarm?.(track)} onMouseEnter={() => onWarm?.(track)} onFocus={() => onWarm?.(track)} onClick={() => onPlay?.(track)} aria-label={`Play ${track.title || "track"}`}>
+      <span className="home-track-tile__cover">{art ? <img src={art} alt="" loading="lazy" /> : <span className="home-track-tile__placeholder">♫</span>}<span className="home-track-tile__play">▶</span></span>
+      <span className="home-track-tile__copy"><strong>{track.title || "Untitled track"}</strong><small>{track.artist || "Unknown artist"}</small></span>
+    </button>
+  );
+  if (simple) return button;
   return (
     <div className="home-track-tile-wrap">
       <button type="button" className="home-track-tile__next" onClick={() => onPlayNext?.(track)} aria-label={`Add ${track.title || "track"} to Play Next`}>＋<span>Play Next</span></button>
-      <button type="button" className="home-track-tile" {...menuProps} onMouseDown={() => onWarm?.(track)} onMouseEnter={() => onWarm?.(track)} onFocus={() => onWarm?.(track)} onClick={() => onPlay?.(track)} aria-label={`Play ${track.title || "track"}`}>
-        <span className="home-track-tile__cover">{art ? <img src={art} alt="" loading="lazy" /> : <span className="home-track-tile__placeholder">♫</span>}<span className="home-track-tile__play">▶</span></span>
-        <span className="home-track-tile__copy"><strong>{track.title || "Untitled track"}</strong><small>{track.artist || "Unknown artist"}</small></span>
-      </button>
+      {button}
     </div>
   );
 }
-
 export function ArtistRow({ tracks, onNavigate, onOpenArtist }) {
   const artists = [];
   const seen = new Set();
