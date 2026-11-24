@@ -1,7 +1,9 @@
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
+    is_safe_wikimedia_url,
     license_is_reusable,
+    verified_artist_entity_candidates,
 )
 
 
@@ -60,3 +62,24 @@ def test_image_bytes_must_match_declared_image_format() -> None:
     assert image_bytes_match_mime(b"RIFFxxxxWEBPsample", "image/webp")
     assert not image_bytes_match_mime(b"not an image", "image/jpeg")
     assert not image_bytes_match_mime(b"\xff\xd8\xffsample", "image/png")
+
+
+def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
+    search_results = [
+        {"id": "Q1", "label": "Sample Artist"},
+        {"id": "Q2", "label": "Sample Artist"},
+    ]
+    claims = {
+        "Q1": {"P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q639669"}}}}], "P18": [{}]},
+        "Q2": {"P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}], "P18": [{}]},
+    }
+
+    assert verified_artist_entity_candidates("Sample Artist", search_results, claims) == []
+
+
+def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
+    assert is_safe_wikimedia_url("https://upload.wikimedia.org/example.jpg")
+    assert is_safe_wikimedia_url("https://commons.wikimedia.org/wiki/File:Example.jpg")
+    assert not is_safe_wikimedia_url("http://upload.wikimedia.org/example.jpg")
+    assert not is_safe_wikimedia_url("https://example.com/image.jpg")
+    assert not is_safe_wikimedia_url("https://commons.wikimedia.org@evil.example/image.jpg")
