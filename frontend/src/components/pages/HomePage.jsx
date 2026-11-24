@@ -157,7 +157,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {recentlyPlayed.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
-      {recentlyAdded.length ? <TrackRow title="New & recently released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
       <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
