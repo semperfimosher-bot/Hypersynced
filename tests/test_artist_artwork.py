@@ -488,10 +488,9 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
 async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> None:
     import uuid
     from datetime import UTC, datetime, timedelta
+    from types import SimpleNamespace
 
     from backend.app.services import artist_artwork
-
-    from types import SimpleNamespace
 
     profile = cast(
         ArtistProfile,
