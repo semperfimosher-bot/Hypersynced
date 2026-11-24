@@ -486,8 +486,8 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
 
 @pytest.mark.asyncio
 async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> None:
-    from datetime import UTC, datetime, timedelta
     import uuid
+    from datetime import UTC, datetime, timedelta
 
     from backend.app.services import artist_artwork
 

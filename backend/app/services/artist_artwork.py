@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import re
 import time
-from urllib.parse import urlsplit
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import httpx
@@ -517,7 +517,7 @@ async def run_artist_artwork_worker() -> None:
                 await fetch_and_store_artist_artwork(job_id)
                 try:
                     await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=2)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
             else:
                 try:
