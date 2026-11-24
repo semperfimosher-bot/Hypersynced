@@ -165,7 +165,7 @@ test("search shortcut polish and instant social cache are present", () => {
 
 
 test("search history appears only as matching suggestions while typing and discovery tiles warm artwork", () => {
-  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\.length/);
+  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\.some/);
   assert.match(searchPageSource, /hs-search-history-suggestions/);
   assert.doesNotMatch(searchPageSource, /YOUR HISTORY/);
   assert.match(searchPageSource, /discoveryArtworkCache/);
