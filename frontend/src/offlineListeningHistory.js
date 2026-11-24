@@ -5,6 +5,8 @@ const PREFIX = "hypersynced.offline-listening-events.v1:";
 const MAX_PENDING_EVENTS = 500;
 let activeOwner = null;
 const flushByOwner = new Map();
+const retryTimersByOwner = new Map();
+const retryAttemptsByOwner = new Map();
 
 function ownerKey(owner) {
   const value = String(owner ?? "").trim();
@@ -68,6 +70,29 @@ export function enqueueOfflineListeningEvent(owner, event) {
     return true;
   } catch { return false; }
 }
+function scheduleSyncRetry(owner) {
+  if (typeof globalThis.window?.setTimeout !== "function") return;
+  if (retryTimersByOwner.has(owner)) return;
+  const attempt = retryAttemptsByOwner.get(owner) ?? 0;
+  const delay = Math.min(5_000 * (2 ** attempt), 60_000);
+  retryAttemptsByOwner.set(owner, attempt + 1);
+  const timer = globalThis.window.setTimeout(() => {
+    retryTimersByOwner.delete(owner);
+    if (activeOwner === owner && globalThis.navigator?.onLine !== false) {
+      void flushOfflineListeningEvents(owner);
+    }
+  }, delay);
+  retryTimersByOwner.set(owner, timer);
+}
+function cancelSyncRetry(owner) {
+  const timer = retryTimersByOwner.get(owner);
+  if (timer !== undefined) {
+    globalThis.window?.clearTimeout?.(timer);
+    retryTimersByOwner.delete(owner);
+  }
+  retryAttemptsByOwner.delete(owner);
+}
+
 function removeQueuedEvent(owner, eventId) {
   const cacheKey = key(owner);
   if (!cacheKey) return;
@@ -85,6 +110,7 @@ export async function flushOfflineListeningEvents(owner, request = apiRequest) {
   if (flushByOwner.has(normalized)) return flushByOwner.get(normalized);
   const task = (async () => {
     let uploaded = 0;
+    let failed = false;
     for (const event of readOfflineListeningEvents(normalized)) {
       if (globalThis.navigator?.onLine === false) break;
       try {
@@ -100,6 +126,7 @@ export async function flushOfflineListeningEvents(owner, request = apiRequest) {
         uploaded += 1;
       } catch {
         // Keep the failed event and later events for a future retry.
+        failed = true;
         break;
       }
     }
@@ -109,19 +136,26 @@ export async function flushOfflineListeningEvents(owner, request = apiRequest) {
         owner: normalized,
       });
     }
+    if (failed && request === apiRequest) scheduleSyncRetry(normalized);
+    else if (!failed && uploaded) retryAttemptsByOwner.delete(normalized);
     return uploaded;
   })().finally(() => flushByOwner.delete(normalized));
   flushByOwner.set(normalized, task);
   return task;
 }
 export function setOfflineListeningOwner(owner) {
-  activeOwner = ownerKey(owner);
+  const nextOwner = ownerKey(owner);
+  if (activeOwner && activeOwner !== nextOwner) cancelSyncRetry(activeOwner);
+  activeOwner = nextOwner;
   if (activeOwner && globalThis.navigator?.onLine !== false) {
     void flushOfflineListeningEvents(activeOwner);
   }
 }
 if (typeof globalThis.window?.addEventListener === "function") {
   globalThis.window.addEventListener("online", () => {
-    if (activeOwner) void flushOfflineListeningEvents(activeOwner);
+    if (activeOwner) {
+      cancelSyncRetry(activeOwner);
+      void flushOfflineListeningEvents(activeOwner);
+    }
   });
 }
