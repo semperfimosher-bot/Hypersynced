@@ -317,6 +317,7 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     monkeypatch,
 ) -> None:
     import uuid
+    from types import SimpleNamespace
 
     from backend.app.services import artist_artwork
 
@@ -402,6 +403,7 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         "find_reusable_artist_image",
         fake_find_image,
     )
+
     def fake_settings():
         nonlocal stage
         stage = "settings"
@@ -436,8 +438,6 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         except Exception as exc:
             thread_errors.append(f"{type(exc).__name__}: {exc}")
             raise
-
-    from types import SimpleNamespace
 
     # Replace the service's asyncio reference instead of patching the shared
     # module: SQLAlchemy and pytest also use asyncio during this test.
