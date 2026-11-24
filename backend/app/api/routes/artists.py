@@ -29,12 +29,12 @@ from ...models.artist import (
     ArtistProfile,
 )
 from ...models.media import Track
+from ...services.artist_artwork import fetch_and_store_artist_artwork
 from ...services.artists import (
     ensure_artist_profile,
     load_published_artist_tracks,
     normalize_artist_name,
 )
-from ...services.artist_artwork import fetch_and_store_artist_artwork
 from ...services.b2 import create_presigned_download_url
 from ..dependencies import (
     CurrentUser,
