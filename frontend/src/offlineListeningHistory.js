@@ -25,7 +25,13 @@ export function createListeningEventId() {
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
 }
 export function readOfflineListeningEvents(owner) {
   const cacheKey = key(owner);
@@ -33,7 +39,14 @@ export function readOfflineListeningEvents(owner) {
   try {
     const parsed = JSON.parse(storage()?.getItem(cacheKey) ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((event) => event && typeof event.eventId === "string" && typeof event.trackId === "string" && typeof event.listenedAt === "string").slice(-MAX_PENDING_EVENTS);
+    return parsed
+      .filter((event) =>
+        event &&
+        typeof event.eventId === "string" &&
+        typeof event.trackId === "string" &&
+        typeof event.listenedAt === "string"
+      )
+      .slice(-MAX_PENDING_EVENTS);
   } catch { return []; }
 }
 export function enqueueOfflineListeningEvent(owner, event) {
@@ -41,7 +54,12 @@ export function enqueueOfflineListeningEvent(owner, event) {
   if (!cacheKey || !event?.eventId || !event?.trackId || !event?.listenedAt) return false;
   const current = readOfflineListeningEvents(owner);
   if (current.some((item) => item.eventId === event.eventId)) return true;
-  current.push({ eventId: String(event.eventId), trackId: String(event.trackId), listenedAt: String(event.listenedAt), queuedAt: Date.now() });
+  current.push({
+    eventId: String(event.eventId),
+    trackId: String(event.trackId),
+    listenedAt: String(event.listenedAt),
+    queuedAt: Date.now(),
+  });
   const bounded = current.slice(-MAX_PENDING_EVENTS);
   try {
     const target = storage();
@@ -72,7 +90,11 @@ export async function flushOfflineListeningEvents(owner, request = apiRequest) {
       try {
         await request("/users/me/listening", {
           method: "POST",
-          body: JSON.stringify({ track_id: event.trackId, event_id: event.eventId, listened_at: event.listenedAt }),
+          body: JSON.stringify({
+            track_id: event.trackId,
+            event_id: event.eventId,
+            listened_at: event.listenedAt,
+          }),
         });
         removeQueuedEvent(normalized, event.eventId);
         uploaded += 1;
@@ -81,7 +103,12 @@ export async function flushOfflineListeningEvents(owner, request = apiRequest) {
         break;
       }
     }
-    if (uploaded) notifyListeningHistoryChanged({ type: "offline-history-synced", owner: normalized });
+    if (uploaded) {
+      notifyListeningHistoryChanged({
+        type: "offline-history-synced",
+        owner: normalized,
+      });
+    }
     return uploaded;
   })().finally(() => flushByOwner.delete(normalized));
   flushByOwner.set(normalized, task);
