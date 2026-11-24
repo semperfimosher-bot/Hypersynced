@@ -1,13 +1,16 @@
 from datetime import UTC, datetime
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.routes.users import ListeningRequest, record_listening
+from backend.app.models.account import User
 
 
 @pytest.mark.asyncio
@@ -24,8 +27,8 @@ async def test_offline_listening_event_sync_is_idempotent_for_same_owner_and_tra
 
     response = await record_listening(
         ListeningRequest(track_id=track_id, event_id=event_id),
-        SimpleNamespace(id=owner_id),
-        session,
+        cast(User, SimpleNamespace(id=owner_id)),
+        cast(AsyncSession, session),
     )
 
     assert response == {
@@ -47,8 +50,8 @@ async def test_offline_listening_event_sync_rejects_id_collision():
     with pytest.raises(HTTPException) as error:
         await record_listening(
             ListeningRequest(track_id=uuid4(), event_id=event_id),
-            SimpleNamespace(id=uuid4()),
-            session,
+            cast(User, SimpleNamespace(id=uuid4())),
+            cast(AsyncSession, session),
         )
 
     assert error.value.status_code == 409
@@ -76,8 +79,8 @@ async def test_offline_listening_event_sync_preserves_client_timestamp():
 
     response = await record_listening(
         ListeningRequest(track_id=track_id, event_id=event_id, listened_at=listened_at),
-        SimpleNamespace(id=owner_id),
-        session,
+        cast(User, SimpleNamespace(id=owner_id)),
+        cast(AsyncSession, session),
     )
 
     saved_event = session.add.call_args.args[0]
@@ -105,7 +108,13 @@ async def test_concurrent_offline_event_upload_returns_existing_event():
             ),
         ),
         add=Mock(),
-        flush=AsyncMock(side_effect=IntegrityError("insert", {}, Exception("duplicate"))),
+        flush=AsyncMock(
+            side_effect=IntegrityError(
+                "insert",
+                {},
+                Exception("duplicate"),
+            ),
+        ),
         rollback=AsyncMock(),
         commit=AsyncMock(),
     )
