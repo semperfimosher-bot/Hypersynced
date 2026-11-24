@@ -13,15 +13,16 @@ import {
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
 import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
-import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";\nimport DownloadedArtistTrackNotice from "../home/DownloadedArtistTrackNotice.jsx";
+import { readCachedHomeRecentlyAdded, refreshHomeRecentlyAdded } from "../../homeRecentlyAdded.js";
+import DownloadedArtistTrackNotice from "../home/DownloadedArtistTrackNotice.jsx";
 
 function normalizedArtistKey(value) {
-  return String(value ?? "").toLocaleLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+  return String(value ?? "").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
 function trackMatchesDownloadedArtist(track, artistNames) {
   const artistText = String(track?.artist ?? "");
-  const candidates = [artistText, ...artistText.split(/[,;&]|\\b(?:feat(?:uring)?|ft|with|and)\\b/gi)];
+  const candidates = [artistText, ...artistText.split(/[,;&]|\b(?:feat(?:uring)?|ft|with|and)\b/gi)];
   return candidates.some((candidate) => artistNames.has(normalizedArtistKey(candidate)));
 }
 
@@ -105,9 +106,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       Array.isArray(storedSeen) ? storedSeen.map(String) : cachedBeforeRefresh.map((track) => String(track.id)),
     );
     const hasBaseline = storedSeen !== null || cachedBeforeRefresh.length > 0;
-    const ownerKey = getOfflineOwnerKey(currentUser);
-    const artistNamesPromise = currentUser && ownerKey
-      ? getDownloadedArtistNames(ownerKey).catch(() => [])
+    const artistNamesPromise = currentUser
+      ? import("../../offlineDownloads.js").then(({ getDownloadedArtistNames, getOfflineOwnerKey }) => getDownloadedArtistNames(getOfflineOwnerKey(currentUser))).catch(() => [])
       : Promise.resolve([]);
     void Promise.all([refreshHomeRecentlyAdded(), artistNamesPromise]).then(([tracks, downloadedArtists]) => {
       if (!active) return;
