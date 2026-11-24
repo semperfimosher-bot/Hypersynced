@@ -1,75 +1,156 @@
-import {useCallback,useEffect,useRef,useState} from "react";
-import {resolveArtworkUrl} from "../../artworkUrl.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { resolveArtworkUrl } from "../../artworkUrl.js";
 import * as player from "../../audioPlayer.js";
-import SectionHeading from "../ui/SectionHeading.jsx";
 import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
-import {readCachedHomeSuggestions,writeCachedHomeSuggestions} from "../../homeSuggestions.js";
-import {getSuggestedMusic} from "../../profileApi.js";
-import {getHomeRecentlyPlayedForOwner,applyOptimisticRecentlyPlayed,readCachedHomeRecentlyPlayed,writeCachedHomeRecentlyPlayed,subscribeListeningHistoryChanged} from "../../homeRecentlyPlayed.js";
-import {TrackRow,QuickPicks,ArtistRow} from "../home/HomeFeedSections.jsx";
+import { readCachedHomeSuggestions, writeCachedHomeSuggestions } from "../../homeSuggestions.js";
+import { getSuggestedMusic } from "../../profileApi.js";
+import {
+  getHomeRecentlyPlayedForOwner,
+  applyOptimisticRecentlyPlayed,
+  readCachedHomeRecentlyPlayed,
+  writeCachedHomeRecentlyPlayed,
+  subscribeListeningHistoryChanged,
+} from "../../homeRecentlyPlayed.js";
+import { TrackRow, QuickPicks, ArtistRow } from "../home/HomeFeedSections.jsx";
 
-function matchMood(track,mood){if(mood==="All")return true;const tags=Array.isArray(track?.moods)?track.moods.join(" "):track?.moods??track?.mood_tags??track?.mood??"";return String(tags).toLowerCase().split(/[|, ]+/).filter(Boolean).includes(mood.toLowerCase());}
-const SLIDE_LABELS=["Your music","Discover","Quick access","Find your mood"];
-function HomeCarousel({recent,suggestions,onNavigate,onRecent,onDiscover,onMood,guest,onOpenAuth,onPlay,onWarm,getMenuProps,onOpenArtist}){
- const [active,setActive]=useState(0),[paused,setPaused]=useState(false),timer=useRef(null);
- useEffect(()=>{if(paused)return;timer.current=window.setInterval(()=>setActive(current=>(current+1)%4),5000);return()=>window.clearInterval(timer.current);},[paused]);
- const moveTo=index=>{setActive(index);setPaused(true);window.clearTimeout(timer.current);timer.current=window.setTimeout(()=>setPaused(false),10000);};
- const slideTracks=[recent[0],suggestions[0],suggestions[2]??suggestions[0],suggestions[4]??suggestions[0]];
- const firstRecent=recent[0],discover=suggestions[0],coverFor=index=>resolveArtworkUrl(slideTracks[index]?.artwork_url),activeTrack=slideTracks[active];
- return <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)} onFocus={()=>setPaused(true)} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setPaused(false);}}>
-  <div className="home-carousel__viewport">
-   {SLIDE_LABELS.map((label,index)=><article key={label} className={`home-carousel__slide ${index===active?"is-active":""}`} aria-hidden={index!==active}>
-    <div className="home-carousel__art" style={coverFor(index)?{backgroundImage:`url("${coverFor(index)}")`}:undefined}/>
-    <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index)?<img src={coverFor(index)} alt="" loading={index===active?"eager":"lazy"}/>:null}</div>
-    <div className="home-carousel__content">
-     <span className="home-carousel__eyebrow">{index===0?"PICK UP WHERE YOU LEFT OFF":index===1?"YOUR NEXT FAVORITE":index===2?"YOUR LIBRARY":"SET THE TONE"}</span>
-     <h2>{index===0?(guest?"Welcome to HyperSynced":"Your sound, right where you left it") :index===1?"Find your next favorite":index===2?"All your music, one tap away":"Set the mood. Press play."}</h2>
-     <p>{index===0?"A quick look at music you've been playing lately.":index===1?"Explore recommendations shaped by listening and music you haven't tried.":index===2?"Jump straight into playlists, favorites, recent listening and more.":"Pick a mood and let the music take it from there."}</p>
-     {activeTrack?<div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={()=>onPlay?.(activeTrack)}>{activeTrack.title||"Featured track"}</button><button type="button" onClick={()=>onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist||"Unknown artist"}</button></div>:null}
-     <button className="home-carousel__action" type="button" onClick={()=>index===0?(firstRecent?onPlay(firstRecent):onOpenAuth?.()):index===1?(discover?onPlay(discover):onDiscover()):index===2?onNavigate?.("library"):onMood("Chill")}>{index===0?(firstRecent?"Play recent":"Get started"):index===1?(discover?"Play discovery":"Explore music"):index===2?"Open library":"Explore moods"} <span>▶</span></button>
+const SLIDE_LABELS = ["Your music", "Discover", "Quick access", "Explore"];
+
+function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPlay, onOpenArtist }) {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const timer = useRef(null);
+
+  useEffect(() => {
+    if (paused) return undefined;
+    timer.current = window.setInterval(() => setActive((current) => (current + 1) % SLIDE_LABELS.length), 5000);
+    return () => window.clearInterval(timer.current);
+  }, [paused]);
+
+  const moveTo = (index) => {
+    setActive(index);
+    setPaused(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setPaused(false), 10000);
+  };
+  const slideTracks = [recent[0], suggestions[0], suggestions[2] ?? suggestions[0], suggestions[4] ?? suggestions[0]];
+  const firstRecent = recent[0];
+  const discover = suggestions[0];
+  const coverFor = (index) => resolveArtworkUrl(slideTracks[index]?.artwork_url);
+  const activeTrack = slideTracks[active];
+
+  return (
+    <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
+      <div className="home-carousel__viewport">
+        {SLIDE_LABELS.map((label, index) => (
+          <article key={label} className={`home-carousel__slide ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
+            <div className="home-carousel__art" style={coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
+            <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index) ? <img src={coverFor(index)} alt="" loading={index === active ? "eager" : "lazy"} /> : null}</div>
+            <div className="home-carousel__content">
+              <span className="home-carousel__eyebrow">{index === 0 ? "PICK UP WHERE YOU LEFT OFF" : index === 1 ? "YOUR NEXT FAVORITE" : index === 2 ? "YOUR LIBRARY" : "EXPLORE MUSIC"}</span>
+              <h2>{index === 0 ? (guest ? "Welcome to HyperSynced" : "Your sound, right where you left it") : index === 1 ? "Find your next favorite" : index === 2 ? "All your music, one tap away" : "Explore something new"}</h2>
+              <p>{index === 0 ? "A quick look at music you've been playing lately." : index === 1 ? "Explore music and discover something new to listen to." : index === 2 ? "Jump straight into playlists, favorites, recent listening and more." : "Browse music, artists, albums and playlists."}</p>
+              {activeTrack ? <div className="home-carousel__track-meta"><button type="button" className="home-carousel__track-title" onClick={() => onPlay?.(activeTrack)}>{activeTrack.title || "Featured track"}</button><button type="button" onClick={() => onOpenArtist?.(activeTrack.artist)}>{activeTrack.artist || "Unknown artist"}</button></div> : null}
+              <button className="home-carousel__action" type="button" onClick={() => index === 0 ? (firstRecent ? onPlay(firstRecent) : onOpenAuth?.()) : index === 1 ? (discover ? onPlay(discover) : onNavigate?.("search")) : index === 2 ? onNavigate?.("library") : onNavigate?.("search")}>{index === 0 ? (firstRecent ? "Play recent" : "Get started") : index === 1 ? (discover ? "Play discovery" : "Explore music") : index === 2 ? "Open library" : "Explore music"} <span>▶</span></button>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="home-carousel__controls" aria-label="Slide controls">{SLIDE_LABELS.map((label, index) => <button key={label} type="button" aria-label={`Show slide ${index + 1}: ${label}`} aria-current={active === index ? "true" : undefined} className={active === index ? "is-active" : ""} onClick={() => moveTo(index)} />)}</div>
+      <span className="home-carousel__counter">{active + 1} / {SLIDE_LABELS.length}</span>
+    </section>
+  );
+}
+
+function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
+  const menu = useTrackActionMenu();
+  const recentOwner = currentUser?.id ?? currentUser?.username ?? "guest-device";
+  const [recentlyPlayedState, setRecentlyPlayedState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeRecentlyPlayed(recentOwner) }));
+  const recentlyPlayed = getHomeRecentlyPlayedForOwner(recentOwner, recentlyPlayedState.owner, recentlyPlayedState.tracks);
+  const setRecentlyPlayed = (next) => setRecentlyPlayedState((current) => ({
+    owner: recentOwner,
+    tracks: typeof next === "function" ? next(current.owner === recentOwner ? current.tracks : readCachedHomeRecentlyPlayed(recentOwner)) : next,
+  }));
+  const [suggestionsState, setSuggestionsState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeSuggestions(recentOwner) }));
+  const suggestedTracks = suggestionsState.owner === recentOwner ? suggestionsState.tracks : readCachedHomeSuggestions(recentOwner);
+  const suggestionsRequestRef = useRef(0);
+  const context = recentlyPlayed.map((track) => String(track.id)).join("|");
+
+  useEffect(() => { setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner)); }, [recentOwner]);
+  useEffect(() => subscribeListeningHistoryChanged((event) => {
+    const detail = event?.detail ?? {};
+    if (detail.owner && String(detail.owner) !== String(recentOwner ?? "")) return;
+    if (detail.type === "optimistic-play" && detail.track?.id) {
+      const cached = readCachedHomeRecentlyPlayed(recentOwner);
+      const instant = applyOptimisticRecentlyPlayed(cached, detail.track, 12, { incrementPlayCount: false });
+      writeCachedHomeRecentlyPlayed(recentOwner, instant);
+      setRecentlyPlayed(instant);
+      return;
+    }
+    setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));
+  }), [recentOwner]);
+
+  const loadSuggestions = useCallback(async () => {
+    const requestId = ++suggestionsRequestRef.current;
+    const cached = readCachedHomeSuggestions(recentOwner);
+    setSuggestionsState({ owner: recentOwner, tracks: cached });
+    const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
+    try {
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 12 });
+      if (requestId !== suggestionsRequestRef.current) return;
+      const tracks = Array.isArray(response) ? response : [];
+      writeCachedHomeSuggestions(recentOwner, tracks);
+      setSuggestionsState({ owner: recentOwner, tracks });
+    } catch {
+      // Cached personalized content remains available if refresh fails.
+    }
+  }, [recentOwner, context]);
+
+  useEffect(() => { if (suggestedTracks.length) player.seedQueueFromSuggestions(suggestedTracks); }, [suggestedTracks]);
+  useEffect(() => {
+    void loadSuggestions();
+    return () => { suggestionsRequestRef.current++; };
+  }, [loadSuggestions]);
+
+  const play = async (track) => {
+    if (!track?.id) return;
+    try {
+      await player.playTrack(track.id, {
+        audioUrl: track.audio_url ?? null,
+        artworkUrl: resolveArtworkUrl(track.artwork_url),
+        title: track.title ?? "",
+        artist: track.artist ?? "",
+        album: track.album ?? "",
+        mimeType: track.mime_type ?? null,
+        fileSize: track.file_size ?? null,
+        mediaVersion: track.media_version ?? null,
+        genre: track.genre ?? "",
+        releaseYear: track.release_year ?? null,
+      });
+    } catch (error) {
+      console.warn("[HyperSynced] Home playback failed.", error);
+    }
+  };
+  const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
+  const menuProps = (track) => menu.getTriggerProps(track);
+  const recentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
+  const releases = suggestedTracks.filter((track) => Number(track.release_year) >= new Date().getFullYear() - 1 && !recentIds.has(String(track.id))).sort((a, b) => (Number(b.release_year) || 0) - (Number(a.release_year) || 0));
+  const releaseIds = new Set(releases.map((track) => String(track.id)));
+  const discovery = suggestedTracks.filter((track) => !recentIds.has(String(track.id)) && !releaseIds.has(String(track.id)));
+  const quickPicks = [...recentlyPlayed, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
+
+  return (
+    <div className="page-stack home-page">
+      <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
+      <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
+      {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {recentlyPlayed.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {releases.length ? <TrackRow title="New & recently released" eyebrow="FRESH MUSIC" tracks={releases} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps} /> : null}
+      <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
+      <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
     </div>
-   </article>)}
-  </div>
-  <div className="home-carousel__controls" aria-label="Slide controls">{SLIDE_LABELS.map((label,index)=><button key={label} type="button" aria-label={`Show slide ${index+1}: ${label}`} aria-current={active===index?"true":undefined} className={active===index?"is-active":""} onClick={()=>moveTo(index)}/>)}</div>
-  <span className="home-carousel__counter">{active+1} / 4</span>
- </section>;
+  );
 }
-function HomePage({currentUser,onNavigate,onOpenAuth,onOpenArtist}){
- const menu=useTrackActionMenu(),recentOwner=currentUser?.id??currentUser?.username??"guest-device";
- const [recentlyPlayedState,setRecentlyPlayedState]=useState(()=>({owner:recentOwner,tracks:readCachedHomeRecentlyPlayed(recentOwner)}));
- const recentlyPlayed=getHomeRecentlyPlayedForOwner(recentOwner,recentlyPlayedState.owner,recentlyPlayedState.tracks);
- const setRecentlyPlayed=next=>setRecentlyPlayedState(current=>({owner:recentOwner,tracks:typeof next==="function"?next(current.owner===recentOwner?current.tracks:readCachedHomeRecentlyPlayed(recentOwner)):next}));
- const [suggestionsState,setSuggestionsState]=useState(()=>({owner:recentOwner,tracks:readCachedHomeSuggestions(recentOwner)}));
- const suggestedTracks=suggestionsState.owner===recentOwner?suggestionsState.tracks:readCachedHomeSuggestions(recentOwner);
- const [loading,setLoading]=useState(!suggestedTracks.length),[error,setError]=useState("");
- const suggestionsRequestRef=useRef(0),context=recentlyPlayed.map(track=>String(track.id)).join("|");
- useEffect(()=>{setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));},[recentOwner]);
- useEffect(()=>subscribeListeningHistoryChanged(event=>{const detail=event?.detail??{};if(detail.owner&&String(detail.owner)!==String(recentOwner??""))return;if(detail.type==="optimistic-play"&&detail.track?.id){const cached=readCachedHomeRecentlyPlayed(recentOwner),instant=applyOptimisticRecentlyPlayed(cached, detail.track, 12, {incrementPlayCount:false});writeCachedHomeRecentlyPlayed(recentOwner, instant);setRecentlyPlayed(instant);return;}setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner));}),[recentOwner]);
- const loadSuggestions=useCallback(async()=>{const requestId=++suggestionsRequestRef.current,cached=readCachedHomeSuggestions(recentOwner);setSuggestionsState({owner:recentOwner,tracks:cached});setLoading(!cached.length);setError("");const contextTrackIds=context.split("|").filter(Boolean).slice(0,12);try{const response=await getSuggestedMusic({currentTrackId:contextTrackIds[0]??null,excludeTrackIds:contextTrackIds,contextTrackIds,limit:12});if (requestId !== suggestionsRequestRef.current) return;const tracks=Array.isArray(response)?response:[];writeCachedHomeSuggestions(recentOwner,tracks);setSuggestionsState({owner:recentOwner,tracks});}catch(err){if(requestId===suggestionsRequestRef.current&&!cached.length)setError(err instanceof Error?err.message:"Suggestions unavailable.");}finally{if(requestId===suggestionsRequestRef.current)setLoading(false);}},[recentOwner,context]);
- useEffect(()=>{if(suggestedTracks.length)player.seedQueueFromSuggestions(suggestedTracks);},[suggestedTracks]);
- useEffect(()=>{void loadSuggestions();return()=>{suggestionsRequestRef.current++;};},[loadSuggestions]);
- const play=async track=>{if(!track?.id)return;try{await player.playTrack(track.id,{audioUrl:track.audio_url??null,artworkUrl:resolveArtworkUrl(track.artwork_url),title:track.title??"",artist:track.artist??"",album:track.album??"",mimeType:track.mime_type??null,fileSize:track.file_size??null,mediaVersion:track.media_version??null,genre:track.genre??"",releaseYear:track.release_year??null});}catch(err){setError(err instanceof Error?err.message:"Playback failed.");}};
- const warm=track=>{if(track?.id)void player.warmTrackForPlayback(track.id,track);};
- const menuProps=track=>menu.getTriggerProps(track),scrollSuggestions=()=>document.getElementById("home-suggested-music")?.scrollIntoView({behavior:"smooth",block:"start"});
- const onMoodSection=selected=>{setMood(selected);window.setTimeout(scrollSuggestions,80);};
- const recentIds=new Set(recentlyPlayed.map(track=>String(track.id)));
- const releases=suggestedTracks.filter(track=>Number(track.release_year)>=new Date().getFullYear()-1&&!recentIds.has(String(track.id))).sort((a,b)=>(Number(b.release_year)||0)-(Number(a.release_year)||0));
- const releaseIds=new Set(releases.map(track=>String(track.id)));
- const discovery=suggestedTracks.filter(track=>!recentIds.has(String(track.id))&&!releaseIds.has(String(track.id)));
- const quickPicks=[...recentlyPlayed,...suggestedTracks].filter((track,index,all)=>track?.id&&all.findIndex(candidate=>String(candidate?.id)===String(track.id))===index).slice(0,4);
 
- return <div className="page-stack home-page">
- <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
- <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={()=>onNavigate?.("search")} onDiscover={()=>onNavigate?.("search")} onMood={()=>onNavigate?.("search")} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps} onOpenArtist={onOpenArtist}/>
- {quickPicks.length?<QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
- {recentlyPlayed.length?<TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
- {releases.length?<TrackRow title="New & recently released" eyebrow="FRESH MUSIC" tracks={releases} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
- {discovery.length?<TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
- <ArtistRow tracks={suggestedTracks} onOpenArtist={onOpenArtist} onNavigate={onNavigate}/>
- <MoodCards tracks={suggestedTracks} activeMood={mood} onChange={onMoodSection}/>
- <section id="home-suggested-music" className="home-music-section home-feed-row"><SectionHeading title={mood==="All"?"Suggested Music":`${mood} mix`} actionLabel="Explore" onAction={()=>onNavigate?.("search")}/>
- {personalizedSuggestions.length?<><div className="home-horizontal-scroll home-scroll-fade" aria-busy={loading}>{personalizedSuggestions.map(track=><TrackTile key={track.id} track={track} onPlay={play} onWarm={warm} menuProps={menuProps(track)}/>)}</div>{mood!=="All"&&!moodHasMatches?<p className="home-mood-fallback-note">No tracks are tagged {mood.toLowerCase()} yet, so these are your listening-based picks while your mood mix grows.</p>:null}</>:loading?<div className="home-track-grid home-track-grid--loading" aria-busy="true" aria-label="Loading listening-based suggestions">{Array.from({length:6},(_,i)=><div className="home-track-card home-track-card--skeleton" key={i} aria-hidden="true"><div className="home-track-card__art home-skeleton-block"/><div className="home-track-card__info"><span className="home-skeleton-line home-skeleton-line--title"/><span className="home-skeleton-line home-skeleton-line--artist"/></div></div>)}</div>:<div className="home-empty-state"><div className="home-empty-state__icon">♫</div><div><strong>Your listening mix is ready to grow</strong><p>Play a few songs and this shelf will recommend more music based on your listening.</p><button type="button" className="home-carousel__action" onClick={()=>onNavigate?.("search")}>Explore music →</button></div></div>}
- </section><TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth}/></div>;
-}
 export default HomePage;
