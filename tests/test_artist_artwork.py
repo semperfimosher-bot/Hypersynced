@@ -1,3 +1,5 @@
+import pytest
+
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
@@ -144,3 +146,145 @@ def test_verified_entity_candidate_requires_external_musicbrainz_id() -> None:
     assert verified_artist_entity_candidates(
         "Verified Artist", results, claims_with_id,
     ) == results
+
+
+
+@pytest.mark.asyncio
+async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
+    monkeypatch,
+) -> None:
+    from backend.app.services import artist_artwork
+
+    calls: list[str] = []
+    claims = {
+        "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}],
+        "P18": [{"mainsnak": {"datavalue": {"value": "Artist portrait.jpg"}}}],
+        "P434": [{"mainsnak": {"datavalue": {"value": "mbid-artist-1"}}}],
+    }
+
+    async def fake_request_json(client, url, params):
+        calls.append(url)
+        if url == artist_artwork.WIKIDATA_API:
+            return {"search": [{"id": "Q100", "label": "Correct Artist"}]}
+        if "Special:EntityData/Q100" in url:
+            return {"entities": {"Q100": {"claims": claims}}}
+        if "musicbrainz.org" in url:
+            return {
+                "name": "Correct Artist",
+                "type": "Group",
+                "relations": [
+                    {
+                        "type": "wikidata",
+                        "url": {"resource": "https://www.wikidata.org/wiki/Q100"},
+                    },
+                ],
+            }
+        if url == artist_artwork.COMMONS_API:
+            return {
+                "query": {
+                    "pages": {
+                        "1": {
+                            "imageinfo": [
+                                {
+                                    "thumburl": "https://upload.wikimedia.org/artist.jpg",
+                                    "url": "https://upload.wikimedia.org/full.jpg",
+                                    "descriptionurl": "https://commons.wikimedia.org/wiki/File:Artist.jpg",
+                                    "extmetadata": {
+                                        "LicenseShortName": {"value": "CC BY-SA 4.0"},
+                                        "Artist": {"value": "Photographer"},
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+        raise AssertionError(f"Unexpected request URL: {url}")
+
+    class FakeImageResponse:
+        headers = {"content-type": "image/jpeg", "content-length": "9"}
+
+        def raise_for_status(self):
+            return None
+
+        async def aiter_bytes(self):
+            yield b"\\xff\\xd8\\xffsample"
+
+    class FakeStream:
+        async def __aenter__(self):
+            return FakeImageResponse()
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def stream(self, method, url):
+            calls.append(url)
+            return FakeStream()
+
+    monkeypatch.setattr(artist_artwork, "_request_json", fake_request_json)
+    monkeypatch.setattr(artist_artwork.httpx, "AsyncClient", FakeClient)
+
+    result = await artist_artwork.find_reusable_artist_image("Correct Artist")
+
+    assert result is not None
+    assert result["artist_qid"] == "Q100"
+    assert result["content_type"] == "image/jpeg"
+    assert result["image_bytes"] == b"\\xff\\xd8\\xffsample"
+    assert result["license"] == "CC BY-SA 4.0"
+    assert result["credit"] == "Photographer"
+    assert result["source_page_url"].startswith("https://commons.wikimedia.org/")
+    assert any("musicbrainz.org" in call for call in calls)
+
+
+@pytest.mark.asyncio
+async def test_artist_image_fetch_pipeline_rejects_ambiguous_identity(
+    monkeypatch,
+) -> None:
+    from backend.app.services import artist_artwork
+
+    async def fake_request_json(client, url, params):
+        if url == artist_artwork.WIKIDATA_API:
+            return {
+                "search": [
+                    {"id": "Q100", "label": "Same Name Artist"},
+                    {"id": "Q200", "label": "Same Name Artist"},
+                ],
+            }
+        if "Special:EntityData" in url:
+            return {
+                "entities": {
+                    url.split("/")[-1].removesuffix(".json"): {
+                        "claims": {
+                            "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}],
+                            "P18": [{}],
+                            "P434": [{"mainsnak": {"datavalue": {"value": "mbid"}}}],
+                        },
+                    },
+                },
+            }
+        raise AssertionError("Ambiguous match must stop before other providers.")
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(artist_artwork, "_request_json", fake_request_json)
+    monkeypatch.setattr(artist_artwork.httpx, "AsyncClient", FakeClient)
+
+    assert await artist_artwork.find_reusable_artist_image("Same Name Artist") is None
