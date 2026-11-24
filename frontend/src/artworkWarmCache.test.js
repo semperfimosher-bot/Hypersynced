@@ -53,3 +53,25 @@ test("playlist artwork warming is a no-op outside browsers", async () => {
   assert.equal(warmPlaylistArtwork([{ artwork_url: "https://cdn.example/cover.jpg" }]), 0);
   if (originalImage !== undefined) globalThis.Image = originalImage;
 });
+
+test("failed artwork warm can be retried after the failure", async (t) => {
+  const originalImage = globalThis.Image;
+  const images = [];
+  globalThis.Image = class FakeImage {
+    set src(value) {
+      this.url = value;
+      images.push(this);
+    }
+  };
+  t.after(() => {
+    if (originalImage === undefined) delete globalThis.Image;
+    else globalThis.Image = originalImage;
+  });
+
+  const { warmTrackArtwork } = await import("./artworkWarmCache.js");
+  const track = { artwork_url: "https://cdn.example/retry-after-error.jpg" };
+  assert.equal(warmTrackArtwork([track]), 1);
+  images[0].onerror();
+  assert.equal(warmTrackArtwork([track]), 1);
+  assert.equal(images.length, 2);
+});
