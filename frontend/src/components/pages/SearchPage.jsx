@@ -150,6 +150,7 @@ import {
 const searchPlaylistCache = new Map();
 const searchPlaylistRequests = new Map();
 const discoveryArtworkCache = new Map();
+const discoveryPeopleCache = new Map();
 
 function SearchPage({
   query,
@@ -462,6 +463,7 @@ useEffect(() => {
   const [discoveryMode, setDiscoveryMode] = useState("");
   const [completedSearchQuery, setCompletedSearchQuery] = useState("");
   const [discoveryTracks, setDiscoveryTracks] = useState([]);
+  const [discoveryPeople, setDiscoveryPeople] = useState([]);
   const [discoveryLoading, setDiscoveryLoading] = useState(false);
   const [discoveryError, setDiscoveryError] = useState("");
 
@@ -519,6 +521,25 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       })
       .catch(() => {
         // Discovery artwork is decorative; keep the shortcuts functional with icons.
+      });
+    return () => { cancelled = true; };
+  }, [normalizedQuery, discoveryMode, currentUser?.id, currentUser?.username]);
+  
+  // Warm profile photos separately so Find People never reuses music artwork.
+  useEffect(() => {
+    if (normalizedQuery || discoveryMode) return undefined;
+    const ownerKey = String(currentUser?.id ?? currentUser?.username ?? "guest");
+    const cached = discoveryPeopleCache.get(ownerKey);
+    if (cached?.length) setDiscoveryPeople(cached);
+    let cancelled = false;
+    searchUsers("")
+      .then((people) => {
+        if (cancelled || !Array.isArray(people) || !people.length) return;
+        discoveryPeopleCache.set(ownerKey, people);
+        setDiscoveryPeople(people);
+      })
+      .catch(() => {
+        // People collage is decorative and should not affect search availability.
       });
     return () => { cancelled = true; };
   }, [normalizedQuery, discoveryMode, currentUser?.id, currentUser?.username]);
@@ -2812,19 +2833,29 @@ async function downloadOpenedPlaylist() {
               { id: "find-people", label: "Find People", query: "", filter: "people", icon: "people" },
               { id: "find-new-tunes", label: "Find New Tunes", query: "", filter: "tracks", icon: "music" },
               ...SEARCH_QUICK_COMMANDS.map((command) => ({ ...command, icon: command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play" })),
-            ].map((command) => (
+            ].map((command) => {
+              const musicPool = discoveryTracks.length ? discoveryTracks : (results?.tracks ?? []);
+              const releasePool = (results?.albums ?? []).map((album) => album?.artwork_url).filter(Boolean);
+              const profilePool = discoveryPeople.map((person) => person?.avatar_url ?? person?.avatar ?? person?.profile_image_url ?? person?.image_url ?? person?.photo_url).filter(Boolean);
+              const trackSlice = command.id === "find-new-tunes" ? musicPool.slice(4, 8) : musicPool.slice(0, 4);
+              const tileArtwork = command.id === "find-people"
+                ? profilePool.slice(0, 4)
+                : command.id === "newly-released"
+                  ? releasePool.slice(0, 4).length ? releasePool.slice(0, 4) : musicPool.slice(0, 4).map((track) => track?.artwork_url).filter(Boolean)
+                  : trackSlice.map((track) => track?.artwork_url).filter(Boolean);
+              return (
               <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
                 <span className="hs-search-discovery__tile-icon hs-search-discovery__tile-art">
                   <PlaylistArtwork
-                    tracks={(discoveryTracks.length ? discoveryTracks : results?.tracks ?? []).slice(0, 4)}
-                    artworkUrls={(results?.albums ?? []).slice(0, 4).map((album) => album?.artwork_url).filter(Boolean)}
+                    artworkUrls={tileArtwork}
                     fallbackSize={18}
                   />
-                  {!discoveryTracks.length && !(results?.tracks?.length) && !(results?.albums?.length) ? <Icon name={command.icon} size={19} /> : null}
+                  {!tileArtwork.length ? <Icon name={command.icon} size={19} /> : null}
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
