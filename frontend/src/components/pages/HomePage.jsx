@@ -149,8 +149,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const homeDiscoveryPool = (suggestedTracks.length ? suggestedTracks : recentlyAdded).filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);
-  const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 12);
+  const homeDiscoveryPool = [...suggestedTracks, ...recentlyAdded].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 12);
+  const homeRecentFallback = recentlyPlayed.slice(0, 12);
   const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 12);
   const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
@@ -159,9 +159,9 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
       <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
       {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
-      {homeRecentFallback.length ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
+      {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
-      {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
+      {discovery.length >= 6 ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       <ArtistRow tracks={homeDiscoveryPool} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
     </div>
