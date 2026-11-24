@@ -169,35 +169,39 @@ test("search shortcut polish and instant social cache are present", () => {
 });
 
 
-test("search history appears only as matching suggestions while typing and discovery tiles warm artwork", () => {
-  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\.some/);
+test("search history suggestions and discovery shortcuts are lightweight and sparkle on hover", () => {
+  assert.match(searchPageSource, /normalizedQuery && !openedPlaylist && recentSearches\\.some/);
   assert.match(searchPageSource, /hs-search-history-suggestions/);
   assert.doesNotMatch(searchPageSource, /YOUR HISTORY/);
-  assert.match(searchPageSource, /discoveryArtworkCache/);
-  assert.match(searchPageSource, /getSuggestedMusic\(\{ limit: 12, homeExplore: false \}\)/);
-  assert.match(searchPageSource, /PlaylistArtwork/);
+  const discoveryTiles = searchPageSource.slice(
+    searchPageSource.indexOf('className="hs-search-discovery__tiles"'),
+    searchPageSource.indexOf("!openedPlaylist && normalizedQuery && completedSearchQuery"),
+  );
+  assert.doesNotMatch(discoveryTiles, /PlaylistArtwork|tileArtwork|artworkUrls/);
+  assert.match(discoveryTiles, /hs-search-discovery__tile-sparkles/);
   assert.match(searchStylesSource, /hs-search-history-suggestions/);
-  assert.match(searchStylesSource, /hs-search-discovery__tile-art/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile-sparkles/);
 });
 
-
-test("discovery shortcuts use distinct collage sources including real profile photos", () => {
-  assert.match(searchPageSource, /discoveryPeopleCache/);
-  assert.match(searchPageSource, /searchUsers\(""\)/);
-  assert.match(searchPageSource, /profilePool\.slice\(0, 4\)/);
-  assert.match(searchPageSource, /releasePool\.slice\(0, 4\)/);
-  assert.match(searchPageSource, /searchHypersync\("new releases", "smart"/);
-  assert.match(searchPageSource, /discoveryReleaseResults\.tracks/);
-  assert.match(searchPageSource, /musicPool\.slice\(4, 8\)/);
-  assert.match(searchPageSource, /quickCommandIndex/);
-  assert.match(searchPageSource, /quickCommandTracks/);
-  assert.match(searchPageSource, /artworkUrls=\{tileArtwork\}/);
-  assert.match(searchPageSource, /command\.id === "find-people"/);
-  assert.match(searchPageSource, /command\.id === "newly-released"/);
-  assert.match(searchStylesSource, /hs-search-discovery__tile-art \.playlist-artwork-collage/);
-  assert.match(searchStylesSource, /transform: rotate\(-[0-9]+deg\)/);
+test("home quick picks have right-side sparkle accents and Library playlist action is right-aligned", () => {
+  const homeFeedSource = readFileSync(
+    new URL("./components/home/HomeFeedSections.jsx", import.meta.url),
+    "utf8",
+  );
+  const homeFeedStylesSource = readFileSync(
+    new URL("./styles/homeFeed.css", import.meta.url),
+    "utf8",
+  );
+  const surfaceStylesSource = readFileSync(
+    new URL("./styles/surfaceConsistency.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(homeFeedSource, /home-track-tile__sparkles/);
+  assert.match(homeFeedStylesSource, /home-quick-picks .*home-track-tile__sparkles/);
+  assert.match(homeFeedStylesSource, /:focus-visible .*home-track-tile__sparkles/);
+  assert.match(surfaceStylesSource, /hs-library-console .*search-console__heading.*display: flex/);
+  assert.match(surfaceStylesSource, /hs-library-console .*search-primary-action.*margin-left: auto/);
 });
-
 
 test("artist profiles quietly refresh to reveal fetched portraits", () => {
   assert.match(artistProfilePageSource, /profile\.artwork_source_page_url/);
