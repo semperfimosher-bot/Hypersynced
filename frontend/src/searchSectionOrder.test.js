@@ -207,6 +207,7 @@ test("home quick picks have right-side sparkle accents and Library playlist acti
 test("artist profiles quietly refresh to reveal fetched portraits", () => {
   assert.match(artistProfilePageSource, /profile\.artwork_source_page_url/);
   assert.match(artistProfilePageSource, /getArtistProfile\(artistName\)/);
-  assert.match(artistProfilePageSource, /attempts < 3/);
-  assert.match(artistProfilePageSource, /10_000/);
+  assert.match(artistProfilePageSource, /attempts < 5/);
+  assert.match(artistProfilePageSource, /8_000/);
+  assert.match(artistProfilePageSource, /5_000/);
 });
