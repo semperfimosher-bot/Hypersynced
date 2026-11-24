@@ -795,3 +795,10 @@
   background-color: var(--hs-button-surface-raised);
   color: #f4fbff;
 }
+
+/* Library heading keeps the playlist action on the right side of its search header. */
+.hs-library-console .hs-search-console__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hs-library-console .hs-search-console__intro { min-width: 0; flex: 1 1 auto; }
+.hs-library-console .hs-search-primary-action { margin-left: auto; justify-self: auto; grid-column: auto; flex: 0 0 auto; }
+@media (max-width: 760px) { .hs-library-console .hs-search-console__heading { flex-direction: row; align-items: center; gap: 10px; } .hs-library-console .hs-search-primary-action { margin-left: auto; } }
+@media (max-width: 390px) { .hs-library-console .hs-search-console__heading { align-items: flex-start; } .hs-library-console .hs-search-primary-action { padding-inline: 8px; font-size: 8px; } }
