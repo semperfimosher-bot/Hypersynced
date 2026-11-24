@@ -60,7 +60,9 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
         {slideLabels.map((label, index) => (
           <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
-            <div className="home-carousel__artwork" aria-hidden="true">{coverFor(index) ? <img src={coverFor(index)} alt="" loading={index === active ? "eager" : "lazy"} /> : null}</div>
+            <div className="home-carousel__artwork" aria-hidden="true">
+              {! (guest && index === 0) ? (slideTracks[index] ? [slideTracks[index], recent[index % Math.max(1, recent.length)] ?? suggestions[index + 1], suggestions[index + 2]].filter((track, artworkIndex, all) => track?.artwork_url && all.findIndex((candidate) => candidate?.id && String(candidate.id) === String(track.id)) === artworkIndex).slice(0, 3).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} />) : null) : null}
+            </div>
             <div className={`home-carousel__content ${guest && index === 0 ? "home-carousel__content--guest-image-only" : ""}`}>
               <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "BACK IN THE GROOVE" : contentIndex === 1 ? "FRESH FINDS" : contentIndex === 2 ? (guest ? "ARTISTS IN YOUR ORBIT" : "YOUR MUSIC, YOUR RULES") : "TUNED TO YOU"}</span>
               <h2>{guest && index === 0 ? "Welcome to HyperSynced" : contentIndex === 0 ? "Pick up where you left off" : contentIndex === 1 ? "Find Your Next Favorite" : contentIndex === 2 ? (guest ? "Artists in Your Orbit" : "Your Music Vault") : "Made for Your Mood"}</h2>
@@ -72,7 +74,6 @@ function HomeCarousel({ recent, suggestions, onNavigate, guest, onOpenAuth, onPl
         ))}
       </div>
       <div className="home-carousel__controls" aria-label="Slide controls">{slideLabels.map((label, index) => <button key={label} type="button" aria-label={`Show slide ${index + 1}: ${label}`} aria-current={active === index ? "true" : undefined} className={active === index ? "is-active" : ""} onClick={() => moveTo(index)} />)}</div>
-      <span className="home-carousel__counter">{active + 1} / {slideLabels.length}</span>
     </section>
   );
 }
