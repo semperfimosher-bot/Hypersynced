@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getMyRecentlyPlayed } from "./profileApi.js";
+import { getMyRecentlyPlayed, getSuggestedMusic, searchUsers } from "./profileApi.js";
 
 test("Home recently played uses the focused Neon endpoint", async () => {
   const originalFetch = globalThis.fetch;
