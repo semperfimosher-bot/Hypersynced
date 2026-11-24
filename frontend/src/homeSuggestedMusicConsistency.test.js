@@ -15,6 +15,8 @@ test("Home keeps Picked for You and removes the redundant Suggested shelf", () =
   assert.match(page, /readCachedHomeSuggestions/);
   assert.match(page, /writeCachedHomeSuggestions/);
   assert.match(page, /getSuggestedMusic/);
+  assert.match(page, /fallbackTracks=\{recentlyAdded\}/);
+  assert.match(page, /activeTrack \? onPlay\(activeTrack\)/);
   assert.match(page, /contextTrackIds/);
   assert.match(page, /recentlyPlayed/);
   assert.match(page, /suggestionsRequestRef/);
