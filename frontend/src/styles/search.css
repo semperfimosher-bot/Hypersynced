@@ -8635,3 +8635,74 @@ button:disabled {
   .hs-search-suggestions { max-height: min(360px, 55vh); padding: 6px; }
   .hs-search-suggestion { padding: 7px; }
 }
+
+
+/* Search landing discovery: bold blue ambience, history rail, and colorful discovery tiles. */
+.hs-search-console {
+  padding: clamp(14px, 2.1vw, 24px);
+  border: 1px solid rgba(71, 193, 242, .18);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(22, 92, 255, .34), transparent 48%),
+    radial-gradient(ellipse at 90% 85%, rgba(12, 183, 255, .18), transparent 42%),
+    linear-gradient(145deg, rgba(3, 19, 54, .94), rgba(2, 12, 24, .98) 68%);
+  box-shadow: inset 0 1px rgba(123, 212, 255, .06), 0 12px 34px rgba(0, 0, 0, .24);
+}
+.hs-search-console__surface-group { gap: 12px; }
+.hs-search-console__heading { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.hs-search-console__heading h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.04em; }
+.hs-search-input {
+  min-height: 54px;
+  border-radius: 12px;
+  border-color: rgba(76, 204, 255, .5);
+  background: rgba(2, 14, 25, .88);
+  box-shadow: 0 0 0 3px rgba(36, 174, 255, .06), 0 0 22px rgba(29, 162, 255, .12);
+}
+.hs-search-input:focus-within { border-color: rgba(99, 221, 255, .88); box-shadow: 0 0 0 3px rgba(36, 174, 255, .12), 0 0 30px rgba(29, 162, 255, .18); }
+.hs-search-input input { font-size: 13px; }
+.hs-search-quick-commands { gap: 7px; margin-top: 1px; }
+.hs-search-quick-commands button { min-height: 34px; border-radius: 999px; padding-inline: 12px; color: #d0e5ef; font-size: 9px; background: rgba(9, 27, 44, .8); border-color: rgba(91, 173, 209, .22); }
+.hs-search-quick-commands button:hover { color: #fff; border-color: rgba(77, 227, 255, .48); background: rgba(17, 68, 100, .75); }
+.hs-search-discovery { display: grid; gap: 16px; margin-top: 2px; }
+.hs-search-discovery__recent, .hs-search-discovery__browse-head { padding: 15px 16px; border: 1px solid rgba(75, 177, 220, .14); border-radius: 13px; background: linear-gradient(145deg, rgba(3, 16, 29, .9), rgba(4, 14, 23, .84)); }
+.hs-search-discovery__section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.hs-search-discovery__section-head > div { display: grid; gap: 3px; }
+.hs-search-discovery__section-head span { color: #67c9f2; font: 700 8px "JetBrains Mono", monospace; letter-spacing: .14em; }
+.hs-search-discovery__section-head h3 { margin: 0; color: #f2f8fb; font-size: 17px; font-weight: 650; letter-spacing: -.025em; }
+.hs-search-discovery__section-head button { border: 0; color: #82a5b6; background: transparent; font-size: 9px; cursor: pointer; }
+.hs-search-discovery__recent-row { display: flex; gap: 12px; overflow-x: auto; padding: 1px 1px 4px; scrollbar-width: thin; }
+.hs-search-discovery__recent-item { display: grid; gap: 6px; flex: 0 0 78px; min-width: 0; border: 0; padding: 0; color: #cbdde7; background: transparent; text-align: center; cursor: pointer; }
+.hs-search-discovery__recent-item > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+.hs-search-discovery__recent-art { display: grid; place-items: center; width: 68px; height: 68px; margin-inline: auto; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; color: rgba(255,255,255,.9); background: linear-gradient(135deg, #0d77c9, #08335c); transition: transform 140ms ease, filter 140ms ease; }
+.hs-search-discovery__recent-item:hover .hs-search-discovery__recent-art { transform: scale(1.04); filter: brightness(1.12); }
+.hs-search-discovery__recent-art.tone-1 { background: linear-gradient(135deg, #5c3baf, #1a2361); }
+.hs-search-discovery__recent-art.tone-2 { background: linear-gradient(135deg, #16a4a9, #07506b); }
+.hs-search-discovery__recent-art.tone-3 { background: linear-gradient(135deg, #db6b33, #7b234c); }
+.hs-search-discovery__recent-art.tone-4 { background: linear-gradient(135deg, #c24d9b, #5230a0); }
+.hs-search-discovery__recent-art.tone-5 { background: linear-gradient(135deg, #5a8e42, #144a66); }
+.hs-search-discovery__browse-head { margin-bottom: -4px; }
+.hs-search-discovery__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hs-search-discovery__tile { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 112px; overflow: hidden; padding: 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; color: #fff; text-align: left; background: linear-gradient(130deg, #0b92d4, #4e5de4 64%, #984ad3); cursor: pointer; isolation: isolate; transition: transform 150ms ease, filter 150ms ease; }
+.hs-search-discovery__tile::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 15%, rgba(255,255,255,.2), transparent 40%); z-index: -1; }
+.hs-search-discovery__tile:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.hs-search-discovery__tile-label { font-size: clamp(14px, 1.7vw, 20px); font-weight: 750; letter-spacing: -.035em; }
+.hs-search-discovery__tile-icon { display: grid; place-items: center; width: 35px; height: 35px; flex: 0 0 auto; border-radius: 10px; color: rgba(255,255,255,.88); background: rgba(255,255,255,.13); }
+.hs-search-discovery__tile.tone-1 { background: linear-gradient(130deg, #00b9c8, #3675e8 55%, #a744d0); }
+.hs-search-discovery__tile.tone-2 { background: linear-gradient(130deg, #32bba0, #3b9bdb 55%, #4c65d8); }
+.hs-search-discovery__tile.tone-3 { background: linear-gradient(130deg, #e05b31, #d62e84 58%, #823fd0); }
+.hs-search-discovery__tile.tone-4 { background: linear-gradient(130deg, #b6d649, #3aa78d 58%, #0878c8); }
+.hs-search-discovery__tile.tone-5 { background: linear-gradient(130deg, #7950d5, #b64ab9 58%, #df6c69); }
+@media (max-width: 760px) {
+  .hs-search-console { padding: 13px; border-radius: 12px; }
+  .hs-search-input { min-height: 48px; }
+  .hs-search-discovery { gap: 11px; }
+  .hs-search-discovery__recent, .hs-search-discovery__browse-head { padding: 12px; border-radius: 11px; }
+  .hs-search-discovery__section-head h3 { font-size: 15px; }
+  .hs-search-discovery__recent-item { flex-basis: 70px; }
+  .hs-search-discovery__recent-art { width: 60px; height: 60px; }
+  .hs-search-discovery__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .hs-search-discovery__tile { min-height: 90px; padding: 12px; border-radius: 10px; }
+  .hs-search-discovery__tile-label { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .hs-search-discovery__tile, .hs-search-discovery__recent-art { transition: none; }
+}
