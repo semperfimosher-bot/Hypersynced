@@ -111,6 +111,30 @@ test(
 
 
 test(
+  "autoplay suggestions are queued after every playlist track in original order",
+  async () => {
+    const queueModule = await loadQueueModule();
+    const playlist = queueModule.buildTrackQueue([
+      { id: "playlist-1", title: "Playlist One", artist: "A" },
+      { id: "playlist-2", title: "Playlist Two", artist: "B" },
+      { id: "playlist-3", title: "Playlist Three", artist: "C" },
+    ]);
+    const suggestions = [
+      { id: "suggestion-1", title: "Suggestion One", artist: "S1" },
+      { id: "suggestion-2", title: "Suggestion Two", artist: "S2" },
+    ];
+    const queued = queueModule.appendAutoplayQueueEntries(playlist, suggestions);
+
+    assert.deepEqual(queued.map((entry) => entry.id), [
+      "playlist-1", "playlist-2", "playlist-3", "suggestion-1", "suggestion-2",
+    ]);
+    assert.equal(queued[2].meta.title, "Playlist Three");
+    assert.equal(queued[3].meta.title, "Suggestion One");
+  },
+);
+
+
+test(
   "getNextQueueIndex advances in order",
   async () => {
     const queueModule =
