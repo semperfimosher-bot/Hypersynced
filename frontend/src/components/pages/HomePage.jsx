@@ -7,7 +7,7 @@ import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 import {readCachedHomeSuggestions,writeCachedHomeSuggestions} from "../../homeSuggestions.js";
 import {getSuggestedMusic} from "../../profileApi.js";
 import {getHomeRecentlyPlayedForOwner,applyOptimisticRecentlyPlayed,readCachedHomeRecentlyPlayed,writeCachedHomeRecentlyPlayed,subscribeListeningHistoryChanged} from "../../homeRecentlyPlayed.js";
-import {QuickPickGrid,MoodFilterBar,TrackTile,TrackRow,ArtistRow,MoodCards} from "../home/HomeFeedSections.jsx";
+import {TrackTile,TrackRow,ArtistRow,MoodCards} from "../home/HomeFeedSections.jsx";
 
 function matchMood(track,mood){if(mood==="All")return true;const tags=Array.isArray(track?.moods)?track.moods.join(" "):track?.moods??track?.mood_tags??track?.mood??"";return String(tags).toLowerCase().split(/[|, ]+/).filter(Boolean).includes(mood.toLowerCase());}
 const SLIDE_LABELS=["Your music","Discover","Quick access","Find your mood"];
@@ -56,7 +56,6 @@ function HomePage({currentUser,onNavigate,onOpenAuth}){
  return <div className="page-stack home-page">
  <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser? `Good to see you, ${currentUser.username??"there"}`:"Welcome to HyperSynced"}</h1></header>
  <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} onNavigate={onNavigate} onRecent={scrollSuggestions} onDiscover={()=>onNavigate?.("search")} onMood={setMood} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>
- {currentUser?<MoodFilterBar activeMood={mood} onChange={setMood}/>:null}
  {releases.length?<TrackRow title="New & recently released" eyebrow="FRESH MUSIC" tracks={releases} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
  {discovery.length?<TrackRow title="Fresh for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
  {recentlyPlayed.length?<TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} getMenuProps={menuProps}/>:null}
