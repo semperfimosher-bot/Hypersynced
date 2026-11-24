@@ -864,7 +864,8 @@ export default function App() {
       const trackKey = String(state.trackId);
       if (trackKey === lastCountedTrack || trackKey === String(snapshot.lastTrackId ?? "")) return;
       lastCountedTrack = trackKey;
-      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;\n      snapshot.lastTrackId = trackKey;
+      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;
+      snapshot.lastTrackId = trackKey;
       const milestone = Math.floor(snapshot.count / 100) * 100;
       if (milestone > snapshot.milestone) {
         snapshot.milestone = milestone;
