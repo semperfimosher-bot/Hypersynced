@@ -1633,10 +1633,31 @@ async def search_users(
         .order_by(
             User.username.asc(),
         )
-        .limit(100 if not term else 20)
+        .limit(16 if not term else 20)
     )
 
     users = result.scalars().all()
+    follower_counts: dict[UUID, int] = {}
+    if users:
+        follower_result = await session.execute(
+            select(
+                UserFollow.following_id,
+                func.count(UserFollow.follower_id),
+            )
+            .where(
+                UserFollow.following_id.in_(
+                    [found_user.id for found_user in users],
+                ),
+                UserFollow.accepted_at.is_not(None),
+            )
+            .group_by(
+                UserFollow.following_id,
+            )
+        )
+        follower_counts = {
+            following_id: int(count or 0)
+            for following_id, count in follower_result.all()
+        }
 
     return [
         UserSearchResult(
@@ -1649,17 +1670,11 @@ async def search_users(
             avatar_url=avatar_url(
                 found_user,
             ),
-            followers_count=(
-                await accepted_followers_count(
-                    session,
-                    found_user.id,
-                )
-            ),
+            followers_count=follower_counts.get(found_user.id, 0),
             member_since=(found_user.created_at),
         )
         for found_user in users
     ]
-
 
 @router.get(
     "/{username}/avatar",
