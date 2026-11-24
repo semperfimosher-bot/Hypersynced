@@ -857,11 +857,11 @@ export default function App() {
     let snapshot = { count: 0, milestone: 0 };
     try { snapshot = { ...snapshot, ...(JSON.parse(localStorage.getItem(storageKey) || "{}")) }; } catch {}
     const unsubscribe = player.subscribe((state) => {
-      if (state?.phase !== "playing" || !state.trackId) return;
+      if (state?.phase !== "playing" || !state.trackId) return;\n      const duration = Number(state.duration) || 0;\n      const threshold = duration > 0 ? Math.min(30, duration * 0.5) : 30;\n      if ((Number(state.currentTime) || 0) < threshold) return;
       const trackKey = String(state.trackId);
-      if (trackKey === lastCountedTrack) return;
+      if (trackKey === lastCountedTrack || trackKey === String(snapshot.lastTrackId ?? "")) return;
       lastCountedTrack = trackKey;
-      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;
+      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;\n      snapshot.lastTrackId = trackKey;
       const milestone = Math.floor(snapshot.count / 100) * 100;
       if (milestone > snapshot.milestone) {
         snapshot.milestone = milestone;
