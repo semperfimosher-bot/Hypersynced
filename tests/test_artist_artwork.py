@@ -3,10 +3,10 @@ import pytest
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
-    license_is_reusable,
     is_safe_wikimedia_url,
-    musicbrainz_identity_matches,
+    license_is_reusable,
     musicbrainz_artist_id,
+    musicbrainz_identity_matches,
     verified_artist_entity_candidates,
     wikidata_qid_from_musicbrainz_relations,
 )
