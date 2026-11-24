@@ -1,12 +1,12 @@
 """persist licensed artist portrait metadata
 
 Revision ID: f6a9b3c2d8e1
-Revises: c9d4e7a2b6f1
+Revises: e1a7c3b9d5f2
 """
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "f6a9b3c2d8e1"
 down_revision: str | Sequence[str] | None = "e1a7c3b9d5f2"
