@@ -288,3 +288,103 @@ async def test_artist_image_fetch_pipeline_rejects_ambiguous_identity(
     monkeypatch.setattr(artist_artwork.httpx, "AsyncClient", FakeClient)
 
     assert await artist_artwork.find_reusable_artist_image("Same Name Artist") is None
+
+
+
+@pytest.mark.asyncio
+async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
+    monkeypatch,
+) -> None:
+    import uuid
+
+    from backend.app.services import artist_artwork
+
+    profile_id = uuid.uuid4()
+    profile = type(
+        "Profile",
+        (),
+        {
+            "id": profile_id,
+            "name": "Verified Artist",
+            "artwork_object_key": None,
+            "artwork_artist_qid": None,
+            "artwork_source_url": None,
+            "artwork_source_page_url": None,
+            "artwork_license": None,
+            "artwork_credit": None,
+        },
+    )()
+    session_calls = 0
+    commit_count = 0
+    uploaded: dict = {}
+
+    class FakeSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, model, requested_id):
+            assert requested_id == profile_id
+            return profile
+
+        async def commit(self):
+            nonlocal commit_count
+            commit_count += 1
+
+    def session_factory():
+        nonlocal session_calls
+        session_calls += 1
+        return FakeSession()
+
+    class FakeB2Client:
+        def put_object(self, **kwargs):
+            uploaded.update(kwargs)
+
+    candidate = {
+        "artist_qid": "Q100",
+        "image_bytes": b"verified-image",
+        "content_type": "image/jpeg",
+        "source_url": "https://upload.wikimedia.org/source.jpg",
+        "source_page_url": "https://commons.wikimedia.org/wiki/File:Source.jpg",
+        "license": "CC BY-SA 4.0",
+        "credit": "Image Author",
+    }
+
+    async def fake_find_image(name):
+        assert name == "Verified Artist"
+        return candidate
+
+    monkeypatch.setattr(artist_artwork, "get_session_factory", session_factory)
+    monkeypatch.setattr(
+        artist_artwork,
+        "find_reusable_artist_image",
+        fake_find_image,
+    )
+    monkeypatch.setattr(
+        artist_artwork,
+        "get_settings",
+        lambda: type("Settings", (), {"b2_bucket_name": "test-bucket"})(),
+    )
+    monkeypatch.setattr(
+        artist_artwork,
+        "get_b2_s3_client",
+        lambda: FakeB2Client(),
+    )
+
+    await artist_artwork.fetch_and_store_artist_artwork(profile_id)
+
+    expected_key = f"artist-artwork/{profile_id}/Q100"
+    assert session_calls == 2
+    assert commit_count == 1
+    assert uploaded["Bucket"] == "test-bucket"
+    assert uploaded["Key"] == expected_key
+    assert uploaded["Body"] == b"verified-image"
+    assert uploaded["ContentType"] == "image/jpeg"
+    assert profile.artwork_object_key == expected_key
+    assert profile.artwork_artist_qid == "Q100"
+    assert profile.artwork_source_url == candidate["source_url"]
+    assert profile.artwork_source_page_url == candidate["source_page_url"]
+    assert profile.artwork_license == candidate["license"]
+    assert profile.artwork_credit == candidate["credit"]
