@@ -121,8 +121,8 @@ async def test_concurrent_offline_event_upload_returns_existing_event():
 
     response = await record_listening(
         ListeningRequest(track_id=track_id, event_id=event_id),
-        SimpleNamespace(id=owner_id),
-        session,
+        cast(User, SimpleNamespace(id=owner_id)),
+        cast(AsyncSession, session),
     )
 
     assert response["duplicate"] is True
