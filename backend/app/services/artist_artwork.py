@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import re
 import time
-from urllib.parse import urlsplit
 from uuid import UUID
+from urllib.parse import urlsplit
 
 import httpx
 
