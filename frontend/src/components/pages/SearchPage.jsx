@@ -2786,7 +2786,7 @@ async function downloadOpenedPlaylist() {
               { id: "find-new-tunes", label: "Find New Tunes", query: "", filter: "tracks", icon: "music" },
               ...SEARCH_QUICK_COMMANDS.map((command) => ({ ...command, icon: command.filter === "people" ? "people" : command.filter === "albums" ? "disc" : command.filter === "artists" ? "music" : "play" })),
             ].map((command) => (
-              <button type="button" key={command.id} className="hs-search-discovery__tile" onClick={() => runQuickCommand(command)}>
+              <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
                 <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
               </button>
