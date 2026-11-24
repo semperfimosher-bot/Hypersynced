@@ -87,7 +87,14 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
         },
     }
 
-    assert verified_artist_entity_candidates("Sample Artist", search_results, claims) == []
+    assert (
+        verified_artist_entity_candidates(
+            "Sample Artist",
+            search_results,
+            claims,
+        )
+        == []
+    )
 
 
 def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
@@ -95,7 +102,9 @@ def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
     assert is_safe_wikimedia_url("https://commons.wikimedia.org/wiki/File:Example.jpg")
     assert not is_safe_wikimedia_url("http://upload.wikimedia.org/example.jpg")
     assert not is_safe_wikimedia_url("https://example.com/image.jpg")
-    assert not is_safe_wikimedia_url("https://commons.wikimedia.org@evil.example/image.jpg")
+    assert not is_safe_wikimedia_url(
+        "https://commons.wikimedia.org@evil.example/image.jpg",
+    )
 
 
 def test_artist_identity_requires_matching_musicbrainz_and_wikidata_link() -> None:
@@ -186,9 +195,13 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
                         "1": {
                             "imageinfo": [
                                 {
-                                    "thumburl": "https://upload.wikimedia.org/artist.jpg",
+                                    "thumburl": (
+                                        "https://upload.wikimedia.org/artist.jpg"
+                                    ),
                                     "url": "https://upload.wikimedia.org/full.jpg",
-                                    "descriptionurl": "https://commons.wikimedia.org/wiki/File:Artist.jpg",
+                                    "descriptionurl": (
+                                        "https://commons.wikimedia.org/wiki/File:Artist.jpg"
+                                    ),
                                     "extmetadata": {
                                         "LicenseShortName": {"value": "CC BY-SA 4.0"},
                                         "Artist": {"value": "Photographer"},
@@ -265,7 +278,15 @@ async def test_artist_image_fetch_pipeline_rejects_ambiguous_identity(
                 "entities": {
                     url.split("/")[-1].removesuffix(".json"): {
                         "claims": {
-                            "P31": [{"mainsnak": {"datavalue": {"value": {"id": "Q215380"}}}}],
+                            "P31": [
+                                {
+                                    "mainsnak": {
+                                        "datavalue": {
+                                            "value": {"id": "Q215380"},
+                                        },
+                                    },
+                                },
+                            ],
                             "P18": [{}],
                             "P434": [{"mainsnak": {"datavalue": {"value": "mbid"}}}],
                         },
