@@ -171,6 +171,7 @@ async def test_artist_profile_is_unique_and_reports_stats_and_follow_state() -> 
             "Example Artist",
             session,
             listener,
+            BackgroundTasks(),
         )
 
         assert response.name == "Example Artist"
