@@ -496,6 +496,7 @@ async def get_artist_profile(
 
     if not profile.artwork_object_key:
         await enqueue_artist_artwork(profile.id)
+        profile.artwork_status = "queued"
 
     return await _artist_profile_response(
         session,

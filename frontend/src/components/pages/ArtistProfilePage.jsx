@@ -230,6 +230,7 @@ export default function ArtistProfilePage({
       !profile
       || profile.artwork_status === "ready"
       || profile.artwork_status === "missing"
+      || profile.artwork_status === "failed"
       || !online
     ) {
       return undefined;

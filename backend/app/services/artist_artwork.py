@@ -332,6 +332,14 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
         try:
             candidate = await find_reusable_artist_image(artist_name)
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            async with factory() as session:
+                profile = await session.get(ArtistProfile, profile_id)
+                if profile:
+                    profile.artwork_status = "failed"
+                    profile.artwork_attempts += 1
+                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=min(30, 2 ** min(profile.artwork_attempts, 5)))
+                    profile.artwork_lease_until = None
+                    await session.commit()
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         if not candidate:
@@ -347,6 +355,14 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
 
         settings = get_settings()
         if not settings.b2_bucket_name:
+            async with factory() as session:
+                profile = await session.get(ArtistProfile, profile_id)
+                if profile:
+                    profile.artwork_status = "failed"
+                    profile.artwork_attempts += 1
+                    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=1)
+                    profile.artwork_lease_until = None
+                    await session.commit()
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         object_key = f"artist-artwork/{profile_id}/{candidate['artist_qid']}"
