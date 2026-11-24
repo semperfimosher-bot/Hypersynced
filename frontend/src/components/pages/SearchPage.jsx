@@ -2839,7 +2839,7 @@ async function downloadOpenedPlaylist() {
               const profilePool = discoveryPeople.map((person) => person?.avatar_url ?? person?.avatar ?? person?.profile_image_url ?? person?.image_url ?? person?.photo_url).filter(Boolean);
               const quickCommandIndex = SEARCH_QUICK_COMMANDS.findIndex((item) => item.id === command.id);
               const quickCommandTracks = musicPool.length
-                ? Array.from({ length: Math.min(4, musicPool.length) }, (_, index) => musicPool[(Math.max(quickCommandIndex, 0) + index) % musicPool.length])
+                ? Array.from({ length: Math.min(4, musicPool.length) }, (_, index) => musicPool[(Math.max(quickCommandIndex, 0) + (quickCommandIndex < 3 ? 1 : 2) + index) % musicPool.length])
                 : [];
               const tileArtwork = command.id === "find-people"
                 ? profilePool.slice(0, 4)
