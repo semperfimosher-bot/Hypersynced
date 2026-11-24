@@ -523,6 +523,7 @@ export default function MessagesPage({
       },
       [
         selectedUsername,
+        currentUser?.id,
       ],
     );
 
