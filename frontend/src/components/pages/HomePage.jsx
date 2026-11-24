@@ -148,7 +148,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const warm = (track) => { if (track?.id) void player.warmTrackForPlayback(track.id, track); };
   const menuProps = (track) => menu.getTriggerProps(track);
   const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const homeDiscoveryPool = [...suggestedTracks, ...recentlyAdded].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);\n  const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
+  const homeDiscoveryPool = [...suggestedTracks, ...recentlyAdded].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index);
+  const homeRecentFallback = [...recentlyPlayed, ...homeDiscoveryPool].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
   const discovery = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id))).slice(0, 6);
   const quickPicks = [...homeRecentFallback, ...suggestedTracks].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 4);
 
