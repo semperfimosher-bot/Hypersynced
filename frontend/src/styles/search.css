@@ -8954,3 +8954,53 @@ button:disabled {
     gap: 8px;
   }
 }
+
+
+/* Search-history suggestions are only visible while a query is being typed. */
+.hs-search-history-suggestions {
+  display: grid;
+  gap: 3px;
+  width: min(100%, 560px);
+  padding: 6px;
+  border: 1px solid rgba(68, 176, 222, .2);
+  border-radius: 10px;
+  background: rgba(3, 16, 31, .96);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .25);
+}
+.hs-search-history-suggestions button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 7px;
+  color: #c4dce8;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+.hs-search-history-suggestions button:hover,
+.hs-search-history-suggestions button:focus-visible {
+  color: #f2fbff;
+  outline: none;
+  background: rgba(21, 125, 190, .18);
+}
+.hs-search-history-suggestions__icon { display: grid; place-items: center; color: #63d7ff; }
+.hs-search-discovery__tile-icon.hs-search-discovery__tile-art {
+  display: block;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(4, 20, 39, .35);
+}
+.hs-search-discovery__tile-art .playlist-artwork-collage { width: 100%; height: 100%; }
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile { min-width: 0; min-height: 0; }
+.hs-search-discovery__tile-art .playlist-artwork-collage__tile img { width: 100%; height: 100%; object-fit: cover; }
+.hs-search-discovery__tile-art > svg { display: block; width: 100%; height: 100%; padding: 11px; }
+@media (max-width: 760px) {
+  .hs-search-discovery__tile-icon.hs-search-discovery__tile-art { width: 40px; height: 40px; min-width: 40px; }
+}
