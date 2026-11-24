@@ -1289,11 +1289,6 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
   function handleSearchKeyDown(
     event,
   ) {
-    if (event.key === "Escape" && searchSuggestionsOpen) {
-      event.preventDefault();
-      return;
-    }
-
     if (event.key === "Enter" && normalizedQuery) {
       rememberSearch(normalizedQuery);
     }
