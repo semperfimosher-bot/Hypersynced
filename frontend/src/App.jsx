@@ -566,6 +566,9 @@ function MainPage({
         onOpenAuth={
           onOpenAuth
         }
+        onOpenArtist={
+          onOpenArtist
+        }
       />
     );
   }
