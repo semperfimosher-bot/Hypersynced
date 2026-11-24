@@ -182,6 +182,8 @@ test("discovery shortcuts use distinct collage sources including real profile ph
   assert.match(searchPageSource, /profilePool\.slice\(0, 4\)/);
   assert.match(searchPageSource, /releasePool\.slice\(0, 4\)/);
   assert.match(searchPageSource, /musicPool\.slice\(4, 8\)/);
+  assert.match(searchPageSource, /quickCommandIndex/);
+  assert.match(searchPageSource, /quickCommandTracks/);
   assert.match(searchPageSource, /artworkUrls=\{tileArtwork\}/);
   assert.match(searchPageSource, /command\.id === "find-people"/);
   assert.match(searchPageSource, /command\.id === "newly-released"/);
