@@ -231,7 +231,25 @@ async def autoplay(
             ),
             limit=(
                 _autoplay_limit(
-       # Home discovery avoids tracks and artists listened to during the last two weeks.\n    if user is not None and payload.home_explore:\n        cutoff = datetime.now(UTC) - timedelta(days=14)\n        recent_result = await session.execute(\n            select(Track.id, Track.artist)\n            .join(ListeningEvent, ListeningEvent.track_id == Track.id)\n            .where(\n                ListeningEvent.user_id == user.id,\n                ListeningEvent.listened_at >= cutoff,\n                Track.is_published.is_(True),\n            )\n        )\n        recent_rows = recent_result.all()\n        recent_track_ids = {row.id for row in recent_rows}\n        recent_artist_keys = {str(row.artist or "").strip().casefold() for row in recent_rows if str(row.artist or "").strip()}\n        tracks = [track for track in tracks if track.id not in recent_track_ids and str(track.artist or "").strip().casefold() not in recent_artist_keys]\n        tracks = tracks[:6]\n\n                 payload.limit
+       # Home discovery avoids tracks and artists listened to during the last two weeks.
+    if user is not None and payload.home_explore:
+        cutoff = datetime.now(UTC) - timedelta(days=14)
+        recent_result = await session.execute(
+            select(Track.id, Track.artist)
+            .join(ListeningEvent, ListeningEvent.track_id == Track.id)
+            .where(
+                ListeningEvent.user_id == user.id,
+                ListeningEvent.listened_at >= cutoff,
+                Track.is_published.is_(True),
+            )
+        )
+        recent_rows = recent_result.all()
+        recent_track_ids = {row.id for row in recent_rows}
+        recent_artist_keys = {str(row.artist or "").strip().casefold() for row in recent_rows if str(row.artist or "").strip()}
+        tracks = [track for track in tracks if track.id not in recent_track_ids and str(track.artist or "").strip().casefold() not in recent_artist_keys]
+        tracks = tracks[:6]
+
+                 payload.limit
                 )
             ),
         )
