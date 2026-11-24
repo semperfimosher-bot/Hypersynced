@@ -848,6 +848,38 @@ export default function App() {
   const [statusMessage, setStatusMessage] =
     useState("");
 
+  // Count unique track starts per account and celebrate every 100 streams.
+  useEffect(() => {
+    const owner = currentUser?.id ?? currentUser?.username;
+    if (!owner || currentUser?.offline_only) return undefined;
+    const storageKey = `hypersynced.stream-milestones.v1:${encodeURIComponent(String(owner))}`;
+    let lastCountedTrack = null;
+    let snapshot = { count: 0, milestone: 0 };
+    try { snapshot = { ...snapshot, ...(JSON.parse(localStorage.getItem(storageKey) || "{}")) }; } catch {}
+    const unsubscribe = player.subscribe((state) => {
+      if (state?.phase !== "playing" || !state.trackId) return;
+      const trackKey = String(state.trackId);
+      if (trackKey === lastCountedTrack) return;
+      lastCountedTrack = trackKey;
+      snapshot.count = Math.max(0, Number(snapshot.count) || 0) + 1;
+      const milestone = Math.floor(snapshot.count / 100) * 100;
+      if (milestone > snapshot.milestone) {
+        snapshot.milestone = milestone;
+        setStatusMessage(`🎉 ${milestone} songs streamed! Thanks for supporting HyperSynced and being part of our music community! 💙🎶`);
+      }
+      try { localStorage.setItem(storageKey, JSON.stringify(snapshot)); } catch {}
+    });
+    return unsubscribe;
+  }, [currentUser?.id, currentUser?.username, currentUser?.offline_only]);
+
+  useEffect(() => {
+    const onStatus = (event) => {
+      if (event?.detail) setStatusMessage(String(event.detail));
+    };
+    window.addEventListener("hypersynced:status-message", onStatus);
+    return () => window.removeEventListener("hypersynced:status-message", onStatus);
+  }, []);
+
   const {
     activePlaylistDownloads,
     activePlaylistUpdate,
