@@ -8,10 +8,9 @@ from uuid import UUID
 
 import httpx
 
-from backend.app.config import get_settings
-from backend.app.database import get_session_factory
-from backend.app.models.artist import ArtistProfile
-from backend.app.services.b2 import get_b2_s3_client
+from ..config import get_settings
+from ..database import get_session_factory
+from ..models.artist import ArtistProfile
 
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
@@ -340,6 +339,8 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
             _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
             return
         object_key = f"artist-artwork/{profile_id}/{candidate['artist_qid']}"
+        from .b2 import get_b2_s3_client
+
         await asyncio.to_thread(
             get_b2_s3_client().put_object,
             Bucket=settings.b2_bucket_name,
