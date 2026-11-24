@@ -483,14 +483,14 @@ async def get_artist_profile(
     artist_name: str,
     session: DatabaseSession,
     viewer: OptionalCurrentUser,
-    background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks | None = None,
 ) -> ArtistProfileResponse:
     profile = await _artist_entity(
         session,
         artist_name,
     )
 
-    if not profile.artwork_object_key:
+    if not profile.artwork_object_key and background_tasks is not None:
         background_tasks.add_task(
             fetch_and_store_artist_artwork,
             profile.id,
