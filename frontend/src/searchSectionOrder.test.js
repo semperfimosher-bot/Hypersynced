@@ -136,7 +136,7 @@ test(
   () => {
     assert.match(searchPageSource, /const \[completedSearchQuery, setCompletedSearchQuery\] = useState/);
     assert.match(searchPageSource, /completedSearchQuery === normalizedQuery/);
-    assert.match(searchPageSource, /setCompletedSearchQuery\\(normalizedQuery\\)/);
+    assert.match(searchPageSource, /setCompletedSearchQuery\(normalizedQuery\)/);
     const timerIndex = searchPageSource.indexOf("const timer =");
     const timerBody = searchPageSource.slice(timerIndex, timerIndex + 12000);
     assert.match(timerBody, /\},\s*0,\s*\);/);
