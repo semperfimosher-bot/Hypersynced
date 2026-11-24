@@ -89,7 +89,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const [suggestionsState, setSuggestionsState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeSuggestions(recentOwner) }));
   const suggestedTracks = suggestionsState.owner === recentOwner ? suggestionsState.tracks : readCachedHomeSuggestions(recentOwner);
   const suggestionsRequestRef = useRef(0);
-  const [recentlyAdded, setRecentlyAdded] = useState(() => readCachedHomeRecentlyAdded());\n  const [downloadedArtistNotice, setDownloadedArtistNotice] = useState(null);
+  const [recentlyAdded, setRecentlyAdded] = useState(() => readCachedHomeRecentlyAdded());
+  const [downloadedArtistNotice, setDownloadedArtistNotice] = useState(null);
   const context = recentlyPlayed.map((track) => String(track.id)).join("|");
 
   useEffect(() => { setRecentlyPlayed(readCachedHomeRecentlyPlayed(recentOwner)); }, [recentOwner]);
@@ -191,7 +192,8 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     <div className="page-stack home-page">
       <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
       <HomeCarousel recent={homeRecentFallback} suggestions={suggestedTracks} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onOpenArtist={onOpenArtist} />
-      {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}\n      {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
+      {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}
+      {quickPicks.length ? <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {discovery.length >= 6 ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
