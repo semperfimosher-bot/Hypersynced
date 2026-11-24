@@ -119,6 +119,10 @@ export default function AdminUploadsPage() {
             true,
         });
 
+        if (Number(result?.updated ?? 0) > 0) {
+          globalThis.window?.dispatchEvent(new Event("hypersynced:catalog-updated"));
+        }
+
         const sourceSummary =
           Object.entries(
             result?.external_sources ??
