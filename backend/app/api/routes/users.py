@@ -26,6 +26,7 @@ from pydantic import (
     Field,
 )
 from sqlalchemy import func, select
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import flag_modified
@@ -1610,7 +1611,7 @@ async def search_users(
     term = (q or "").strip()
     pattern = f"%{term}%"
 
-    filters = [User.is_active.is_(True)]
+    filters: list[ColumnElement[bool]] = [User.is_active.is_(True)]
     if term:
         filters.append(
             User.username.ilike(pattern)
