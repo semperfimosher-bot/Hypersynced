@@ -168,3 +168,5 @@
 .home-quick-picks .home-track-tile__sparkles i:nth-child(3) { right: 0; bottom: 0; font-size: 7px; }
 .home-quick-picks .home-track-tile:hover .home-track-tile__sparkles, .home-quick-picks .home-track-tile:focus-visible .home-track-tile__sparkles { opacity: 1; transform: translateY(-50%) scale(1) rotate(0); }
 @media (prefers-reduced-motion: reduce) { .home-quick-picks .home-track-tile__sparkles { transition: none; } }
+
+.home-quick-picks .home-track-tile__copy { padding-right: 28px; }
