@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
 from fastapi import (
     APIRouter,
 )
+from sqlalchemy import select
+
 from pydantic import (
     BaseModel,
     Field,
 )
 
-from ...models.account import ListeningEvent\nfrom ...models.media import Track\nfrom ...services.autoplay import (
+from ...models.account import ListeningEvent
+from ...models.media import Track
+from ...services.autoplay import (
     recommend_autoplay_tracks,
 )
 from ..dependencies import (
@@ -157,6 +162,8 @@ class AutoplayRequest(
     )
 
     limit: Any = 8
+
+    home_explore: bool = False
 
 
 class AutoplayTrackResponse(
