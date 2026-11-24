@@ -139,6 +139,11 @@ import {
   warmTrackArtwork,
 } from "../../artworkWarmCache.js";
 
+import {
+  readRecentSearches,
+  saveRecentSearch,
+} from "../../recentSearches.js";
+
 
 // Search playlist data is kept warm for this page-module lifetime.
 const searchPlaylistCache = new Map();
@@ -479,6 +484,19 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
   ] = useState(
     EMPTY_RESULTS,
   );
+
+  const recentSearchOwner = currentUser?.id ?? currentUser?.username ?? "guest-device";
+  const [recentSearches, setRecentSearches] = useState(() => readRecentSearches(recentSearchOwner));
+  const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
+
+  useEffect(() => {
+    setRecentSearches(readRecentSearches(recentSearchOwner));
+  }, [recentSearchOwner]);
+
+  const rememberSearch = (value) => {
+    const next = saveRecentSearch(value, recentSearchOwner);
+    setRecentSearches(next);
+  };
 
   const [downloadedMusicCount, setDownloadedMusicCount] = useState(null);
 
@@ -1272,6 +1290,16 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
   function handleSearchKeyDown(
     event,
   ) {
+    if (event.key === "Escape" && searchSuggestionsOpen) {
+      event.preventDefault();
+      setSearchSuggestionsOpen(false);
+      return;
+    }
+
+    if (event.key === "Enter" && normalizedQuery) {
+      rememberSearch(normalizedQuery);
+      setSearchSuggestionsOpen(false);
+    }
     const trackCount =
   displayResults.tracks.length;
 
@@ -2627,10 +2655,12 @@ async function downloadOpenedPlaylist() {
 }
       autoComplete="off"
       spellCheck="false"
+      onFocus={() => setSearchSuggestionsOpen(true)}
       onChange={(event) => {
         onQueryChange(
           event.target.value,
         );
+        setSearchSuggestionsOpen(true);
       }}
       onKeyDown={
         handleSearchKeyDown
@@ -2648,6 +2678,35 @@ async function downloadOpenedPlaylist() {
 
   </label>
 
+  {searchSuggestionsOpen && !openedPlaylist ? (
+    <div className="hs-search-suggestions" role="listbox" aria-label="Search suggestions">
+      {!normalizedQuery && recentSearches.length ? (
+        <div className="hs-search-suggestions__group">
+          <div className="hs-search-suggestions__heading"><span>RECENT SEARCHES</span><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { try { localStorage.removeItem(`hypersynced.recent-searches.v1:${encodeURIComponent(String(recentSearchOwner || "guest"))}`); } catch {} setRecentSearches([]); }}>Clear</button></div>
+          {recentSearches.slice(0, 6).map((item) => (
+            <button type="button" role="option" className="hs-search-suggestion" key={item} onMouseDown={(event) => event.preventDefault()} onClick={() => { rememberSearch(item); onQueryChange(item); setSearchSuggestionsOpen(false); }}>
+              <span className="hs-search-suggestion__icon"><Icon name="clock" size={15} /></span><span className="hs-search-suggestion__copy"><strong>{item}</strong><small>Recent search</small></span><span className="hs-search-suggestion__arrow">↗</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {normalizedQuery ? (
+        <div className="hs-search-suggestions__group">
+          <div className="hs-search-suggestions__heading"><span>QUICK MATCHES</span></div>
+          {[
+            ...((results?.tracks || []).slice(0, 3).map((item) => ({ item, kind: "track", label: item.title, detail: item.artist }))),
+            ...((results?.artists || []).slice(0, 2).map((item) => ({ item, kind: "artist", label: item.name ?? item.artist ?? item.title, detail: "Artist" }))),
+            ...((results?.albums || []).slice(0, 2).map((item) => ({ item, kind: "album", label: item.title ?? item.name, detail: item.artist ?? "Album" }))),
+          ].filter((suggestion) => suggestion.label).slice(0, 5).map((suggestion) => (
+            <button type="button" role="option" className="hs-search-suggestion" key={suggestion.kind + ":" + suggestion.label} onMouseDown={(event) => event.preventDefault()} onClick={() => { rememberSearch(suggestion.label); onQueryChange(suggestion.label); setSearchSuggestionsOpen(false); }}>
+              <span className="hs-search-suggestion__icon"><Icon name={suggestion.kind === "artist" ? "users" : suggestion.kind === "album" ? "disc" : "music"} size={15} /></span><span className="hs-search-suggestion__copy"><strong>{suggestion.label}</strong><small>{suggestion.detail || suggestion.kind}</small></span><span className="hs-search-suggestion__arrow">↗</span>
+            </button>
+          ))}
+          {!loading && !results?.tracks?.length && !results?.artists?.length && !results?.albums?.length ? <p className="hs-search-suggestions__empty">Suggestions appear as matches load.</p> : null}
+        </div>
+      ) : null}
+    </div>
+  ) : null}
 
   </div>
   </section>
