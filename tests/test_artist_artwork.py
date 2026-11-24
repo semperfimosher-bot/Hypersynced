@@ -1,5 +1,6 @@
-import pytest
 from typing import cast
+
+import pytest
 
 from backend.app.models.artist import ArtistProfile
 
