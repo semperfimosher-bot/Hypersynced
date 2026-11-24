@@ -48,6 +48,11 @@ class ArtistProfile(
         nullable=True,
     )
 
+    artwork_artist_qid: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+    )
+
     artwork_source_url: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
