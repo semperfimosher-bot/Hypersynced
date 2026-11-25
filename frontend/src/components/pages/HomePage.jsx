@@ -224,8 +224,15 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const discovery = discoveryFallbackPool.filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 12);
-  const quickPickPool = [...homeRecentFallback, ...suggestedTracks, ...recentlyAdded, ...discoveryFallback];
-  const quickPicks = quickPickPool.filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 6);
+  // Quick Picks are recommendations shaped by recent/current listening context,
+  // not a replay list. Prefer personalized suggestions and only use fresh catalog
+  // tracks as a fallback; never fill the row with recently-played tracks.
+  const quickPickFallback = recentlyAdded.filter((track) => !actualRecentIds.has(String(track.id)));
+  const quickPickPool = [...suggestedTracks, ...quickPickFallback, ...discoveryFallback];
+  const quickPicks = quickPickPool.filter((track, index, all) =>
+    track?.id && !actualRecentIds.has(String(track.id)) &&
+    all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
+  ).slice(0, 6);
   const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
   const artworkWarmKey = artworkWarmTracks.map((track) => track?.id).filter(Boolean).join("|");
   useEffect(() => { warmTrackArtwork(artworkWarmTracks, 18); }, [artworkWarmKey]);
