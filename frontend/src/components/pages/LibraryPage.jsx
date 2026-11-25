@@ -5066,23 +5066,11 @@ useEffect(() => {
 
             <div>
               <strong>
-                No
-                {" "}
-                {activeTab.toLowerCase()}
-                {" "}
-                in your Library yet
+                No followed artists yet
               </strong>
 
               <p>
-                Like songs or add music to a
-                playlist and its
-                {" "}
-                {activeTab ===
-                "Artists"
-                  ? "artists"
-                  : "albums"}
-                {" "}
-                will appear here.
+                Follow artists from their profiles and they will appear here with their real profile pictures.
               </p>
             </div>
 
