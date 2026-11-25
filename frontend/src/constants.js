@@ -32,8 +32,6 @@ export const ADMIN_NAV_ITEMS = [
 export const LIBRARY_TABS = [
   "Playlists",
   "Artists",
-  "Albums",
-  "Songs",
 ];
 
 export const SEARCH_CATEGORIES = [
