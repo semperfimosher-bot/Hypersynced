@@ -188,7 +188,7 @@ function SearchPage({
     );
 
   const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
-  const [discoveryPeopleArtwork] = useState([{ avatar_url: "/find-people/purple-girl.svg" }, { avatar_url: "/find-people/white-haired.svg" }, { avatar_url: "/find-people/headphones-boy.svg" }]);
+  const [discoveryPeopleArtwork] = useState([{ avatar_url: "/find-people/purple-girl.svg" }, { avatar_url: "/find-people/white-haired.svg" }]);
   const [discoveryArtworkByCommand, setDiscoveryArtworkByCommand] = useState({});
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
 
