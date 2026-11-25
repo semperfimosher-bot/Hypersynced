@@ -174,7 +174,7 @@ def license_is_reusable(value: str | None) -> bool:
     }
 
 
-def image_bytes_match_mime(content: bytes, content_type: str) -> bool:
+def image_bytes_match_mime(content: bytes | bytearray, content_type: str) -> bool:
     if content_type == "image/jpeg":
         return content.startswith(b"\xff\xd8\xff")
     if content_type == "image/png":
