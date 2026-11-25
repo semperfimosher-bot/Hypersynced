@@ -61,6 +61,8 @@ export default function PlayerBar({
   const playerDetailsPointerRef =
     useRef(null);
 
+  const playerSwipeStartRef = useRef(null);
+
   const [
     state,
     setState,
@@ -420,12 +422,32 @@ export default function PlayerBar({
       onPointerMove={
         handlePlayerDetailsPointerMove
       }
-      onPointerUp={
-        clearPlayerDetailsPress
-      }
-      onPointerCancel={
-        clearPlayerDetailsPress
-      }
+      onPointerUp={(event) => {
+        const start = playerSwipeStartRef.current;
+        playerSwipeStartRef.current = null;
+        clearPlayerDetailsPress();
+        if (!start || start.pointerId !== event.pointerId || start.pointerType !== "touch") return;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        if (Math.abs(dx) < 48 || Math.abs(dy) > 65) return;
+        if (event.target instanceof Element && event.target.closest("button, input, a, [role='button']")) return;
+        if (dx < 0) handleNext();
+        else handlePrevious();
+      }}
+      onPointerCancel={() => {
+        playerSwipeStartRef.current = null;
+        clearPlayerDetailsPress();
+      }}
+      onPointerDownCapture={(event) => {
+        if (event.pointerType === "touch") {
+          playerSwipeStartRef.current = {
+            pointerId: event.pointerId,
+            pointerType: event.pointerType,
+            x: event.clientX,
+            y: event.clientY,
+          };
+        }
+      }}
     >
 
       {/* =================================================
