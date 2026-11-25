@@ -2324,6 +2324,7 @@ async function downloadOpenedPlaylist() {
               }}
             >
 
+              <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
               <span className="hs-search-track__art hs-search-entity-card__art">
 
                 {resolveArtworkUrl(
@@ -2440,7 +2441,8 @@ async function downloadOpenedPlaylist() {
               }}
             >
 
-              <span className="hs-search-entity-card__art">
+              <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
+              <span className="hs-search-track__art hs-search-entity-card__art">
 
                 {resolveArtworkUrl(
                   collaboration.artwork_url,
