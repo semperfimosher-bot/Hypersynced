@@ -8996,3 +8996,12 @@ button:disabled {
 .hs-search-discovery__tile-sparkles i:nth-child(3) { right: 2px; bottom: -5px; font-size: 7px; }
 .hs-search-discovery__tile:hover .hs-search-discovery__tile-sparkles, .hs-search-discovery__tile:focus-visible .hs-search-discovery__tile-sparkles { opacity: 1; transform: scale(1) rotate(0); }
 @media (prefers-reduced-motion: reduce) { .hs-search-discovery__tile-sparkles { transition: none; } }
+
+/* Search entity rows share the Library song/playlist row geometry. */
+.hs-search-entity-card.hs-library-entity-row{grid-template-columns:28px 46px minmax(0,1fr) 18px;min-height:64px;padding:8px 11px;gap:10px;border-radius:0;background:var(--hs-surface);box-sizing:border-box}
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__art{width:46px;height:46px}
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy{display:grid;min-width:0;gap:3px}
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy strong,.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy strong{font-size:10.5px;font-weight:600}
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy small{font-size:8px;color:var(--hs-muted,#697f89);letter-spacing:normal;font-weight:400}
+@media(max-width:760px){.hs-search-entity-card.hs-library-entity-row{grid-template-columns:24px 46px minmax(0,1fr) 16px;min-height:62px;padding:8px 10px;gap:8px}}
