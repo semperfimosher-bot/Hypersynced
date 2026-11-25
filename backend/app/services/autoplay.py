@@ -226,6 +226,7 @@ async def recommend_autoplay_tracks(
     current_track_id: UUID | None,
     exclude_track_ids: set[UUID],
     context_track_ids: list[UUID] | None = None,
+    never_played_only: bool = False,
     limit: int,
 ) -> list[Track]:
     excluded = {
@@ -839,6 +840,13 @@ async def recommend_autoplay_tracks(
                 )
             )
 
+        if never_played_only and user_id is not None:
+            listened_track_ids = select(ListeningEvent.track_id).where(
+                ListeningEvent.user_id == user_id,
+            )
+            stmt = stmt.where(
+                Track.id.not_in(listened_track_ids),
+            )
 
         return stmt
 
