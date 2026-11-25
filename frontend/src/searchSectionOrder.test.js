@@ -257,3 +257,9 @@ test("Quick Picks mobile hides its persistent circular play overlay", () => {
   );
   assert.match(homeFeedStylesSource, /@media\s*\(max-width:\s*979px\)[\s\S]*?\.home-quick-picks\s+\.home-track-tile__play[\s\S]*?display:\s*none/);
 });
+
+
+test("artist profile artwork is larger on mobile and keeps the full portrait", () => {
+  assert.match(searchStylesSource, /hs-artist-hero__art\s*\{[^}]*width:\s*164px/s);
+  assert.match(searchStylesSource, /hs-artist-hero__art img\s*\{[^}]*object-fit:\s*contain/s);
+});
