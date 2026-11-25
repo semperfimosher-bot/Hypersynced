@@ -300,6 +300,8 @@ async def test_artist_image_fetch_pipeline_rejects_ambiguous_identity(
                     },
                 },
             }
+        if url == artist_artwork.COMMONS_API:
+            return {"query": {"pages": {}}}
         raise AssertionError("Ambiguous match must stop before other providers.")
 
     class FakeClient:
