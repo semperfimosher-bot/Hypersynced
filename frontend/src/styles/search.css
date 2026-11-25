@@ -9116,3 +9116,10 @@ button:disabled {
   .hs-search-track__play { justify-self: center !important; }
   .player-bar { touch-action: pan-y; }
 }
+
+@media (max-width: 979px) {
+  .hs-search-filterbar button[data-filter="all"] { order: 1; }
+  .hs-search-filterbar button[data-filter="playlists"] { order: 2; }
+  .hs-search-filterbar button[data-filter="artists"] { order: 3; }
+  .hs-search-filterbar button[data-filter="people"] { order: 4; }
+}
