@@ -207,3 +207,8 @@ export async function searchUsers(
     )}`,
   );
 }
+
+
+export function getFollowedArtists() {
+  return apiRequest("/artists/following", { cache: "no-store" });
+}
