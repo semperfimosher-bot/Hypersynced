@@ -21,8 +21,8 @@ from sqlalchemy import (
     and_,
     delete,
     func,
-    or_,
     not_,
+    or_,
     select,
     update,
 )
