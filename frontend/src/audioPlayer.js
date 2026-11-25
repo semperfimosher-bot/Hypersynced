@@ -201,13 +201,13 @@ let recentTrackIds =
   [];
 
 const AUTOPLAY_REFILL_THRESHOLD =
-  4;
+  6;
 
 const AUTOPLAY_BATCH_SIZE =
-  12;
+  16;
 
 const AUTOPLAY_CONTEXT_SIZE =
-  12;
+  16;
 
 let queueRevision =
   0;
@@ -818,14 +818,18 @@ function appendAutoplayTracks(
   persistQueueSnapshot();
   notify();
 
-  // Autoplay suggestions are appended after every queued collection track.
-  // Warm the next track in sequence, not a recommendation that jumps the playlist.
+  // Prepare the upcoming queue while the current song is still playing.
+  // This warms up to two upcoming entries, preserving playlist order and never
+  // jumping ahead to a recommendation over the user's queued tracks.
   const nextIndex = getNextQueueIndex(currentQueue, currentQueueIndex);
   if (nextIndex >= 0) {
-    const nextEntry = currentQueue[nextIndex];
-    void Promise.resolve(
-      warmQueuedAudioEntry(nextEntry, { warmBytes: 256 * 1024 }),
-    ).catch(() => {});
+    for (const warmIndex of [nextIndex, nextIndex + 1]) {
+      const entry = currentQueue[warmIndex];
+      if (!entry) continue;
+      void Promise.resolve(
+        warmQueuedAudioEntry(entry, { warmBytes: 256 * 1024 }),
+      ).catch(() => {});
+    }
   }
 
   return addedCount;
