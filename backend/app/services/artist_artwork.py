@@ -37,6 +37,7 @@ _last_musicbrainz_request_at = 0.0
 FORMAL_PORTRAIT_SIGNALS = (
     "portrait", "headshot", "studio photo", "studio portrait", "formal portrait",
     "red carpet", "step and repeat", "press portrait", "press photo",
+    "photograph", "photo", "pictured",
 )
 ARTWORK_REJECT_TERMS = (
     "concert", "live performance", "live show", "live", "performance", "stage", "festival", "crowd",
@@ -81,7 +82,7 @@ def verified_artist_entity_candidates(
     search_results: list[dict],
     claims_by_entity: dict[str, dict],
 ) -> list[dict]:
-    """Return exact-label, typed music artists that have a portrait claim."""
+    """Return unique exact-label, typed music artists with a photo claim."""
     candidates = [
         candidate
         for candidate in exact_artist_entity_candidates(
@@ -92,9 +93,6 @@ def verified_artist_entity_candidates(
             claims_by_entity.get(candidate["id"], {}),
         )
         and claims_by_entity.get(candidate["id"], {}).get("P18")
-        and musicbrainz_artist_id(
-            claims_by_entity.get(candidate["id"], {}),
-        )
     ]
     # Exact-name matches can still collide across people/groups. Fail closed.
     return candidates if len(candidates) == 1 else []
@@ -281,117 +279,66 @@ async def _commons_search_for_artist_image(
 
 
 async def find_reusable_artist_image(artist_name: str) -> dict | None:
-    """Resolve a single exact-name Wikidata music-artist entity and a licensed Commons image.
+    """Resolve an exact Wikidata music artist and reusable Commons portrait.
 
-    Ambiguous exact-name artist entities are rejected instead of guessing. Only Commons
-    files with a known permissive license are returned, with source/credit metadata.
+    Avoids the extra MusicBrainz verification request to reduce provider latency.
+    Exact label, artist type and P18 photo claim are the identity signals; Commons
+    provides licensing and attribution. Ambiguous or incomplete matches use one fallback.
     """
     clean_name = " ".join(str(artist_name or "").split())
     if not clean_name:
         return None
-
     async with httpx.AsyncClient(
         headers={"User-Agent": USER_AGENT},
-        timeout=httpx.Timeout(8.0),
+        timeout=httpx.Timeout(6.0, connect=3.0),
         follow_redirects=True,
     ) as client:
         search_data = await _request_json(
             client, WIKIDATA_API,
-            {
-                "action": "wbsearchentities",
-                "search": clean_name,
-                "language": "en",
-                "format": "json",
-                "limit": 20,
-            },
+            {"action": "wbsearchentities", "search": clean_name,
+             "language": "en", "format": "json", "limit": 8},
         )
         candidates = exact_artist_entity_candidates(clean_name, search_data.get("search") or [])
-        if len(candidates) > 6:
-            return None
-        claims_by_entity: dict[str, dict] = {}
-        for candidate in candidates:
+        if len(candidates) == 1:
+            candidate = candidates[0]
             entity_data = await _request_json(
                 client,
-                (
-                    "https://www.wikidata.org/wiki/Special:EntityData/"
-                    f"{candidate['id']}.json"
-                ),
+                f"https://www.wikidata.org/wiki/Special:EntityData/{candidate['id']}.json",
                 {},
             )
-            entity = entity_data.get("entities", {}).get(candidate["id"], {})
-            claims_by_entity[candidate["id"]] = entity.get("claims") or {}
-        verified = verified_artist_entity_candidates(
-            clean_name,
-            candidates,
-            claims_by_entity,
-        )
-        if len(verified) != 1:
-            # Wikidata may have no artist photo or a missing MusicBrainz link.
-            # Fall back to Commons title/description search, still requiring an
-            # exact name hit and a known reusable license.
-            return await _commons_search_for_artist_image(client, clean_name)
-
-        candidate = verified[0]
-        claims = claims_by_entity[candidate["id"]]
-        mbid = musicbrainz_artist_id(claims)
-        if not mbid or not await _verify_musicbrainz_link(
-            client,
-            clean_name,
-            candidate["id"],
-            mbid,
-        ):
-            # A failed secondary identity check must not suppress the independent
-            # Commons exact-name/licensing fallback; the image still needs its own
-            # name and license checks before display or upload.
-            return await _commons_search_for_artist_image(client, clean_name)
-        image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
-        if not isinstance(image_value, str) or not image_value:
-            return None
-        file_title = "File:" + image_value.replace(" ", "_")
-        commons_data = await _request_json(
-            client, COMMONS_API,
-            {
-                "action": "query",
-                "titles": file_title,
-                "prop": "imageinfo",
-                "iiprop": "url|extmetadata",
-                "iiurlwidth": 1200,
-                "format": "json",
-            },
-        )
-        pages = commons_data.get("query", {}).get("pages", {})
-        page = next(iter(pages.values()), {})
-        image_info = (page.get("imageinfo") or [{}])[0]
-        ext = image_info.get("extmetadata") or {}
-        image_title = str(page.get("title") or image_value)
-        image_description = str(ext.get("ImageDescription", {}).get("value") or "")
-        if not is_formal_artist_portrait_candidate(image_title, image_description):
-            return None
-        license_name = ext.get("LicenseShortName", {}).get("value", "")
-        if not license_is_reusable(license_name):
-            return None
-        image_url = image_info.get("thumburl") or image_info.get("url")
-        source_page = image_info.get("descriptionurl")
-        if (
-            not image_url
-            or not source_page
-            or not is_safe_wikimedia_url(image_url)
-            or not is_safe_wikimedia_url(source_page)
-        ):
-            return None
-        return {
-            "artist_qid": candidate["id"],
-            "image_url": image_url,
-            "content_type": None,
-            "source_url": image_info.get("url") or image_url,
-            "source_page_url": source_page,
-            "license": license_name,
-            "credit": (
-                ext.get("Artist", {}).get("value")
-                or ext.get("Credit", {}).get("value")
-                or ""
-            ),
-        }
+            claims = entity_data.get("entities", {}).get(candidate["id"], {}).get("claims") or {}
+            if has_artist_entity_type(claims) and claims.get("P18"):
+                image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
+                if isinstance(image_value, str) and image_value:
+                    commons_data = await _request_json(
+                        client, COMMONS_API,
+                        {"action": "query", "titles": "File:" + image_value.replace(" ", "_"),
+                         "prop": "imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": 800,
+                         "format": "json"},
+                    )
+                    pages = commons_data.get("query", {}).get("pages", {})
+                    page = next(iter(pages.values()), {})
+                    info = (page.get("imageinfo") or [{}])[0]
+                    ext = info.get("extmetadata") or {}
+                    title = str(page.get("title") or image_value)
+                    description = str(ext.get("ImageDescription", {}).get("value") or "")
+                    license_name = str(ext.get("LicenseShortName", {}).get("value") or "")
+                    image_url = info.get("thumburl") or info.get("url")
+                    source_page = info.get("descriptionurl")
+                    if (
+                        is_formal_artist_portrait_candidate(title, description)
+                        and license_is_reusable(license_name)
+                        and image_url and source_page
+                        and is_safe_wikimedia_url(image_url)
+                        and is_safe_wikimedia_url(source_page)
+                    ):
+                        return {
+                            "artist_qid": candidate["id"], "image_url": image_url,
+                            "content_type": None, "source_url": info.get("url") or image_url,
+                            "source_page_url": source_page, "license": license_name,
+                            "credit": ext.get("Artist", {}).get("value") or ext.get("Credit", {}).get("value") or "",
+                        }
+        return await _commons_search_for_artist_image(client, clean_name)
 
 
 async def _stream_commons_image_to_b2(
@@ -633,12 +580,12 @@ async def _artist_artwork_backfill_loop() -> None:
                         ),
                     ).order_by(
                         ArtistProfile.updated_at.asc()
-                    ).limit(8)
+                    ).limit(2)
                 )
                 batch = list(result.scalars())
             for artist_id in batch:
                 await enqueue_artist_artwork(artist_id)
-            await asyncio.sleep(600)
+            await asyncio.sleep(900)
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -691,7 +638,7 @@ async def _artist_artwork_worker_loop() -> None:
 
 async def run_artist_artwork_worker() -> None:
     """Bounded pool: at most three artist image fetches/uploads concurrently."""
-    pool_size = 3
+    pool_size = 1
     tasks = [
         asyncio.create_task(_artist_artwork_worker_loop())
         for _ in range(pool_size)
