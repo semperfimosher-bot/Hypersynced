@@ -130,6 +130,7 @@ import {
 } from "../../playlistOfflineAction.js";
 
 import {
+  getCachedLibraryAsync,
   applySavedPlaylistMembership,
   getCachedPlaylistAsync,
   settleSavedPlaylistMembership,
@@ -183,6 +184,57 @@ function SearchPage({
     getOfflineOwnerKey(
       currentUser,
     );
+
+  const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
+  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getCachedLibraryAsync(offlineOwnerKey)
+      .then((library) => {
+        if (cancelled) return;
+        const tracks = Array.isArray(library?.tracks) ? library.tracks : [];
+        const unique = [];
+        const seen = new Set();
+        for (const track of tracks) {
+          const artwork = track?.artwork_url ?? track?.cover_url ?? track?.album_artwork_url;
+          if (!artwork || seen.has(String(artwork))) continue;
+          seen.add(String(artwork));
+          unique.push({ artwork, artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null });
+          if (unique.length >= 3) break;
+        }
+        setDiscoveryCardArtwork(unique);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [offlineOwnerKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let idleHandle = null;
+    let timer = null;
+    const loadPreview = () => {
+      if (cancelled || document.visibilityState !== "visible") return;
+      searchUsers("")
+        .then((people) => {
+          if (cancelled) return;
+          setDiscoveryPeopleArtwork((Array.isArray(people) ? people : [])
+            .filter((person) => person?.avatar_url)
+            .slice(0, 3));
+        })
+        .catch(() => {});
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      idleHandle = window.requestIdleCallback(loadPreview, { timeout: 4000 });
+    } else {
+      timer = window.setTimeout(loadPreview, 2200);
+    }
+    return () => {
+      cancelled = true;
+      if (idleHandle != null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleHandle);
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, []);
 
   const [
   openedPlaylist,
@@ -2774,8 +2826,9 @@ async function downloadOpenedPlaylist() {
               return (
               <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
-                <span className="hs-search-discovery__tile-icon">
-                  <Icon name={command.icon} size={19} />
+                <span className="hs-search-discovery__tile-art" aria-hidden="true">
+                  {(command.filter === "people" ? discoveryPeopleArtwork.map((person) => person.avatar_url) : discoveryCardArtwork.map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork)).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
+                  <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
                     <i>✦</i><i>✧</i><i>✦</i>
                   </span>
