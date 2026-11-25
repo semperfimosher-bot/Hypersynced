@@ -186,7 +186,7 @@ function SearchPage({
     );
 
   const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
-  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);
+  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);\n  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -207,7 +207,7 @@ function SearchPage({
             genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
             releaseYear,
           });
-          if (unique.length >= 3) break;
+          if (unique.length >= 60) break;
         }
         setDiscoveryCardArtwork(unique);
       })
@@ -2797,6 +2797,7 @@ async function downloadOpenedPlaylist() {
         setDiscoveryMode("");
         setDiscoveryTracks([]);
         setDiscoveryError("");
+        setSuggestionsDismissed(false);
         onQueryChange(
           event.target.value,
         );
@@ -2822,13 +2823,13 @@ async function downloadOpenedPlaylist() {
   </section>
 
 
-      {normalizedQuery && !openedPlaylist && recentSearches.some((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())) ? (
+      {normalizedQuery && !openedPlaylist && !suggestionsDismissed && recentSearches.some((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())) ? (
         <div className="hs-search-history-suggestions" role="listbox" aria-label="Recent search suggestions">
           {recentSearches
             .filter((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()))
             .slice(0, 6)
             .map((item) => (
-              <button type="button" role="option" aria-selected="false" key={item} onClick={() => { rememberSearch(item); onQueryChange(item); }}>
+              <button type="button" role="option" aria-selected="false" key={item} onClick={() => { rememberSearch(item); setSuggestionsDismissed(true); onQueryChange(item); }}>
                 <span className="hs-search-history-suggestions__icon"><Icon name="search" size={14} /></span>
                 <span>{item}</span>
               </button>
@@ -2855,13 +2856,14 @@ async function downloadOpenedPlaylist() {
                   {(command.filter === "people"
                     ? discoveryPeopleArtwork.map((person) => person.avatar_url)
                     : (() => {
+                        const commandTerms = String(command.query || command.label || "").toLowerCase().split(/[^a-z0-9]+/).filter((term) => term && !["find", "new", "tunes", "music", "songs", "tracks"].includes(term));
                         const relevantArtwork = command.id === "newly-released"
                           ? discoveryCardArtwork.filter((art) => art.releaseYear >= 2025)
                           : command.filter === "artists"
                             ? discoveryCardArtwork.filter((art) => art.artistArtwork)
-                            : discoveryCardArtwork.filter((art) => art.genre.includes(command.label.toLowerCase().replace(/[^a-z0-9]/g, "")) || art.genre.includes(command.label.toLowerCase()));
+                            : discoveryCardArtwork.filter((art) => commandTerms.some((term) => art.genre.split(/[^a-z0-9]+/).includes(term)));
                         const source = relevantArtwork.length ? relevantArtwork : discoveryCardArtwork;
-                        return source.map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
+                        return source.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
                       })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
