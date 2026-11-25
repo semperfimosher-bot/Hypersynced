@@ -3443,3 +3443,5 @@ button.hs-profile-stat:hover,
 /* Artist hero portrait has a little more breathing room and never clips the image. */
 .hs-artist-profile-page .hs-artist-hero__art>img{width:176px;height:176px;max-width:100%;object-fit:cover;object-position:center;border-radius:10px}
 @media(max-width:699px){.hs-artist-profile-page .hs-artist-hero__art>img{width:160px;height:160px}}
+
+@media(max-width:699px){.hs-artist-profile-page .hs-artist-hero__art{min-height:190px;padding:10px}.hs-artist-profile-page .hs-artist-hero__art>img{width:160px;height:160px}}
