@@ -226,7 +226,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   ).slice(0, 12);
   // Quick Picks are recommendations shaped by recent/current listening context,
   // not a replay list. Prefer personalized suggestions and only use fresh catalog
-  // tracks as a fallback; never fill the row with recently-played tracks.
+  // tracks as a fallback; exclude entries already in the listening-history cache.
   const quickPickFallback = recentlyAdded.filter((track) => !actualRecentIds.has(String(track.id)));
   const quickPickPool = [...suggestedTracks, ...quickPickFallback, ...discoveryFallback];
   const quickPicks = quickPickPool.filter((track, index, all) =>
