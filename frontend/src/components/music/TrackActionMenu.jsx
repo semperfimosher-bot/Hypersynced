@@ -485,123 +485,52 @@ export default function TrackActionMenu({
   async function toggleLike() {
     if (!isRegistered) {
       requireAccount();
-
       return;
     }
 
-    setBusy(
-      "like",
-    );
-
+    const wasLiked = liked;
+    const nextLiked = !wasLiked;
+    setLiked(nextLiked);
+    setBusy("like");
     setNotice("");
 
+    // Update Library immediately; sync the server and offline pin afterward.
+    window.dispatchEvent(new CustomEvent("hypersync:library-changed"));
+
     try {
-      if (liked) {
-        await unlikeTrack(
-          track.id,
-        );
-
-        setLiked(false);
-
+      if (wasLiked) {
+        await unlikeTrack(track.id);
         if (offlineOwnerKey) {
-          await removeLikedTrackFromOffline(
-            track,
-            offlineOwnerKey,
-          ).catch(
-            () => false,
-          );
-
-          const stillDownloaded =
-            await isTrackDownloaded(
-              track,
-              {
-                ownerKey:
-                  offlineOwnerKey,
-              },
-            ).catch(
-              () => downloaded,
-            );
-
-          setDownloaded(
-            Boolean(
-              stillDownloaded,
-            ),
-          );
-
-          window.dispatchEvent(
-            new CustomEvent(
-              "hypersync:offline-downloads-changed",
-            ),
-          );
+          await removeLikedTrackFromOffline(track, offlineOwnerKey).catch(() => false);
+          const stillDownloaded = await isTrackDownloaded(track, { ownerKey: offlineOwnerKey }).catch(() => downloaded);
+          setDownloaded(Boolean(stillDownloaded));
+          window.dispatchEvent(new CustomEvent("hypersync:offline-downloads-changed"));
         }
-
-        window.dispatchEvent(
-          new CustomEvent(
-            "hypersync:library-changed",
-          ),
-        );
-
-        setNotice(
-          "Removed from Liked Songs",
-        );
+        setNotice("Removed from Liked Songs");
       } else {
-        await likeTrack(
-          track.id,
-        );
-
-        setLiked(true);
-
-        try {
-          const canonicalTrack =
-            await getLibraryTrack(
-              track.id,
-            );
-
-          await downloadTrackForOffline(
-            canonicalTrack ??
-              track,
-            {
-              pinRef:
-                likedSongsDownloadPinRef,
-            },
-          );
-
-          setDownloaded(
-            true,
-          );
-
-          window.dispatchEvent(
-            new CustomEvent(
-              "hypersync:offline-downloads-changed",
-            ),
-          );
-
-          setNotice(
-            "Added to Liked Songs • available offline",
-          );
-        } catch (downloadError) {
-          setNotice(
-            downloadError instanceof Error
-              ? (
-                  "Added to Liked Songs, but offline download failed: " +
-                  downloadError.message
-                )
-              : "Added to Liked Songs, but offline download failed.",
-          );
-        }
-
-        window.dispatchEvent(
-          new CustomEvent(
-            "hypersync:library-changed",
-          ),
-        );
+        await likeTrack(track.id);
+        // Offline availability is intentionally background work, not a blocker
+        // for the visible save action.
+        void (async () => {
+          try {
+            const canonicalTrack = await getLibraryTrack(track.id);
+            await downloadTrackForOffline(canonicalTrack ?? track, { pinRef: likedSongsDownloadPinRef });
+            setDownloaded(true);
+            window.dispatchEvent(new CustomEvent("hypersync:offline-downloads-changed"));
+            setNotice("Added to Liked Songs • available offline");
+          } catch (downloadError) {
+            setNotice(downloadError instanceof Error
+              ? "Added to Liked Songs, but offline download failed: " + downloadError.message
+              : "Added to Liked Songs, but offline download failed.");
+          }
+        })();
+        setNotice("Added to Liked Songs");
       }
+      window.dispatchEvent(new CustomEvent("hypersynced:library-changed"));
     } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : "Unable to update Liked Songs.",
-      );
+      setLiked(wasLiked);
+      window.dispatchEvent(new CustomEvent("hypersynced:library-changed"));
+      setNotice(error instanceof Error ? error.message : "Unable to update Liked Songs.");
     } finally {
       setBusy("");
     }
