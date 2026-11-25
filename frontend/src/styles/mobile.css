@@ -3353,3 +3353,6 @@ input, select, textarea { min-width:0; max-width:100%; }
   .hs-library-filter-row { gap:8px; }
   .hs-library-new-playlist { min-height:34px; padding:0 9px; font-size:9px; }
 }
+
+/* Home rails: child tiles must not block horizontal touch scrolling. */
+@media(max-width:979px){.home-horizontal-scroll,.home-artist-scroll{touch-action:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.home-track-tile-wrap,.home-track-tile-wrap .home-track-tile{touch-action:auto!important}}
