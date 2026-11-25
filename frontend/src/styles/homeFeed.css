@@ -192,3 +192,6 @@
 @media(max-width:979px){.home-scroll-fade{-webkit-mask-image:none!important;mask-image:none!important;-webkit-mask-composite:unset!important;mask-composite:unset!important}.home-carousel__art{filter:blur(16px) saturate(1.1)!important;opacity:.34!important}.home-carousel__slide{transition:opacity .32s ease,transform .38s ease,visibility .32s}}
 
 @media(max-width:979px){.home-quick-picks .home-track-tile__play{display:none!important}}
+
+/* Mobile featured-slide collage stays within the viewport's right safe area. */
+@media(max-width:979px){.home-carousel__artwork{right:clamp(22px,8vw,44px);width:min(42%,190px);transform:translateY(-50%) translateX(-7px)}.home-carousel__artwork-cover--2{left:3%;top:3%}.home-carousel__artwork-cover--3{right:6%;bottom:2%}}
