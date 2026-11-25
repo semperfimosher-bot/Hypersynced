@@ -40,6 +40,12 @@ export async function getArtistProfile(
 }
 
 
+export async function getArtistArtworkStatus(artistName) {
+  return apiRequest(
+    "/artists/" + encodeURIComponent(artistName) + "/artwork",
+  );
+}
+
 export async function followArtist(
   artistName,
 ) {
