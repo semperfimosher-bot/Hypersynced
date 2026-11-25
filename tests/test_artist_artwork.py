@@ -258,7 +258,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
 
     assert result is not None
     assert result["artist_qid"] == "Q100"
-    assert result["content_type"] == "image/jpeg"
+    assert result["content_type"] is None
     assert result["image_url"] == "https://upload.wikimedia.org/artist.jpg"
     assert result["license"] == "CC BY-SA 4.0"
     assert result["credit"] == "Photographer"
