@@ -612,16 +612,6 @@ export default function ArtistProfilePage({
                 profile.monthly_listeners,
               )} monthly listeners`}
           </p>
-          {profile.artwork_source_page_url ? (
-            <p className="hs-artist-artwork-credit">
-              {profile.artwork_credit ? `Photo credit: ${profile.artwork_credit}` : "Artist image source"}
-              {profile.artwork_license ? ` • ${profile.artwork_license}` : ""}
-              {" • "}
-              <a href={profile.artwork_source_page_url} target="_blank" rel="noopener noreferrer">
-                Image source
-              </a>
-            </p>
-          ) : null}
 
           <div className="hs-artist-hero__actions">
             <button
