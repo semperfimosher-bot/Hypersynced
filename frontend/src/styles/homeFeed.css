@@ -170,3 +170,11 @@
 @media (prefers-reduced-motion: reduce) { .home-quick-picks .home-track-tile__sparkles { transition: none; } }
 
 .home-quick-picks .home-track-tile__copy { padding-right: 28px; }
+
+/* Smooth, cache-stable Home artwork and native mobile horizontal gestures. */
+.home-carousel__slide { transition:opacity .42s ease, transform .48s cubic-bezier(.2,.75,.2,1); }
+.home-carousel__slide:not(.is-active) { visibility:hidden; transition:opacity .42s ease, transform .48s cubic-bezier(.2,.75,.2,1), visibility 0s linear .42s; }
+.home-carousel__slide.is-active { visibility:visible; transition-delay:0s; }
+.home-carousel__artwork-cover { backface-visibility:hidden; transform-origin:center; }
+.home-horizontal-scroll, .home-artist-scroll { touch-action:pan-x; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; scroll-behavior:smooth; }
+.home-track-tile__cover img { display:block; opacity:1; transition:none; }
