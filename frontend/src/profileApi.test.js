@@ -108,6 +108,7 @@ test("Find New Tunes requests authenticated personalized autoplay suggestions", 
       context_track_ids: ["context-track"],
       limit: 40,
       home_explore: false,
+      never_played_only: false,
     });
   } finally {
     globalThis.fetch = originalFetch;
