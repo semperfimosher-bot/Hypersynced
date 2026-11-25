@@ -20,7 +20,26 @@ logger = logging.getLogger(
 
 def should_record_admin_activity(kind: str) -> bool:
     compact = kind.strip().casefold().replace("-", "").replace("_", "")
-    return "heartbeat" not in compact
+    automated_markers = (
+        "heartbeat",
+        "healthcheck",
+        "monitor",
+        "servicecheck",
+        "systemcheck",
+        "automated",
+        "automation",
+        "scheduled",
+        "backgroundjob",
+        "backgroundtask",
+        "workerstatus",
+        "polling",
+        "maintenance",
+        "cleanup",
+        "backfill",
+        "syncjob",
+        "cachewarm",
+    )
+    return not any(marker in compact for marker in automated_markers)
 
 
 
