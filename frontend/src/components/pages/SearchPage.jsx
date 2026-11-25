@@ -2872,8 +2872,10 @@ async function downloadOpenedPlaylist() {
                           : command.filter === "artists"
                             ? discoveryCardArtwork.filter((art) => art.artistArtwork)
                             : discoveryCardArtwork.filter((art) => commandTerms.some((term) => art.genre.split(/[^a-z0-9]+/).includes(term)));
-                        const source = relevantArtwork.length ? relevantArtwork : discoveryCardArtwork;
-                        return source.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
+                        // Never use unrelated artwork as a fallback for a category card.
+                        // Genre cards only display artwork from tracks whose genre matches
+                        // the card; other cards use their own matching data criteria.
+                        return relevantArtwork.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
                       })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
