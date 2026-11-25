@@ -45,18 +45,18 @@ export default function MessageNotificationPanel({
   pushBusy = false,
   pushEnabled = false,
 }) {
-  const notifications =
-    Array.isArray(
-      data?.notifications,
-    )
+  const allNotifications =
+    Array.isArray(data?.notifications)
       ? data.notifications
       : [];
+  const notifications = allNotifications.filter((notification) => {
+    if (notification?.type !== "admin_activity" && notification?.type !== "admin_account_notification") return true;
+    const kind = String(notification?.kind ?? notification?.notification_kind ?? "").replace(/[-_]/g, "").toLowerCase();
+    const content = `${notification?.title ?? ""} ${notification?.body ?? ""}`.toLowerCase();
+    return !/(heartbeat|healthcheck|monitor(?:ing)?|servicecheck|systemcheck|automated|automation|scheduled|background(?:job|task)|workerstatus|polling|maintenance|cleanup|backfill|syncjob|cachewarm)/i.test(`${kind} ${content}`);
+  });
 
-  const unreadCount =
-    Number(
-      data?.unread_count ??
-      0,
-    ) || 0;
+  const unreadCount = notifications.reduce((count, notification) => count + (notification?.read ? 0 : 1), 0);
 
   return (
     <div className="message-notification-block">
