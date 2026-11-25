@@ -22,6 +22,7 @@ from sqlalchemy import (
     delete,
     func,
     or_,
+    not_,
     select,
     update,
 )
@@ -1017,15 +1018,8 @@ async def message_notifications(
                 compact_body,
             )
         ]
-        # Drop previously stored machine/maintenance notices as well as
-        # filtering future writes so admins do not keep seeing old noise.
-        await session.execute(
-            delete(AdminNotification).where(
-                AdminNotification.recipient_id == user.id,
-                AdminNotification.kind != DIRECT_MESSAGE_NOTIFICATION_KIND,
-                or_(*automated_conditions),
-            )
-        )
+        # Reuse these predicates in both the notification list and unread
+        # count, so legacy automated notices never surface to admins.
 
     unread_result = await session.execute(
         select(
@@ -1258,6 +1252,7 @@ async def message_notifications(
                 != DIRECT_MESSAGE_NOTIFICATION_KIND,
                 AdminNotification.title
                 != "User signed in",
+                not_(or_(*automated_conditions)),
                 AdminNotification.viewed_at
                 .is_(
                     None,
@@ -1484,6 +1479,7 @@ async def message_notifications(
                     != DIRECT_MESSAGE_NOTIFICATION_KIND,
                     AdminNotification.title
                     != "User signed in",
+                    not_(or_(*automated_conditions)),
                     AdminNotification.viewed_at
                     .is_(
                         None,
