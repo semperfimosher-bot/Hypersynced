@@ -171,7 +171,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: true });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       writeCachedHomeSuggestions(recentOwner, tracks);
