@@ -3365,3 +3365,26 @@ input, select, textarea { min-width:0; max-width:100%; }
 @media(max-width:979px){.page-stack .admin-page__denied{width:100%;min-width:0;box-sizing:border-box;padding:20px 14px;display:grid;justify-items:center;gap:12px;overflow:visible}.page-stack .admin-page__denied h2,.page-stack .admin-page__denied p{max-width:100%;overflow-wrap:anywhere;text-align:center}.page-stack .admin-page__denied .hs-search-primary-action{display:flex!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:3;width:min(100%,360px);min-height:48px;justify-content:center;align-items:center;margin:8px auto;padding:12px 18px;box-sizing:border-box;color:#f0faff;background:linear-gradient(135deg,#087bce,#00a8ed);border:1px solid rgba(105,220,255,.5);border-radius:10px;box-shadow:0 0 18px rgba(0,151,255,.24);font-weight:700;cursor:pointer;touch-action:manipulation}}
 @media(max-width:979px){.hs-library-console__heading{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}.hs-library-console__heading>div{min-width:0;flex:1 1 auto}.hs-library-console__heading h2{font-size:clamp(16px,4.7vw,21px);line-height:1.15;overflow-wrap:anywhere}.hs-library-new-playlist--mobile{display:flex!important;flex:0 0 auto;min-height:40px;align-items:center;justify-content:center;gap:5px;padding:0 10px;font-size:9px;white-space:nowrap}.hs-library-new-playlist--desktop{display:none!important}}
 @media(min-width:980px){.hs-library-new-playlist--mobile{display:none!important}.hs-library-new-playlist--desktop{display:flex!important}}
+
+
+/* Mobile search shows the four primary result filters only. */
+@media (max-width: 979px) {
+  .hs-search-filterbar button[data-filter="albums"],
+  .hs-search-filterbar button[data-filter="collaborations"],
+  .hs-search-filterbar button[data-filter="tracks"] {
+    display: none;
+  }
+
+  /* Mobile row copy should begin beside its artwork/icon, not be pushed to the far edge. */
+  .hs-search-track__copy,
+  .hs-search-entity-card > span:nth-child(2),
+  .hs-library-track-row__copy,
+  .hs-library-entity-row > span,
+  .home-track-tile__copy,
+  .home-artist-tile__copy,
+  .settings-row > span:first-child {
+    justify-self: start;
+    text-align: left;
+    min-width: 0;
+  }
+}
