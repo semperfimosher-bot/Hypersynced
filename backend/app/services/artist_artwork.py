@@ -540,8 +540,12 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
     finally:
         _active_artist_jobs.discard(job_key)
 
-async def enqueue_artist_artwork(profile_id: UUID | str) -> bool:
-    """Persist an artwork request while deduplicating queued or active work."""
+async def enqueue_artist_artwork(
+    profile_id: UUID | str,
+    *,
+    force: bool = False,
+) -> bool:
+    """Persist an artwork request; on-demand requests can bypass stale retry cooldowns."""
     async with get_session_factory()() as session:
         profile = await session.get(ArtistProfile, profile_id)
         if not profile or profile.artwork_object_key:
@@ -553,7 +557,14 @@ async def enqueue_artist_artwork(profile_id: UUID | str) -> bool:
         if active_status and profile.artwork_lease_until and profile.artwork_lease_until > now:
             return False
         if profile.artwork_next_retry_at and profile.artwork_next_retry_at > now:
-            return False
+            if not force:
+                return False
+            profile.artwork_next_retry_at = None
+        if force:
+            # A fresh artist-profile visit is an explicit on-demand request.
+            # Clear this process-local cooldown too, so previous misses do not
+            # prevent the worker from actually contacting the image providers.
+            _artist_artwork_retry_after.pop(str(profile_id), None)
         profile.artwork_status = "queued"
         profile.artwork_lease_until = None
         await session.commit()
