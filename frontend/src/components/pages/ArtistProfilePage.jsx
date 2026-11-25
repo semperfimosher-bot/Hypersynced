@@ -204,9 +204,9 @@ export default function ArtistProfilePage({
         try {
           const nextProfile = await getArtistProfile(artistName);
           setProfile(nextProfile);
-          const artworkPending = !nextProfile.artwork_url
-            && ["queued", "fetching", "verifying", "uploading"].includes(nextProfile.artwork_status);
-          setLoading(artworkPending);
+          // Artist data should not wait for external portrait discovery or B2.
+          // The artwork area shows its own loading state while background fetches run.
+          setLoading(false);
         } catch (loadError) {
           setError(
             loadError instanceof Error
@@ -478,14 +478,7 @@ export default function ArtistProfilePage({
   }
 
 
-  if (
-    loading
-    || (
-      artworkUrl
-      && !artworkImageLoaded
-      && !artworkImageFailed
-    )
-  ) {
+  if (loading) {
     return (
       <div className="hs-profile-page hs-artist-profile-page">
         <div className="hs-profile-skeleton" />
