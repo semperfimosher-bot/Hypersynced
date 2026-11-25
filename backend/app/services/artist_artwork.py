@@ -478,7 +478,8 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
                 # Persist verified source and attribution before showing the temporary
                 # image or starting the B2 upload, so the UI can credit it immediately.
                 profile.artwork_status = "uploading"
-                profile.artwork_temporary_url = candidate["source_url"]
+                # Use the thumbnail URL for immediate display; keep the full source URL for attribution.
+                profile.artwork_temporary_url = candidate["image_url"]
                 profile.artwork_artist_qid = candidate["artist_qid"]
                 profile.artwork_source_url = candidate["source_url"]
                 profile.artwork_source_page_url = candidate["source_page_url"]
