@@ -2460,7 +2460,7 @@ async function downloadOpenedPlaylist() {
       >
 
         {displayResults.collaborations.map(
-          (collaboration) => (
+          (collaboration, index) => (
 
             <button
               type="button"
