@@ -508,7 +508,7 @@ async def get_followed_artists(
             "name": profile.name,
             "artwork_url": (
                 create_presigned_download_url(profile.artwork_object_key)
-                if profile.artwork_object_key
+                if profile.has_profile_picture and profile.artwork_object_key
                 else (
                     profile.artwork_temporary_url
                     if profile.artwork_status == "uploading"
