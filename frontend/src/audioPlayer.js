@@ -2416,35 +2416,37 @@ async function playTrackInternal(
     await audio.play();
   } catch (error) {
     /*
-     * Changing audio.src for a newer
-     * playback request may reject the
-     * previous play() promise.
-     *
-     * That is expected. A stale request
-     * must quietly disappear rather than
-     * turning into a visible player error.
+     * Changing audio.src for a newer playback request can reject a stale
+     * play() promise. Ignore that expected interruption. For a current track,
+     * reset the media element once and retry before exposing a playback error.
      */
     if (
-      !isPlaybackSessionCurrent(
-        session,
-      ) ||
-      isExpectedPlayInterruption(
-        error,
-      )
+      !isPlaybackSessionCurrent(session) ||
+      isExpectedPlayInterruption(error)
     ) {
       return null;
     }
 
-    setPlaybackPhase(
-      "error",
-      error instanceof Error
-        ? error.message
-        : "Unable to start playback.",
-    );
+    try {
+      audio.load();
+      await audio.play();
+    } catch (retryError) {
+      if (
+        !isPlaybackSessionCurrent(session) ||
+        isExpectedPlayInterruption(retryError)
+      ) {
+        return null;
+      }
 
-    notify();
-
-    throw error;
+      const message = retryError instanceof Error
+        ? retryError.message
+        : error instanceof Error
+          ? error.message
+          : "Unable to start playback.";
+      setPlaybackPhase("error", message);
+      notify();
+      throw retryError;
+    }
   }
 
 
