@@ -39,10 +39,11 @@ FORMAL_PORTRAIT_SIGNALS = (
     "red carpet", "step and repeat", "press portrait", "press photo",
 )
 ARTWORK_REJECT_TERMS = (
-    "concert", "live performance", "live show", "stage", "festival", "crowd",
+    "concert", "live performance", "live show", "live", "performance", "stage", "festival", "crowd",
     "party", "nightclub", "backstage", "tour photo", "poster", "logo",
     "album cover", "cover art", "promo graphic", "promotional graphic",
-    "screenshot", "text image", "lyrics", "fan art",
+    "screenshot", "text image", "typography", "text", "lyrics", "fan art",
+    "illustration", "drawing", "painting", "cartoon", "banner", "advertisement", "watermark",
 )
 
 def is_formal_artist_portrait_candidate(title: str | None, description: str | None = None) -> bool:
