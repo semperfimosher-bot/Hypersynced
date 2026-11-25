@@ -39,6 +39,10 @@ import {
   LIBRARY_TABS,
 } from "../../constants.js";
 
+import {
+  getFollowedArtists,
+} from "../../profileApi.js";
+
 import Icon from
   "../ui/Icon.jsx";
 import PlayingIndicator from "../ui/PlayingIndicator.jsx";
@@ -358,6 +362,22 @@ useEffect(() => {
   ] = useState(
     "Playlists",
   );
+
+  const [followedArtists, setFollowedArtists] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    if (currentUser?.account_type !== "registered") {
+      setFollowedArtists([]);
+      return () => { active = false; };
+    }
+    void getFollowedArtists().then((items) => {
+      if (active) setFollowedArtists(Array.isArray(items) ? items : []);
+    }).catch(() => {
+      if (active) setFollowedArtists([]);
+    });
+    return () => { active = false; };
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
 
   const libraryCacheKey =
   currentUser?.id ??
@@ -2920,15 +2940,29 @@ useEffect(() => {
 
 
   const libraryArtists =
-    useMemo(
-      () =>
-        buildLibraryArtists(
-          libraryEntityTracks,
-        ),
-      [
-        libraryEntityTracks,
-      ],
-    );
+    useMemo(() => {
+      const localArtists = buildLibraryArtists(libraryEntityTracks);
+      const followsByName = new Map(
+        followedArtists.map((artist) => [
+          String(artist?.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
+          artist,
+        ]),
+      );
+      return localArtists
+        .filter((artist) => followsByName.has(
+          String(artist.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
+        ))
+        .map((artist) => {
+          const follow = followsByName.get(
+            String(artist.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
+          );
+          return {
+            ...artist,
+            artwork_url: follow?.artwork_url || null,
+            has_profile_picture: Boolean(follow?.has_profile_picture),
+          };
+        });
+    }, [libraryEntityTracks, followedArtists]);
 
 
   const libraryAlbums =
