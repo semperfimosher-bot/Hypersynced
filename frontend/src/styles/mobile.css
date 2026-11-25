@@ -3308,3 +3308,39 @@
 }
 
 /* Total Played and device rows inherit the exact shared Library row surface and hover. */
+
+/* Responsive containment: pages and their children may shrink to the viewport. */
+:root, body, #root { width:100%; max-width:100%; overflow-x:clip; }
+#root, main, .main-content, .page-stack, .home-page, .hs-search-page, .hs-library-page,
+.hs-search-section, .hs-search-console, .hs-search-console__heading, .hs-search-console__actions,
+.hs-library-console__surface-group, .hs-playlist-track-search, .hs-search-track-list {
+  min-width:0; max-width:100%;
+}
+img, video, canvas, svg { max-width:100%; }
+input, select, textarea { min-width:0; max-width:100%; }
+.hs-search-page { grid-template-columns:minmax(0,1fr); }
+.hs-search-console__heading { grid-template-columns:minmax(0,1fr) minmax(0,auto); }
+.hs-search-console__actions { flex-wrap:wrap; justify-content:flex-end; min-width:0; }
+.hs-search-filterbar { min-width:0; max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; touch-action:pan-x; scrollbar-width:none; }
+.hs-search-filterbar::-webkit-scrollbar { display:none; }
+.hs-search-track, .hs-library-track-row, .hs-search-entity-row { min-width:0; }
+@media (max-width:979px) {
+  html, body, #root { overflow-x:clip; }
+  .main-content { width:100%; min-width:0; max-width:100%; }
+  .page-stack { width:100%; min-width:0; max-width:100%; }
+  .hs-search-console__heading { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .hs-search-console__actions { justify-content:flex-start; }
+  .hs-search-page > *, .hs-library-page > * { min-width:0; max-width:100%; }
+  .hs-search-entity-grid { grid-template-columns:minmax(0,1fr); }
+  .hs-search-filterbar { flex-wrap:nowrap; }
+  .hs-search-filterbar > button { flex:0 0 auto; }
+  .hs-search-track-list { width:100%; }
+  .home-horizontal-scroll, .home-artist-scroll { max-width:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x proximity; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
+  .home-horizontal-scroll > *, .home-artist-scroll > * { scroll-snap-align:start; }
+  .home-track-tile-wrap, .home-horizontal-scroll .home-track-tile { flex:0 0 clamp(108px, 34vw, 145px); }
+}
+@media (max-width:380px) {
+  .main-content { padding-left:10px; padding-right:10px; }
+  .hs-search-console__heading h2 { font-size:clamp(17px,5vw,22px); }
+  .hs-search-console__actions > button { max-width:100%; }
+}
