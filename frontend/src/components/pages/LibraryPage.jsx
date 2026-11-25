@@ -4483,47 +4483,21 @@ useEffect(() => {
         </div>
 
 
-        {isRegistered ? (
-          <button
-            type="button"
-            className="hs-search-primary-action"
-            onClick={() => {
-              setCreateOpen(
-                true,
-              );
-            }}
-          >
-            <Icon
-              name="plus"
-              size={16}
-            />
-
-            New Playlist
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="hs-search-primary-action"
-            onClick={
-              onOpenAuth
-            }
-          >
-            <Icon
-              name="library"
-              size={16}
-            />
-
+        {!isRegistered ? (
+          <button type="button" className="hs-search-primary-action" onClick={onOpenAuth}>
+            <Icon name="library" size={16} />
             Sign in
           </button>
-        )}
+        ) : null}
 
       </div>
 
 
-      <div
-        className="hs-search-filterbar"
-        role="tablist"
-      >
+      <div className="hs-library-filter-row">
+        <div
+          className="hs-search-filterbar"
+          role="tablist"
+        >
 
         {LIBRARY_TABS.map(
           (tab) => (
@@ -4585,6 +4559,13 @@ useEffect(() => {
           ),
         )}
 
+        </div>
+        {isRegistered ? (
+          <button type="button" className="hs-search-primary-action hs-library-new-playlist" onClick={() => setCreateOpen(true)}>
+            <Icon name="plus" size={16} />
+            New Playlist
+          </button>
+        ) : null}
       </div>
 
 
