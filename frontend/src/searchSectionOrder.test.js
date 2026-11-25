@@ -34,6 +34,11 @@ const artistApiSource = readFileSync(
   "utf8",
 );
 
+const appSource = readFileSync(
+  new URL("./App.jsx", import.meta.url),
+  "utf8",
+);
+
 
 
 test(
@@ -222,6 +227,7 @@ test("artist profiles cache for instant re-entry and quietly refresh portraits",
   assert.match(artistProfilePageSource, /getArtistArtworkStatus\(artistName\)/);
   assert.match(artistProfilePageSource, /attempts < 8/);
   assert.match(artistProfilePageSource, /350/);
+  assert.match(searchStylesSource, /hs-artist-hero__art\s*\{[^}]*width:\s*164px/s);
   assert.match(artistApiSource, /getArtistArtworkStatus/);
 });
 
@@ -233,4 +239,21 @@ test("collaboration search rows define their ranking index", () => {
   );
   assert.match(collaborationMap, /\(collaboration,\s*index\)\s*=>/);
   assert.match(collaborationMap, /String\(index\s*\+\s*1\)/);
+});
+
+
+test("100-song listening milestone uses playback progress and displays a thank-you toast", () => {
+  assert.match(appSource, /hypersynced\.stream-milestones\.v1/);
+  assert.match(appSource, /currentTime < threshold/);
+  assert.match(appSource, /snapshot\.count % 100 === 0/);
+  assert.match(appSource, /Thanks for supporting HyperSynced/);
+  assert.match(appSource, /setStatusMessage\(/);
+});
+
+test("Quick Picks mobile hides its persistent circular play overlay", () => {
+  const homeFeedStylesSource = readFileSync(
+    new URL("./styles/homeFeed.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(homeFeedStylesSource, /@media\s*\(max-width:\s*979px\)[\s\S]*?\.home-quick-picks\s+\.home-track-tile__play[\s\S]*?display:\s*none/);
 });
