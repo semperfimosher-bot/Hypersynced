@@ -183,11 +183,14 @@ test("search history suggestions and discovery shortcuts are lightweight and spa
     searchPageSource.indexOf('className="hs-search-discovery__tiles"'),
     searchPageSource.indexOf("!openedPlaylist && normalizedQuery && completedSearchQuery"),
   );
-  assert.doesNotMatch(discoveryTiles, /PlaylistArtwork|tileArtwork|artworkUrls/);
+  assert.doesNotMatch(discoveryTiles, /PlaylistArtwork|artworkUrls/);
+  assert.match(discoveryTiles, /hs-search-discovery__tile-art/);
+  assert.match(discoveryTiles, /discoveryPeopleArtwork\.map/);
   assert.match(discoveryTiles, /hs-search-discovery__tile-sparkles/);
   assert.match(searchStylesSource, /hs-search-history-suggestions/);
   assert.match(searchStylesSource, /hs-search-discovery__tile-sparkles/);
-  assert.doesNotMatch(searchStylesSource, /hs-search-discovery__tile-art/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile-art-cover--1/);
+  assert.match(searchStylesSource, /hs-search-discovery__tile-sparkles/);
 });
 
 test("home quick picks have right-side sparkle accents and Library playlist action is right-aligned", () => {
