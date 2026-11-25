@@ -481,6 +481,48 @@ async def _artist_profile_response(
 
 
 @router.get(
+    "/following",
+)
+async def get_followed_artists(
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> list[dict[str, object]]:
+    """Return the current user's followed artist portraits for their Library."""
+    result = await session.execute(
+        select(ArtistProfile)
+        .join(
+            ArtistFollow,
+            ArtistFollow.artist_id == ArtistProfile.id,
+        )
+        .where(
+            ArtistFollow.user_id == user.id,
+        )
+        .order_by(
+            ArtistProfile.name.asc(),
+        )
+    )
+    profiles = result.scalars().all()
+    return [
+        {
+            "id": str(profile.id),
+            "name": profile.name,
+            "artwork_url": (
+                create_presigned_download_url(profile.artwork_object_key)
+                if profile.artwork_object_key
+                else (
+                    profile.artwork_temporary_url
+                    if profile.artwork_status == "uploading"
+                    else None
+                )
+            ),
+            "has_profile_picture": bool(profile.has_profile_picture),
+            "artwork_status": profile.artwork_status,
+        }
+        for profile in profiles
+    ]
+
+
+@router.get(
     "/{artist_name}/artwork",
 )
 async def get_artist_artwork_status(
