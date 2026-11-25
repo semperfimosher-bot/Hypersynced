@@ -2941,27 +2941,29 @@ useEffect(() => {
 
   const libraryArtists =
     useMemo(() => {
-      const localArtists = buildLibraryArtists(libraryEntityTracks);
-      const followsByName = new Map(
-        followedArtists.map((artist) => [
-          String(artist?.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
+      const localArtists = new Map(
+        buildLibraryArtists(libraryEntityTracks).map((artist) => [
+          String(artist.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
           artist,
         ]),
       );
-      return localArtists
-        .filter((artist) => followsByName.has(
-          String(artist.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
-        ))
-        .map((artist) => {
-          const follow = followsByName.get(
-            String(artist.name ?? "").normalize("NFKC").toLocaleLowerCase().trim(),
-          );
+      return followedArtists
+        .map((follow) => {
+          const name = String(follow?.name ?? "").trim();
+          const key = name.normalize("NFKC").toLocaleLowerCase().trim();
+          const local = localArtists.get(key);
           return {
-            ...artist,
+            key: local?.key ?? key,
+            name,
             artwork_url: follow?.artwork_url || null,
             has_profile_picture: Boolean(follow?.has_profile_picture),
+            tracks: local?.tracks ?? [],
+            track_count: local?.track_count ?? 0,
+            album_count: local?.album_count ?? 0,
           };
-        });
+        })
+        .filter((artist) => artist.name)
+        .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base", numeric: true }));
     }, [libraryEntityTracks, followedArtists]);
 
 
