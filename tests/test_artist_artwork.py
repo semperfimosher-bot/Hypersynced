@@ -108,11 +108,17 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
 def test_artist_image_source_requires_formal_portrait_not_live_or_graphic() -> None:
     assert is_formal_artist_portrait_candidate("File:Artist portrait.jpg", "Portrait of Artist")
     assert is_formal_artist_portrait_candidate("File:Artist at red carpet.jpg", "Red carpet photo")
-    assert is_formal_artist_portrait_candidate("File:Step and repeat.jpg", "Step-and-repeat press portrait")
+    assert is_formal_artist_portrait_candidate(
+        "File:Step and repeat.jpg",
+        "Step-and-repeat press portrait",
+    )
     assert not is_formal_artist_portrait_candidate("File:Artist concert.jpg", "Live concert stage")
     assert not is_formal_artist_portrait_candidate("File:Artist party.jpg", "Party photo")
     assert not is_formal_artist_portrait_candidate("File:Artist logo.png", "Logo with text")
-    assert not is_formal_artist_portrait_candidate("File:Artist poster.png", "Graphic with text and a banner")
+    assert not is_formal_artist_portrait_candidate(
+        "File:Artist poster.png",
+        "Graphic with text and a banner",
+    )
     assert not is_formal_artist_portrait_candidate("File:Artist.jpg", "Photo at festival")
 
 
@@ -223,7 +229,9 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
                                     ),
                                     "extmetadata": {
                                         "LicenseShortName": {"value": "CC BY-SA 4.0"},
-                                        "ImageDescription": {"value": "Formal studio portrait of Correct Artist"},
+                                        "ImageDescription": {
+                                            "value": "Formal studio portrait of Correct Artist",
+                                        },
                                         "Artist": {"value": "Photographer"},
                                     },
                                 },
