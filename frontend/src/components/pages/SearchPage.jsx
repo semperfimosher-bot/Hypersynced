@@ -188,7 +188,7 @@ function SearchPage({
     );
 
   const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
-  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);
+  const [discoveryPeopleArtwork] = useState([{ avatar_url: "/find-people/purple-girl.svg" }, { avatar_url: "/find-people/white-haired.svg" }, { avatar_url: "/find-people/headphones-boy.svg" }]);
   const [discoveryArtworkByCommand, setDiscoveryArtworkByCommand] = useState({});
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
 
@@ -280,32 +280,7 @@ function SearchPage({
       else if (idleHandle != null) window.clearTimeout(idleHandle);
     };
   }, []);
-  useEffect(() => {
-    let cancelled = false;
-    let idleHandle = null;
-    let timer = null;
-    const loadPreview = () => {
-      if (cancelled || document.visibilityState !== "visible") return;
-      searchUsers("")
-        .then((people) => {
-          if (cancelled) return;
-          setDiscoveryPeopleArtwork((Array.isArray(people) ? people : [])
-            .filter((person) => person?.avatar_url)
-            .slice(0, 3));
-        })
-        .catch(() => {});
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      idleHandle = window.requestIdleCallback(loadPreview, { timeout: 4000 });
-    } else {
-      timer = window.setTimeout(loadPreview, 2200);
-    }
-    return () => {
-      cancelled = true;
-      if (idleHandle != null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleHandle);
-      if (timer != null) window.clearTimeout(timer);
-    };
-  }, []);
+
 
   const [
   openedPlaylist,
