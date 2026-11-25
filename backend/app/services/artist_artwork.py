@@ -20,8 +20,10 @@ USER_AGENT = "HyperSynced/1.0 (artist artwork attribution; https://hypersynced.a
 MAX_ART_BYTES = 4 * 1024 * 1024
 ARTIST_TYPES = {"Q639669", "Q215380", "Q2088357", "Q483501"}
 ALLOWED_LICENSES = {
-    "cc0", "cc-by", "cc-by-sa", "cc-by-3.0", "cc-by-4.0",
-    "cc-by-sa-3.0", "cc-by-sa-4.0", "public domain", "public domain mark", "pd",
+    "cc0", "cc0-1.0", "cc-by", "cc-by-2.0", "cc-by-2.5", "cc-by-3.0",
+    "cc-by-4.0", "cc-by-sa", "cc-by-sa-2.0", "cc-by-sa-2.5",
+    "cc-by-sa-3.0", "cc-by-sa-4.0", "public domain",
+    "public domain mark", "pd",
 }
 _active_artist_jobs: set[str] = set()
 _artist_artwork_queue_event = asyncio.Event()
