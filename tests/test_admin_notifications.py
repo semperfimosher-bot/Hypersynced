@@ -32,16 +32,3 @@ def test_automated_system_activity_is_not_notified_to_admins() -> None:
         "maintenance_polling",
     ):
         assert should_record_admin_activity(kind) is False
-
-
-def test_automated_maintenance_activity_is_not_recorded() -> None:
-    for kind in (
-        "automated_health_check",
-        "service_monitoring",
-        "scheduled_cleanup",
-        "background_worker_status",
-        "catalog_backfill",
-        "cache_warm_job",
-        "maintenance_polling",
-    ):
-        assert should_record_admin_activity(kind) is False
