@@ -9462,3 +9462,32 @@ button.hs-shared-music-card:active {
 .hs-library-entity-row.hs-search-track .hs-search-track__copy{display:grid;min-width:0;gap:3px;}
 .hs-library-entity-row.hs-search-track .hs-search-track__copy strong,.hs-library-entity-row.hs-search-track .hs-search-track__copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 @media(max-width:760px){.hs-library-entity-row.hs-search-track{grid-template-columns:24px 46px minmax(0,1fr) 16px;min-height:62px;padding:8px 10px;gap:8px}}
+
+
+/* Keep the app's pages vertically navigable without accidental horizontal drift.
+   Explicit horizontal scrollers (such as Home feed rows) remain independently scrollable. */
+html,
+body,
+#root,
+.app-shell,
+.main-workspace,
+.main-content,
+.page-stack {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.main-content,
+.page-stack,
+.page-stack > *,
+.main-workspace > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Clip accidental over-wide page decoration without clipping designated row scrollers. */
+.page-stack > * {
+  overflow-wrap: anywhere;
+}
