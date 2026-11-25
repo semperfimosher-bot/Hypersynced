@@ -6,12 +6,12 @@ from backend.app.models.artist import ArtistProfile
 from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
+    is_formal_artist_portrait_candidate,
     is_safe_wikimedia_url,
     license_is_reusable,
     musicbrainz_artist_id,
     musicbrainz_identity_matches,
     verified_artist_entity_candidates,
-    is_formal_artist_portrait_candidate,
     wikidata_qid_from_musicbrainz_relations,
 )
 
