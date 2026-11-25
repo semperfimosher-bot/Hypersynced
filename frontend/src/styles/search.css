@@ -9048,3 +9048,41 @@ button:disabled {
   .hs-search-console__heading { gap: 8px; min-height: 0; }
   .hs-search-console__intro { transform: translateY(-2px); }
 }
+
+
+/* Library Artists and Albums: use the same full-width stacked playlist-row rhythm. */
+.hs-library-entity-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+.hs-library-entity-row.hs-search-track {
+  display: grid;
+  grid-template-columns: 28px 46px minmax(0, 1fr) minmax(112px, auto) 44px 31px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 8px 11px;
+  border: 0;
+  border-bottom: 1px solid rgba(66, 128, 154, 0.065);
+  border-radius: 0;
+  background: var(--hs-surface);
+  text-align: left;
+}
+.hs-library-entity-row .hs-search-track__art { width: 46px; height: 46px; }
+.hs-library-entity-row .hs-search-track__copy { justify-self: start; text-align: left; min-width: 0; }
+.hs-library-entity-row .hs-search-track__copy strong { font-size: 10px; line-height: 1.2; }
+.hs-library-entity-row .hs-search-track__copy small { color: #617983; font-size: 7px; line-height: 1.35; }
+.hs-library-entity-row > svg:last-child { justify-self: end; }
+@media (max-width: 760px) {
+  .hs-library-entity-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .hs-library-entity-row.hs-search-track { grid-template-columns: 24px 46px minmax(0, 1fr) 16px; min-height: 62px; padding: 8px 10px; gap: 8px; }
+  .hs-library-entity-row .hs-search-track__copy strong { font-size: 10px; }
+  .hs-library-entity-row .hs-search-track__copy small { font-size: 7px; }
+}
