@@ -195,3 +195,11 @@
 
 /* Mobile featured-slide collage stays within the viewport's right safe area. */
 @media(max-width:979px){.home-carousel__artwork{right:clamp(22px,8vw,44px);width:min(42%,190px);transform:translateY(-50%) translateX(-7px)}.home-carousel__artwork-cover--2{left:3%;top:3%}.home-carousel__artwork-cover--3{right:6%;bottom:2%}}
+
+
+/* Mobile Quick Picks: remove the permanently visible circular play overlay. */
+@media (max-width: 979px) {
+  .home-quick-picks .home-track-tile__play {
+    display: none;
+  }
+}
