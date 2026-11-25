@@ -72,6 +72,39 @@ function writeConversationSnapshot(owner, username, data) {
 }
 
 
+function conversationActivityTime(conversation) {
+  const values = [
+    conversation?.last_message_at,
+    conversation?.lastMessageAt,
+    conversation?.last_message?.created_at,
+    conversation?.last_message?.timestamp,
+    conversation?.updated_at,
+    conversation?.updatedAt,
+    conversation?.messages?.at?.(-1)?.created_at,
+    conversation?.messages?.at?.(-1)?.timestamp,
+  ];
+  for (const value of values) {
+    const parsed = value ? new Date(value).getTime() : NaN;
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function sortConversationsByRecent(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item, index) => ({ item, index, activity: conversationActivityTime(item) }))
+    .sort((a, b) => b.activity - a.activity || a.index - b.index)
+    .map(({ item }) => item);
+}
+
+function sortMessagesChronologically(data) {
+  if (!data || !Array.isArray(data.messages)) return data;
+  const messages = data.messages.map((item, index) => ({ item, index, time: conversationActivityTime({ messages: [item] }) }))
+    .sort((a, b) => a.time - b.time || a.index - b.index)
+    .map(({ item }) => item);
+  return { ...data, messages };
+}
+
 function formatMessageTime(
   value,
 ) {
@@ -311,11 +344,7 @@ export default function MessagesPage({
             await getConversations();
 
           setConversations(
-            Array.isArray(
-              result?.conversations,
-            )
-              ? result.conversations
-              : [],
+            sortConversationsByRecent(result?.conversations),
           );
 
           setUnreadCount(
@@ -386,8 +415,9 @@ export default function MessagesPage({
 
           if (request !== conversationRequestRef.current) return;
 
-          setConversation(result);
-          writeConversationSnapshot(currentUser?.id, normalized, result);
+          const sortedConversation = sortMessagesChronologically(result);
+          setConversation(sortedConversation);
+          writeConversationSnapshot(currentUser?.id, normalized, sortedConversation);
 
           setSearchQuery(
             "",
@@ -511,8 +541,9 @@ export default function MessagesPage({
               username,
             );
 
-          setConversation(result);
-          writeConversationSnapshot(currentUser?.id, username, result);
+          const sortedConversation = sortMessagesChronologically(result);
+          setConversation(sortedConversation);
+          writeConversationSnapshot(currentUser?.id, username, sortedConversation);
         } catch {
           /*
            * Keep the current thread visible
