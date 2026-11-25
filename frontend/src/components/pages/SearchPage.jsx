@@ -2268,12 +2268,12 @@ async function downloadOpenedPlaylist() {
       >
 
         {displayResults.artists.map(
-          (artist) => (
+          (artist, index) => (
 
             <button
               type="button"
               key={artist.name}
-              className="hs-search-entity-card"
+              className="hs-search-track hs-library-entity-row hs-search-entity-card"
               {...collectionActionMenu.getTriggerProps({
                 key:
                   `artist:${artist.name}`,
@@ -2324,7 +2324,7 @@ async function downloadOpenedPlaylist() {
               }}
             >
 
-              <span className="hs-search-entity-card__art">
+              <span className="hs-search-track__art hs-search-entity-card__art">
 
                 {resolveArtworkUrl(
                   artist.artwork_url,
@@ -2346,22 +2346,9 @@ async function downloadOpenedPlaylist() {
 
               </span>
 
-              <span>
-
-                <small>
-                  ARTIST
-                </small>
-
-                <strong>
-                  {artist.name}
-                </strong>
-
-                <em>
-                  {artist.track_count}
-                  {" "}
-                  matching tracks
-                </em>
-
+              <span className="hs-search-track__copy">
+                <strong>{artist.name}</strong>
+                <small>{artist.track_count} matching tracks</small>
               </span>
 
               <Icon
@@ -2525,14 +2512,14 @@ async function downloadOpenedPlaylist() {
       >
 
         {displayResults.albums.map(
-          (album) => (
+          (album, index) => (
 
             <button
               type="button"
               key={
                 `${album.artist}:${album.title}`
               }
-              className="hs-search-entity-card"
+              className="hs-search-track hs-library-entity-row hs-search-entity-card"
               {...collectionActionMenu.getTriggerProps({
                 key:
                   `album:${album.artist}:${album.title}`,
@@ -2611,20 +2598,9 @@ async function downloadOpenedPlaylist() {
 
               </span>
 
-              <span>
-
-                <small>
-                  ALBUM
-                </small>
-
-                <strong>
-                  {album.title}
-                </strong>
-
-                <em>
-                  {album.artist}
-                </em>
-
+              <span className="hs-search-track__copy">
+                <strong>{album.title}</strong>
+                <small>{album.artist || "Album"}</small>
               </span>
 
               <Icon
