@@ -9555,31 +9555,24 @@ body,
 }
 .hs-search-discovery__tile-art-cover--1 {
   position: absolute;
-  width: 42%;
+  width: 40%;
   height: 76%;
   left: 5%;
   top: 12%;
   object-fit: cover;
   border-radius: 6px;
-  transform: rotate(-8deg);
+  transform: rotate(-7deg);
 }
 .hs-search-discovery__tile-art-cover--2 {
   position: absolute;
-  width: 42%;
+  width: 40%;
   height: 76%;
-  left: 29%;
-  top: 10%;
-  object-fit: cover;
-  border-radius: 6px;
-  transform: rotate(2deg);
-}
-.hs-search-discovery__tile-art-cover--3 {
-  position: absolute;
-  width: 42%;
-  height: 76%;
-  right: 4%;
+  right: 5%;
   top: 12%;
   object-fit: cover;
   border-radius: 6px;
-  transform: rotate(9deg);
+  transform: rotate(7deg);
+}
+.hs-search-discovery__tile-art-cover--3 {
+  display: none !important;
 }
