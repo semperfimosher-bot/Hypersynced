@@ -538,3 +538,76 @@ async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> 
     assert commits == 1
 
     artist_artwork._artist_artwork_queue_event.clear()
+
+
+@pytest.mark.asyncio
+async def test_artist_artwork_falls_back_to_name_matched_commons_search(monkeypatch) -> None:
+    from backend.app.services import artist_artwork
+
+    async def fake_request_json(client, url, params):
+        if url == artist_artwork.WIKIDATA_API:
+            return {"search": []}
+        if url == artist_artwork.COMMONS_API:
+            return {
+                "query": {
+                    "pages": {
+                        "1": {
+                            "title": "File:Test Artist portrait.jpg",
+                            "imageinfo": [
+                                {
+                                    "thumburl": "https://upload.wikimedia.org/portrait.jpg",
+                                    "url": "https://upload.wikimedia.org/full.jpg",
+                                    "descriptionurl": "https://commons.wikimedia.org/wiki/File:Test_Artist_portrait.jpg",
+                                    "extmetadata": {
+                                        "LicenseShortName": {"value": "CC BY 4.0"},
+                                        "ImageDescription": {"value": "Portrait of Test Artist"},
+                                        "Artist": {"value": "Photo Author"},
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+        raise AssertionError(f"Unexpected provider request: {url}")
+
+    class FakeImageResponse:
+        headers = {"content-type": "image/jpeg", "content-length": "9"}
+
+        def raise_for_status(self):
+            return None
+
+        async def aiter_bytes(self):
+            yield b"\xff\xd8\xffsample"
+
+    class FakeStream:
+        async def __aenter__(self):
+            return FakeImageResponse()
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def stream(self, method, url):
+            assert url == "https://upload.wikimedia.org/portrait.jpg"
+            return FakeStream()
+
+    monkeypatch.setattr(artist_artwork, "_request_json", fake_request_json)
+    monkeypatch.setattr(artist_artwork.httpx, "AsyncClient", FakeClient)
+
+    result = await artist_artwork.find_reusable_artist_image("Test Artist")
+
+    assert result is not None
+    assert result["artist_qid"] == "commons-search"
+    assert result["image_bytes"] == b"\xff\xd8\xffsample"
+    assert result["license"] == "CC BY 4.0"
+    assert result["credit"] == "Photo Author"
