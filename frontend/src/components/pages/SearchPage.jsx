@@ -187,6 +187,7 @@ function SearchPage({
 
   const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
   const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);
+  const [discoveryArtworkByCommand, setDiscoveryArtworkByCommand] = useState({});
   const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
 
   useEffect(() => {
@@ -225,6 +226,58 @@ function SearchPage({
     };
   }, [offlineOwnerKey]);
 
+  useEffect(() => {
+    let cancelled = false;
+    let idleHandle = null;
+    const commands = [
+      { id: "newly-released", query: "new releases", filter: "tracks" },
+      { id: "pop", query: "pop", filter: "tracks" },
+      { id: "country", query: "country", filter: "tracks" },
+      { id: "rock", query: "rock", filter: "tracks" },
+      { id: "electronic", query: "electronic", filter: "tracks" },
+      { id: "rap-hip-hop", query: "rap hip hop", filter: "tracks" },
+      { id: "alternative", query: "alternative", filter: "tracks" },
+      { id: "chill", query: "chill", filter: "tracks" },
+      { id: "driving", query: "driving", filter: "tracks" },
+      { id: "hype", query: "hype", filter: "tracks" },
+      { id: "find-new-tunes", query: "new tunes", filter: "tracks" },
+    ];
+    const load = async () => {
+      if (cancelled || document.visibilityState !== "visible") return;
+      let cursor = 0;
+      const worker = async () => {
+        while (!cancelled && cursor < commands.length) {
+          const command = commands[cursor++];
+          try {
+            const response = await searchHypersync(command.query, "smart");
+            if (cancelled) return;
+            const tracks = Array.isArray(response?.tracks) ? response.tracks : [];
+            const artists = Array.isArray(response?.artists) ? response.artists : [];
+            const source = command.filter === "artists"
+              ? artists.map((artist) => ({ artwork: artist.artist_artwork_url ?? artist.image_url ?? artist.artwork_url, artistArtwork: artist.artist_artwork_url ?? artist.image_url ?? artist.artwork_url, genre: "", releaseYear: 0 }))
+              : tracks.map((track) => ({
+                  artwork: track?.artwork_url ?? track?.cover_url ?? track?.album_artwork_url,
+                  artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null,
+                  genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
+                  releaseYear: Number(track?.release_year ?? track?.year ?? String(track?.release_date ?? "").slice(0, 4)) || 0,
+                }));
+            const filtered = source.filter(item => item.artwork);
+            if (filtered.length) setDiscoveryArtworkByCommand(prev => ({ ...prev, [command.id]: filtered.slice(0, 12) }));
+          } catch {
+            // Library artwork and category icon fallback remain available if discovery search fails.
+          }
+        }
+      };
+      await Promise.all([worker(), worker()]);
+    };
+    if (typeof window.requestIdleCallback === "function") idleHandle = window.requestIdleCallback(load, { timeout: 5000 });
+    else idleHandle = window.setTimeout(load, 1800);
+    return () => {
+      cancelled = true;
+      if (idleHandle != null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleHandle);
+      else if (idleHandle != null) window.clearTimeout(idleHandle);
+    };
+  }, []);
   useEffect(() => {
     let cancelled = false;
     let idleHandle = null;
@@ -2867,14 +2920,15 @@ async function downloadOpenedPlaylist() {
                     ? discoveryPeopleArtwork.map((person) => person.avatar_url)
                     : (() => {
                         const commandTerms = String(command.query || command.label || "").toLowerCase().split(/[^a-z0-9]+/).filter((term) => term && !["find", "new", "tunes", "music", "songs", "tracks"].includes(term));
-                        const relevantArtwork = command.id === "newly-released"
+                        const libraryMatches = command.id === "newly-released"
                           ? discoveryCardArtwork.filter((art) => art.releaseYear >= 2025)
                           : command.filter === "artists"
                             ? discoveryCardArtwork.filter((art) => art.artistArtwork)
                             : discoveryCardArtwork.filter((art) => commandTerms.some((term) => art.genre.split(/[^a-z0-9]+/).includes(term)));
-                        // Never use unrelated artwork as a fallback for a category card.
-                        // Genre cards only display artwork from tracks whose genre matches
-                        // the card; other cards use their own matching data criteria.
+                        const searchedMatches = discoveryArtworkByCommand[command.id] || [];
+                        // Prefer matching cached library art, then matching category-query art.
+                        // Query results are scoped to the card's category, not borrowed from another genre.
+                        const relevantArtwork = libraryMatches.length ? libraryMatches : searchedMatches;
                         return relevantArtwork.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
                       })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
