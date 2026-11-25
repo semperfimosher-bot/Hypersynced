@@ -54,7 +54,11 @@ def test_artist_entity_must_have_a_musical_artist_or_group_type() -> None:
 
 def test_artist_image_requires_reusable_license() -> None:
     assert license_is_reusable("CC BY-SA 4.0")
+    assert license_is_reusable("CC BY-SA 3.0")
+    assert license_is_reusable("CC BY-SA 2.5")
     assert license_is_reusable("CC BY 4.0")
+    assert license_is_reusable("CC BY 3.0")
+    assert license_is_reusable("CC BY 2.0")
     assert license_is_reusable("CC0")
     assert license_is_reusable("Public domain")
     assert not license_is_reusable("All rights reserved")
