@@ -848,6 +848,14 @@ export default function App() {
   const [statusMessage, setStatusMessage] =
     useState("");
 
+  // Status messages are rendered globally so milestones are visible on every page,
+  // including Home and mobile, rather than being tied to a page that may not render.
+  useEffect(() => {
+    if (!statusMessage) return undefined;
+    const timer = window.setTimeout(() => setStatusMessage(""), 7000);
+    return () => window.clearTimeout(timer);
+  }, [statusMessage]);
+
   // Count meaningful playback per play session, including repeat plays of the same track.
   useEffect(() => {
     const owner = currentUser?.id ?? currentUser?.username ?? "guest-device";
@@ -2562,6 +2570,12 @@ const clearPlaylistToOpen =
             }}
           />
         </Suspense>
+      ) : null}
+
+      {statusMessage ? (
+        <div className="hs-global-status-toast" role="status" aria-live="polite">
+          {statusMessage}
+        </div>
       ) : null}
 
       <MobileBottomNav
