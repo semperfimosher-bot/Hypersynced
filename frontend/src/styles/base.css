@@ -9491,3 +9491,59 @@ body,
 .page-stack > * {
   overflow-wrap: anywhere;
 }
+
+
+/* Mobile action popups are viewport-centered, compact, and safe-area aware. */
+@media (max-width: 760px) {
+  .track-action-layer,
+  .track-action-layer.is-mobile {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)) !important;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .track-action-layer .track-action-menu,
+  .track-action-layer.is-mobile .track-action-menu {
+    width: min(340px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: min(62dvh, 420px) !important;
+    padding: 5px !important;
+    border-radius: 11px !important;
+    margin: auto !important;
+    font-size: 12px;
+  }
+  .track-action-layer .track-action-menu > button,
+  .track-action-layer .track-action-playlists > button,
+  .track-action-layer.is-mobile .track-action-menu > button,
+  .track-action-layer.is-mobile .track-action-playlists > button {
+    min-height: 36px !important;
+    gap: 6px !important;
+    padding: 4px 6px !important;
+    font-size: 11px !important;
+  }
+  .track-action-layer .track-action-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .track-action-layer .track-action-menu__track {
+    padding: 6px 6px 7px !important;
+  }
+  .track-action-layer .track-action-menu__track strong {
+    font-size: 11px !important;
+  }
+  .track-action-layer .track-action-menu__track small {
+    font-size: 9px !important;
+  }
+}
+
+/* Discovery tiles retain a category-themed artwork panel even before images arrive. */
+.hs-search-discovery__tile-art {
+  background:
+    radial-gradient(circle at 72% 22%, rgba(98, 218, 255, .2), transparent 44%),
+    linear-gradient(145deg, #07344d, #06101c 72%);
+}
+.hs-search-discovery__tile-art-cover {
+  opacity: 1 !important;
+  filter: none !important;
+}
