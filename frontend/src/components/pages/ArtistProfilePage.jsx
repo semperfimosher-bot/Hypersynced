@@ -480,6 +480,11 @@ export default function ArtistProfilePage({
 
   if (
     loading
+    || (
+      artworkUrl
+      && !artworkImageLoaded
+      && !artworkImageFailed
+    )
   ) {
     return (
       <div className="hs-profile-page hs-artist-profile-page">
