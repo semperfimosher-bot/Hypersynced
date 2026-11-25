@@ -494,9 +494,6 @@ export default function TrackActionMenu({
     setBusy("like");
     setNotice("");
 
-    // Update Library immediately; sync the server and offline pin afterward.
-    window.dispatchEvent(new CustomEvent("hypersync:library-changed"));
-
     try {
       if (wasLiked) {
         await unlikeTrack(track.id);
