@@ -9547,3 +9547,39 @@ body,
   opacity: 1 !important;
   filter: none !important;
 }
+
+/* The Find People preview uses the same three fixed local anime assets on every visit. */
+.hs-search-discovery__tile-art {
+  position: relative;
+  overflow: hidden;
+}
+.hs-search-discovery__tile-art-cover--1 {
+  position: absolute;
+  width: 47%;
+  height: 86%;
+  left: 2%;
+  top: 7%;
+  object-fit: cover;
+  border-radius: 6px;
+  transform: rotate(-8deg);
+}
+.hs-search-discovery__tile-art-cover--2 {
+  position: absolute;
+  width: 47%;
+  height: 86%;
+  left: 27%;
+  top: 4%;
+  object-fit: cover;
+  border-radius: 6px;
+  transform: rotate(2deg);
+}
+.hs-search-discovery__tile-art-cover--3 {
+  position: absolute;
+  width: 47%;
+  height: 86%;
+  right: 1%;
+  top: 8%;
+  object-fit: cover;
+  border-radius: 6px;
+  transform: rotate(9deg);
+}
