@@ -613,7 +613,7 @@ async def _artist_artwork_backfill_loop() -> None:
             await asyncio.sleep(120)
 
 
-async def _artist_artwork_worker_loop(worker_number: int) -> None:
+async def _artist_artwork_worker_loop() -> None:
     """Each worker handles one portrait at a time; pool size caps resource use."""
     factory = get_session_factory()
     while True:
@@ -661,8 +661,8 @@ async def run_artist_artwork_worker() -> None:
     """Bounded pool: at most three artist image fetches/uploads concurrently."""
     pool_size = 3
     tasks = [
-        asyncio.create_task(_artist_artwork_worker_loop(worker_number))
-        for worker_number in range(pool_size)
+        asyncio.create_task(_artist_artwork_worker_loop())
+        for _ in range(pool_size)
     ]
     backfill_task = asyncio.create_task(_artist_artwork_backfill_loop())
     try:
