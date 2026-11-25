@@ -213,10 +213,7 @@ export default function ArtistProfilePage({
               ? loadError.message
               : "Unable to load artist.",
           );
-        } finally {
-          setLoading(
-            false,
-          );
+          setLoading(false);
         }
       },
       [
