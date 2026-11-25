@@ -216,8 +216,8 @@ test("artist profiles cache for instant re-entry and quietly refresh portraits",
   assert.match(artistProfilePageSource, /getArtistProfile\(artistName\)/);
   assert.match(artistApiSource, /artistProfileCache = new Map/);
   assert.match(artistApiSource, /getCachedArtistProfile/);
-  assert.match(artistProfilePageSource, /attempts < 15/);
-  assert.match(artistProfilePageSource, /2_000/);
-  assert.match(artistProfilePageSource, /7_000/);
-  assert.match(artistProfilePageSource, /1_200/);
+  assert.match(artistProfilePageSource, /getArtistArtworkStatus\(artistName\)/);
+  assert.match(artistProfilePageSource, /attempts < 8/);
+  assert.match(artistProfilePageSource, /350/);
+  assert.match(artistApiSource, /getArtistArtworkStatus/);
 });
