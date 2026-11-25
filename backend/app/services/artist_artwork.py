@@ -191,6 +191,80 @@ async def _request_json(client: httpx.AsyncClient, url: str, params: dict) -> di
     return data
 
 
+async def _commons_search_for_artist_image(
+    client: httpx.AsyncClient,
+    artist_name: str,
+) -> dict | None:
+    """Find a name-matched, freely reusable Commons portrait when Wikidata is incomplete."""
+    search = await _request_json(
+        client,
+        COMMONS_API,
+        {
+            "action": "query",
+            "generator": "search",
+            "gsrsearch": f'file:"{artist_name}"',
+            "gsrnamespace": 6,
+            "gsrlimit": 12,
+            "prop": "imageinfo",
+            "iiprop": "url|extmetadata",
+            "iiurlwidth": 1200,
+            "format": "json",
+        },
+    )
+    pages = search.get("query", {}).get("pages", {})
+    normalized_artist = " ".join(artist_name.split()).casefold()
+    for page in pages.values():
+        title = str(page.get("title") or "").casefold()
+        info = (page.get("imageinfo") or [{}])[0]
+        ext = info.get("extmetadata") or {}
+        description = str(ext.get("ImageDescription", {}).get("value") or "")
+        # Search results are not identity proof. Require the exact artist name to
+        # appear in the file title or its Commons description, and reject other
+        # licenses before any image bytes are downloaded.
+        text_blob = title + " " + re.sub(r"<[^>]+>", " ", description).casefold()
+        if normalized_artist not in text_blob:
+            continue
+        license_name = str(ext.get("LicenseShortName", {}).get("value") or "")
+        if not license_is_reusable(license_name):
+            continue
+        image_url = info.get("thumburl") or info.get("url")
+        source_page = info.get("descriptionurl")
+        if not image_url or not source_page or not (
+            is_safe_wikimedia_url(image_url)
+            and is_safe_wikimedia_url(source_page)
+        ):
+            continue
+        content = bytearray()
+        async with client.stream("GET", image_url) as response:
+            response.raise_for_status()
+            mime = response.headers.get("content-type", "").split(";", 1)[0].lower()
+            if mime not in {"image/jpeg", "image/png", "image/webp"}:
+                continue
+            length = response.headers.get("content-length")
+            if length and int(length) > MAX_ART_BYTES:
+                continue
+            async for chunk in response.aiter_bytes():
+                content.extend(chunk)
+                if len(content) > MAX_ART_BYTES:
+                    break
+        if not content or not image_bytes_match_mime(bytes(content), mime):
+            continue
+        return {
+            "artist_qid": "commons-search",
+            "image_bytes": bytes(content),
+            "content_type": mime,
+            "source_url": info.get("url") or image_url,
+            "source_page_url": source_page,
+            "license": license_name,
+            "credit": (
+                ext.get("Artist", {}).get("value")
+                or ext.get("Credit", {}).get("value")
+                or ""
+            ),
+        }
+    return None
+
+
 async def find_reusable_artist_image(artist_name: str) -> dict | None:
     """Resolve a single exact-name Wikidata music-artist entity and a licensed Commons image.
 
@@ -237,7 +311,10 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             claims_by_entity,
         )
         if len(verified) != 1:
-            return None
+            # Wikidata may have no artist photo or a missing MusicBrainz link.
+            # Fall back to Commons title/description search, still requiring an
+            # exact name hit and a known reusable license.
+            return await _commons_search_for_artist_image(client, clean_name)
 
         candidate = verified[0]
         claims = claims_by_entity[candidate["id"]]
