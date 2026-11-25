@@ -526,10 +526,10 @@ export default function TrackActionMenu({
         })();
         setNotice("Added to Liked Songs");
       }
-      window.dispatchEvent(new CustomEvent("hypersynced:library-changed"));
+      window.dispatchEvent(new CustomEvent("hypersync:library-changed"));
     } catch (error) {
       setLiked(wasLiked);
-      window.dispatchEvent(new CustomEvent("hypersynced:library-changed"));
+      window.dispatchEvent(new CustomEvent("hypersync:library-changed"));
       setNotice(error instanceof Error ? error.message : "Unable to update Liked Songs.");
     } finally {
       setBusy("");
