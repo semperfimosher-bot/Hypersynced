@@ -312,7 +312,10 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             candidate["id"],
             mbid,
         ):
-            return None
+            # A failed secondary identity check must not suppress the independent
+            # Commons exact-name/licensing fallback; the image still needs its own
+            # name and license checks before display or upload.
+            return await _commons_search_for_artist_image(client, clean_name)
         image_value = claims["P18"][0].get("mainsnak", {}).get("datavalue", {}).get("value")
         if not isinstance(image_value, str) or not image_value:
             return None
