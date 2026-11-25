@@ -575,41 +575,51 @@ async def enqueue_artist_artwork(
         return True
 
 
-async def run_artist_artwork_worker() -> None:
-    """Low-duty-cycle artwork queue with small backfill batches."""
+async def _artist_artwork_backfill_loop() -> None:
+    """Queue small, low-priority batches of catalog portraits every ten minutes."""
     factory = get_session_factory()
-    backfill_at = datetime.now(UTC)
+    while True:
+        try:
+            now = datetime.now(UTC)
+            async with factory() as session:
+                result = await session.execute(
+                    select(ArtistProfile.id).where(
+                        ArtistProfile.artwork_object_key.is_(None),
+                        (
+                            ArtistProfile.artwork_status.in_(["missing", "failed"])
+                            | (
+                                ArtistProfile.artwork_status.in_(["fetching", "uploading"])
+                                & (
+                                    ArtistProfile.artwork_lease_until.is_(None)
+                                    | (ArtistProfile.artwork_lease_until <= now)
+                                )
+                            )
+                        ),
+                        (
+                            ArtistProfile.artwork_next_retry_at.is_(None)
+                            | (ArtistProfile.artwork_next_retry_at <= now)
+                        ),
+                    ).order_by(
+                        ArtistProfile.updated_at.asc()
+                    ).limit(8)
+                )
+                batch = list(result.scalars())
+            for artist_id in batch:
+                await enqueue_artist_artwork(artist_id)
+            await asyncio.sleep(600)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            await asyncio.sleep(120)
+
+
+async def _artist_artwork_worker_loop(worker_number: int) -> None:
+    """Each worker handles one portrait at a time; pool size caps resource use."""
+    factory = get_session_factory()
     while True:
         _artist_artwork_queue_event.clear()
-        now = datetime.now(UTC)
+        job_id = None
         try:
-            if now >= backfill_at:
-                async with factory() as session:
-                    result = await session.execute(
-                        select(ArtistProfile.id).where(
-                            ArtistProfile.artwork_object_key.is_(None),
-                            (
-                                ArtistProfile.artwork_status.in_(["missing", "failed"])
-                                | (
-                                    ArtistProfile.artwork_status.in_(["fetching", "uploading"])
-                                    & (
-                                        ArtistProfile.artwork_lease_until.is_(None)
-                                        | (ArtistProfile.artwork_lease_until <= now)
-                                    )
-                                )
-                            ),
-                            (
-                                ArtistProfile.artwork_next_retry_at.is_(None)
-                                | (ArtistProfile.artwork_next_retry_at <= now)
-                            ),
-                        ).order_by(
-                            ArtistProfile.updated_at.asc()
-                        ).limit(8)
-                    )
-                    batch = list(result.scalars())
-                for aid in batch:
-                    await enqueue_artist_artwork(aid)
-                backfill_at = now + timedelta(minutes=10)
             async with factory() as session:
                 result = await session.execute(
                     select(ArtistProfile)
@@ -617,32 +627,47 @@ async def run_artist_artwork_worker() -> None:
                         ArtistProfile.artwork_object_key.is_(None),
                         ArtistProfile.artwork_status == "queued",
                     )
-                    # On-demand requests update the profile timestamp; newest queued
-                    # requests outrank idle catalog backfill work.
                     .order_by(ArtistProfile.updated_at.desc())
                     .limit(1)
                     .with_for_update(skip_locked=True)
                 )
                 claimed = result.scalar_one_or_none()
-                job_id = claimed.id if claimed else None
                 if claimed:
-                    # Claim under a row lock and persist a lease before releasing it;
-                    # another worker replica cannot process this queued row at once.
+                    job_id = claimed.id
                     claimed.artwork_status = "fetching"
-                    claimed.artwork_lease_until = now + timedelta(minutes=10)
+                    claimed.artwork_lease_until = (
+                        datetime.now(UTC) + timedelta(minutes=10)
+                    )
                     await session.commit()
             if job_id:
                 await fetch_and_store_artist_artwork(job_id)
-                try:
-                    await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=2)
-                except TimeoutError:
-                    pass
+                # Small spacing prevents rapid retries and keeps provider/B2 pressure low.
+                await asyncio.sleep(1.0)
             else:
                 try:
-                    await asyncio.wait_for(_artist_artwork_queue_event.wait(), timeout=60)
+                    await asyncio.wait_for(
+                        _artist_artwork_queue_event.wait(),
+                        timeout=5,
+                    )
                 except TimeoutError:
                     pass
         except asyncio.CancelledError:
             raise
         except Exception:
-            await asyncio.sleep(120)
+            await asyncio.sleep(30)
+
+
+async def run_artist_artwork_worker() -> None:
+    """Bounded pool: at most three artist image fetches/uploads concurrently."""
+    pool_size = 3
+    tasks = [
+        asyncio.create_task(_artist_artwork_worker_loop(worker_number))
+        for worker_number in range(pool_size)
+    ]
+    backfill_task = asyncio.create_task(_artist_artwork_backfill_loop())
+    try:
+        await asyncio.gather(*tasks, backfill_task)
+    finally:
+        for task in [*tasks, backfill_task]:
+            task.cancel()
+        await asyncio.gather(*tasks, backfill_task, return_exceptions=True)
