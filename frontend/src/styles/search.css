@@ -9037,3 +9037,14 @@ button:disabled {
 .hs-artist-hero__art img {
   object-fit: contain;
 }
+
+/* Search console sizing: slightly taller on desktop, tighter on phones. */
+@media (min-width: 761px) {
+  .hs-search-console__heading { min-height: 88px; padding-top: 8px; }
+  .hs-search-console__intro { transform: translateY(-4px); }
+}
+@media (max-width: 760px) {
+  .hs-search-console { gap: 11px; padding: 12px; }
+  .hs-search-console__heading { gap: 8px; min-height: 0; }
+  .hs-search-console__intro { transform: translateY(-2px); }
+}
