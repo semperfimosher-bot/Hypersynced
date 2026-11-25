@@ -71,10 +71,11 @@ export function TrackTile({ track, onPlay, onWarm, menuProps, onPlayNext, simple
     </div>
   );
 }
-export function ArtistRow({ tracks, onNavigate, onOpenArtist }) {
+export function ArtistRow({ tracks, fallbackTracks = [], onNavigate, onOpenArtist }) {
   const artists = [];
   const seen = new Set();
-  for (const track of tracks ?? []) {
+  const artistTrackPool = [...(tracks ?? []), ...(fallbackTracks ?? [])];
+  for (const track of artistTrackPool) {
     const name = String(track?.artist ?? "").trim();
     if (!name || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
