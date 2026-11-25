@@ -10,6 +10,7 @@ import * as player from
 import {
   followArtist,
   getArtistProfile,
+  getCachedArtistProfile,
   unfollowArtist,
 } from "../../artistApi.js";
 
@@ -194,25 +195,23 @@ export default function ArtistProfilePage({
           return;
         }
 
-        setLoading(
-          true,
-        );
-        setError(
-          "",
-        );
+        const cachedProfile = getCachedArtistProfile(artistName);
+        setProfile(cachedProfile);
+        setLoading(!cachedProfile);
+        setError("");
 
         try {
           const nextProfile = await getArtistProfile(artistName);
           setProfile(nextProfile);
-          // Artist data should not wait for external portrait discovery or B2.
-          // The artwork area shows its own loading state while background fetches run.
           setLoading(false);
         } catch (loadError) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Unable to load artist.",
+          if (!cachedProfile) {
+            setError(
+              loadError instanceof Error
+                ? loadError.message
+                : "Unable to load artist.",
           );
+          }
           setLoading(false);
         }
       },
