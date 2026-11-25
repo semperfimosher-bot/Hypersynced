@@ -178,3 +178,7 @@
 .home-carousel__artwork-cover { backface-visibility:hidden; transform-origin:center; }
 .home-horizontal-scroll, .home-artist-scroll { touch-action:pan-x; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; scroll-behavior:smooth; }
 .home-track-tile__cover img { display:block; opacity:1; transition:none; }
+
+/* Let mobile browsers negotiate both vertical page scroll and horizontal Home-row swipes. */
+@media(max-width:979px){.home-horizontal-scroll,.home-artist-scroll{touch-action:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}}
+.home-carousel__viewport{touch-action:pan-y;}
