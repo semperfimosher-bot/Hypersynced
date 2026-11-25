@@ -3,22 +3,40 @@ import {
 } from "./api/client.js";
 
 
+const artistProfileCache = new Map();
+
+function artistProfileCacheKey(name) {
+  return String(name || "").trim().toLocaleLowerCase();
+}
+
+export function getCachedArtistProfile(artistName) {
+  return artistProfileCache.get(artistProfileCacheKey(artistName)) ?? null;
+}
+
+function cacheArtistProfile(profile) {
+  if (profile?.name) {
+    artistProfileCache.set(artistProfileCacheKey(profile.name), profile);
+  }
+  return profile;
+}
+
 export async function getArtistProfile(
   artistName,
 ) {
-  return apiRequest(
+  const profile = await apiRequest(
     "/artists/" +
       encodeURIComponent(
         artistName,
       ),
   );
+  return cacheArtistProfile(profile);
 }
 
 
 export async function followArtist(
   artistName,
 ) {
-  return apiRequest(
+  return cacheArtistProfile(await apiRequest(
     "/artists/" +
       encodeURIComponent(
         artistName,
@@ -28,14 +46,14 @@ export async function followArtist(
       method:
         "POST",
     },
-  );
+  ));
 }
 
 
 export async function unfollowArtist(
   artistName,
 ) {
-  return apiRequest(
+  return cacheArtistProfile(await apiRequest(
     "/artists/" +
       encodeURIComponent(
         artistName,
@@ -45,5 +63,5 @@ export async function unfollowArtist(
       method:
         "DELETE",
     },
-  );
+  ));
 }
