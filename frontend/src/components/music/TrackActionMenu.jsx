@@ -11,18 +11,12 @@ import {
 } from "../../api/client.js";
 
 import {
-  addLikedTrackOfflinePin,
-  downloadTrackForOffline,
-  getLikedSongsDownloadPinRef,
-  getManualDownloadPinRef,
   getOfflineOwnerKey,
-  isTrackDownloaded,
   removeLikedTrackFromOffline,
 } from "../../offlineDownloads.js";
 
 import {
   addTrackToPlaylist,
-  getLibraryTrack,
   getLikedTrackState,
   getMyPlaylists,
   likeTrack,
@@ -172,12 +166,6 @@ export default function TrackActionMenu({
     false,
   );
 
-  const [
-    downloaded,
-    setDownloaded,
-  ] = useState(
-    false,
-  );
 
   const track =
     menu?.track ??
@@ -190,16 +178,6 @@ export default function TrackActionMenu({
   const offlineOwnerKey =
     getOfflineOwnerKey(
       currentUser,
-    );
-
-  const manualDownloadPinRef =
-    getManualDownloadPinRef(
-      offlineOwnerKey,
-    );
-
-  const likedSongsDownloadPinRef =
-    getLikedSongsDownloadPinRef(
-      offlineOwnerKey,
     );
 
 
@@ -219,11 +197,6 @@ export default function TrackActionMenu({
 
     setLiked(false);
 
-    setDownloaded(
-      Boolean(
-        track?.downloaded,
-      ),
-    );
   }, [
     track?.id,
   ]);
@@ -291,8 +264,6 @@ export default function TrackActionMenu({
     menu,
     track?.id,
     isRegistered,
-    likedSongsDownloadPinRef,
-    manualDownloadPinRef,
     offlineOwnerKey,
   ]);
 
@@ -598,102 +569,6 @@ export default function TrackActionMenu({
   }
 
 
-  async function downloadTrack() {
-    if (downloaded) {
-      return;
-    }
-
-    setBusy(
-      "download",
-    );
-
-    setNotice("");
-
-    let addedToLikedSongs =
-      false;
-
-    try {
-      /*
-       * Individual downloads are Library music.
-       * Add the track to Liked Songs first so
-       * Artists/Albums update immediately and
-       * the download never becomes orphaned
-       * from the user's Library index.
-       */
-      if (!liked) {
-        await likeTrack(
-          track.id,
-        );
-
-        setLiked(
-          true,
-        );
-
-        addedToLikedSongs =
-          true;
-      }
-
-      const canonicalTrack =
-        await getLibraryTrack(
-          track.id,
-        );
-
-      const offlineTrack =
-        canonicalTrack ??
-        track;
-
-      await downloadTrackForOffline(
-        offlineTrack,
-        {
-          pinRef:
-            manualDownloadPinRef,
-        },
-      );
-
-      /*
-       * A manual download also lives in
-       * Liked Songs, so give the same cached
-       * media an independent Liked Songs pin.
-       * This adds no second network download.
-       */
-      await addLikedTrackOfflinePin(
-        offlineTrack,
-        offlineOwnerKey,
-      );
-
-      setDownloaded(
-        true,
-      );
-
-      setNotice(
-        "Available offline",
-      );
-
-      window.dispatchEvent(
-        new CustomEvent(
-          "hypersync:offline-downloads-changed",
-        ),
-      );
-    } catch (error) {
-      setNotice(
-        error instanceof Error
-          ? error.message
-          : "Unable to download song.",
-      );
-    } finally {
-      if (
-        addedToLikedSongs
-      ) {
-        window.dispatchEvent(
-          new CustomEvent(
-            "hypersync:library-changed",
-          ),
-        );
-      }
-
-      setBusy("");
-    }
-  }
 
 
   return (
@@ -1187,35 +1062,7 @@ export default function TrackActionMenu({
                 </span>
               </button>
             ) : null}
-                          <button
-                type="button"
-                role="menuitem"
-                disabled={
-                  downloaded ||
-                  busy ===
-                    "download"
-                }
-                onClick={() => {
-                  void downloadTrack();
-                }}
-              >
-              <span className="track-action-icon">
-                <Icon
-                  name={
-                    downloaded
-                      ? "check"
-                      : "download"
-                  }
-                  size={15}
-                />
-              </span>
 
-              <span>
-                {downloaded
-                  ? "Downloaded for offline"
-                  : "Download for offline"}
-              </span>
-              </button>
 
           </>
         )}
