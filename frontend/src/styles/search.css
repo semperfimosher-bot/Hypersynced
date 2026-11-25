@@ -9149,3 +9149,40 @@ button:disabled {
 .hs-search-discovery__tile-art-cover::before,
 .hs-search-discovery__tile-art-cover::after { content: none !important; display: none !important; }
 .hs-search-discovery__tile-art-cover { pointer-events: none; }
+
+
+/* Fluorescent blue loading indicator inspired by the user's reference image. */
+.hs-search-scan-dot.is-active {
+  position: relative;
+  flex: 0 0 112px;
+  width: 112px;
+  height: 10px;
+  border-radius: 0;
+  background: radial-gradient(circle, #9bf7ff 0 1.8px, rgba(32,187,255,.72) 2.4px, transparent 3.2px) 0 50% / 9px 10px repeat-x;
+  opacity: 1;
+  box-shadow: none;
+  animation: hs-search-fluoro-dots 1.15s linear infinite;
+}
+.hs-search-scan-dot.is-active::before {
+  content: "SEARCHING";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  color: #60eaff;
+  font: 700 7px/1 "JetBrains Mono", monospace;
+  letter-spacing: .28em;
+  text-align: center;
+  text-shadow: 0 0 5px rgba(54,223,255,.9), 0 0 12px rgba(30,166,255,.6);
+}
+@keyframes hs-search-fluoro-dots {
+  0% { filter: brightness(.65); background-position: 0 50%; }
+  50% { filter: brightness(1.55); }
+  100% { filter: brightness(.65); background-position: 9px 50%; }
+}
+@media (max-width: 760px) {
+  .hs-search-scan-dot.is-active { flex-basis: 86px; width: 86px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-search-scan-dot.is-active { animation: none; }
+}
