@@ -2915,7 +2915,7 @@ async function downloadOpenedPlaylist() {
                         // Query results are scoped to the card's category, not borrowed from another genre.
                         const relevantArtwork = libraryMatches.length ? libraryMatches : searchedMatches;
                         return relevantArtwork.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
-                      })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
+                      })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading={command.filter === "people" ? "eager" : "lazy"} decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
                     <i>✦</i><i>✧</i><i>✦</i>
