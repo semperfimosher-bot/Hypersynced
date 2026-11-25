@@ -187,3 +187,6 @@
 .home-track-tile-wrap .home-track-tile{touch-action:auto}
 .home-track-tile-wrap{touch-action:auto}
 @media(max-width:979px){.home-carousel__artwork{right:14px}.home-quick-picks .home-track-tile__play{opacity:0!important;pointer-events:none!important}}
+
+/* Mobile GPU relief: remove rail masks and soften carousel blur/compositing. */
+@media(max-width:979px){.home-scroll-fade{-webkit-mask-image:none!important;mask-image:none!important;-webkit-mask-composite:unset!important;mask-composite:unset!important}.home-carousel__art{filter:blur(16px) saturate(1.1)!important;opacity:.34!important}.home-carousel__slide{transition:opacity .32s ease,transform .38s ease,visibility .32s}}
