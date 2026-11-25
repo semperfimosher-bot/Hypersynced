@@ -29,6 +29,12 @@ const artistProfilePageSource = readFileSync(
   "utf8",
 );
 
+const artistApiSource = readFileSync(
+  new URL("./artistApi.js", import.meta.url),
+  "utf8",
+);
+
+
 
 test(
   "search result sections preserve the current discovery layout",
@@ -204,9 +210,12 @@ test("home quick picks have right-side sparkle accents and Library playlist acti
   assert.match(surfaceStylesSource, /hs-library-console .*search-primary-action.*margin-left: auto/);
 });
 
-test("artist profiles quietly refresh to reveal fetched portraits", () => {
-  assert.match(artistProfilePageSource, /profile\.artwork_source_page_url/);
+test("artist profiles cache for instant re-entry and quietly refresh portraits", () => {
+  assert.doesNotMatch(artistProfilePageSource, /profile\.artwork_source_page_url/);
+  assert.match(artistProfilePageSource, /getCachedArtistProfile\(artistName\)/);
   assert.match(artistProfilePageSource, /getArtistProfile\(artistName\)/);
+  assert.match(artistApiSource, /artistProfileCache = new Map/);
+  assert.match(artistApiSource, /getCachedArtistProfile/);
   assert.match(artistProfilePageSource, /attempts < 15/);
   assert.match(artistProfilePageSource, /2_000/);
   assert.match(artistProfilePageSource, /7_000/);
