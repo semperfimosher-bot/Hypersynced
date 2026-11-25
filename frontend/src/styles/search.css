@@ -9123,3 +9123,19 @@ button:disabled {
   .hs-search-filterbar button[data-filter="artists"] { order: 3; }
   .hs-search-filterbar button[data-filter="people"] { order: 4; }
 }
+
+
+/* Search header breathing room and fully opaque discovery-card artwork. */
+.hs-search-console__intro {
+  margin-bottom: 12px;
+}
+.hs-search-discovery__tile-art-cover {
+  opacity: 1 !important;
+  filter: none !important;
+}
+.hs-search-discovery__tile-art {
+  opacity: 1 !important;
+}
+@media (max-width: 760px) {
+  .hs-search-console__intro { margin-bottom: 15px; }
+}
