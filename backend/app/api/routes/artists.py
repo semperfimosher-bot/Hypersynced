@@ -438,13 +438,14 @@ async def _artist_profile_response(
         )
     ]
 
+    # Artist hero artwork must be a verified artist portrait, never track cover art.
     artwork_url = (
         create_presigned_download_url(profile.artwork_object_key)
         if profile.artwork_object_key
         else (
             profile.artwork_temporary_url
             if profile.artwork_status == "uploading" and profile.artwork_temporary_url
-            else (_track_artwork_url(tracks[0]) if tracks else None)
+            else None
         )
     )
 

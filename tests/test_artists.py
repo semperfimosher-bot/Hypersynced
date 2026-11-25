@@ -173,6 +173,9 @@ async def test_artist_profile_is_unique_and_reports_stats_and_follow_state() -> 
         )
 
         assert response.name == "Example Artist"
+        # The hero must never use unrelated track cover art as an artist portrait.
+        assert response.artwork_url is None
+        assert response.artwork_status in {"queued", "fetching"}
         assert response.track_count == 2
         assert response.album_count == 2
         assert response.total_plays == 3

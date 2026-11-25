@@ -570,10 +570,24 @@ export default function ArtistProfilePage({
               alt=""
             />
           ) : (
-            <Icon
-              name="music"
-              size={54}
-            />
+            <div className="hs-artist-artwork-placeholder">
+              <Icon
+                name="music"
+                size={54}
+              />
+              <span>
+                {profile.artwork_status === "queued"
+                  || profile.artwork_status === "fetching"
+                  || profile.artwork_status === "verifying"
+                  || profile.artwork_status === "uploading"
+                  ? "Finding artist photo"
+                  : profile.artwork_status === "missing"
+                    ? "No verified photo"
+                    : profile.artwork_status === "failed"
+                      ? "Photo unavailable"
+                      : "Artist portrait"}
+              </span>
+            </div>
           )}
         </div>
 
