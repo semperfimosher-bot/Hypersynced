@@ -10,6 +10,7 @@ import * as player from
 import {
   followArtist,
   getArtistProfile,
+  getArtistArtworkStatus,
   getCachedArtistProfile,
   unfollowArtist,
 } from "../../artistApi.js";
@@ -228,9 +229,8 @@ export default function ArtistProfilePage({
     load,
   ]);
   
-  // Artwork discovery and B2 storage run in the backend. Poll the profile so the
-  // temporary Wikimedia thumbnail appears as soon as discovery finishes, then
-  // switch to the permanent B2 URL when the upload completes.
+  // Poll the lightweight artwork-only endpoint so a discovered thumbnail can
+  // appear immediately without repeatedly rebuilding expensive artist statistics.
   useEffect(() => {
     if (
       !profile
@@ -247,28 +247,32 @@ export default function ArtistProfilePage({
     const refreshArtwork = async () => {
       attempts += 1;
       try {
-        const refreshed = await getArtistProfile(artistName);
-        if (cancelled || !refreshed) return;
-        setProfile(refreshed);
-        const hasArtworkUrl = Boolean(resolveArtworkUrl(refreshed.artwork_url));
-        const terminalArtworkState = ["ready", "missing", "failed"].includes(refreshed.artwork_status);
-        if (hasArtworkUrl || terminalArtworkState) {
+        const artwork = await getArtistArtworkStatus(artistName);
+        if (cancelled || !artwork) return;
+        const nextStatus = artwork.status || profile.artwork_status;
+        const nextUrl = artwork.artwork_url || profile.artwork_url;
+        setProfile((current) => current ? {
+          ...current,
+          artwork_status: nextStatus,
+          artwork_url: nextUrl,
+          has_profile_picture: Boolean(nextUrl) || current.has_profile_picture,
+        } : current);
+        const terminalArtworkState = ["ready", "missing", "failed"].includes(nextStatus);
+        if (nextUrl || terminalArtworkState) {
           setLoading(false);
         }
-        if (terminalArtworkState) {
-          return;
-        }
+        if (terminalArtworkState) return;
       } catch {
-        // Preserve the current profile; transient polling errors should not disrupt it.
+        // Artwork is optional; keep the artist profile usable through transient errors.
       }
 
       if (!cancelled) {
-        const delay = attempts < 15 ? 2_000 : 7_000;
+        const delay = attempts < 8 ? 350 : attempts < 20 ? 1_000 : 2_500;
         timer = window.setTimeout(refreshArtwork, delay);
       }
     };
 
-    timer = window.setTimeout(refreshArtwork, 1_200);
+    timer = window.setTimeout(refreshArtwork, 250);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
@@ -278,7 +282,6 @@ export default function ArtistProfilePage({
     online,
     profile?.id,
     profile?.artwork_status,
-    profile?.artwork_temporary_url,
   ]);
 
 
