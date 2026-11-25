@@ -245,7 +245,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}
       <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} />
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
-      {recentlyAdded.length ? <TrackRow title="Newly Released" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
+      {recentlyAdded.length ? <TrackRow title="Newly Uploaded" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       <ArtistRow tracks={suggestedTracks} fallbackTracks={[...recentlyAdded, ...recentlyPlayed]} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
