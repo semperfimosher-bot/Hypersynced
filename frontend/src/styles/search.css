@@ -9086,3 +9086,33 @@ button:disabled {
   .hs-library-entity-row .hs-search-track__copy strong { font-size: 10px; }
   .hs-library-entity-row .hs-search-track__copy small { font-size: 7px; }
 }
+
+
+/* Mobile-only search filter set: All, Playlists, Artists, People. */
+@media (max-width: 979px) {
+  .hs-search-filterbar button[data-filter="albums"],
+  .hs-search-filterbar button[data-filter="collaborations"],
+  .hs-search-filterbar button[data-filter="tracks"] { display: none !important; }
+  /* Prevent auto-sized metadata columns from pushing title copy to the edge. */
+  .hs-search-track {
+    grid-template-columns: 22px 42px minmax(0, 1fr) minmax(44px, 70px) 34px 28px !important;
+    gap: 7px !important;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .hs-search-track__copy,
+  .hs-search-entity-card .hs-search-track__copy,
+  .hs-library-entity-row .hs-search-track__copy {
+    justify-self: start !important;
+    min-width: 0 !important;
+    width: 100%;
+    text-align: left !important;
+  }
+  .hs-search-track__copy strong,
+  .hs-search-track__copy small { text-align: left !important; }
+  .hs-search-track__art { width: 42px !important; height: 42px !important; }
+  .hs-search-track__signals { min-width: 0 !important; max-width: 70px; }
+  .hs-search-track__duration { justify-self: center !important; }
+  .hs-search-track__play { justify-self: center !important; }
+  .player-bar { touch-action: pan-y; }
+}
