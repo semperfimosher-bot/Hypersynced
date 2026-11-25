@@ -40,6 +40,7 @@ from ...models.messaging import (
 )
 from ...security.rate_limit import enforce_rate_limit
 from ...services.admin_notifications import (
+    AUTOMATED_ADMIN_ACTIVITY_MARKERS,
     record_admin_activity,
 )
 from ...services.message_retention import (
@@ -989,6 +990,40 @@ async def message_notifications(
                 AdminNotification.recipient_id == user.id,
                 AdminNotification.kind != DIRECT_MESSAGE_NOTIFICATION_KIND,
                 AdminNotification.title == "User signed in",
+            )
+        )
+
+        compact_kind = func.replace(
+            func.replace(func.lower(AdminNotification.kind), "-", ""),
+            "_",
+            "",
+        )
+        compact_title = func.replace(
+            func.replace(func.lower(AdminNotification.title), "-", ""),
+            " ",
+            "",
+        )
+        compact_body = func.replace(
+            func.replace(func.lower(AdminNotification.body), "-", ""),
+            " ",
+            "",
+        )
+        automated_conditions = [
+            expression.contains(marker)
+            for marker in AUTOMATED_ADMIN_ACTIVITY_MARKERS
+            for expression in (
+                compact_kind,
+                compact_title,
+                compact_body,
+            )
+        ]
+        # Drop previously stored machine/maintenance notices as well as
+        # filtering future writes so admins do not keep seeing old noise.
+        await session.execute(
+            delete(AdminNotification).where(
+                AdminNotification.recipient_id == user.id,
+                AdminNotification.kind != DIRECT_MESSAGE_NOTIFICATION_KIND,
+                or_(*automated_conditions),
             )
         )
 
