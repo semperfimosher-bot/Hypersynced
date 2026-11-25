@@ -200,7 +200,13 @@ function SearchPage({
           const artwork = track?.artwork_url ?? track?.cover_url ?? track?.album_artwork_url;
           if (!artwork || seen.has(String(artwork))) continue;
           seen.add(String(artwork));
-          unique.push({ artwork, artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null });
+          const releaseYear = Number(track?.release_year ?? track?.year ?? String(track?.release_date ?? "").slice(0, 4)) || 0;
+          unique.push({
+            artwork,
+            artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null,
+            genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
+            releaseYear,
+          });
           if (unique.length >= 3) break;
         }
         setDiscoveryCardArtwork(unique);
@@ -2827,7 +2833,17 @@ async function downloadOpenedPlaylist() {
               <button type="button" key={command.id} className={`hs-search-discovery__tile${command.id === "newly-released" ? " is-newly-released" : ""}`} onClick={() => runQuickCommand(command)}>
                 <span className="hs-search-discovery__tile-label">{command.label}</span>
                 <span className="hs-search-discovery__tile-art" aria-hidden="true">
-                  {(command.filter === "people" ? discoveryPeopleArtwork.map((person) => person.avatar_url) : discoveryCardArtwork.map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork)).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
+                  {(command.filter === "people"
+                    ? discoveryPeopleArtwork.map((person) => person.avatar_url)
+                    : (() => {
+                        const relevantArtwork = command.id === "newly-released"
+                          ? discoveryCardArtwork.filter((art) => art.releaseYear >= 2025)
+                          : command.filter === "artists"
+                            ? discoveryCardArtwork.filter((art) => art.artistArtwork)
+                            : discoveryCardArtwork.filter((art) => art.genre.includes(command.label.toLowerCase().replace(/[^a-z0-9]/g, "")) || art.genre.includes(command.label.toLowerCase()));
+                        const source = relevantArtwork.length ? relevantArtwork : discoveryCardArtwork;
+                        return source.map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
+                      })()).slice(0, 3).map((src, artIndex) => <img key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading="lazy" decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
                     <i>✦</i><i>✧</i><i>✦</i>
