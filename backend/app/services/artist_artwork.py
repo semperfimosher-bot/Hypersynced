@@ -359,7 +359,9 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
         }
 
 
-async def _stream_commons_image_to_b2(image_url: str, b2_client, bucket: str, object_key: str) -> str:
+async def _stream_commons_image_to_b2(
+    image_url: str, b2_client, bucket: str, object_key: str
+) -> str:
     """Fetch Commons artwork boundedly, validate it, and commit to B2 multipart."""
     if not is_safe_wikimedia_url(image_url):
         raise ValueError("Untrusted Wikimedia image URL")
