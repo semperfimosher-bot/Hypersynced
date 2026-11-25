@@ -186,33 +186,43 @@ function SearchPage({
     );
 
   const [discoveryCardArtwork, setDiscoveryCardArtwork] = useState([]);
-  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);\n  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+  const [discoveryPeopleArtwork, setDiscoveryPeopleArtwork] = useState([]);
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getCachedLibraryAsync(offlineOwnerKey)
-      .then((library) => {
-        if (cancelled) return;
-        const tracks = Array.isArray(library?.tracks) ? library.tracks : [];
-        const unique = [];
-        const seen = new Set();
-        for (const track of tracks) {
-          const artwork = track?.artwork_url ?? track?.cover_url ?? track?.album_artwork_url;
-          if (!artwork || seen.has(String(artwork))) continue;
-          seen.add(String(artwork));
-          const releaseYear = Number(track?.release_year ?? track?.year ?? String(track?.release_date ?? "").slice(0, 4)) || 0;
-          unique.push({
-            artwork,
-            artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null,
-            genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
-            releaseYear,
-          });
-          if (unique.length >= 60) break;
-        }
-        setDiscoveryCardArtwork(unique);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
+    const refreshDiscoveryArtwork = () => {
+      getCachedLibraryAsync(offlineOwnerKey)
+        .then((library) => {
+          if (cancelled) return;
+          const tracks = Array.isArray(library?.tracks) ? library.tracks : [];
+          const unique = [];
+          const seen = new Set();
+          for (const track of tracks) {
+            const artwork = track?.artwork_url ?? track?.cover_url ?? track?.album_artwork_url;
+            if (!artwork || seen.has(String(artwork))) continue;
+            seen.add(String(artwork));
+            const releaseYear = Number(track?.release_year ?? track?.year ?? String(track?.release_date ?? "").slice(0, 4)) || 0;
+            unique.push({
+              artwork,
+              artistArtwork: track?.artist_artwork_url ?? track?.artist_image_url ?? null,
+              genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
+              releaseYear,
+            });
+            if (unique.length >= 60) break;
+          }
+          setDiscoveryCardArtwork(unique);
+        })
+        .catch(() => {});
+    };
+    refreshDiscoveryArtwork();
+    window.addEventListener("hypersynced:catalog-updated", refreshDiscoveryArtwork);
+    window.addEventListener("hypersynced:library-updated", refreshDiscoveryArtwork);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("hypersynced:catalog-updated", refreshDiscoveryArtwork);
+      window.removeEventListener("hypersynced:library-updated", refreshDiscoveryArtwork);
+    };
   }, [offlineOwnerKey]);
 
   useEffect(() => {
