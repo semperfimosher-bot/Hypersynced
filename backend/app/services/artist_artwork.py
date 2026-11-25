@@ -37,7 +37,7 @@ _last_musicbrainz_request_at = 0.0
 FORMAL_PORTRAIT_SIGNALS = (
     "portrait", "headshot", "studio photo", "studio portrait", "formal portrait",
     "red carpet", "step and repeat", "press portrait", "press photo",
-    "photograph", "photo", "pictured",
+    "photograph", "photo", "pictured", ".jpg", ".jpeg", ".png", ".webp",
 )
 ARTWORK_REJECT_TERMS = (
     "concert", "live performance", "live show", "live", "performance", "stage", "festival", "crowd",
