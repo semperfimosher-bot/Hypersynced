@@ -182,3 +182,8 @@
 /* Let mobile browsers negotiate both vertical page scroll and horizontal Home-row swipes. */
 @media(max-width:979px){.home-horizontal-scroll,.home-artist-scroll{touch-action:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}}
 .home-carousel__viewport{touch-action:pan-y;}
+
+/* Mobile horizontal gestures: allow both directions on child tiles so the parent rail can scroll. */
+.home-track-tile-wrap .home-track-tile{touch-action:auto}
+.home-track-tile-wrap{touch-action:auto}
+@media(max-width:979px){.home-carousel__artwork{right:14px}.home-quick-picks .home-track-tile__play{opacity:0!important;pointer-events:none!important}}
