@@ -107,6 +107,8 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
 
 def test_artist_image_source_requires_formal_portrait_not_live_or_graphic() -> None:
     assert is_formal_artist_portrait_candidate("File:Artist portrait.jpg", "Portrait of Artist")
+    # Exact-name Commons/Wikidata photo filenames are often minimally described.
+    assert is_formal_artist_portrait_candidate("File:Artist.jpg", "")
     assert is_formal_artist_portrait_candidate("File:Artist at red carpet.jpg", "Red carpet photo")
     assert is_formal_artist_portrait_candidate(
         "File:Step and repeat.jpg",
