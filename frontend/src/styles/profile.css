@@ -3445,3 +3445,10 @@ button.hs-profile-stat:hover,
 @media(max-width:699px){.hs-artist-profile-page .hs-artist-hero__art>img{width:160px;height:160px}}
 
 @media(max-width:699px){.hs-artist-profile-page .hs-artist-hero__art{min-height:190px;padding:10px}.hs-artist-profile-page .hs-artist-hero__art>img{width:160px;height:160px}}
+
+/* Compact the profile hero on phones while retaining avatar clarity. */
+@media (max-width: 760px) {
+  .hs-profile-hero { min-height: 0; gap: 9px; padding: 10px; }
+  .hs-profile-hero__avatar { min-height: 172px; padding: 14px; }
+  .hs-profile-hero__identity { padding: 14px; }
+}
