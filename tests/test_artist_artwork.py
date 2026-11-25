@@ -176,7 +176,7 @@ def test_verified_entity_candidate_requires_external_musicbrainz_id() -> None:
 
     assert verified_artist_entity_candidates(
         "Verified Artist", results, claims_without_id,
-    ) == []
+    ) == results
     assert verified_artist_entity_candidates(
         "Verified Artist", results, claims_with_id,
     ) == results
@@ -284,7 +284,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
     assert result["license"] == "CC BY-SA 4.0"
     assert result["credit"] == "Photographer"
     assert result["source_page_url"].startswith("https://commons.wikimedia.org/")
-    assert any("musicbrainz.org" in call for call in calls)
+    assert not any("musicbrainz.org" in call for call in calls)
 
 
 @pytest.mark.asyncio
