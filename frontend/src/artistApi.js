@@ -4,6 +4,7 @@ import {
 
 
 const artistProfileCache = new Map();
+const ARTIST_PROFILE_CACHE_LIMIT = 12;
 
 function artistProfileCacheKey(name) {
   return String(name || "").trim().toLocaleLowerCase();
@@ -15,7 +16,13 @@ export function getCachedArtistProfile(artistName) {
 
 function cacheArtistProfile(profile) {
   if (profile?.name) {
-    artistProfileCache.set(artistProfileCacheKey(profile.name), profile);
+    const key = artistProfileCacheKey(profile.name);
+    artistProfileCache.delete(key);
+    artistProfileCache.set(key, profile);
+    while (artistProfileCache.size > ARTIST_PROFILE_CACHE_LIMIT) {
+      const oldestKey = artistProfileCache.keys().next().value;
+      artistProfileCache.delete(oldestKey);
+    }
   }
   return profile;
 }
