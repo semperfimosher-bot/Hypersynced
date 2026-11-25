@@ -392,7 +392,7 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         def upload_part(self, **kwargs):
             uploaded.update(kwargs)
             assert profile.artwork_status == "uploading"
-            assert profile.artwork_temporary_url == candidate["source_url"]
+            assert profile.artwork_temporary_url == candidate["image_url"]
             assert profile.artwork_source_page_url == candidate["source_page_url"]
             assert profile.artwork_license == candidate["license"]
             assert profile.artwork_credit == candidate["credit"]
