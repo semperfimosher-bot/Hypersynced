@@ -45,6 +45,8 @@ import {
   orderSearchResultsForDisplay,
 } from "../../searchAlphabetical.js";
 
+import { sortResultItems } from "../../sortResults.js";
+
 import {
   searchPlaybackQueueEntry,
 } from "../../searchPlaybackQueueEntry.js";
@@ -1310,13 +1312,14 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
 
   const displayResults =
-  useMemo(
-    () =>
-      orderSearchResultsForDisplay(
-        combinedResults,
-      ),
-    [combinedResults],
-  );
+  useMemo(() => {
+    const ordered = orderSearchResultsForDisplay(combinedResults);
+    const result = { ...ordered };
+    for (const key of ["tracks", "artists", "albums", "collaborations", "playlists", "people"]) {
+      if (Array.isArray(result[key])) result[key] = sortResultItems(result[key], sortMode);
+    }
+    return result;
+  }, [combinedResults, sortMode]);
 
 
   const resultTotal =
