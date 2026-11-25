@@ -86,7 +86,7 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
           <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
             <div className="home-carousel__artwork" aria-hidden="true">
-              {artworkForSlide(index).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading={index === active ? "eager" : "lazy"} decoding="async" fetchPriority={index === active ? "high" : "low"} />)}
+              {artworkForSlide(index).map((track, artworkIndex) => <img key={String(track.id)} className={`home-carousel__artwork-cover home-carousel__artwork-cover--${artworkIndex + 1}`} src={resolveArtworkUrl(track.artwork_url)} alt="" loading="eager" decoding="async" fetchPriority={index === active ? "high" : "auto"} />)}
             </div>
             <div className={`home-carousel__content ${guest && index === 0 ? "home-carousel__content--guest-image-only" : ""}`}>
               <span className="home-carousel__eyebrow">{guest && index === 0 ? "WELCOME TO HYPERSYNCED" : contentIndex === 0 ? "BACK IN THE GROOVE" : contentIndex === 1 ? "FRESH FINDS" : contentIndex === 2 ? (guest ? "ARTISTS IN YOUR ORBIT" : "YOUR MUSIC, YOUR RULES") : "TUNED TO YOU"}</span>
