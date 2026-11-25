@@ -32,6 +32,27 @@ _musicbrainz_lock = asyncio.Lock()
 _last_musicbrainz_request_at = 0.0
 
 
+
+
+FORMAL_PORTRAIT_SIGNALS = (
+    "portrait", "headshot", "studio photo", "studio portrait", "formal portrait",
+    "red carpet", "step and repeat", "press portrait", "press photo",
+)
+ARTWORK_REJECT_TERMS = (
+    "concert", "live performance", "live show", "stage", "festival", "crowd",
+    "party", "nightclub", "backstage", "tour photo", "poster", "logo",
+    "album cover", "cover art", "promo graphic", "promotional graphic",
+    "screenshot", "text image", "lyrics", "fan art",
+)
+
+def is_formal_artist_portrait_candidate(title: str | None, description: str | None = None) -> bool:
+    """Accept formal artist portraits; reject event, performance, and graphic imagery."""
+    blob = re.sub(r"<[^>]+>", " ", f"{title or ''} {description or ''}").casefold()
+    if any(term in blob for term in ARTWORK_REJECT_TERMS):
+        return False
+    return any(signal in blob for signal in FORMAL_PORTRAIT_SIGNALS)
+
+
 def exact_artist_entity_candidates(artist_name: str, search_results: list[dict]) -> list[dict]:
     """Keep exact case-folded label matches only; fuzzy matches are never accepted."""
     target = " ".join(str(artist_name or "").split()).casefold()
@@ -224,7 +245,7 @@ async def _commons_search_for_artist_image(
         # appear in the file title or its Commons description, and reject other
         # licenses before any image bytes are downloaded.
         text_blob = title + " " + re.sub(r"<[^>]+>", " ", description).casefold()
-        if normalized_artist not in text_blob:
+        if normalized_artist not in text_blob or not is_formal_artist_portrait_candidate(title, description):
             continue
         license_name = str(ext.get("LicenseShortName", {}).get("value") or "")
         if not license_is_reusable(license_name):
@@ -335,6 +356,10 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
         page = next(iter(pages.values()), {})
         image_info = (page.get("imageinfo") or [{}])[0]
         ext = image_info.get("extmetadata") or {}
+        image_title = str(page.get("title") or image_value)
+        image_description = str(ext.get("ImageDescription", {}).get("value") or "")
+        if not is_formal_artist_portrait_candidate(image_title, image_description):
+            return None
         license_name = ext.get("LicenseShortName", {}).get("value", "")
         if not license_is_reusable(license_name):
             return None
