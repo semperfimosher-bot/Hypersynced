@@ -1203,7 +1203,26 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     return () => { cancelled = true; };
   }, [discoveryMode, currentUser?.id, currentUser?.username]);
 
-  const combinedResults = results;
+  const combinedResults =
+    useMemo(() => {
+      const source = results && typeof results === "object" ? results : {};
+      const sourceCounts = source.counts && typeof source.counts === "object" ? source.counts : {};
+      const normalizeItems = (value) => Array.isArray(value) ? value.filter((item) => item && typeof item === "object") : [];
+      return {
+        ...EMPTY_RESULTS,
+        ...source,
+        counts: {
+          ...EMPTY_RESULTS.counts,
+          ...sourceCounts,
+        },
+        tracks: normalizeItems(source.tracks),
+        artists: normalizeItems(source.artists),
+        collaborations: normalizeItems(source.collaborations),
+        albums: normalizeItems(source.albums),
+        people: normalizeItems(source.people),
+        playlists: normalizeItems(source.playlists),
+      };
+    }, [results]);
 
   // Reflect optimistic Library saves immediately in Search results and detail.
   useEffect(() => {
