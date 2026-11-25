@@ -246,7 +246,13 @@ async def _commons_search_for_artist_image(
         # appear in the file title or its Commons description, and reject other
         # licenses before any image bytes are downloaded.
         text_blob = title + " " + re.sub(r"<[^>]+>", " ", description).casefold()
-        if normalized_artist not in text_blob or not is_formal_artist_portrait_candidate(title, description):
+        if (
+            normalized_artist not in text_blob
+            or not is_formal_artist_portrait_candidate(
+                title,
+                description,
+            )
+        ):
             continue
         license_name = str(ext.get("LicenseShortName", {}).get("value") or "")
         if not license_is_reusable(license_name):
