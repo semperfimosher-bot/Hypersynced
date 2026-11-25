@@ -259,7 +259,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
     assert result is not None
     assert result["artist_qid"] == "Q100"
     assert result["content_type"] == "image/jpeg"
-    assert result["image_bytes"] == b"\xff\xd8\xffsample"
+    assert result["image_url"] == "https://upload.wikimedia.org/artist.jpg"
     assert result["license"] == "CC BY-SA 4.0"
     assert result["credit"] == "Photographer"
     assert result["source_page_url"].startswith("https://commons.wikimedia.org/")
@@ -383,18 +383,29 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         return FakeSession()
 
     class FakeB2Client:
-        def put_object(self, **kwargs):
+        def create_multipart_upload(self, **kwargs):
+            uploaded.update(kwargs)
+            return {"UploadId": "test-upload"}
+
+        def upload_part(self, **kwargs):
+            uploaded.update(kwargs)
             assert profile.artwork_status == "uploading"
             assert profile.artwork_temporary_url == candidate["source_url"]
             assert profile.artwork_source_page_url == candidate["source_page_url"]
             assert profile.artwork_license == candidate["license"]
             assert profile.artwork_credit == candidate["credit"]
-            uploaded.update(kwargs)
+            return {"ETag": "test-etag"}
+
+        def complete_multipart_upload(self, **kwargs):
+            uploaded["completed"] = kwargs
+
+        def abort_multipart_upload(self, **kwargs):
+            uploaded["aborted"] = kwargs
 
     candidate = {
         "artist_qid": "Q100",
-        "image_bytes": b"verified-image",
-        "content_type": "image/jpeg",
+        "image_url": "https://upload.wikimedia.org/source.jpg",
+        "content_type": None,
         "source_url": "https://upload.wikimedia.org/source.jpg",
         "source_page_url": "https://commons.wikimedia.org/wiki/File:Source.jpg",
         "license": "CC BY-SA 4.0",
@@ -413,6 +424,36 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         "get_session_factory",
         lambda: session_factory,
     )
+    class FakeImageResponse:
+        headers = {"content-type": "image/jpeg", "content-length": "9"}
+
+        def raise_for_status(self):
+            pass
+
+        async def aiter_bytes(self, chunk_size=65536):
+            yield b"\xff\xd8\xffsample"
+
+    class FakeStreamContext:
+        async def __aenter__(self):
+            return FakeImageResponse()
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakeHttpClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def stream(self, method, url):
+            assert url == candidate["image_url"]
+            return FakeStreamContext()
+
     monkeypatch.setattr(
         artist_artwork,
         "find_reusable_artist_image",
@@ -429,6 +470,7 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
         "get_settings",
         fake_settings,
     )
+    monkeypatch.setattr(artist_artwork.httpx, "AsyncClient", FakeHttpClient)
 
     def fake_get_b2_client():
         nonlocal b2_client_calls, stage
@@ -469,14 +511,15 @@ async def test_artist_artwork_worker_uploads_and_persists_verified_metadata(
     expected_key = f"artist-artwork/{profile_id}/Q100"
     assert find_calls == 1, f"worker stopped before provider lookup; stage={stage}"
     assert b2_client_calls == 1, f"worker stopped before B2 client; stage={stage}"
-    assert thread_calls == 1, f"worker stopped before B2 upload; stage={stage}"
+    assert thread_calls == 3, f"worker stopped before multipart B2 upload; stage={stage}"
     assert not thread_errors, f"B2 upload failed in test double: {thread_errors}"
     assert session_calls == 3  # fetching, temporary uploading state, final ready state
     assert commit_count == 3
     assert uploaded["Bucket"] == "test-bucket"
     assert uploaded["Key"] == expected_key
-    assert uploaded["Body"] == b"verified-image"
+    assert uploaded["Body"] == bytearray(b"\xff\xd8\xffsample")
     assert uploaded["ContentType"] == "image/jpeg"
+    assert uploaded["completed"]["UploadId"] == "test-upload"
     assert profile.artwork_object_key == expected_key
     assert profile.artwork_artist_qid == "Q100"
     assert profile.artwork_source_url == candidate["source_url"]
@@ -612,6 +655,6 @@ async def test_artist_artwork_falls_back_to_name_matched_commons_search(monkeypa
 
     assert result is not None
     assert result["artist_qid"] == "commons-search"
-    assert result["image_bytes"] == b"\xff\xd8\xffsample"
+    assert result["image_url"] == "https://upload.wikimedia.org/portrait.jpg"
     assert result["license"] == "CC BY 4.0"
     assert result["credit"] == "Photo Author"

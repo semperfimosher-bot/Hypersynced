@@ -236,25 +236,10 @@ async def _commons_search_for_artist_image(
             and is_safe_wikimedia_url(source_page)
         ):
             continue
-        content = bytearray()
-        async with client.stream("GET", image_url) as response:
-            response.raise_for_status()
-            mime = response.headers.get("content-type", "").split(";", 1)[0].lower()
-            if mime not in {"image/jpeg", "image/png", "image/webp"}:
-                continue
-            length = response.headers.get("content-length")
-            if length and int(length) > MAX_ART_BYTES:
-                continue
-            async for chunk in response.aiter_bytes():
-                content.extend(chunk)
-                if len(content) > MAX_ART_BYTES:
-                    break
-        if not content or not image_bytes_match_mime(bytes(content), mime):
-            continue
         return {
             "artist_qid": "commons-search",
-            "image_bytes": bytes(content),
-            "content_type": mime,
+            "image_url": image_url,
+            "content_type": None,
             "source_url": info.get("url") or image_url,
             "source_page_url": source_page,
             "license": license_name,
@@ -359,27 +344,10 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
             or not is_safe_wikimedia_url(source_page)
         ):
             return None
-        content = bytearray()
-        async with client.stream("GET", image_url) as image_response:
-            image_response.raise_for_status()
-            content_type = image_response.headers.get("content-type", "").split(";", 1)[0].lower()
-            if content_type not in {"image/jpeg", "image/png", "image/webp"}:
-                return None
-            content_length = image_response.headers.get("content-length")
-            if content_length and int(content_length) > MAX_ART_BYTES:
-                return None
-            async for chunk in image_response.aiter_bytes():
-                content.extend(chunk)
-                if len(content) > MAX_ART_BYTES:
-                    return None
-        if not image_bytes_match_mime(bytes(content), content_type):
-            return None
-        if not content:
-            return None
         return {
             "artist_qid": candidate["id"],
-            "image_bytes": bytes(content),
-            "content_type": content_type,
+            "image_url": image_url,
+            "content_type": None,
             "source_url": image_info.get("url") or image_url,
             "source_page_url": source_page,
             "license": license_name,
@@ -389,6 +357,59 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
                 or ""
             ),
         }
+
+
+async def _stream_commons_image_to_b2(image_url: str, b2_client, bucket: str, object_key: str) -> str:
+    """Fetch Commons artwork boundedly, validate it, and commit to B2 multipart."""
+    if not is_safe_wikimedia_url(image_url):
+        raise ValueError("Untrusted Wikimedia image URL")
+    async with httpx.AsyncClient(
+        headers={"User-Agent": USER_AGENT},
+        timeout=httpx.Timeout(20.0),
+        follow_redirects=False,
+    ) as client:
+        async with client.stream("GET", image_url) as response:
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+            if content_type not in {"image/jpeg", "image/png", "image/webp"}:
+                raise ValueError("Unsupported image MIME type")
+            declared_length = response.headers.get("content-length")
+            if declared_length and int(declared_length) > MAX_ART_BYTES:
+                raise ValueError("Artwork exceeds size limit")
+            buffer = bytearray()
+            async for chunk in response.aiter_bytes(64 * 1024):
+                buffer.extend(chunk)
+                if len(buffer) > MAX_ART_BYTES:
+                    raise ValueError("Artwork exceeds size limit")
+            if not buffer or not image_bytes_match_mime(buffer, content_type):
+                raise ValueError("Image bytes do not match MIME type")
+            started = await asyncio.to_thread(
+                b2_client.create_multipart_upload,
+                Bucket=bucket, Key=object_key, ContentType=content_type,
+                CacheControl="public, max-age=2592000",
+            )
+            upload_id = started["UploadId"]
+            try:
+                part = await asyncio.to_thread(
+                    b2_client.upload_part,
+                    Bucket=bucket, Key=object_key, UploadId=upload_id,
+                    PartNumber=1, Body=buffer,
+                )
+                await asyncio.to_thread(
+                    b2_client.complete_multipart_upload,
+                    Bucket=bucket, Key=object_key, UploadId=upload_id,
+                    MultipartUpload={"Parts": [{"PartNumber": 1, "ETag": part["ETag"]}]},
+                )
+            except Exception:
+                try:
+                    await asyncio.to_thread(
+                        b2_client.abort_multipart_upload,
+                        Bucket=bucket, Key=object_key, UploadId=upload_id,
+                    )
+                except Exception:
+                    pass
+                raise
+            return content_type
 
 
 async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
@@ -465,13 +486,12 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
                 await session.commit()
         from .b2 import get_b2_s3_client
 
-        await asyncio.to_thread(
-            get_b2_s3_client().put_object,
-            Bucket=settings.b2_bucket_name,
-            Key=object_key,
-            Body=candidate["image_bytes"],
-            ContentType=candidate["content_type"],
-            CacheControl="public, max-age=2592000",
+        b2_client = get_b2_s3_client()
+        await _stream_commons_image_to_b2(
+            candidate["image_url"],
+            b2_client,
+            settings.b2_bucket_name,
+            object_key,
         )
 
         async with factory() as session:
