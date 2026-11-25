@@ -3541,6 +3541,7 @@ async function downloadOpenedPlaylist() {
                 <button
                   type="button"
                   key={filter}
+                  data-filter={filter}
                   className={
                     activeFilter ===
                     filter
