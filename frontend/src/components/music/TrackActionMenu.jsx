@@ -11,12 +11,16 @@ import {
 } from "../../api/client.js";
 
 import {
+  downloadTrackForOffline,
+  getLikedSongsDownloadPinRef,
   getOfflineOwnerKey,
+  isTrackDownloaded,
   removeLikedTrackFromOffline,
 } from "../../offlineDownloads.js";
 
 import {
   addTrackToPlaylist,
+  getLibraryTrack,
   getLikedTrackState,
   getMyPlaylists,
   likeTrack,
@@ -166,6 +170,11 @@ export default function TrackActionMenu({
     false,
   );
 
+  const [
+    downloaded,
+    setDownloaded,
+  ] = useState(false);
+
 
   const track =
     menu?.track ??
@@ -178,6 +187,11 @@ export default function TrackActionMenu({
   const offlineOwnerKey =
     getOfflineOwnerKey(
       currentUser,
+    );
+
+  const likedSongsDownloadPinRef =
+    getLikedSongsDownloadPinRef(
+      offlineOwnerKey,
     );
 
 
@@ -196,6 +210,7 @@ export default function TrackActionMenu({
     setBusy("");
 
     setLiked(false);
+    setDownloaded(Boolean(track?.downloaded));
 
   }, [
     track?.id,
