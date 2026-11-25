@@ -112,6 +112,7 @@ def test_artist_image_source_requires_formal_portrait_not_live_or_graphic() -> N
     assert not is_formal_artist_portrait_candidate("File:Artist concert.jpg", "Live concert stage")
     assert not is_formal_artist_portrait_candidate("File:Artist party.jpg", "Party photo")
     assert not is_formal_artist_portrait_candidate("File:Artist logo.png", "Logo with text")
+    assert not is_formal_artist_portrait_candidate("File:Artist poster.png", "Graphic with text and a banner")
     assert not is_formal_artist_portrait_candidate("File:Artist.jpg", "Photo at festival")
 
 
