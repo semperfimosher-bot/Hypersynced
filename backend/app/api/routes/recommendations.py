@@ -159,6 +159,8 @@ class AutoplayRequest(
 
     home_explore: bool = False
 
+    never_played_only: bool = False
+
 
 class AutoplayTrackResponse(
     BaseModel,
@@ -223,6 +225,7 @@ async def autoplay(
                     limit=12,
                 )
             ),
+            never_played_only=bool(payload.never_played_only),
             limit=(
                 _autoplay_limit(
                     payload.limit
