@@ -9139,3 +9139,13 @@ button:disabled {
 @media (max-width: 760px) {
   .hs-search-console__intro { margin-bottom: 15px; }
 }
+
+
+/* Remove decorative/overlay shapes from every Search discovery card artwork. */
+.hs-search-discovery__tile-icon,
+.hs-search-discovery__tile-sparkles { display: none !important; }
+.hs-search-discovery__tile-art::before,
+.hs-search-discovery__tile-art::after,
+.hs-search-discovery__tile-art-cover::before,
+.hs-search-discovery__tile-art-cover::after { content: none !important; display: none !important; }
+.hs-search-discovery__tile-art-cover { pointer-events: none; }
