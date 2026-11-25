@@ -575,7 +575,7 @@ function MainPage({
 
 
   return (
-    <PageErrorBoundary>
+    <PageErrorBoundary key={`page-${activePage}`}>
       <Suspense
         fallback={
           <div
@@ -605,6 +605,10 @@ function MainPage({
 // ======================================================================================
 // App shell
 // ======================================================================================
+
+function isAutomatedStatusMessage(message) {
+  return /heartbeat|automated|automation|monitor(?:ing)?|health check|service status|scheduled|background (?:job|task)|worker status|system check|polling/i.test(String(message ?? ""));
+}
 
 function shouldKeepTextFocus(
   target,
@@ -2572,7 +2576,7 @@ const clearPlaylistToOpen =
         </Suspense>
       ) : null}
 
-      {statusMessage ? (
+      {statusMessage && (!isAdminUser(currentUser) || !isAutomatedStatusMessage(statusMessage)) ? (
         <div className="hs-global-status-toast" role="status" aria-live="polite">
           {statusMessage}
         </div>
