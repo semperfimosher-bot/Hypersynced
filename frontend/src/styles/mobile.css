@@ -3356,3 +3356,7 @@ input, select, textarea { min-width:0; max-width:100%; }
 
 /* Home rails: child tiles must not block horizontal touch scrolling. */
 @media(max-width:979px){.home-horizontal-scroll,.home-artist-scroll{touch-action:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.home-track-tile-wrap,.home-track-tile-wrap .home-track-tile{touch-action:auto!important}}
+
+/* Global status toast, including stream-count thank-you milestones. */
+.hs-global-status-toast{position:fixed;z-index:10050;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(560px,calc(100vw - 28px));max-width:calc(100vw - 28px);box-sizing:border-box;padding:12px 16px;border:1px solid rgba(65,183,255,.42);border-radius:12px;background:rgba(3,18,30,.96);color:#e8f7ff;box-shadow:0 12px 36px rgba(0,0,0,.45);font-size:13px;line-height:1.4;text-align:center;overflow-wrap:anywhere;backdrop-filter:blur(14px)}
+@media(min-width:980px){.hs-global-status-toast{bottom:28px}}
