@@ -575,7 +575,7 @@ function MainPage({
 
 
   return (
-    <PageErrorBoundary key={`page-${activePage}`}>
+    <PageErrorBoundary key={`page-${activePage}`} scope={activePage}>
       <Suspense
         fallback={
           <div
