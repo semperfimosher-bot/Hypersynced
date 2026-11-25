@@ -11,6 +11,7 @@ from backend.app.services.artist_artwork import (
     musicbrainz_artist_id,
     musicbrainz_identity_matches,
     verified_artist_entity_candidates,
+    is_formal_artist_portrait_candidate,
     wikidata_qid_from_musicbrainz_relations,
 )
 
@@ -102,6 +103,16 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
         )
         == []
     )
+
+
+def test_artist_image_source_requires_formal_portrait_not_live_or_graphic() -> None:
+    assert is_formal_artist_portrait_candidate("File:Artist portrait.jpg", "Portrait of Artist")
+    assert is_formal_artist_portrait_candidate("File:Artist at red carpet.jpg", "Red carpet photo")
+    assert is_formal_artist_portrait_candidate("File:Step and repeat.jpg", "Step-and-repeat press portrait")
+    assert not is_formal_artist_portrait_candidate("File:Artist concert.jpg", "Live concert stage")
+    assert not is_formal_artist_portrait_candidate("File:Artist party.jpg", "Party photo")
+    assert not is_formal_artist_portrait_candidate("File:Artist logo.png", "Logo with text")
+    assert not is_formal_artist_portrait_candidate("File:Artist.jpg", "Photo at festival")
 
 
 def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
@@ -211,6 +222,7 @@ async def test_artist_image_fetch_pipeline_verifies_identity_and_attribution(
                                     ),
                                     "extmetadata": {
                                         "LicenseShortName": {"value": "CC BY-SA 4.0"},
+                                        "ImageDescription": {"value": "Formal studio portrait of Correct Artist"},
                                         "Artist": {"value": "Photographer"},
                                     },
                                 },
