@@ -9,7 +9,7 @@ import {
 
 
 const SEARCH_CACHE_TTL_MS =
-  30 * 24 * 60 * 60 * 1000;
+  14 * 24 * 60 * 60 * 1000;
 
 const SEARCH_REVALIDATE_AFTER_MS =
   45 * 1000;
