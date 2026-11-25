@@ -481,6 +481,46 @@ async def _artist_profile_response(
 
 
 @router.get(
+    "/{artist_name}/artwork",
+)
+async def get_artist_artwork_status(
+    artist_name: str,
+    session: DatabaseSession,
+) -> dict[str, str | None]:
+    """Small status endpoint for fast portrait polling without loading profile stats."""
+    normalized = normalize_artist_name(artist_name)
+    if not normalized:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Artist not found.",
+        )
+    result = await session.execute(
+        select(ArtistProfile).where(
+            ArtistProfile.normalized_name == normalized,
+        )
+    )
+    profile = result.scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Artist not found.",
+        )
+    artwork_url = (
+        create_presigned_download_url(profile.artwork_object_key)
+        if profile.artwork_object_key
+        else (
+            profile.artwork_temporary_url
+            if profile.artwork_status == "uploading"
+            else None
+        )
+    )
+    return {
+        "status": profile.artwork_status,
+        "artwork_url": artwork_url,
+    }
+
+
+@router.get(
     "/{artist_name}",
     response_model=ArtistProfileResponse,
 )
