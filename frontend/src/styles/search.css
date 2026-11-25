@@ -9031,3 +9031,9 @@ button:disabled {
     height: 164px;
   }
 }
+
+
+/* Show the complete verified portrait inside the enlarged artist avatar. */
+.hs-artist-hero__art img {
+  object-fit: contain;
+}
