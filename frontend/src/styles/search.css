@@ -9022,3 +9022,12 @@ button:disabled {
 @media(min-width:980px){.hs-search-console{padding:22px 24px;border-radius:14px}.hs-search-console__heading{gap:34px;margin-bottom:4px}.hs-search-console__intro h2{font-size:clamp(24px,2.2vw,30px);letter-spacing:-.045em}.hs-search-console__intro p{max-width:680px;font-size:11px}.hs-search-discovery__tiles{gap:12px}.hs-search-discovery__tile{min-height:100px;padding:17px 18px;border-radius:14px}}
 @media(max-width:760px){.hs-search-discovery__tile-art{width:52%;opacity:.66}.hs-search-discovery__tile-art-cover{width:75%;height:75%}.hs-search-discovery__tile-icon{right:9px;bottom:9px;width:25px;height:25px}.hs-search-discovery__tile-sparkles{inset:-5px}}
 @media(prefers-reduced-motion:reduce){.hs-search-discovery__tile-sparkles,.hs-search-discovery__tile-art-cover{transition:none}}
+
+
+/* Give artist portraits more room on mobile while retaining the portrait shape. */
+@media (max-width: 699px) {
+  .hs-artist-hero__art {
+    width: 164px;
+    height: 164px;
+  }
+}
