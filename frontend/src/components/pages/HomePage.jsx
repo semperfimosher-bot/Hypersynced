@@ -34,6 +34,7 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const timer = useRef(null);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     if (paused) return undefined;
@@ -42,7 +43,7 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
   }, [paused, slideLabels.length]);
 
   const moveTo = (index) => {
-    setActive(index);
+    setActive((index + slideLabels.length) % slideLabels.length);
     setPaused(true);
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setPaused(false), 10000);
@@ -81,7 +82,7 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
 
   return (
     <section className="home-carousel" aria-label="Featured home slides" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
-      <div className="home-carousel__viewport">
+      <div className="home-carousel__viewport" onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX ?? null; }} onTouchEnd={(event) => { const startX = touchStartX.current; const endX = event.changedTouches[0]?.clientX; touchStartX.current = null; if (startX == null || endX == null) return; const delta = endX - startX; if (Math.abs(delta) < 45) return; moveTo(active + (delta < 0 ? 1 : -1)); }}>
         {slideLabels.map((label, index) => (
           <article key={label} className={`home-carousel__slide ${guest && index === 0 ? "home-carousel__slide--guest-welcome" : ""} ${index === active ? "is-active" : ""}`} aria-hidden={index !== active}>
             <div className="home-carousel__art" style={guest && index === 0 ? { backgroundImage: "url(/hypersync-home-hero.png)" } : coverFor(index) ? { backgroundImage: `url("${coverFor(index)}")` } : undefined} />
