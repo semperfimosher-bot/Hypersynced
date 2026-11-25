@@ -171,6 +171,15 @@ export default function ArtistProfilePage({
     setFollowBusy,
   ] = useState(false);
 
+  const artworkUrl = resolveArtworkUrl(profile?.artwork_url);
+  const [artworkImageLoaded, setArtworkImageLoaded] = useState(false);
+  const [artworkImageFailed, setArtworkImageFailed] = useState(false);
+
+  useEffect(() => {
+    setArtworkImageLoaded(false);
+    setArtworkImageFailed(false);
+  }, [artworkUrl]);
+
 
   const load =
     useCallback(
@@ -193,11 +202,11 @@ export default function ArtistProfilePage({
         );
 
         try {
-          setProfile(
-            await getArtistProfile(
-              artistName,
-            ),
-          );
+          const nextProfile = await getArtistProfile(artistName);
+          setProfile(nextProfile);
+          const artworkPending = !nextProfile.artwork_url
+            && ["queued", "fetching", "verifying", "uploading"].includes(nextProfile.artwork_status);
+          setLoading(artworkPending);
         } catch (loadError) {
           setError(
             loadError instanceof Error
@@ -245,7 +254,12 @@ export default function ArtistProfilePage({
         const refreshed = await getArtistProfile(artistName);
         if (cancelled || !refreshed) return;
         setProfile(refreshed);
-        if (["ready", "missing", "failed"].includes(refreshed.artwork_status)) {
+        const hasArtworkUrl = Boolean(resolveArtworkUrl(refreshed.artwork_url));
+        const terminalArtworkState = ["ready", "missing", "failed"].includes(refreshed.artwork_status);
+        if (hasArtworkUrl || terminalArtworkState) {
+          setLoading(false);
+        }
+        if (terminalArtworkState) {
           return;
         }
       } catch {
@@ -469,7 +483,6 @@ export default function ArtistProfilePage({
 
   if (
     loading
-    && !profile
   ) {
     return (
       <div className="hs-profile-page hs-artist-profile-page">
@@ -554,16 +567,15 @@ export default function ArtistProfilePage({
           aria-hidden="true"
         />
         <div className="hs-profile-hero__avatar hs-artist-hero__art">
-          {resolveArtworkUrl(
-            profile.artwork_url,
-          ) ? (
+          {artworkUrl && !artworkImageFailed ? (
             <img
-              src={
-                resolveArtworkUrl(
-                  profile.artwork_url,
-                )
-              }
+              src={artworkUrl}
               alt=""
+              onLoad={() => setArtworkImageLoaded(true)}
+              onError={() => {
+                setArtworkImageLoaded(false);
+                setArtworkImageFailed(true);
+              }}
             />
           ) : (
             <div className="hs-artist-artwork-placeholder">
@@ -586,6 +598,9 @@ export default function ArtistProfilePage({
             </div>
           )}
         </div>
+        {artworkUrl && !artworkImageLoaded && !artworkImageFailed ? (
+          <div className="hs-profile-skeleton hs-artist-artwork-loading" aria-label="Loading artist picture" />
+        ) : null}
 
         <div className="hs-profile-hero__identity hs-artist-hero__copy">
           <span className="hs-eyebrow">
