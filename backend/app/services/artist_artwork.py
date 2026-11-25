@@ -603,7 +603,9 @@ async def run_artist_artwork_worker() -> None:
                         ArtistProfile.artwork_object_key.is_(None),
                         ArtistProfile.artwork_status == "queued",
                     )
-                    .order_by(ArtistProfile.updated_at.asc())
+                    # On-demand requests update the profile timestamp; newest queued
+                    # requests outrank idle catalog backfill work.
+                    .order_by(ArtistProfile.updated_at.desc())
                     .limit(1)
                     .with_for_update(skip_locked=True)
                 )
