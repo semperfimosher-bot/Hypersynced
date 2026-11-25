@@ -223,14 +223,13 @@ export default function ArtistProfilePage({
     load,
   ]);
   
-  // Artist portraits are fetched in the API background after the first profile response.
-  // Refresh the lightweight profile payload a few times to reveal the portrait when ready.
+  // Artwork discovery and B2 storage run in the backend. Poll the profile so the
+  // temporary Wikimedia thumbnail appears as soon as discovery finishes, then
+  // switch to the permanent B2 URL when the upload completes.
   useEffect(() => {
     if (
       !profile
-      || profile.artwork_status === "ready"
-      || profile.artwork_status === "missing"
-      || profile.artwork_status === "failed"
+      || ["ready", "missing", "failed"].includes(profile.artwork_status)
       || !online
     ) {
       return undefined;
@@ -244,26 +243,22 @@ export default function ArtistProfilePage({
       attempts += 1;
       try {
         const refreshed = await getArtistProfile(artistName);
-        if (cancelled) return;
-        if (
-          refreshed?.artwork_status === "uploading"
-          || refreshed?.artwork_status === "ready"
-        ) {
-          setProfile(refreshed);
-          if (refreshed.artwork_status === "ready") {
-            return;
-          }
+        if (cancelled || !refreshed) return;
+        setProfile(refreshed);
+        if (["ready", "missing", "failed"].includes(refreshed.artwork_status)) {
+          return;
         }
       } catch {
-        // Keep the existing artist profile and retry only a few times.
+        // Preserve the current profile; transient polling errors should not disrupt it.
       }
 
-      if (!cancelled && attempts < 5) {
-        timer = window.setTimeout(refreshArtwork, 8_000);
+      if (!cancelled) {
+        const delay = attempts < 15 ? 2_000 : 7_000;
+        timer = window.setTimeout(refreshArtwork, delay);
       }
     };
 
-    timer = window.setTimeout(refreshArtwork, 5_000);
+    timer = window.setTimeout(refreshArtwork, 1_200);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
@@ -272,11 +267,12 @@ export default function ArtistProfilePage({
     artistName,
     online,
     profile?.id,
-    profile?.artwork_source_page_url,
+    profile?.artwork_status,
+    profile?.artwork_temporary_url,
   ]);
 
 
-  useEffect(() => {
+    useEffect(() => {
     return player.subscribe(
       setPlaybackState,
     );
