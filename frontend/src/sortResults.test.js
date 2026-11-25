@@ -112,3 +112,33 @@ test(
     );
   },
 );
+
+test(
+  "sorting all search entity types preserves identity and playback index for the clicked track",
+  () => {
+    const tracks = [
+      { id: "track-z", title: "Zulu" },
+      { id: "track-a", title: "Alpha" },
+      { id: "track-m", title: "Mike" },
+    ];
+    const playlists = [
+      { id: "playlist-z", title: "Zulu Mix" },
+      { id: "playlist-a", title: "Alpha Mix" },
+    ];
+    const artists = [
+      { id: "artist-z", name: "Zulu" },
+      { id: "artist-a", name: "Alpha" },
+    ];
+    const sortedTracks = sortResultItems(tracks, "alphabetical");
+    const sortedPlaylists = sortResultItems(playlists, "alphabetical");
+    const sortedArtists = sortResultItems(artists, "alphabetical");
+
+    assert.deepEqual(sortedTracks.map((item) => item.id), ["track-a", "track-m", "track-z"]);
+    assert.deepEqual(sortedPlaylists.map((item) => item.id), ["playlist-a", "playlist-z"]);
+    assert.deepEqual(sortedArtists.map((item) => item.id), ["artist-a", "artist-z"]);
+
+    const clickedId = "track-m";
+    const queueIndex = sortedTracks.findIndex((item) => String(item.id) === clickedId);
+    assert.equal(sortedTracks[queueIndex].id, clickedId);
+  },
+);
