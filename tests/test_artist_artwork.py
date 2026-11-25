@@ -580,11 +580,20 @@ async def test_enqueue_artist_artwork_persists_and_wakes_worker(monkeypatch) -> 
     assert commits == 1
     assert artist_artwork._artist_artwork_queue_event.is_set()
 
+    # Explicit on-demand retries bypass an old missing-photo cooldown.
+    profile.artwork_status = "missing"
+    profile.artwork_lease_until = None
+    profile.artwork_next_retry_at = datetime.now(UTC) + timedelta(days=14)
+    assert await artist_artwork.enqueue_artist_artwork(profile.id, force=True) is True
+    assert profile.artwork_next_retry_at is None
+    assert profile.artwork_status == "queued"
+    assert commits == 2
+
     # Requests already queued/active are deduplicated without another commit.
     profile.artwork_status = "fetching"
     profile.artwork_lease_until = datetime.now(UTC) + timedelta(minutes=1)
     assert await artist_artwork.enqueue_artist_artwork(profile.id) is False
-    assert commits == 1
+    assert commits == 2
 
     artist_artwork._artist_artwork_queue_event.clear()
 
