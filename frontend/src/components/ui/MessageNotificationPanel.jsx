@@ -56,7 +56,8 @@ export default function MessageNotificationPanel({
     return !/(heartbeat|healthcheck|monitor(?:ing)?|servicecheck|systemcheck|automated|automation|scheduled|background(?:job|task)|workerstatus|polling|maintenance|cleanup|backfill|syncjob|cachewarm)/i.test(`${kind} ${content}`);
   });
 
-  const unreadCount = notifications.reduce((count, notification) => count + (notification?.read ? 0 : 1), 0);
+  const filteredOutCount = allNotifications.length - notifications.length;
+  const unreadCount = Math.max(0, (Number(data?.unread_count ?? 0) || 0) - filteredOutCount);
 
   return (
     <div className="message-notification-block">
