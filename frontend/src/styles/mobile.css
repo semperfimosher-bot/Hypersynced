@@ -3344,3 +3344,12 @@ input, select, textarea { min-width:0; max-width:100%; }
   .hs-search-console__heading h2 { font-size:clamp(17px,5vw,22px); }
   .hs-search-console__actions > button { max-width:100%; }
 }
+
+/* Library controls share one row: tabs left, playlist creation right. */
+.hs-library-filter-row { display:flex; align-items:center; gap:10px; min-width:0; width:100%; }
+.hs-library-filter-row .hs-search-filterbar { flex:1 1 auto; min-width:0; }
+.hs-library-new-playlist { flex:0 0 auto; white-space:nowrap; }
+@media(max-width:979px) {
+  .hs-library-filter-row { gap:8px; }
+  .hs-library-new-playlist { min-height:34px; padding:0 9px; font-size:9px; }
+}
