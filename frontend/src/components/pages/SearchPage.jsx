@@ -1614,6 +1614,13 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
   function changeSortMode(
     nextMode,
   ) {
+    const selectedTrackId = selectedTrackIndex >= 0
+      ? displayResults.tracks[selectedTrackIndex]?.id
+      : null;
+    const nextSortedTracks = sortResultItems(displayResults.tracks, nextMode);
+    setSelectedTrackIndex(selectedTrackId == null
+      ? -1
+      : nextSortedTracks.findIndex((track) => String(track.id) === String(selectedTrackId)));
     setSortMode(
       nextMode,
     );
