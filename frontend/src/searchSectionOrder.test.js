@@ -224,3 +224,13 @@ test("artist profiles cache for instant re-entry and quietly refresh portraits",
   assert.match(artistProfilePageSource, /350/);
   assert.match(artistApiSource, /getArtistArtworkStatus/);
 });
+
+
+test("collaboration search rows define their ranking index", () => {
+  const collaborationMap = searchPageSource.slice(
+    searchPageSource.indexOf("displayResults.collaborations.map"),
+    searchPageSource.indexOf("const albumPanel"),
+  );
+  assert.match(collaborationMap, /\(collaboration,\s*index\)\s*=>/);
+  assert.match(collaborationMap, /String\(index\s*\+\s*1\)/);
+});
