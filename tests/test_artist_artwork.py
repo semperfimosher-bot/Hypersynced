@@ -159,7 +159,7 @@ def test_artist_identity_requires_matching_musicbrainz_and_wikidata_link() -> No
     )
 
 
-def test_verified_entity_candidate_requires_external_musicbrainz_id() -> None:
+def test_verified_entity_candidate_requires_exact_name_artist_type_and_photo_claim() -> None:
     results = [{"id": "Q123", "label": "Verified Artist"}]
     claims_without_id = {
         "Q123": {
