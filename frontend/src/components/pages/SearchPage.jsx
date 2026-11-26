@@ -43,6 +43,9 @@ import {
 
 import {
   orderSearchResultsForDisplay,
+  filterSearchResultsForQuery,
+  splitArtistCredits,
+  isCollaborativeTrack,
 } from "../../searchAlphabetical.js";
 
 import { sortResultItems } from "../../sortResults.js";
@@ -1288,13 +1291,14 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
   const displayResults =
   useMemo(() => {
-    const ordered = orderSearchResultsForDisplay(combinedResults);
+    const relevant = filterSearchResultsForQuery(combinedResults, normalizedQuery);
+    const ordered = orderSearchResultsForDisplay(relevant);
     const result = { ...ordered };
     for (const key of ["tracks", "artists", "albums", "collaborations", "playlists", "people"]) {
       if (Array.isArray(result[key])) result[key] = sortResultItems(result[key], sortMode);
     }
     return result;
-  }, [combinedResults, sortMode]);
+  }, [combinedResults, sortMode, normalizedQuery]);
 
 
   const resultTotal =
@@ -2491,137 +2495,40 @@ async function downloadOpenedPlaylist() {
     ) : null;
 
 
-  const collaborationPanel =
-    displayResults.collaborations.length >
-    0 ? (
+  const collaborationTracks = displayResults.tracks.filter(isCollaborativeTrack);
 
-      <SearchEntityPanel
-        eyebrow="RELATION INDEX"
-        title="Collaborations"
-        count={
-          results.counts
-            .collaborations
-        }
-        modifier={
-          "hs-search-discovery-panel--collaborations"
-        }
-      >
-
-        {displayResults.collaborations.map(
-          (collaboration, index) => (
-
-            <button
-              type="button"
-              key={
-                collaboration.name
-              }
-              className="hs-search-track hs-library-entity-row hs-search-entity-card"
-              {...collectionActionMenu.getTriggerProps({
-                key:
-                  `artist:${collaboration.name}`,
-                kind:
-                  "artist",
-                title:
-                  collaboration.name,
-                subtitle:
-                  "Collaboration",
-                artwork_url:
-                  collaboration.artwork_url ??
-                  null,
-                actions: [
-                  {
-                    id:
-                      "play",
-                    label:
-                      "Play collaboration",
-                    icon:
-                      "play",
-                    onSelect:
-                      () => {
-                        void playSearchCollection(
-                          `songs by ${collaboration.name}`,
-                        );
-                      },
-                  },
-                  {
-                    id:
-                      "open",
-                    label:
-                      "Open artist",
-                    icon:
-                      "music",
-                    onSelect:
-                      () => {
-                        setOpenedArtistName(
-                          collaboration.name,
-                        );
-                      },
-                  },
-                ],
-              })}
-              onClick={() => {
-                setOpenedArtistName(
-                  collaboration.name,
-                );
-              }}
-            >
-
-              <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
-              <span className="hs-search-track__art hs-search-entity-card__art">
-
-                {resolveArtworkUrl(
-                  collaboration.artwork_url,
-                ) ? (
-                  <img
-                    src={
-                      resolveArtworkUrl(
-                        collaboration.artwork_url,
-                      )
-                    }
-                    alt=""
-                  />
-                ) : (
-                  <Icon
-                    name="music"
-                    size={26}
-                  />
-                )}
-
-              </span>
-
-              <span>
-
-                <small>
-                  COLLABORATION
-                </small>
-
-                <strong>
-                  {collaboration.name}
-                </strong>
-
-                <em>
-                  {
-                    collaboration
-                      .track_count
-                  }
-                  {" "}
-                  matching tracks
-                </em>
-
-              </span>
-
-              <Icon
-                name="chevron"
-                size={16}
-              />
-
-            </button>
-          ),
-        )}
-
-      </SearchEntityPanel>
-
-    ) : null;
+  const collaborationPanel = collaborationTracks.length > 0 ? (
+    <SearchEntityPanel
+      eyebrow="RELATION INDEX"
+      title="Collaborations"
+      count={collaborationTracks.length}
+      modifier="hs-search-discovery-panel--collaborations"
+    >
+      {collaborationTracks.map((track) => {
+        const trackIndex = displayResults.tracks.findIndex((item) => String(item.id) === String(track.id));
+        const artwork = resolveArtworkUrl(track.artwork_url);
+        const artists = splitArtistCredits(track.artist);
+        return (
+          <button
+            type="button"
+            key={track.id}
+            className="hs-search-track hs-library-entity-row hs-search-entity-card hs-collaboration-song-row"
+            onClick={() => playTrack(trackIndex)}
+          >
+            <span className="hs-search-track__rank">{String(trackIndex + 1).padStart(2, "0")}</span>
+            <span className="hs-search-track__art hs-search-entity-card__art">
+              {artwork ? <img src={artwork} alt="" loading="lazy" decoding="async" /> : <Icon name="music" size={22} />}
+            </span>
+            <span className="hs-search-track__copy">
+              <strong>{track.title}</strong>
+              <small>{artists.length ? artists.join(" · ") : track.artist}</small>
+            </span>
+            <Icon name="chevron" size={16} />
+          </button>
+        );
+      })}
+    </SearchEntityPanel>
+  ) : null;
 
 
   const albumPanel =
