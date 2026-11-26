@@ -1331,7 +1331,14 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       : combinedResults;
     const ordered = orderSearchResultsForDisplay(relevant);
     const result = { ...ordered };
-    const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
+    const historyById = new Map();
+    for (const historyTrack of recentlyPlayedHistory) {
+      const historyId = String(historyTrack?.id ?? "");
+      const historyTime = Date.parse(historyTrack?.last_played_at ?? "") || 0;
+      const previous = historyById.get(historyId);
+      const previousTime = Date.parse(previous?.last_played_at ?? "") || 0;
+      if (!previous || historyTime > previousTime) historyById.set(historyId, historyTrack);
+    }
     if (Array.isArray(result.tracks)) {
       result.tracks = result.tracks.map((track) => ({
         ...track,
@@ -1362,13 +1369,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     }
   }, [displayResults.tracks, currentTrackId, sortMode]);
 
-  useEffect(() => {
-    if (!currentTrackId || sortMode !== "recent" || !openedPlaylist) return;
-    const tracks = filteredOpenedPlaylistTracks;
-    if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
-      player.reorderQueueFromCollection(tracks, currentTrackId);
-    }
-  }, [filteredOpenedPlaylistTracks, currentTrackId, sortMode, openedPlaylist?.id]);
+
 
   const resultTotal =
     useMemo(
@@ -1390,6 +1391,14 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       }));
       return sortResultItems(filterPlaylistTracks(withHistory, playlistSearchQuery), sortMode);
     }, [openedPlaylist?.tracks, playlistSearchQuery, sortMode, recentlyPlayedHistory]);
+
+  useEffect(() => {
+    if (!currentTrackId || sortMode !== "recent" || !openedPlaylist) return;
+    const tracks = filteredOpenedPlaylistTracks;
+    if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
+      player.reorderQueueFromCollection(tracks, currentTrackId);
+    }
+  }, [filteredOpenedPlaylistTracks, currentTrackId, sortMode, openedPlaylist?.id]);
 
   useEffect(() => {
     setPlaylistSearchQuery(
