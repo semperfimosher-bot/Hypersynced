@@ -1236,3 +1236,17 @@
 @media (max-width: 480px) {
   .message-notification-row__delete { width: 30px; }
 }
+
+
+/* Device/session rows use their own three-column content layout inside the shared row surface. */
+.hs-search-track.hs-admin-device-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  min-height: 94px;
+  padding: 12px 16px;
+  gap: 12px;
+}
+.hs-admin-device-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.hs-admin-device-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
+.hs-admin-device-info > small { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.hs-admin-device-actions { display: flex; align-items: center; justify-content: flex-end; }
+.hs-admin-device-actions button { border-radius: 8px; }
