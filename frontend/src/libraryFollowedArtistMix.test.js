@@ -36,7 +36,10 @@ test("Find Your Mix uses discovery candidates with a 30-day listening cooldown",
   assert.match(home, /neverPlayedOnly:\s*false/);
   assert.match(home, /writeCachedHomeSuggestions/);
   assert.match(api, /never_played_only:\s*neverPlayedOnly/);
-  assert.match(recommendations, /timedelta\(days=30\)/);\n  assert.match(recommendations, /recent_artist_keys/);
+  assert.match(recommendations, /timedelta\(days=30\)/);
+  assert.match(recommendations, /recent_artist_keys/);
   assert.match(autoplay, /never_played_only\s+and\s+user_id\s+is\s+not\s+None/);
   assert.match(autoplay, /ListeningEvent\.user_id\s*==\s*user_id/);
+  assert.match(library, /hs-library-auto-load-sentinel/);
+  assert.doesNotMatch(library, /Load more library tracks/);
 });
