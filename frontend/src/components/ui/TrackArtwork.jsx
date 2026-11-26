@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";\nimport { getSearchArtwork, refreshSearchArtwork } from "../../searchArtworkCache.js";
+import { useEffect, useState } from "react";
+import { getSearchArtwork, refreshSearchArtwork } from "../../searchArtworkCache.js";
 import {
   resolveArtworkUrl,
 } from "../../artworkUrl.js";
@@ -92,7 +93,9 @@ function TrackArtwork({
   priority = false,
 }) {
   const artworkUrl = resolveArtworkUrl(src);
-  const [refreshKey, setRefreshKey] = useState(0);\n  const [cachedSrc, setCachedSrc] = useState("");\n  useEffect(() => { if (!artworkUrl) { setCachedSrc(""); return undefined; } let active=true, objectUrl=""; const show=(blob)=>{if(!active||!blob)return;const next=URL.createObjectURL(blob);if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=next;setCachedSrc(next);}; void getSearchArtwork(artworkUrl).then(cached=>{if(!active)return;if(cached?.blob)show(cached.blob);if(!cached||cached.stale)void refreshSearchArtwork(artworkUrl).then(show);});return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl);};},[artworkUrl]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [cachedSrc, setCachedSrc] = useState("");
+  useEffect(() => { if (!artworkUrl) { setCachedSrc(""); return undefined; } let active=true, objectUrl=""; const show=(blob)=>{if(!active||!blob)return;const next=URL.createObjectURL(blob);if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=next;setCachedSrc(next);}; void getSearchArtwork(artworkUrl).then(cached=>{if(!active)return;if(cached?.blob)show(cached.blob);if(!cached||cached.stale)void refreshSearchArtwork(artworkUrl).then(show);});return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl);};},[artworkUrl]);
 
   useEffect(() => {
     if (!artworkUrl || typeof navigator === "undefined" || !navigator.serviceWorker) return undefined;
@@ -128,9 +131,11 @@ function TrackArtwork({
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
         onLoad={(event) => {
-          resetArtworkRetry(event.currentTarget);\n          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
+          resetArtworkRetry(event.currentTarget);
+          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
         }}
-        onError={(event) => {\n          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
+        onError={(event) => {
+          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
           if (
             retryTransientArtwork(
               event,
