@@ -43,6 +43,7 @@ import {
   writeCachedHomeRecentlyPlayed,
   subscribeListeningHistoryChanged,
 } from "../../homeRecentlyPlayed.js";
+import { splitArtistCredits, trackArtistCredits } from "../../searchAlphabetical.js";
 
 
 function memberFor(value) {
@@ -579,8 +580,13 @@ export default function ProfilePage({
                     {track.title}
                   </strong>
 
-                  <span>
-                    {track.artist}
+                  <span className="hs-profile-recent-artist-links">
+                    {splitArtistCredits(trackArtistCredits(track)).map((artistName, artistIndex) => (
+                      <span key={artistName}>
+                        {artistIndex ? <span aria-hidden="true"> · </span> : null}
+                        <button type="button" onClick={(event) => { event.stopPropagation(); onSearchArtist?.(artistName); }}>{artistName}</button>
+                      </span>
+                    ))}
                   </span>
                   <span className="hs-recent-card__play" aria-hidden="true">
                     <Icon name="play" size={15} />
