@@ -9360,3 +9360,71 @@ button:disabled {
   .hs-search-entity-grid .hs-search-track__art,
   .hs-search-entity-grid .hs-search-entity-card__art { width:42px !important; height:42px !important; flex-basis:42px; }
 }
+
+
+/* Shared compact playlist-height rows for search entity panels. */
+.hs-search-entity-grid > .hs-search-track.hs-library-entity-row,
+.hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+.hs-search-discovery-grid .hs-collaboration-song-row {
+  min-height: 58px !important;
+  height: 58px;
+  grid-template-columns: 20px 40px minmax(0,1fr) 14px !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+}
+.hs-search-entity-grid .hs-search-track__art,
+.hs-search-discovery-grid .hs-search-entity-card__art,
+.hs-search-discovery-grid .hs-collaboration-song-row .hs-search-track__art {
+  width: 40px !important;
+  height: 40px !important;
+  flex-basis: 40px !important;
+  border-radius: 5px !important;
+}
+.hs-search-entity-grid .hs-search-track__rank,
+.hs-search-discovery-grid .hs-search-track__rank { font-size: 9px; }
+.hs-search-entity-grid .hs-search-track__copy,
+.hs-search-discovery-grid .hs-search-entity-card .hs-search-track__copy,
+.hs-search-discovery-grid .hs-collaboration-song-row .hs-search-track__copy,
+.hs-search-discovery-grid .hs-search-entity-card > span:nth-child(3) {
+  min-width: 0;
+  width: 100%;
+  gap: 1px !important;
+  align-self: center;
+  text-align: left;
+}
+.hs-search-entity-grid .hs-search-track__copy strong,
+.hs-search-entity-grid .hs-search-track__copy small,
+.hs-search-discovery-grid .hs-search-entity-card strong,
+.hs-search-discovery-grid .hs-search-entity-card small,
+.hs-search-discovery-grid .hs-search-entity-card em,
+.hs-search-discovery-grid .hs-collaboration-song-row strong,
+.hs-search-discovery-grid .hs-collaboration-song-row small {
+  line-height: 1.2;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hs-search-entity-grid > .hs-search-track.hs-library-entity-row,
+.hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+.hs-search-discovery-grid .hs-collaboration-song-row { border-radius: 0 !important; }
+.hs-search-entity-grid > .hs-search-track.hs-library-entity-row:first-child,
+.hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row:first-child,
+.hs-search-discovery-grid .hs-collaboration-song-row:first-child { border-top: 1px solid rgba(80,125,148,.18) !important; }
+.hs-search-entity-grid > hs-search-track.hs-library-entity-row:last-child,
+.hs-search-entity-grid > .hs-search-track.hs-library-entity-row:last-child,
+.hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row:last-child,
+.hs-search-discovery-grid .hs-collaboration-song-row:last-child { border-radius: 0 0 8px 8px !important; }
+.hs-artist-credit-links button {
+  display:inline; padding:0; margin:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer;
+}
+.hs-artist-credit-links button:hover { color:var(--hs-blue,#54ddff); text-decoration:underline; }
+.hs-search-artist-profile-stack { display:flex; flex-direction:column; gap:12px; min-width:0; }
+@media(max-width:979px) {
+  .hs-search-entity-grid > .hs-search-track.hs-library-entity-row,
+  .hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+  .hs-search-discovery-grid .hs-collaboration-song-row { grid-template-columns:18px 38px minmax(0,1fr) 12px !important; min-height:54px !important; height:54px; gap:6px !important; padding:5px 8px !important; }
+  .hs-search-entity-grid .hs-search-track__art,
+  .hs-search-discovery-grid .hs-search-entity-card__art,
+  .hs-search-discovery-grid .hs-collaboration-song-row .hs-search-track__art { width:38px !important; height:38px !important; flex-basis:38px !important; }
+}
