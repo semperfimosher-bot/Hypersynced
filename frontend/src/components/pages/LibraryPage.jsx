@@ -650,6 +650,8 @@ const [
     "private",
   );
 
+  const [createCollaborators, setCreateCollaborators] = useState(false);
+
   const [
     creating,
     setCreating,
@@ -2253,13 +2255,15 @@ useEffect(() => {
     if (!title || creating) return;
 
     const description = createDescription.trim() || null;
-    const visibility = createVisibility;
+    const allowCollaborators = createCollaborators;
+    const visibility = allowCollaborators ? "public" : createVisibility;
     const optimisticId = `pending-playlist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const optimisticPlaylist = {
       id: optimisticId,
       title,
       description,
       visibility,
+      allow_collaborators: allowCollaborators,
       owner_username: currentUser?.username ?? "You",
       is_owner: true,
       track_count: 0,
@@ -2275,11 +2279,12 @@ useEffect(() => {
     setCreateTitle("");
     setCreateDescription("");
     setCreateVisibility("private");
+    setCreateCollaborators(false);
     setCreateOpen(false);
     setCreating(false);
     setError("");
 
-    void createPlaylist({ title, description, visibility })
+    void createPlaylist({ title, description, visibility, allow_collaborators: allowCollaborators })
       .then(async (playlist) => {
         setOwnedPlaylists(current => current.map(item =>
           String(item.id) === optimisticId ? playlist : item
@@ -2301,6 +2306,7 @@ useEffect(() => {
         setCreateTitle(title);
         setCreateDescription(description ?? "");
         setCreateVisibility(visibility);
+        setCreateCollaborators(allowCollaborators);
         setCreateOpen(true);
         setError(requestError instanceof Error ? requestError.message : "Unable to create playlist. Please try again.");
       });
@@ -5193,6 +5199,7 @@ useEffect(() => {
 
       <section className="hs-search-section hs-library-collection">
 
+        {visiblePlaylists.length > 0 ? (
         <div className="hs-search-section__heading">
 
           <div>
@@ -5210,6 +5217,7 @@ useEffect(() => {
           </strong>
 
         </div>
+        ) : null}
 
 
         {loading ? (
@@ -5842,6 +5850,24 @@ useEffect(() => {
                 }}
               />
 
+            </label>
+
+
+            <label className="library-field hs-library-collaborators-field">
+              <span className="hs-library-collaborators-label">
+                <input
+                  type="checkbox"
+                  checked={createCollaborators}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+                    setCreateCollaborators(enabled);
+                    if (enabled) setCreateVisibility("public");
+                    else if (createVisibility === "public") setCreateVisibility("private");
+                  }}
+                />
+                <span>Allow collaborators</span>
+              </span>
+              <small>Anyone can add songs to this playlist. Automatically makes it public.</small>
             </label>
 
 
