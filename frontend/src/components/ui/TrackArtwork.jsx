@@ -94,14 +94,14 @@ function TrackArtwork({
   const artworkUrl = resolveArtworkUrl(src);
   const [refreshKey, setRefreshKey] = useState(0);
   const [cachedSrc, setCachedSrc] = useState("");
-  useEffect(() => {
-    const refreshArtworkCache = (url) => {
+  const refreshArtworkCache = (url) => {
     void import("../../searchArtworkCache.js")
       .then(({ refreshSearchArtwork }) => refreshSearchArtwork(url))
       .catch(() => {});
   };
 
-  if (!artworkUrl) {
+  useEffect(() => {
+    if (!artworkUrl) {
       setCachedSrc("");
       return undefined;
     }
