@@ -1336,7 +1336,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
           displayResults.counts,
         ),
       [
-        combinedResults.counts,
+        displayResults.counts,
       ],
     );
 
