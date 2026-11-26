@@ -38,43 +38,6 @@ function itemTitle(
 }
 
 
-function recentTime(
-  item,
-) {
-  for (const value of [
-    item?.last_played_at,
-    item?.lastPlayedAt,
-    item?.added_at,
-    item?.addedAt,
-    item?.created_at,
-    item?.createdAt,
-    item?.updated_at,
-    item?.updatedAt,
-    item?.downloaded_at,
-    item?.downloadedAt,
-  ]) {
-    if (!value) {
-      continue;
-    }
-
-    const time =
-      new Date(
-        value,
-      ).getTime();
-
-    if (
-      Number.isFinite(
-        time,
-      )
-    ) {
-      return time;
-    }
-  }
-
-  return null;
-}
-
-
 function compareText(
   left,
   right,
