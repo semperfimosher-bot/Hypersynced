@@ -29,7 +29,7 @@ export const FILTERS = [
   ["artists", "Artists"],
   [
     "collaborations",
-    "Collaborations",
+    "Collab",
   ],
   ["people", "People"],
   ["playlists", "Playlists"],
