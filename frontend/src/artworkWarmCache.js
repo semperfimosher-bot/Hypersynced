@@ -1,9 +1,11 @@
 import { resolveArtworkUrl } from "./artworkUrl.js";
 
 const MAX_WARMED_ARTWORK_URLS = 600;
+const MAX_PRIORITY_ARTWORKS = 8;
 
 const warmedArtworkUrls = new Set();
 const MAX_ARTWORKS_PER_BATCH = 24;
+const warmedPriorityUrls = new Set();
 
 function rawArtwork(track) {
   return track?.artwork_url ?? track?.artworkUrl ?? null;
@@ -11,7 +13,7 @@ function rawArtwork(track) {
 
 // Populate the browser image cache before playlist rows are rendered. Keep
 // batches bounded so a large account library doesn't start hundreds of requests.
-export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH) {
+export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH, priority = false) {
   if (typeof Image === "undefined" || !Array.isArray(rawUrls)) return 0;
   let warmed = 0;
   for (const raw of rawUrls) {
@@ -21,9 +23,13 @@ export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH) {
     warmedArtworkUrls.add(url);
     const image = new Image();
     image.decoding = "async";
-    image.fetchPriority = "low";
+    image.fetchPriority = priority ? "high" : "low";
     image.onerror = () => warmedArtworkUrls.delete(url);
     image.src = url;
+    if (priority) {
+      warmedPriorityUrls.add(url);
+      while (warmedPriorityUrls.size > MAX_PRIORITY_ARTWORKS) warmedPriorityUrls.delete(warmedPriorityUrls.values().next().value);
+    }
     while (warmedArtworkUrls.size > MAX_WARMED_ARTWORK_URLS) {
       warmedArtworkUrls.delete(warmedArtworkUrls.values().next().value);
     }
@@ -32,9 +38,9 @@ export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH) {
   return warmed;
 }
 
-export function warmTrackArtwork(tracks, limit = MAX_ARTWORKS_PER_BATCH) {
+export function warmTrackArtwork(tracks, limit = MAX_ARTWORKS_PER_BATCH, priority = false) {
   if (!Array.isArray(tracks)) return 0;
-  return warmArtworkUrls(tracks.map(rawArtwork), limit);
+  return warmArtworkUrls(tracks.map(rawArtwork), limit, priority);
 }
 
 export function warmPlaylistArtwork(playlists, limit = MAX_ARTWORKS_PER_BATCH) {
