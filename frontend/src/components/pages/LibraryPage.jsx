@@ -4620,9 +4620,7 @@ useEffect(() => {
 
 
       <div className="hs-search-console__status">
-        {visiblePlaylists.length === 0 ? (
-          <span className="hs-library-empty-status">Ready to sync</span>
-        ) : (
+        {visiblePlaylists.length === 0 ? null : (
           <>
             <span className="hs-search-status-chip hs-search-status-chip--primary"><i /></span>
             <span className="hs-search-status-chip">{ownedPlaylists.length} OWNED</span>

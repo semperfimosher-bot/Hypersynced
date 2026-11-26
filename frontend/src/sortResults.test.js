@@ -35,7 +35,7 @@ const tracks = [
 
 
 test(
-  "smart sort preserves source order for non-library search results",
+  "smart sort orders played tracks newest first and unplayed tracks last",
   () => {
     assert.deepEqual(
       sortResultItems(
@@ -45,8 +45,8 @@ test(
         (track) => track.id,
       ),
       [
-        "one",
         "two",
+        "one",
         "three",
       ],
     );
