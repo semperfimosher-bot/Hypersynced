@@ -4,10 +4,6 @@ export const RESULTS_SORT_OPTIONS = [
     label: "My Smart Sort",
   },
   {
-    value: "recent",
-    label: "Recents",
-  },
-  {
     value: "albums",
     label: "Albums",
   },
@@ -118,12 +114,17 @@ export function sortResultItems(
       }),
     );
 
-  if (
-    mode === "smart"
-  ) {
-    return [
-      ...source,
-    ];
+  if (mode === "smart") {
+    return [...indexed]
+      .sort((left, right) => {
+        const aTime = recentTime(left.item);
+        const bTime = recentTime(right.item);
+        if (aTime === null && bTime === null) return left.index - right.index;
+        if (aTime === null) return 1;
+        if (bTime === null) return -1;
+        return bTime - aTime || left.index - right.index;
+      })
+      .map(({ item }) => item);
   }
 
   indexed.sort(
@@ -137,50 +138,7 @@ export function sortResultItems(
       const b =
         right.item;
 
-      if (
-        mode === "recent"
-      ) {
-        const aTime =
-          recentTime(
-            a,
-          );
-
-        const bTime =
-          recentTime(
-            b,
-          );
-
-        if (
-          aTime !== null ||
-          bTime !== null
-        ) {
-          if (
-            aTime === null
-          ) {
-            return 1;
-          }
-
-          if (
-            bTime === null
-          ) {
-            return -1;
-          }
-
-          if (
-            aTime !==
-            bTime
-          ) {
-            return (
-              bTime -
-              aTime
-            );
-          }
-        }
-      }
-
-      if (
-        mode === "albums"
-      ) {
+      if (mode === "albums") {
         const albumOrder =
           compareText(
             a?.album,
