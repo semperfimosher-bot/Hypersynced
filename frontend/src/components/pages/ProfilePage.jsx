@@ -6,7 +6,7 @@ import {
 } from "react";
 
 import * as player from "../../audioPlayer.js";
-import { readDeviceListeningStats, recordDevicePlayback } from "../../deviceListeningStats.js";
+import { readDeviceListeningStats, DEVICE_LISTENING_STATS_CHANGED_EVENT } from "../../deviceListeningStats.js";
 
 import {
   getMyProfile,
@@ -178,16 +178,11 @@ export default function ProfilePage({
   const [recentTracks, setRecentTracks] = useState(() => readCachedHomeRecentlyPlayed(recentOwner));
   const deviceStatsOwner = currentUser?.id ?? currentUser?.username ?? null;
   const [deviceListeningStats, setDeviceListeningStats] = useState(() => readDeviceListeningStats(deviceStatsOwner));
-  const previousDevicePlaybackRef = useRef(player.getState());
-
   useEffect(() => {
     setDeviceListeningStats(readDeviceListeningStats(deviceStatsOwner));
-    previousDevicePlaybackRef.current = player.getState();
-    return player.subscribe((nextState) => {
-      const nextStats = recordDevicePlayback(deviceStatsOwner, nextState, previousDevicePlaybackRef.current);
-      previousDevicePlaybackRef.current = nextState;
-      setDeviceListeningStats(nextStats);
-    });
+    const refreshDeviceStats = () => setDeviceListeningStats(readDeviceListeningStats(deviceStatsOwner));
+    window.addEventListener(DEVICE_LISTENING_STATS_CHANGED_EVENT, refreshDeviceStats);
+    return () => window.removeEventListener(DEVICE_LISTENING_STATS_CHANGED_EVENT, refreshDeviceStats);
   }, [deviceStatsOwner]);
   const recentRequest = useRef(0);
 
