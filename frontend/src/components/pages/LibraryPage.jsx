@@ -3413,6 +3413,7 @@ useEffect(() => {
       [
         selectedPlaylist?.tracks,
         sortMode,
+        recentlyPlayedHistory,
       ],
     );
 
