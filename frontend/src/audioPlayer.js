@@ -2990,15 +2990,13 @@ export async function togglePlay() {
 }
 
 
-export function pausePlayback() {
-
-
-  return silenceLocalPlayback();
+export function pausePlayback(cause = "pause-playback-api") {
+  return silenceLocalPlayback(cause);
 }
 
 
-export function silenceLocalPlayback() {
-  pauseAudioWithCause("pause-playback-api");
+export function silenceLocalPlayback(cause = "pause-playback-api") {
+  pauseAudioWithCause(cause);
 
   /*
    * Keep this exact pause point hot for
@@ -3475,7 +3473,7 @@ function configureMediaSessionActions() {
   setHandler(
     "pause",
     () => {
-      pausePlayback();
+      pausePlayback("media-session");
     },
   );
 
