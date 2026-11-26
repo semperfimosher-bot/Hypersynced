@@ -1,4 +1,5 @@
 const DEVICE_STATS_PREFIX = "hypersynced:device-listening-stats:v1:";
+export const DEVICE_LISTENING_STATS_CHANGED_EVENT = "hypersynced:device-listening-stats-changed";
 const DEFAULT_STATS = { tracksPlayed: 0, listenedSeconds: 0 };
 
 function keyFor(owner) {
@@ -37,6 +38,7 @@ export function recordDevicePlayback(owner, state, previous = null) {
   if (trackStarted || delta > 0) {
     const key = keyFor(owner);
     try { if (key && globalThis.localStorage) globalThis.localStorage.setItem(key, JSON.stringify(stats)); } catch {}
+    try { globalThis.dispatchEvent?.(new Event(DEVICE_LISTENING_STATS_CHANGED_EVENT)); } catch {}
   }
   return stats;
 }
