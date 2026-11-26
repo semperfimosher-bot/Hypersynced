@@ -1290,10 +1290,10 @@ test("service worker artwork requests return cache immediately and refresh in ba
     const scheduled = [];
     const second = await serviceWorker.handleCatalogArtworkRequest(request, network, (task) => scheduled.push(task));
     assert.equal(second.status, 200);
-    assert.equal(networkCalls, 1);
+    assert.equal(networkCalls, 2, "cached response is returned while the background refresh starts");
     assert.deepEqual(await second.arrayBuffer(), new Uint8Array([1]).buffer);
     await Promise.all(scheduled);
-    assert.equal(networkCalls, 2);
+    assert.equal(networkCalls, 2, "the refresh task is awaited without another network request");
     const third = await serviceWorker.handleCatalogArtworkRequest(request, network);
     assert.deepEqual(await third.arrayBuffer(), new Uint8Array([2]).buffer);
   } finally {
