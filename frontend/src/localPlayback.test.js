@@ -219,3 +219,11 @@ test("local queue plays, advances on track end, and supports previous and next",
   assert.equal(requests.some((url) => /playback-devices|playback-state|jams/.test(url)), false);
   player.stopTrack();
 });
+
+
+test("Home Recently Played fallback references the defined device-local list", () => {
+  const home = readFileSync(new URL("./components/pages/HomePage.jsx", import.meta.url), "utf8");
+  assert.match(home, /<HomeCarousel recent=\{recentlyPlayed\}/);
+  assert.match(home, /recentlyPlayed\.length >= 6[\s\S]*?tracks=\{recentlyPlayed\}/);
+  assert.doesNotMatch(home, /homeRecentFallback/);
+});
