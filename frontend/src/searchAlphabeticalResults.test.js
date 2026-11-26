@@ -159,3 +159,24 @@ test(
     );
   },
 );
+
+
+test("short search terms only return direct name/title/credit matches", async () => {
+  const { filterSearchResultsForQuery } = await import("./searchAlphabetical.js").catch(async () => ({filterSearchResultsForQuery:(await import("./searchAlphabetical.js")).filterSearchResultsForQuery}));
+  const result = filterSearchResultsForQuery({
+    tracks:[{title:"Moonlight",artist:"Morgan",album:"Midnight"},{title:"Summer",artist:"Taylor",album:"Daylight"}],
+    artists:[{name:"Morgan"},{name:"Taylor"}],
+    collaborations:[],albums:[{title:"Midnight",artist:"Morgan"},{title:"Summer",artist:"Taylor"}],
+    people:[],playlists:[{title:"Morgan Mix",description:""},{title:"Summer Hits",description:""}],
+  }, "m");
+  assert.deepEqual(result.artists.map(x=>x.name),["Morgan"]);
+  assert.deepEqual(result.tracks.map(x=>x.title),["Moonlight"]);
+  assert.deepEqual(result.playlists.map(x=>x.title),["Morgan Mix"]);
+});
+
+test("artist credits split collaboration names into distinct profile targets", async () => {
+  const { splitArtistCredits, isCollaborativeTrack } = await import("./searchAlphabetical.js");
+  assert.deepEqual(splitArtistCredits("Artist One feat. Artist Two"),["Artist One","Artist Two"]);
+  assert.equal(isCollaborativeTrack({artist:"Artist One & Artist Two",title:"Song"}),true);
+  assert.equal(isCollaborativeTrack({artist:"Artist One",title:"Song ft Artist Two"}),true);
+});
