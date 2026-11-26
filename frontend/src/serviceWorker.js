@@ -979,6 +979,46 @@ export async function handleMediaRequest(
   return networkResponse;
 }
 
+const HTTP_ARTWORK_CACHE_NAME = "hypersynced-http-artwork-v1";
+const HTTP_ARTWORK_CACHE_LIMIT = 320;
+const HTTP_ARTWORK_MAX_BYTES = 12 * 1024 * 1024;
+
+function isCatalogArtworkRequest(request) {
+  if (request.method !== "GET") return false;
+  const url = new URL(request.url);
+  if (typeof self !== "undefined" && url.origin !== self.location.origin) return false;
+  return /\/(?:api\/)?catalog\/tracks\/[^/]+\/artwork$/.test(url.pathname);
+}
+
+async function cacheArtworkResponse(cache, request, response) {
+  if (!response?.ok || response.type === "opaque") return;
+  const length = Number(response.headers.get("Content-Length"));
+  if (Number.isFinite(length) && length > HTTP_ARTWORK_MAX_BYTES) return;
+  await cache.put(request, response.clone());
+  const keys = await cache.keys();
+  if (keys.length > HTTP_ARTWORK_CACHE_LIMIT) {
+    await Promise.all(keys.slice(0, keys.length - HTTP_ARTWORK_CACHE_LIMIT).map((key) => cache.delete(key)));
+  }
+}
+
+export async function handleCatalogArtworkRequest(request, networkFallback, scheduleBackgroundTask = null) {
+  if (!isCatalogArtworkRequest(request)) return networkFallback(request);
+  const cache = await caches.open(HTTP_ARTWORK_CACHE_NAME);
+  const cached = await cache.match(request);
+  const refreshRequest = new Request(request, { cache: "no-cache" });
+  if (cached) {
+    if (typeof scheduleBackgroundTask === "function") {
+      scheduleBackgroundTask(networkFallback(refreshRequest)
+        .then((response) => cacheArtworkResponse(cache, request, response))
+        .catch(() => null));
+    }
+    return cached;
+  }
+  const response = await networkFallback(refreshRequest);
+  await cacheArtworkResponse(cache, request, response).catch(() => {});
+  return response;
+}
+
 export function registerMediaFetchHandler(
   scope,
   networkFallback,
@@ -996,9 +1036,13 @@ export function registerMediaFetchHandler(
           event.request,
         );
 
+      const catalogArtwork =
+        isCatalogArtworkRequest(event.request);
+
       if (
         !identity &&
-        !artworkIdentity
+        !artworkIdentity &&
+        !catalogArtwork
       ) {
         return;
       }
@@ -1042,12 +1086,18 @@ export function registerMediaFetchHandler(
               DEFAULT_API_BASE_URL,
               scheduleTask,
             )
-          : handleArtworkRequest(
-              event.request,
-              networkFallback,
-              DEFAULT_API_BASE_URL,
-              scheduleTask,
-            );
+          : artworkIdentity
+            ? handleArtworkRequest(
+                event.request,
+                networkFallback,
+                DEFAULT_API_BASE_URL,
+                scheduleTask,
+              )
+            : handleCatalogArtworkRequest(
+                event.request,
+                networkFallback,
+                scheduleTask,
+              );
 
       const lifetimePromise =
         responsePromise.then(
