@@ -11,9 +11,9 @@ export async function getMyProfile() {
 }
 
 
-export function getMyRecentlyPlayed() {
+export function getMyRecentlyPlayed({ limit = 12 } = {}) {
   return apiRequest(
-    "/users/me/recently-played",
+    `/users/me/recently-played?limit=${encodeURIComponent(limit)}`,
     { cache: "no-store" },
   );
 }
