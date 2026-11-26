@@ -5,6 +5,8 @@ import TrackActionMenu from "../music/TrackActionMenu.jsx";
 import useTrackActionMenu from "../../hooks/useTrackActionMenu.js";
 import { readCachedHomeSuggestions, writeCachedHomeSuggestions } from "../../homeSuggestions.js";
 import { warmTrackArtwork } from "../../artworkWarmCache.js";
+import { getCachedLibraryAsync } from "../../libraryCache.js";
+import { getOfflineOwnerKey } from "../../offlineDownloads.js";
 import { getSuggestedMusic } from "../../profileApi.js";
 import {
   getHomeRecentlyPlayedForOwner,
@@ -107,6 +109,15 @@ function HomeCarousel({ recent, suggestions, fallbackTracks = [], pickedTracks, 
 function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const menu = useTrackActionMenu();
   const recentOwner = currentUser?.id ?? currentUser?.username ?? "guest-device";
+  const artworkOwner = getOfflineOwnerKey(currentUser);
+  useEffect(() => {
+    let cancelled = false;
+    void getCachedLibraryAsync(artworkOwner).then((library) => {
+      if (cancelled) return;
+      warmTrackArtwork(Array.isArray(library?.tracks) ? library.tracks : [], 48, true);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [artworkOwner]);
   const [recentlyPlayedState, setRecentlyPlayedState] = useState(() => ({ owner: recentOwner, tracks: readCachedHomeRecentlyPlayed(recentOwner) }));
   const recentlyPlayed = getHomeRecentlyPlayedForOwner(recentOwner, recentlyPlayedState.owner, recentlyPlayedState.tracks);
   const setRecentlyPlayed = (next) => setRecentlyPlayedState((current) => ({

@@ -979,6 +979,44 @@ export async function handleMediaRequest(
   return networkResponse;
 }
 
+const HTTP_IMAGE_CACHE_NAME = "hypersynced-http-images-v1";
+const HTTP_IMAGE_CACHE_LIMIT = 300;
+const HTTP_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+
+function isCacheableSameOriginImage(request) {
+  if (request.method !== "GET" || request.destination !== "image") return false;
+  const url = new URL(request.url);
+  if (typeof self !== "undefined" && url.origin !== self.location.origin) return false;
+  if (/\\/(?:api\\/)?catalog\\/tracks\\/[^/]+\\/artwork$/.test(url.pathname)) return false;
+  return true;
+}
+
+async function cacheSameOriginImage(cache, request, response) {
+  if (!response?.ok || response.type === "opaque") return;
+  const length = Number(response.headers.get("Content-Length"));
+  if (Number.isFinite(length) && length > HTTP_IMAGE_MAX_BYTES) return;
+  await cache.put(request, response.clone());
+  const keys = await cache.keys();
+  if (keys.length > HTTP_IMAGE_CACHE_LIMIT) {
+    await Promise.all(keys.slice(0, keys.length - HTTP_IMAGE_CACHE_LIMIT).map((key) => cache.delete(key)));
+  }
+}
+
+async function handleSameOriginImageRequest(request, networkFallback, scheduleBackgroundTask) {
+  if (!isCacheableSameOriginImage(request)) return networkFallback(request);
+  const cache = await caches.open(HTTP_IMAGE_CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) {
+    scheduleBackgroundTask(networkFallback(new Request(request, { cache: "no-cache" }))
+      .then((response) => cacheSameOriginImage(cache, request, response))
+      .catch(() => null));
+    return cached;
+  }
+  const response = await networkFallback(request);
+  await cacheSameOriginImage(cache, request, response).catch(() => {});
+  return response;
+}
+
 const HTTP_ARTWORK_CACHE_NAME = "hypersynced-http-artwork-v1";
 const HTTP_ARTWORK_CACHE_LIMIT = 320;
 const HTTP_ARTWORK_MAX_BYTES = 12 * 1024 * 1024;
@@ -1050,11 +1088,13 @@ export function registerMediaFetchHandler(
 
       const catalogArtwork =
         isCatalogArtworkRequest(event.request);
+      const sameOriginImage = isCacheableSameOriginImage(event.request);
 
       if (
         !identity &&
         !artworkIdentity &&
-        !catalogArtwork
+        !catalogArtwork &&
+        !sameOriginImage
       ) {
         return;
       }
@@ -1105,11 +1145,17 @@ export function registerMediaFetchHandler(
                 DEFAULT_API_BASE_URL,
                 scheduleTask,
               )
-            : handleCatalogArtworkRequest(
-                event.request,
-                networkFallback,
-                scheduleTask,
-              );
+            : catalogArtwork
+              ? handleCatalogArtworkRequest(
+                  event.request,
+                  networkFallback,
+                  scheduleTask,
+                )
+              : handleSameOriginImageRequest(
+                  event.request,
+                  networkFallback,
+                  scheduleTask,
+                );
 
       const lifetimePromise =
         responsePromise.then(

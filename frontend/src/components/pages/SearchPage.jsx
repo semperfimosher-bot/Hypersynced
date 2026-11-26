@@ -233,8 +233,9 @@ function SearchPage({
               genre: String(track?.genre ?? track?.genres ?? "").toLowerCase(),
               releaseYear,
             });
-            if (unique.length >= 60) break;
+            if (unique.length >= 120) break;
           }
+          warmTrackArtwork(unique.map((item) => ({ artwork_url: item.artwork })), 36, true);
           setDiscoveryCardArtwork(unique);
         })
         .catch(() => {});
@@ -285,7 +286,10 @@ function SearchPage({
                   releaseYear: Number(track?.release_year ?? track?.year ?? String(track?.release_date ?? "").slice(0, 4)) || 0,
                 }));
             const filtered = source.filter(item => item.artwork);
-            if (filtered.length) setDiscoveryArtworkByCommand(prev => ({ ...prev, [command.id]: filtered.slice(0, 12) }));
+            if (filtered.length) {
+              warmTrackArtwork(filtered.map((item) => ({ artwork_url: item.artwork })), 12, true);
+              setDiscoveryArtworkByCommand(prev => ({ ...prev, [command.id]: filtered.slice(0, 12) }));
+            }
           } catch {
             // Library artwork and category icon fallback remain available if discovery search fails.
           }
@@ -1071,7 +1075,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
                     quietRefresh,
                   onRefresh: (freshData) => {
                     if (controller.signal.aborted) return;
-                    warmTrackArtwork(freshData?.tracks || [], 8, true);
+                    warmTrackArtwork(freshData?.tracks || [], 24, true)
                     setResults({
                       ...EMPTY_RESULTS,
                       ...(freshData || {}),
@@ -1099,7 +1103,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
               return;
             }
 
-            warmTrackArtwork(data?.tracks || [], 8, true);
+            warmTrackArtwork(data?.tracks || [], 24, true)
             setResults({
               ...EMPTY_RESULTS,
               ...(data || {}),

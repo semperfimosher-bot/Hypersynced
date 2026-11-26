@@ -231,6 +231,10 @@ let lastPauseCause = null;
 let unexpectedPauseRecoveryTimer = null;
 let unexpectedPauseRecoveryTrackId = null;
 let unexpectedPauseRecoveryAttempts = 0;
+let stalledPlaybackRecoveryTrackId = null;
+let stalledPlaybackRecoveryAttempts = 0;
+let stalledPlaybackRecoveryTimer = null;
+const MAX_STALLED_PLAYBACK_RECOVERIES = 2;
 const MAX_UNEXPECTED_PAUSE_RECOVERIES = 2;
 
 
@@ -1498,6 +1502,9 @@ function attachEvents() {
   audio.addEventListener(
     "playing",
     () => {
+      clearStalledPlaybackRecoveryTimer();
+      stalledPlaybackRecoveryAttempts = 0;
+      stalledPlaybackRecoveryTrackId = currentTrackId ? String(currentTrackId) : null;
       // Keep the saved position as the UI source of truth until the live
       // clock has demonstrably advanced from the restored point. A "playing"
       // event alone is not proof: some browsers briefly report the song end.
@@ -1562,6 +1569,7 @@ function attachEvents() {
   audio.addEventListener(
     "pause",
     () => {
+      clearStalledPlaybackRecoveryTimer();
       const previousPhase = playbackPhase;
       const cause = requestedPauseCause ?? (previousPhase === "loading" ? "source-change" : "external-browser-or-device");
       requestedPauseCause = null;
@@ -1623,6 +1631,79 @@ function attachEvents() {
   );
 
 
+function clearStalledPlaybackRecoveryTimer() {
+  if (stalledPlaybackRecoveryTimer) {
+    globalThis.clearTimeout(stalledPlaybackRecoveryTimer);
+    stalledPlaybackRecoveryTimer = null;
+  }
+}
+
+function scheduleStalledPlaybackRecovery(eventType) {
+  if (audio.paused || !currentTrackId || !hasAudioSource()) return;
+  const trackAtStall = String(currentTrackId);
+  if (stalledPlaybackRecoveryTrackId !== trackAtStall) {
+    stalledPlaybackRecoveryTrackId = trackAtStall;
+    stalledPlaybackRecoveryAttempts = 0;
+  }
+  clearStalledPlaybackRecoveryTimer();
+  const stalledPosition = getSafeCurrentTime();
+  stalledPlaybackRecoveryTimer = globalThis.setTimeout(async () => {
+    stalledPlaybackRecoveryTimer = null;
+    if (String(currentTrackId ?? "") !== trackAtStall || audio.paused || playbackPhase !== "buffering") return;
+    const nowPosition = getSafeCurrentTime();
+    if (Math.abs(nowPosition - stalledPosition) > 0.5) return;
+    if (stalledPlaybackRecoveryAttempts >= MAX_STALLED_PLAYBACK_RECOVERIES) {
+      console.warn("[HyperSynced] Playback buffer remained stalled after recovery attempts.", { trackId: trackAtStall, eventType, positionSeconds: nowPosition, readyState: audio.readyState, networkState: audio.networkState, mediaError: audio.error?.code ?? null });
+      return;
+    }
+    stalledPlaybackRecoveryAttempts += 1;
+    const source = audio.currentSrc || audio.src;
+    const resumeAt = nowPosition;
+    console.warn("[HyperSynced] Recovering stalled audio stream.", { trackId: trackAtStall, eventType, attempt: stalledPlaybackRecoveryAttempts, positionSeconds: resumeAt, readyState: audio.readyState, networkState: audio.networkState, mediaError: audio.error?.code ?? null });
+    requestedPauseCause = "stall-recovery";
+    audio.pause();
+    setPlaybackPhase("loading");
+    notify();
+    try {
+      audio.src = source;
+      audio.load();
+      const ready = await new Promise((resolve) => {
+        if (audio.readyState >= 2) return resolve(true);
+        let settled = false;
+        const finish = (value) => {
+          if (settled) return;
+          settled = true;
+          audio.removeEventListener("loadedmetadata", onReady);
+          audio.removeEventListener("canplay", onReady);
+          audio.removeEventListener("error", onError);
+          globalThis.clearTimeout(timeout);
+          resolve(value);
+        };
+        const onReady = () => finish(true);
+        const onError = () => finish(false);
+        const timeout = globalThis.setTimeout(() => finish(false), 6500);
+        audio.addEventListener("loadedmetadata", onReady, { once: true });
+        audio.addEventListener("canplay", onReady, { once: true });
+        audio.addEventListener("error", onError, { once: true });
+      });
+      if (String(currentTrackId ?? "") !== trackAtStall) return;
+      if (ready && Number.isFinite(resumeAt) && resumeAt > 0) {
+        try { audio.currentTime = resumeAt; } catch {}
+      }
+      await audio.play();
+      setPlaybackPhase("playing");
+      notify();
+    } catch (error) {
+      if (String(currentTrackId ?? "") !== trackAtStall) return;
+      setPlaybackPhase("buffering", error instanceof Error ? error.message : "Audio stream recovery failed");
+      notify();
+      if (stalledPlaybackRecoveryAttempts < MAX_STALLED_PLAYBACK_RECOVERIES) {
+        scheduleStalledPlaybackRecovery("retry-after-reload");
+      }
+    }
+  }, 8000);
+}
+
   audio.addEventListener(
     "waiting",
     () => {
@@ -1630,6 +1711,7 @@ function attachEvents() {
         setPlaybackPhase(
           "buffering",
         );
+        scheduleStalledPlaybackRecovery("waiting");
       }
 
       notify();
@@ -1644,6 +1726,7 @@ function attachEvents() {
         setPlaybackPhase(
           "buffering",
         );
+        scheduleStalledPlaybackRecovery("stalled");
       }
 
       notify();

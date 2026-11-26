@@ -9452,7 +9452,7 @@ button:disabled {
 /* Album entity rows retain left padding and never clip the leading text/art. */
 .hs-search-entity-card.hs-library-entity-row { width:100%; max-width:100%; box-sizing:border-box; padding-inline:12px; overflow:hidden; }
 .hs-search-entity-card.hs-library-entity-row > * { min-width:0; }
-.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy { padding-inline-start:6px; }
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy { padding-inline-start:7px; }
 @media(max-width:760px){ .hs-search-entity-card.hs-library-entity-row { padding-inline:12px !important; grid-template-columns:24px 42px minmax(0,1fr) 16px; gap:8px; } .hs-search-entity-card.hs-library-entity-row .hs-search-entity-card__art { width:42px; height:42px; } }
 
 
