@@ -1265,3 +1265,39 @@ test(
     }
   },
 );
+
+test("service worker artwork requests return cache immediately and refresh in background", async () => {
+  const serviceWorker = await loadServiceWorkerModule();
+  const originalCaches = globalThis.caches;
+  const entries = new Map();
+  const cache = {
+    match: async (request) => entries.get(request.url)?.clone() ?? null,
+    put: async (request, response) => entries.set(request.url, response.clone()),
+    keys: async () => [...entries.keys()].map((url) => new Request(url)),
+    delete: async (request) => entries.delete(request.url),
+  };
+  globalThis.caches = { open: async () => cache };
+  try {
+    const request = new Request("https://example.test/api/catalog/tracks/123/artwork?v=2");
+    let networkCalls = 0;
+    const network = async () => {
+      networkCalls += 1;
+      return new Response(new Uint8Array([networkCalls]), { headers: { "Content-Type": "image/jpeg" } });
+    };
+    const first = await serviceWorker.handleCatalogArtworkRequest(request, network);
+    assert.equal(first.status, 200);
+    assert.equal(networkCalls, 1);
+    const scheduled = [];
+    const second = await serviceWorker.handleCatalogArtworkRequest(request, network, (task) => scheduled.push(task));
+    assert.equal(second.status, 200);
+    assert.equal(networkCalls, 1);
+    assert.deepEqual(await second.arrayBuffer(), new Uint8Array([1]).buffer);
+    await Promise.all(scheduled);
+    assert.equal(networkCalls, 2);
+    const third = await serviceWorker.handleCatalogArtworkRequest(request, network);
+    assert.deepEqual(await third.arrayBuffer(), new Uint8Array([2]).buffer);
+  } finally {
+    if (originalCaches === undefined) delete globalThis.caches;
+    else globalThis.caches = originalCaches;
+  }
+});
