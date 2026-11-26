@@ -17,6 +17,7 @@ from fastapi import (
     APIRouter,
     File,
     HTTPException,
+    Query,
     UploadFile,
     status,
 )
@@ -55,7 +56,6 @@ from ..dependencies import (
     DatabaseSession,
     OptionalCurrentUser,
 )
-from fastapi import Query
 from .audio import stream_b2_file
 from .catalog import (
     _track_artwork_version,
