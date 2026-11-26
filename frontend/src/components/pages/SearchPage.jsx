@@ -1359,7 +1359,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       ...result.counts,
       tracks: result.tracks.length,
       artists: result.artists.length,
-      collaborations: result.collaborations.length,
+      collaborations: result.tracks.filter(isCollaborativeTrack).length,
       albums: result.albums.length,
       people: result.people.length,
       playlists: result.playlists.length,
