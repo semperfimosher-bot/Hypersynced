@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function UploadCompletionWheel({ size = 34, animate = false, animationKey = 0, label = "Upload complete" }) {
   return (
     <svg
