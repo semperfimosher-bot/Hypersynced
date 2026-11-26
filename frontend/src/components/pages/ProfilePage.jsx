@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import * as player from "../../audioPlayer.js";
+import { readDeviceListeningStats, recordDevicePlayback } from "../../deviceListeningStats.js";
 
 import {
   getMyProfile,
@@ -175,6 +176,19 @@ export default function ProfilePage({
 
   const recentOwner = currentUser?.id ?? currentUser?.username;
   const [recentTracks, setRecentTracks] = useState(() => readCachedHomeRecentlyPlayed(recentOwner));
+  const deviceStatsOwner = currentUser?.id ?? currentUser?.username ?? null;
+  const [deviceListeningStats, setDeviceListeningStats] = useState(() => readDeviceListeningStats(deviceStatsOwner));
+  const previousDevicePlaybackRef = useRef(player.getState());
+
+  useEffect(() => {
+    setDeviceListeningStats(readDeviceListeningStats(deviceStatsOwner));
+    previousDevicePlaybackRef.current = player.getState();
+    return player.subscribe((nextState) => {
+      const nextStats = recordDevicePlayback(deviceStatsOwner, nextState, previousDevicePlaybackRef.current);
+      previousDevicePlaybackRef.current = nextState;
+      setDeviceListeningStats(nextStats);
+    });
+  }, [deviceStatsOwner]);
   const recentRequest = useRef(0);
 
 
@@ -476,23 +490,22 @@ export default function ProfilePage({
           }}
         />
 
-        <Stat
-          icon="music"
-          value={
-            profile?.tracks_played ?? 0
-          }
-          label="Total Played"
-          onClick={() => onNavigate?.("total-played")}
-        />
-
-        <Stat
-          icon="headphones"
-          value={`${
-            profile?.hours_listened ?? 0
-          }h`}
-          label="Listening Time"
-        />
-      </section>
+</sectio      <section className="hs-profile-listening-stat-bands" aria-label="Listening statistics">
+        <div className="hs-profile-listening-stat-band">
+          <span className="hs-profile-listening-stat-band__label">DATA FROM ACROSS ACCOUNT</span>
+          <div className="hs-profile-listening-stat-band__cards">
+            <Stat icon="music" value={profile?.tracks_played ?? 0} label="Total Played" onClick={() => onNavigate?.("total-played")} />
+            <Stat icon="headphones" value={`${profile?.hours_listened ?? 0}h`} label="Listening Time" />
+          </div>
+        </div>
+        <div className="hs-profile-listening-stat-band">
+          <span className="hs-profile-listening-stat-band__label">PER THIS DEVICE</span>
+          <div className="hs-profile-listening-stat-band__cards">
+            <Stat icon="music" value={deviceListeningStats.tracksPlayed.toLocaleString()} label="Total Played" />
+            <Stat icon="headphones" value={`${Math.floor(deviceListeningStats.listenedSeconds / 3600)}h`} label="Listening Time" />
+          </div>
+        </div>
+      </section>n>
 
 
       <section className="hs-profile-section">
