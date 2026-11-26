@@ -150,6 +150,7 @@ import {
 import {
   readRecentSearches,
   saveRecentSearch,
+  removeRecentSearch,
 } from "../../recentSearches.js";
 
 
