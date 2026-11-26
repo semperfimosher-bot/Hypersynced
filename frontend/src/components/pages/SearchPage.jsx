@@ -2737,7 +2737,6 @@ async function downloadOpenedPlaylist() {
             artistName={artistName}
             currentUser={currentUser}
             onOpenAuth={onOpenAuth}
-            onBack={() => setOpenedArtistName("")}
             onOpenRelease={(releaseQuery) => {
               setOpenedArtistName("");
               setOpenedPlaylist(null);
@@ -2926,20 +2925,7 @@ async function downloadOpenedPlaylist() {
 
     <div className="hs-search-playlist-view__nav">
 
-      <button
-        type="button"
-        className="hs-search-playlist-back"
-        onClick={
-          closeSearchPlaylist
-        }
-      >
-        <Icon
-          name="chevron"
-          size={15}
-        />
-
-        Back to search
-      </button>
+      
 
     </div>
 
