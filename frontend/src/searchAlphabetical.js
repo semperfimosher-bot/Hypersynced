@@ -174,3 +174,45 @@ export function orderSearchResultsForDisplay(
 
   return ordered;
 }
+
+
+function matchesSearchQuery(value, query) {
+  const normalizedValue = normalizeSortText(value);
+  const normalizedQuery = normalizeSortText(query);
+  if (!normalizedValue || !normalizedQuery) return false;
+  if (normalizedValue.startsWith(normalizedQuery)) return true;
+  return normalizedValue.split(/[\\s&,+/|]+/).some((token) => token.startsWith(normalizedQuery));
+}
+
+
+/** Keep short/general searches focused on direct name/title/credit matches. */
+export function filterSearchResultsForQuery(results, query) {
+  const normalizedQuery = normalizeSortText(query);
+  if (!normalizedQuery || normalizedQuery.length < 1) return results;
+  const filter = (items, fields) => (items || []).filter((item) => fields.some((field) => matchesSearchQuery(item?.[field], normalizedQuery)));
+  return {
+    ...results,
+    tracks: filter(results?.tracks, ["title", "artist", "album"]),
+    artists: filter(results?.artists, ["name"]),
+    collaborations: filter(results?.collaborations, ["name"]),
+    albums: filter(results?.albums, ["title", "artist"]),
+    people: filter(results?.people, ["display_name", "username"]),
+    playlists: filter(results?.playlists, ["title", "description", "owner_username"]),
+  };
+}
+
+
+export function splitArtistCredits(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [];
+  const parts = raw.split(/\\s*(?:,|&|\\bx\\b|\\band\\b|\\bwith\\b|\\bfeat(?:uring)?\\.?|\\bft\\.?|\\bvs\\.?|\\bversus\\b)\\s*/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return [...new Set(parts)];
+}
+
+export function isCollaborativeTrack(track) {
+  const credits = splitArtistCredits(track?.artist);
+  const featured = /\\b(?:feat(?:uring)?|ft)\\.?\\s+[^)\\]}]+/i.test(String(track?.title ?? ""));
+  return credits.length > 1 || featured;
+}
