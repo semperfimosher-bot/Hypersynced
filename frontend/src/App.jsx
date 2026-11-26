@@ -256,8 +256,12 @@ function MainPage({
   onInstallApp,
 }) {
   const [totalPlayedVisited, setTotalPlayedVisited] = useState(activePage === "total-played");
+  const [searchVisited, setSearchVisited] = useState(activePage === "search");
   useEffect(() => {
     if (activePage === "total-played") setTotalPlayedVisited(true);
+  }, [activePage]);
+  useEffect(() => {
+    if (activePage === "search") setSearchVisited(true);
   }, [activePage]);
 
   function renderPage(
@@ -335,47 +339,7 @@ function MainPage({
     }
 
 
-    if (
-      page === "search"
-    ) {
-      return (
-        <SearchPage
-          currentUser={
-            currentUser
-          }
-          query={
-            query
-          }
-          resetToken={
-            searchResetToken
-          }
-          initialArtistName={
-            artistToOpen
-          }
-          onInitialArtistHandled={
-            onArtistOpened
-          }
-          onQueryChange={
-            onQueryChange
-          }
-          onOpenProfile={
-            onOpenProfile
-          }
-          onMessageUser={
-            onMessageUser
-          }
-          onOpenPlaylist={
-            onOpenPlaylist
-          }
-          onOpenAuth={
-            onOpenAuth
-          }
-          activePlaylistDownloads={
-            activePlaylistDownloads
-          }
-        />
-      );
-    }
+    if (page === "search") return null;
 
 
     if (
@@ -587,7 +551,7 @@ function MainPage({
 
 
   return (
-    <PageErrorBoundary key={`page-${activePage}`} scope={activePage}>
+    <PageErrorBoundary key="main-pages" scope={activePage}>
       <Suspense
         fallback={
           <div
@@ -603,6 +567,23 @@ function MainPage({
         }
       >
         {renderPage(activePage, profileUsername)}
+        {searchVisited ? (
+          <div className={"hs-search-keepalive" + (activePage === "search" ? " is-active" : "")} aria-hidden={activePage !== "search"}>
+            <SearchPage
+              currentUser={currentUser}
+              query={query}
+              resetToken={searchResetToken}
+              initialArtistName={artistToOpen}
+              onInitialArtistHandled={onArtistOpened}
+              onQueryChange={onQueryChange}
+              onOpenProfile={onOpenProfile}
+              onMessageUser={onMessageUser}
+              onOpenPlaylist={onOpenPlaylist}
+              onOpenAuth={onOpenAuth}
+              activePlaylistDownloads={activePlaylistDownloads}
+            />
+          </div>
+        ) : null}
         {totalPlayedVisited ? (
           <div className={`hs-total-played-keepalive${activePage === "total-played" ? " is-active" : ""}`} aria-hidden={activePage !== "total-played"}>
             <TotalPlayedPage currentUser={currentUser} isActive={activePage === "total-played"} />
