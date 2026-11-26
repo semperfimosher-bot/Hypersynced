@@ -454,6 +454,9 @@ const [
 
 const libraryTracksRef = useRef(libraryTracks);
 const libraryLoadInFlightRef = useRef(false);
+const libraryAutoLoadBlockedRef = useRef(false);
+const libraryTrackSentinelRef = useRef(null);
+const [libraryAutoLoadRetry, setLibraryAutoLoadRetry] = useState(0);
 const libraryChangeTokenRef = useRef(cachedLibrary?.changeToken ?? null);
 const hydratedLibraryOwnerRef = useRef(cachedLibrary ? libraryCacheKey : null);
 const libraryNextOffsetRef = useRef(
@@ -1409,11 +1412,13 @@ const [
   const loadMoreLibraryTracks = useCallback(async () => {
     if (
       loadingMoreLibraryTracks ||
+      libraryLoadInFlightRef.current ||
       !hasMoreLibraryTracks
     ) {
       return;
     }
 
+    libraryLoadInFlightRef.current = true;
     setLoadingMoreLibraryTracks(true);
     setError("");
 
@@ -1459,12 +1464,17 @@ const [
         changeToken: libraryChangeTokenRef.current,
       });
     } catch (requestError) {
+      libraryAutoLoadBlockedRef.current = true;
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        setHasMoreLibraryTracks(false);
+      }
       setError(
         requestError instanceof Error
           ? requestError.message
           : "Unable to load more library tracks.",
       );
     } finally {
+      libraryLoadInFlightRef.current = false;
       setLoadingMoreLibraryTracks(false);
     }
   }, [
@@ -1480,6 +1490,36 @@ const [
   }, [
     loadLibrary,
   ]);
+
+  useEffect(() => {
+    const sentinel = libraryTrackSentinelRef.current;
+    if (!sentinel || !hasMoreLibraryTracks || loadingMoreLibraryTracks || libraryAutoLoadBlockedRef.current) {
+      return undefined;
+    }
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return undefined;
+    }
+    if (typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        void loadMoreLibraryTracks();
+      }
+    }, { rootMargin: "900px 0px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreLibraryTracks, loadingMoreLibraryTracks, loadMoreLibraryTracks, libraryAutoLoadRetry]);
+
+  useEffect(() => {
+    const unblockAutoLoad = () => {
+      libraryAutoLoadBlockedRef.current = false;
+      setLibraryAutoLoadRetry((current) => current + 1);
+      setHasMoreLibraryTracks(true);
+    };
+    window.addEventListener("online", unblockAutoLoad);
+    return () => window.removeEventListener("online", unblockAutoLoad);
+  }, []);
 
 
   useQuietRefresh(
@@ -5648,24 +5688,13 @@ useEffect(() => {
     )}
 
       {hasMoreLibraryTracks ? (
-        <div className="hs-library-load-more-wrap">
-          <button
-            type="button"
-            className="hs-search-primary-action hs-library-load-more"
-            disabled={
-              loadingMoreLibraryTracks ||
-              (typeof navigator !== "undefined" && navigator.onLine === false)
-            }
-            onClick={() => {
-              void loadMoreLibraryTracks();
-            }}
-          >
-            {loadingMoreLibraryTracks
-              ? "Loading more tracks…"
-              : typeof navigator !== "undefined" && navigator.onLine === false
-                ? "Connect to load more tracks"
-                : `Load more library tracks · ${libraryTracks.length.toLocaleString()} loaded`}
-          </button>
+        <div
+          ref={libraryTrackSentinelRef}
+          className="hs-library-load-more-wrap hs-library-auto-load-sentinel"
+          aria-live="polite"
+          aria-label={loadingMoreLibraryTracks ? "Loading additional library tracks" : undefined}
+        >
+          {loadingMoreLibraryTracks ? <span className="library-spinner" aria-hidden="true" /> : null}
         </div>
       ) : null}
 
