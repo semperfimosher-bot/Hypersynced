@@ -1369,7 +1369,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
 
   useEffect(() => {
-    if (!currentTrackId || sortMode !== "recent") return;
+    if (!currentTrackId || !["recent", "smart"].includes(sortMode)) return;
     const tracks = displayResults.tracks ?? [];
     if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(tracks, currentTrackId);
@@ -2564,7 +2564,7 @@ async function downloadOpenedPlaylist() {
       count={collaborationTracks.length}
       modifier="hs-search-discovery-panel--collaborations"
     >
-      {collaborationTracks.map((track) => {
+      {collaborationTracks.map((track, collaborationIndex) => {
         const trackIndex = displayResults.tracks.findIndex((item) => String(item.id) === String(track.id));
         const artwork = resolveArtworkUrl(track.artwork_url);
         const artists = splitArtistCredits(trackArtistCredits(track));
@@ -2575,7 +2575,7 @@ async function downloadOpenedPlaylist() {
             className="hs-search-track hs-library-entity-row hs-search-entity-card hs-collaboration-song-row"
             onClick={() => playTrack(trackIndex)}
           >
-            <span className="hs-search-track__rank">{String(trackIndex + 1).padStart(2, "0")}</span>
+            <span className="hs-search-track__rank">{collaborationIndex + 1}</span>
             <span className="hs-search-track__art hs-search-entity-card__art">
               {artwork ? <img src={artwork} alt="" loading="lazy" decoding="async" /> : <Icon name="music" size={22} />}
             </span>
@@ -3568,7 +3568,7 @@ async function downloadOpenedPlaylist() {
           </section>
 
 
-          {searchError ? (
+          {!searchError && completedSearchQuery === normalizedQuery && !loading && activeFilter !== "all" && searchFilterCount(activeFilter, displayResults.counts) === 0 ? (<section className="hs-search-filter-empty" role="status" aria-live="polite"><span className="hs-search-filter-empty__orb"><i /><i /><i /></span><strong>Nothing in this frequency yet</strong><p>Try another filter or let HyperSynced find something new.</p><button type="button" onClick={() => setActiveFilter("all")}>Show all results</button></section>) : null}\n          {searchError ? (
             <section className="hs-search-message hs-search-message--error">
 
               <Icon
