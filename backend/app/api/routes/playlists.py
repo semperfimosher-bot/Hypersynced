@@ -85,6 +85,8 @@ class PlaylistCreateRequest(
 
     visibility: PlaylistVisibility = "private"
 
+    allow_collaborators: bool = False
+
 
 class PlaylistUpdateRequest(
     BaseModel,
@@ -195,6 +197,8 @@ class PlaylistSummaryResponse(
     description: str | None
 
     visibility: str
+
+    allow_collaborators: bool = False
 
     owner_id: UUID | None
 
@@ -510,6 +514,7 @@ async def serialize_playlist_summary(
         title=playlist.title,
         description=(playlist.description),
         visibility=(playlist.visibility),
+        allow_collaborators=playlist.allow_collaborators,
         owner_id=(playlist.owner_id),
         owner_username=(owner_username),
         track_count=(track_count),
@@ -631,6 +636,7 @@ async def serialize_playlist_summaries(
                 title=playlist.title,
                 description=playlist.description,
                 visibility=playlist.visibility,
+                allow_collaborators=playlist.allow_collaborators,
                 owner_id=playlist.owner_id,
                 owner_username=(
                     "HyperSynced"
@@ -1610,7 +1616,8 @@ async def create_playlist(
         owner_id=user.id,
         title=title,
         description=description,
-        visibility=(payload.visibility),
+        visibility=("public" if payload.allow_collaborators else payload.visibility),
+        allow_collaborators=payload.allow_collaborators,
     )
 
     session.add(
@@ -1767,11 +1774,14 @@ async def add_track_to_playlist(
         user,
     )
 
-    playlist = await require_playlist_owner(
-        session,
-        playlist_id,
-        user,
-    )
+    await lock_playlist(session, playlist_id)
+    playlist = await get_playlist_or_404(session, playlist_id)
+    await session.refresh(playlist)
+    if playlist.owner_id != user.id and not (playlist.allow_collaborators and playlist.visibility == "public"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owner or an allowed collaborator can add tracks.",
+        )
 
     track = await session.get(
         Track,
