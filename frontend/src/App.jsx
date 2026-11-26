@@ -581,6 +581,7 @@ function MainPage({
               onOpenPlaylist={onOpenPlaylist}
               onOpenAuth={onOpenAuth}
               activePlaylistDownloads={activePlaylistDownloads}
+              isActive={activePage === "search"}
             />
           </div>
         ) : null}
