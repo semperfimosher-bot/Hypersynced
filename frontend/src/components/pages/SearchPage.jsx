@@ -2812,10 +2812,15 @@ async function downloadOpenedPlaylist() {
             .filter((item) => item.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()))
             .slice(0, 6)
             .map((item) => (
-              <button type="button" role="option" aria-selected="false" key={item} onClick={() => { rememberSearch(item); setSuggestionsDismissed(true); onQueryChange(item); }}>
-                <span className="hs-search-history-suggestions__icon"><Icon name="search" size={14} /></span>
-                <span>{item}</span>
-              </button>
+              <div className="hs-search-history-suggestion" role="option" aria-selected="false" key={item}>
+                <button type="button" className="hs-search-history-suggestion__open" onClick={() => { rememberSearch(item); setSuggestionsDismissed(true); onQueryChange(item); }}>
+                  <span className="hs-search-history-suggestions__icon"><Icon name="search" size={14} /></span>
+                  <span>{item}</span>
+                </button>
+                <button type="button" className="hs-search-history-suggestion__remove" aria-label={`Remove ${item} from search history`} title="Remove from search history" onClick={(event) => { event.stopPropagation(); const next = removeRecentSearch(item, recentSearchOwner); setRecentSearches(next); }}>
+                  <Icon name="close" size={14} />
+                </button>
+              </div>
             ))}
         </div>
       ) : null}
