@@ -4621,37 +4621,26 @@ useEffect(() => {
 
         </div>
         {isRegistered ? (
+          {visiblePlaylists.length > 0 ? (
           <button type="button" className="hs-search-primary-action hs-library-new-playlist hs-library-new-playlist--desktop" onClick={() => setCreateOpen(true)}>
             <Icon name="plus" size={16} />
             New Playlist
           </button>
         ) : null}
+        ) : null}
       </div>
 
 
       <div className="hs-search-console__status">
-
-        <span
-          className={
-            "hs-search-status-chip " +
-            "hs-search-status-chip--primary"
-          }
-        >
-          <i />
-        </span>
-
-
-        <span className="hs-search-status-chip">
-          {ownedPlaylists.length}
-          {" OWNED"}
-        </span>
-
-
-        <span className="hs-search-status-chip">
-          {savedPlaylists.length}
-          {" SAVED"}
-        </span>
-
+        {visiblePlaylists.length === 0 ? (
+          <span className="hs-library-empty-status">Ready to sync</span>
+        ) : (
+          <>
+            <span className={"hs-search-status-chip " + "hs-search-status-chip--primary"><i /></span>
+            <span className="hs-search-status-chip">{ownedPlaylists.length} OWNED</span>
+            <span className="hs-search-status-chip">{savedPlaylists.length} SAVED</span>
+          </>
+        )}
       </div>
         </div>
 
@@ -5256,24 +5245,24 @@ useEffect(() => {
         ) : visiblePlaylists.length ===
           0 ? (
 
-          <div className="hs-library-empty">
-
-            <Icon
-              name="playlist"
-              size={22}
-            />
-
-            <div>
-              <strong>
-  Your Library is empty
-</strong>
-
-<p>
-  Create a playlist or add a generated
-  playlist and it will appear here.
-</p>
+          <div className="hs-library-empty hs-library-playlist-empty">
+            <div className="hs-library-empty-art" aria-hidden="true">
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--back"><Icon name="music" size={24} /></span>
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--middle"><Icon name="disc" size={26} /></span>
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--front"><Icon name="playlist" size={28} /></span>
             </div>
-
+            <strong>Your Library is ready for its first playlist</strong>
+            <p>Build a collection around your mood, favorite artists, or whatever you want to hear next.</p>
+            <button type="button" className="hs-library-empty-create" onClick={() => isRegistered ? setCreateOpen(true) : onOpenAuth?.()}>
+              <Icon name="plus" size={16} /> Create Your First Playlist
+            </button>
+            <div className="hs-library-empty-prompts" aria-label="Playlist starter ideas">
+              {["Late Night Synthwave","High-Energy Workout","Chill Focus Beats","Road Trip Favorites"].map((prompt) => (
+                <button type="button" key={prompt} onClick={() => { setCreateTitle(prompt); setCreateDescription(""); setCreateOpen(true); }}>
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
 
         ) : (
