@@ -186,6 +186,7 @@ function SearchPage({
   onInitialArtistHandled,
   resetToken = 0,
   activePlaylistDownloads = [],
+  isActive = false,
 }) {
   const trackActionMenu =
   useTrackActionMenu();
@@ -251,6 +252,7 @@ function SearchPage({
   }, [offlineOwnerKey]);
 
   useEffect(() => {
+    if (!isActive) return undefined;
     let cancelled = false;
     let idleHandle = null;
     const commands = [
@@ -304,7 +306,7 @@ function SearchPage({
       if (idleHandle != null && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleHandle);
       else if (idleHandle != null) window.clearTimeout(idleHandle);
     };
-  }, []);
+  }, [isActive]);
 
 
   const [
