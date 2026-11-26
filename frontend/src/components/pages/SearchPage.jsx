@@ -1400,7 +1400,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     }, [openedPlaylist?.tracks, playlistSearchQuery, sortMode, recentlyPlayedHistory]);
 
   useEffect(() => {
-    if (!currentTrackId || sortMode !== "recent" || !openedPlaylist) return;
+    if (!currentTrackId || !["recent", "smart"].includes(sortMode) || !openedPlaylist) return;
     const tracks = filteredOpenedPlaylistTracks;
     if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(tracks, currentTrackId);
