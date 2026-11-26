@@ -607,3 +607,9 @@
 /* Fluorescent cyan-blue progress for manual catalog uploads. */
 .admin-upload-studio .upload-progress{background:rgba(0,207,255,.12);border:1px solid rgba(0,220,255,.16);}
 .admin-upload-studio .upload-progress i{background:linear-gradient(90deg,#00f0ff,#00a5ff 72%,#247bff);box-shadow:0 0 10px rgba(0,230,255,.8),0 0 22px rgba(0,155,255,.48);}
+
+/* Eight clockwise revolutions, easing into a still completion mark. */
+.upload-success-wheel { display:block; width:34px; height:34px; color:#54ddff; transform:rotate(0deg); }
+.upload-success-wheel--spin { animation:upload-completion-wheel 2.35s cubic-bezier(.08,.62,.18,1) both; }
+@keyframes upload-completion-wheel { from { transform:rotate(0deg); } to { transform:rotate(2880deg); } }
+@media (prefers-reduced-motion:reduce) { .upload-success-wheel--spin { animation-duration:650ms; } }
