@@ -490,7 +490,8 @@ export default function ProfilePage({
           }}
         />
 
-</sectio      <section className="hs-profile-listening-stat-bands" aria-label="Listening statistics">
+      </section>
+      <section className="hs-profile-listening-stat-bands" aria-label="Listening statistics">
         <div className="hs-profile-listening-stat-band">
           <span className="hs-profile-listening-stat-band__label">DATA FROM ACROSS ACCOUNT</span>
           <div className="hs-profile-listening-stat-band__cards">
@@ -505,7 +506,7 @@ export default function ProfilePage({
             <Stat icon="headphones" value={`${Math.floor(deviceListeningStats.listenedSeconds / 3600)}h`} label="Listening Time" />
           </div>
         </div>
-      </section>n>
+      </section>
 
 
       <section className="hs-profile-section">
