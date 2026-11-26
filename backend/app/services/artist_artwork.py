@@ -336,7 +336,11 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
                             "artist_qid": candidate["id"], "image_url": image_url,
                             "content_type": None, "source_url": info.get("url") or image_url,
                             "source_page_url": source_page, "license": license_name,
-                            "credit": ext.get("Artist", {}).get("value") or ext.get("Credit", {}).get("value") or "",
+                            "credit": (
+                                ext.get("Artist", {}).get("value")
+                                or ext.get("Credit", {}).get("value")
+                                or ""
+                            ),
                         }
         return await _commons_search_for_artist_image(client, clean_name)
 
