@@ -1307,7 +1307,9 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
 
   const displayResults =
   useMemo(() => {
-    const relevant = filterSearchResultsForQuery(combinedResults, normalizedQuery);
+    const relevant = combinedResults.intent === "general"
+      ? filterSearchResultsForQuery(combinedResults, normalizedQuery)
+      : combinedResults;
     const ordered = orderSearchResultsForDisplay(relevant);
     const result = { ...ordered };
     for (const key of ["tracks", "artists", "albums", "collaborations", "playlists", "people"]) {
