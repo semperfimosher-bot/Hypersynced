@@ -18,7 +18,7 @@ function formatLastPlayed(value) {
   return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString();
 }
 
-export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth, isActive = false }) {
+export default function TotalPlayedPage({ currentUser, onRequireAuth, isActive = false }) {
   const online = useOnlineStatus();
   const trackActionMenu = useTrackActionMenu();
   const ownerKey = currentUser?.id ?? currentUser?.username ?? null;
