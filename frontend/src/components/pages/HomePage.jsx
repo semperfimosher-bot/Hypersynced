@@ -174,8 +174,11 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: false });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
-      writeCachedHomeSuggestions(recentOwner, tracks);
-      setSuggestionsState({ owner: recentOwner, tracks });
+      // A transient empty recommendation response must not erase a known-good
+      // Home shelf. Keep the cache when the server returns no tracks.
+      const usableTracks = tracks.length ? tracks : cached;
+      if (tracks.length) writeCachedHomeSuggestions(recentOwner, tracks);
+      setSuggestionsState({ owner: recentOwner, tracks: usableTracks });
     } catch {
       // Cached personalized content remains available if refresh fails.
     }
@@ -215,10 +218,13 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   // Discovery surfaces must not fall back to recent listening or generic newly-added tracks.
   // Recommendations are filtered server-side against the user's last 30 days of history.
-  const discovery = [...suggestedTracks].filter((track, index, all) =>
+  // Home discovery stays populated when recommendations are empty/unavailable:
+  // use newest catalog tracks, not recent listening, as a neutral fallback.
+  const homeDiscoveryPool = suggestedTracks.length ? suggestedTracks : recentlyAdded;
+  const discovery = [...homeDiscoveryPool].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 12);
-  const quickPicks = [...suggestedTracks].filter((track, index, all) =>
+  const quickPicks = [...homeDiscoveryPool].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 6);
   const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
@@ -234,7 +240,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Uploaded" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyPlayed.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={recentlyPlayed} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
-      <ArtistRow tracks={suggestedTracks} fallbackTracks={[]} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
+      <ArtistRow tracks={suggestedTracks} fallbackTracks={recentlyAdded} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
     </div>
   );

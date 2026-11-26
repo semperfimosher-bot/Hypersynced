@@ -21,6 +21,9 @@ test("Home keeps Picked for You and removes the redundant Suggested shelf", () =
   assert.match(page, /recentlyPlayed/);
   assert.match(page, /suggestionsRequestRef/);
   assert.match(page, /requestId !== suggestionsRequestRef\.current/);
+  assert.match(page, /const usableTracks = tracks\.length \? tracks : cached/);
+  assert.match(page, /homeDiscoveryPool = suggestedTracks\.length \? suggestedTracks : recentlyAdded/);
+  assert.match(page, /fallbackTracks=\{recentlyAdded\}/);
   assert.match(page, /seedQueueFromSuggestions\(suggestedTracks\)/);
   assert.match(api, /recommendations\/autoplay/);
 });

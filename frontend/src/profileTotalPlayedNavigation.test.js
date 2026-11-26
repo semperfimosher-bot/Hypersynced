@@ -28,8 +28,10 @@ test("ProfilePage receives navigation callback for Total Played stat", () => {
   assert.match(totalPlayedSource, /rootMargin: "1400px 0px"/);
   assert.match(totalPlayedSource, /tracksRef\.current/);
   assert.doesNotMatch(totalPlayedSource, /Back to Profile|hs-search-playlist-back/);
-  assert.match(profileSource, /DATA FROM ACROSS ACCOUNT/);
-  assert.match(profileSource, /PER THIS DEVICE/);
+  assert.match(profileSource, /label="Total Played"/);
+  assert.match(profileSource, /label="Listening Time"/);
+  assert.match(profileSource, /<span>ACCOUNT<\/span>/);
+  assert.match(profileSource, /<span>THIS DEVICE<\/span>/);
 });
 
 
@@ -38,7 +40,7 @@ test("Per Device Played opens a local-history page matching Total Played rows", 
   const appSource = fs.readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const devicePage = fs.readFileSync(new URL("./components/pages/DevicePlayedPage.jsx", import.meta.url), "utf8");
   const stats = fs.readFileSync(new URL("./deviceListeningStats.js", import.meta.url), "utf8");
-  assert.match(profile, /deviceListeningStats\.tracksPlayed\.toLocaleString\(\)[\s\S]*?onClick=\{\(\) => onNavigate\?\.\("device-played"\)\}/);
+  assert.match(profile, /<span>THIS DEVICE<\/span><strong>\{deviceListeningStats\.tracksPlayed\.toLocaleString\(\)\}<\/strong>[\s\S]*?onClick=\{\(\) => onNavigate\?\.\("device-played"\)\}/);
   assert.ok(appSource.includes('page === "device-played"'));
   assert.ok(appSource.includes('case "device-played"'));
   assert.ok(devicePage.includes("hs-total-played-track"));
