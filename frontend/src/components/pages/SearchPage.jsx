@@ -46,6 +46,7 @@ import {
   filterSearchResultsForQuery,
   splitArtistCredits,
   isCollaborativeTrack,
+  trackArtistCredits,
 } from "../../searchAlphabetical.js";
 
 import { sortResultItems } from "../../sortResults.js";
@@ -2525,7 +2526,7 @@ async function downloadOpenedPlaylist() {
       {collaborationTracks.map((track) => {
         const trackIndex = displayResults.tracks.findIndex((item) => String(item.id) === String(track.id));
         const artwork = resolveArtworkUrl(track.artwork_url);
-        const artists = splitArtistCredits(track.artist);
+        const artists = splitArtistCredits(trackArtistCredits(track));
         return (
           <button
             type="button"
@@ -2539,7 +2540,7 @@ async function downloadOpenedPlaylist() {
             </span>
             <span className="hs-search-track__copy">
               <strong>{track.title}</strong>
-              <small><ArtistCreditLinks credit={track.artist} onOpenArtist={setOpenedArtistName} /></small>
+              <small><ArtistCreditLinks credit={trackArtistCredits(track)} onOpenArtist={setOpenedArtistName} /></small>
             </span>
             <Icon name="chevron" size={16} />
           </button>
@@ -3751,7 +3752,7 @@ async function downloadOpenedPlaylist() {
                             </strong>
 
                             <small>
-                              <ArtistCreditLinks credit={track.artist} onOpenArtist={setOpenedArtistName} />
+                              <ArtistCreditLinks credit={trackArtistCredits(track)} onOpenArtist={setOpenedArtistName} />
                               {track.album ? ` • ${track.album}` : ""}
                             </small>
                           </span>
