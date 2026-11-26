@@ -3029,14 +3029,20 @@ useEffect(() => {
 
   useEffect(() => {
     if (!activeLibraryEntity || !currentTrackId) return;
-    const sortedCollectionTracks = sortResultItems(
+    const onlineNow = typeof navigator === "undefined" || navigator.onLine !== false;
+    const playableCollectionTracks = filterOfflinePlayableTracks(
       Array.isArray(activeLibraryEntity.tracks) ? activeLibraryEntity.tracks : [],
+      onlineNow,
+      downloadedTrackIds,
+    );
+    const sortedCollectionTracks = sortResultItems(
+      playableCollectionTracks,
       sortMode,
     );
     if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(sortedCollectionTracks, currentTrackId);
     }
-  }, [activeLibraryEntity, currentTrackId, sortMode]);
+  }, [activeLibraryEntity, currentTrackId, sortMode, offlineMode, downloadedTrackIds]);
 
   function renderLibraryEntityTracks(
     entity,
