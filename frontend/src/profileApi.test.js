@@ -30,7 +30,7 @@ test("Home recently played uses the focused Neon endpoint", async () => {
   try {
     assert.deepEqual(await getMyRecentlyPlayed(), tracks);
     const recentRequests = requested.filter(
-      (request) => request.url === "/api/users/me/recently-played",
+      (request) => request.url.startsWith("/api/users/me/recently-played?limit="),
     );
     assert.equal(recentRequests.length, 1);
     assert.equal(recentRequests[0].options?.cache, "no-store");
