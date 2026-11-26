@@ -59,6 +59,8 @@ export default function UploadQueueItem({
   useEffect(() => {
     if (item.status === "success" && previousStatusRef.current !== "success") {
       setAnimateCompletion(true);
+    } else if (item.status !== "success") {
+      setAnimateCompletion(false);
     }
     previousStatusRef.current = item.status;
   }, [item.status]);
