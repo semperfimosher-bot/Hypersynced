@@ -613,3 +613,9 @@
 .upload-success-wheel--spin { animation:upload-completion-wheel 2.35s cubic-bezier(.08,.62,.18,1) both; }
 @keyframes upload-completion-wheel { from { transform:rotate(0deg); } to { transform:rotate(2880deg); } }
 @media (prefers-reduced-motion:reduce) { .upload-success-wheel--spin { animation:none; } }
+
+.upload-completion-banner { display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid rgba(70,210,150,.35); border-radius:12px; background:rgba(3,34,38,.6); }
+.upload-completion-banner .upload-success-wheel { flex:0 0 auto; color:#53e2b4; }
+.upload-completion-banner > div { display:grid; gap:3px; min-width:0; }
+.upload-completion-banner strong { color:#d9fff2; font-size:.95rem; }
+.upload-completion-banner span { color:var(--muted); font-size:.78rem; }
