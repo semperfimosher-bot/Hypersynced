@@ -3504,3 +3504,11 @@ button.hs-profile-stat:hover,
 .hs-artist-profile-page .hs-artist-release-card strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
 .hs-artist-profile-page .hs-artist-release-card span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; color:var(--hs-muted); font-size:10px; }
 @media(max-width:700px){ .hs-artist-profile-page .hs-artist-albums { grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:8px; } .hs-artist-profile-page .hs-artist-release-card { padding:7px; } .hs-artist-profile-page .hs-artist-albums__art { max-width:120px; } }
+
+/* Smaller card sizing throughout artist profile discovery/release sections. */
+.hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:9px; }
+.hs-artist-profile-page .hs-recent-card { padding:8px; border-radius:8px; }
+.hs-artist-profile-page .hs-recent-card__art { margin-bottom:7px; border-radius:6px; }
+.hs-artist-profile-page .hs-recent-card > strong { font-size:12px; }
+.hs-artist-profile-page .hs-recent-card > span { font-size:10px; }
+@media(max-width:700px){ .hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hs-artist-profile-page .hs-recent-card { padding:7px; } }
