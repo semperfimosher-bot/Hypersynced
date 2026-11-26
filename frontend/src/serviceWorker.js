@@ -990,11 +990,23 @@ function isCatalogArtworkRequest(request) {
   return /\/(?:api\/)?catalog\/tracks\/[^/]+\/artwork$/.test(url.pathname);
 }
 
-async function cacheArtworkResponse(cache, request, response) {
+async function cacheArtworkResponse(cache, request, response, notifyClient = false) {
   if (!response?.ok || response.type === "opaque") return;
+  const previous = notifyClient ? await cache.match(request) : null;
   const length = Number(response.headers.get("Content-Length"));
   if (Number.isFinite(length) && length > HTTP_ARTWORK_MAX_BYTES) return;
   await cache.put(request, response.clone());
+  if (notifyClient && previous) {
+    const oldTag = previous.headers.get("ETag");
+    const newTag = response.headers.get("ETag");
+    const oldModified = previous.headers.get("Last-Modified");
+    const newModified = response.headers.get("Last-Modified");
+    const changed = (oldTag && newTag && oldTag !== newTag) || (oldModified && newModified && oldModified !== newModified);
+    if (changed && typeof self !== "undefined" && self.clients?.matchAll) {
+      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true }).catch(() => []);
+      clients.forEach((client) => client.postMessage({ type: "HYPERSYNC_ARTWORK_REFRESHED", url: request.url }));
+    }
+  }
   const keys = await cache.keys();
   if (keys.length > HTTP_ARTWORK_CACHE_LIMIT) {
     await Promise.all(keys.slice(0, keys.length - HTTP_ARTWORK_CACHE_LIMIT).map((key) => cache.delete(key)));
@@ -1009,7 +1021,7 @@ export async function handleCatalogArtworkRequest(request, networkFallback, sche
   if (cached) {
     if (typeof scheduleBackgroundTask === "function") {
       scheduleBackgroundTask(networkFallback(refreshRequest)
-        .then((response) => cacheArtworkResponse(cache, request, response))
+        .then((response) => cacheArtworkResponse(cache, request, response, true))
         .catch(() => null));
     }
     return cached;
