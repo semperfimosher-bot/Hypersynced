@@ -43,6 +43,7 @@ import {
   getFollowedArtists,
   getMyRecentlyPlayed,
 } from "../../profileApi.js";
+import { readFollowedArtistsCache, writeFollowedArtistsCache } from "../../followedArtistsCache.js";
 
 import Icon from
   "../ui/Icon.jsx";
@@ -376,7 +377,8 @@ useEffect(() => {
     "Playlists",
   );
 
-  const [followedArtists, setFollowedArtists] = useState([]);
+  const followedArtistsCacheOwner = currentUser?.id ?? currentUser?.username ?? null;
+  const [followedArtists, setFollowedArtists] = useState(() => readFollowedArtistsCache(followedArtistsCacheOwner) ?? []);
   const [recentlyPlayedHistory, setRecentlyPlayedHistory] = useState([]);
 
   useEffect(() => {
@@ -391,7 +393,7 @@ useEffect(() => {
       if (active) setRecentlyPlayedHistory([]);
     });
     return () => { active = false; };
-  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type, followedArtistsCacheOwner]);
 
   useEffect(() => {
     let active = true;
@@ -399,10 +401,14 @@ useEffect(() => {
       setFollowedArtists([]);
       return () => { active = false; };
     }
+    const cached = readFollowedArtistsCache(followedArtistsCacheOwner);
+    if (cached) setFollowedArtists(cached);
     void getFollowedArtists().then((items) => {
-      if (active) setFollowedArtists(Array.isArray(items) ? items : []);
+      const next = Array.isArray(items) ? items : [];
+      writeFollowedArtistsCache(followedArtistsCacheOwner, next);
+      if (active) setFollowedArtists(next);
     }).catch(() => {
-      if (active) setFollowedArtists([]);
+      if (active && !cached) setFollowedArtists([]);
     });
     return () => { active = false; };
   }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
@@ -3673,11 +3679,6 @@ useEffect(() => {
   if (openingPlaylistId) {
     return (
       <div className="page-stack hs-search-page hs-library-page hs-playlist-loading-view" aria-busy="true" aria-label="Loading playlist">
-        <div className="hs-search-playlist-view__nav">
-          <button type="button" className="hs-search-playlist-back" onClick={() => { setOpeningPlaylistId(null); selectedPlaylistIdRef.current = null; }}>
-            <Icon name="chevron" size={15} /> Back to Library
-          </button>
-        </div>
         <section className="hs-playlist-loading-hero">
           <div className="hs-playlist-loading-art hs-playlist-shimmer" />
           <div className="hs-playlist-loading-copy">
@@ -3723,32 +3724,6 @@ useEffect(() => {
           `hs-library-playlist-view--${presentation.kind}`
         }
       >
-
-        <div className="hs-search-playlist-view__nav">
-
-          <button
-            type="button"
-            className="hs-search-playlist-back"
-            onClick={() => {
-              selectedPlaylistIdRef.current = null;
-              setPlaylistSearchQuery(
-                "",
-              );
-
-              setSelectedPlaylist(
-                null,
-              );
-            }}
-          >
-            <Icon
-              name="chevron"
-              size={15}
-            />
-
-            Back to Library
-          </button>
-
-        </div>
 
 
         <section className="hs-search-playlist-view__hero">
@@ -5002,24 +4977,7 @@ useEffect(() => {
           <div>
 
             {activeLibraryEntity ? (
-              <button
-                type="button"
-                className="hs-search-playlist-back hs-library-entity-back"
-                onClick={() => {
-                  setSelectedLibraryEntity(
-                    null,
-                  );
-                }}
-              >
-                <Icon
-                  name="chevron"
-                  size={14}
-                />
-
-                Back to
-                {" "}
-                {activeTab}
-              </button>
+              <span>LIBRARY INDEX</span>
             ) : (
               <span>
                 LIBRARY INDEX
