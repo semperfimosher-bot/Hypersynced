@@ -308,6 +308,10 @@ function LibraryPage({
   const resultsSortMenu =
     useResultsSortMenu();
 
+  // Keep the online state available before any effects reference it.
+  const online = useOnlineStatus();
+  const offlineMode = !online;
+
   const [
     sortMode,
     setSortMode,
@@ -3339,12 +3343,6 @@ useEffect(() => {
         sortMode,
       ],
     );
-
-  const online =
-    useOnlineStatus();
-
-  const offlineMode =
-    !online;
 
   const visibleSongTracks =
     focusedLibraryTrack
