@@ -95,7 +95,13 @@ function TrackArtwork({
   const [refreshKey, setRefreshKey] = useState(0);
   const [cachedSrc, setCachedSrc] = useState("");
   useEffect(() => {
-    if (!artworkUrl) {
+    const refreshArtworkCache = (url) => {
+    void import("../../searchArtworkCache.js")
+      .then(({ refreshSearchArtwork }) => refreshSearchArtwork(url))
+      .catch(() => {});
+  };
+
+  if (!artworkUrl) {
       setCachedSrc("");
       return undefined;
     }
@@ -157,10 +163,10 @@ function TrackArtwork({
         decoding="async"
         onLoad={(event) => {
           resetArtworkRetry(event.currentTarget);
-          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
+          if (!cachedSrc) refreshArtworkCache(artworkUrl);
         }}
         onError={(event) => {
-          if (!cachedSrc) void refreshSearchArtwork(artworkUrl);
+          if (!cachedSrc) refreshArtworkCache(artworkUrl);
           if (
             retryTransientArtwork(
               event,
