@@ -53,8 +53,8 @@ export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH, priorit
       warmedArtworkUrls.delete(warmedArtworkUrls.values().next().value);
     }
     warmed += 1;
-    persistWarmedArtworkUrls();
   }
+  if (warmed > 0) persistWarmedArtworkUrls();
   return warmed;
 }
 
