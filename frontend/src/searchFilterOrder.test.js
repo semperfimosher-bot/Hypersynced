@@ -59,7 +59,7 @@ test(
         "All",
         "Albums",
         "Artists",
-        "Collaborations",
+        "Collab",
         "People",
         "Playlists",
         "Tracks",
