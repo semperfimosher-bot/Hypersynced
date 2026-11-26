@@ -90,6 +90,16 @@ function memberFor(value) {
 }
 
 
+function StatSplit({ icon, label, children }) {
+  return (
+    <div className="hs-profile-stat hs-profile-stat--split">
+      <Icon name={icon} size={19} />
+      <strong className="hs-profile-stat--split__label">{label}</strong>
+      <div className="hs-profile-stat--split__values">{children}</div>
+    </div>
+  );
+}
+
 function Stat({
   value,
   label,
@@ -488,18 +498,20 @@ export default function ProfilePage({
       </section>
       <section className="hs-profile-listening-stat-bands" aria-label="Listening statistics">
         <div className="hs-profile-listening-stat-band">
-          <span className="hs-profile-listening-stat-band__label">DATA FROM ACROSS ACCOUNT</span>
-          <div className="hs-profile-listening-stat-band__cards">
-            <Stat icon="music" value={profile?.tracks_played ?? 0} label="Total Played" onClick={() => onNavigate?.("total-played")} />
-            <Stat icon="headphones" value={`${profile?.hours_listened ?? 0}h`} label="Listening Time" />
-          </div>
+          <StatSplit icon="music" label="Total Played">
+            <button type="button" onClick={() => onNavigate?.("total-played")} aria-label="Open account Total Played">
+              <span>ACCOUNT</span><strong>{Number(profile?.tracks_played ?? 0).toLocaleString()}</strong>
+            </button>
+            <button type="button" onClick={() => onNavigate?.("device-played")} aria-label="Open this device Total Played">
+              <span>THIS DEVICE</span><strong>{deviceListeningStats.tracksPlayed.toLocaleString()}</strong>
+            </button>
+          </StatSplit>
         </div>
         <div className="hs-profile-listening-stat-band">
-          <span className="hs-profile-listening-stat-band__label">PER THIS DEVICE</span>
-          <div className="hs-profile-listening-stat-band__cards">
-            <Stat icon="music" value={deviceListeningStats.tracksPlayed.toLocaleString()} label="Total Played" onClick={() => onNavigate?.("device-played")} />
-            <Stat icon="headphones" value={`${Math.floor(deviceListeningStats.listenedSeconds / 3600)}h ${Math.floor((deviceListeningStats.listenedSeconds % 3600) / 60)}m`} label="Listening Time" />
-          </div>
+          <StatSplit icon="headphones" label="Listening Time">
+            <div><span>ACCOUNT</span><strong>{profile?.hours_listened ?? 0}h</strong></div>
+            <div><span>THIS DEVICE</span><strong>{Math.floor(deviceListeningStats.listenedSeconds / 3600)}h {Math.floor((deviceListeningStats.listenedSeconds % 3600) / 60)}m</strong></div>
+          </StatSplit>
         </div>
       </section>
 
@@ -661,7 +673,7 @@ export default function ProfilePage({
               ) => (
                 <button
                   type="button"
-                  className="hs-artist-row"
+                  className="hs-search-track hs-library-track-row hs-profile-top-artist-row"
                   key={artist.artist}
                   {...collectionActionMenu.getTriggerProps({
                     key:
@@ -695,24 +707,17 @@ export default function ProfilePage({
                     );
                   }}
                 >
-                  <strong>
-                    #{index + 1}
-                  </strong>
-
-                  <span>
-                    {artist.artist}
+                  <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="hs-search-track__art hs-profile-top-artist-rank" aria-hidden="true">{index + 1}</span>
+                  <span className="hs-search-track__copy">
+                    <strong>{artist.artist}</strong>
+                    <small>Top artist</small>
                   </span>
-
-                  <em>
-                    {artist.plays}
-                    {" "}
-                    plays
-                  </em>
-
-                  <Icon
-                    name="chevron"
-                    size={15}
-                  />
+                  <span className="hs-search-track__signals">
+                    <em>{Number(artist.plays ?? 0).toLocaleString()} PLAYS</em>
+                  </span>
+                  <span className="hs-search-track__duration" aria-hidden="true"><Icon name="chevron" size={15} /></span>
+                  <span className="hs-search-track__play" aria-hidden="true"><Icon name="chevron" size={14} /></span>
                 </button>
               ),
             )}
