@@ -3866,62 +3866,7 @@ useEffect(() => {
 
             </div>
 
-          </div>
-
-        </section>
-
-
-        {error ? (
-          <section className="hs-search-message hs-search-message--error">
-
-            <div>
-              <strong>
-                PLAYLIST ERROR
-              </strong>
-
-              <p>
-                {error}
-              </p>
-            </div>
-
-          </section>
-        ) : null}
-
-
-        <section className="hs-search-section">
-
-          <div className="hs-search-section__heading">
-
-            <div>
-              <span>
-                PLAYLIST CONTENT
-              </span>
-
-              <h3>
-                Tracks
-              </h3>
-            </div>
-
-            <strong>
-              {(
-                playlistSearchQuery.trim() ||
-                likedGenreFilter !==
-                  "all"
-              )
-                ? (
-                    filteredSelectedPlaylistTracks.length +
-                    " / " +
-                    selectedPlaylist.tracks.length
-                  )
-                : selectedPlaylist.tracks.length}
-            </strong>
-
-          </div>
-
-          {selectedPlaylist.tracks.length >
-          0 ? (
-            <div className="hs-playlist-track-search">
-              <div className="hs-playlist-track-search__controls">
+            <div className="hs-playlist-track-search__controls">
                 <label className="hs-playlist-track-search__query">
                   <Icon
                     name="search"
@@ -3991,6 +3936,64 @@ useEffect(() => {
                   </label>
                 ) : null}
               </div>
+
+
+          </div>
+
+        </section>
+
+
+        {error ? (
+          <section className="hs-search-message hs-search-message--error">
+
+            <div>
+              <strong>
+                PLAYLIST ERROR
+              </strong>
+
+              <p>
+                {error}
+              </p>
+            </div>
+
+          </section>
+        ) : null}
+
+
+        <section className="hs-search-section">
+
+          <div className="hs-search-section__heading">
+
+            <div>
+              <span>
+                PLAYLIST CONTENT
+              </span>
+
+              <h3>
+                Tracks
+              </h3>
+            </div>
+
+            <strong>
+              {(
+                playlistSearchQuery.trim() ||
+                likedGenreFilter !==
+                  "all"
+              )
+                ? (
+                    filteredSelectedPlaylistTracks.length +
+                    " / " +
+                    selectedPlaylist.tracks.length
+                  )
+                : selectedPlaylist.tracks.length}
+            </strong>
+
+          </div>
+
+          {selectedPlaylist.tracks.length >
+          0 ? (
+            <div className="hs-playlist-track-search">
+              
 
               <div className="hs-playlist-track-search__meta">
                 <span>
