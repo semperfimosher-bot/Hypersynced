@@ -1317,6 +1317,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
         ...current,
         playlists: (current.playlists ?? []).map((item) => String(item?.id) === playlistId ? { ...item, is_saved: saved } : item),
       }));
+      setDiscoveryTracks((current) => Array.isArray(current) ? current.map((item) => String(item?.id) === playlistId ? { ...item, is_saved: saved } : item) : current);
       setOpenedPlaylist((current) => String(current?.id ?? "") === playlistId ? { ...current, is_saved: saved } : current);
     };
     window.addEventListener("hypersync:library-changed", handleLibraryChanged);

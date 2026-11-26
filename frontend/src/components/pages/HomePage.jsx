@@ -171,7 +171,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: false });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: true });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       // A transient empty recommendation response must not erase a known-good
@@ -214,6 +214,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   useEffect(() => {
     if (firstWarmTrack?.id) void player.warmTrackForPlayback(firstWarmTrack.id, firstWarmTrack, { warmBytes: 256 * 1024 });
   }, [firstWarmTrack?.id]);
+  const greetingPeriod = (() => { const hour = new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good night"; })();
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   // Discovery surfaces must not fall back to recent listening or generic newly-added tracks.
@@ -224,7 +225,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const discovery = [...homeDiscoveryPool].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 12);
-  const quickPicks = [...homeDiscoveryPool].filter((track, index, all) =>
+  const quickPicks = [...homeDiscoveryPool, ...recentlyAdded].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 6);
   const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
@@ -233,7 +234,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
 
   return (
     <div className="page-stack home-page">
-      <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `Good to see you, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
+      <header className="home-page__greeting"><span>YOUR MUSIC, YOUR SPACE</span><h1>{currentUser ? `${greetingPeriod}, ${currentUser.username ?? "there"}` : "Welcome to HyperSynced"}</h1></header>
       <HomeCarousel recent={recentlyPlayed} suggestions={suggestedTracks} fallbackTracks={recentlyAdded} onNavigate={onNavigate} guest={!currentUser} onOpenAuth={onOpenAuth} onPlay={play} onPlayPicked={(tracks) => { void player.playTrackQueue(tracks); }} pickedTracks={discovery} onOpenArtist={onOpenArtist} />
       {downloadedArtistNotice ? <DownloadedArtistTrackNotice track={downloadedArtistNotice} onDismiss={() => setDownloadedArtistNotice(null)} /> : null}
       <QuickPicks tracks={quickPicks} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} onNavigate={onNavigate} onRecent={() => onNavigate?.("profile")} />
