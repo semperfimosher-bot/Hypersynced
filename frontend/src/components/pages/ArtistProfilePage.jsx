@@ -460,19 +460,7 @@ export default function ArtistProfilePage({
   if (!online) {
     return (
       <div className="hs-profile-page hs-artist-profile-page">
-        <button
-          type="button"
-          className="hs-artist-back"
-          onClick={
-            onBack
-          }
-        >
-          <Icon
-            name="chevron"
-            size={16}
-          />
-          Back
-        </button>
+        
 
         <OfflineNotice
           title="Go back online to see this artist"
@@ -499,19 +487,7 @@ export default function ArtistProfilePage({
   ) {
     return (
       <div className="hs-profile-page hs-artist-profile-page">
-        <button
-          type="button"
-          className="hs-artist-back"
-          onClick={
-            onBack
-          }
-        >
-          <Icon
-            name="chevron"
-            size={16}
-          />
-          Back
-        </button>
+        
 
         <section className="hs-locked-card">
           <Icon
