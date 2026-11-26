@@ -9440,3 +9440,11 @@ button:disabled {
 .hs-search-page .hs-search-track__art { width:44px; height:44px; flex-basis:44px; border-radius:5px; }
 .hs-search-page .hs-search-track__copy strong { font-size:13px; line-height:1.2; }
 .hs-search-page .hs-search-track__copy small { font-size:11px; line-height:1.2; }
+
+/* Recent search rows allow one-tap removal without selecting the query. */
+.hs-search-history-suggestion { display:flex; align-items:center; min-width:0; border-radius:7px; }
+.hs-search-history-suggestion__open { display:flex; align-items:center; gap:9px; flex:1; min-width:0; min-height:34px; padding:6px 9px; border:0; border-radius:7px; color:#c4dce8; text-align:left; background:transparent; cursor:pointer; }
+.hs-search-history-suggestion__open > span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hs-search-history-suggestion__remove { display:grid; place-items:center; width:32px; height:32px; flex:0 0 32px; border:0; border-radius:6px; color:#718c9e; background:transparent; cursor:pointer; }
+.hs-search-history-suggestion__remove:hover { color:#eaf8ff; background:rgba(21,125,190,.2); }
+.hs-search-history-suggestion:hover { background:rgba(21,125,190,.12); }
