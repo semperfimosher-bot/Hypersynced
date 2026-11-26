@@ -9448,3 +9448,9 @@ button:disabled {
 .hs-search-history-suggestion__remove { display:grid; place-items:center; width:32px; height:32px; flex:0 0 32px; border:0; border-radius:6px; color:#718c9e; background:transparent; cursor:pointer; }
 .hs-search-history-suggestion__remove:hover { color:#eaf8ff; background:rgba(21,125,190,.2); }
 .hs-search-history-suggestion:hover { background:rgba(21,125,190,.12); }
+
+/* Album entity rows retain left padding and never clip the leading text/art. */
+.hs-search-entity-card.hs-library-entity-row { width:100%; max-width:100%; box-sizing:border-box; padding-inline:12px; overflow:hidden; }
+.hs-search-entity-card.hs-library-entity-row > * { min-width:0; }
+.hs-search-entity-card.hs-library-entity-row .hs-search-track__copy { padding-inline-start:2px; }
+@media(max-width:760px){ .hs-search-entity-card.hs-library-entity-row { padding-inline:12px !important; grid-template-columns:24px 42px minmax(0,1fr) 16px; gap:8px; } .hs-search-entity-card.hs-library-entity-row .hs-search-entity-card__art { width:42px; height:42px; } }
