@@ -3482,3 +3482,6 @@ button.hs-profile-stat:hover,
 .hs-profile-recent-list > .hs-recent-card > span:not(.hs-recent-card__play) { grid-area:artist; align-self:start; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; line-height:1.2; color:var(--hs-muted,#718c9e); }
 .hs-profile-recent-list > .hs-recent-card .hs-recent-card__play { grid-area:play; justify-self:end; position:static !important; display:flex; opacity:1; background:transparent; }
 @media(max-width:700px) { .hs-profile-recent-list > .hs-recent-card { grid-template-columns:44px minmax(0,1fr) 16px !important; min-height:56px !important; height:56px !important; gap:2px 8px !important; padding:5px 8px !important; } .hs-profile-recent-list .hs-recent-card__art { width:44px !important; height:44px !important; min-width:44px; } }
+
+.hs-profile-recent-artist-links button { display:inline; padding:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.hs-profile-recent-artist-links button:hover { color:var(--hs-blue,#54ddff); text-decoration:underline; }
