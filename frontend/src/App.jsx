@@ -175,6 +175,9 @@ function preloadPage(page) {
     case "listening-time":
       request = import("./components/pages/ListeningTimePage.jsx");
       break;
+    case "listening-time":
+      request = import("./components/pages/ListeningTimePage.jsx");
+      break;
     case "public-profile":
       request = import("./components/pages/PublicProfilePage.jsx");
       break;

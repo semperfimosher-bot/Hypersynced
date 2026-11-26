@@ -49,3 +49,20 @@ test("device play starts update local history immediately with per-track play co
     assert.equal(history.find((track) => track.id === "song-b").play_count, 1);
   });
 });
+
+
+test("device listening session log records date, duration, and day/night totals", () => {
+  withStorage(() => {
+    const owner = "session-log-user";
+    const initial = { trackId: "song-logged", paused: true, phase: "loading", currentTime: 0, title: "Logged song", artist: "Logged artist" };
+    recordDevicePlayback(owner, { ...initial, paused: false, phase: "playing" }, initial);
+    recordDevicePlayback(owner, { ...initial, paused: false, phase: "playing", currentTime: 2 }, { ...initial, paused: false, phase: "playing", currentTime: 0 });
+    const sessions = readDeviceListeningSessions(owner);
+    assert.equal(sessions.length, 1);
+    assert.equal(sessions[0].track_id, "song-logged");
+    assert.equal(sessions[0].title, "Logged song");
+    assert.equal(sessions[0].listened_seconds, 2);
+    assert.equal(sessions[0].day_seconds + sessions[0].night_seconds, 2);
+    assert.ok(sessions[0].started_at);
+  });
+});
