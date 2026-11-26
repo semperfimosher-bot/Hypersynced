@@ -33,7 +33,7 @@ import {
   saveSearchPreferences,
   searchHypersync,
 } from "../../searchApi.js";
-import { getSuggestedMusic, searchUsers } from "../../profileApi.js";
+import { getSuggestedMusic, searchUsers, getMyRecentlyPlayed } from "../../profileApi.js";
 
 
 
@@ -581,6 +581,21 @@ useEffect(() => {
   const [completedSearchQuery, setCompletedSearchQuery] = useState("");
   const [discoveryTracks, setDiscoveryTracks] = useState([]);
   const [discoveryLoading, setDiscoveryLoading] = useState(false);
+  const [recentlyPlayedHistory, setRecentlyPlayedHistory] = useState([]);
+  useEffect(() => {
+    let active = true;
+    if (currentUser?.account_type !== "registered") {
+      setRecentlyPlayedHistory([]);
+      return () => { active = false; };
+    }
+    void getMyRecentlyPlayed({ limit: 1000 }).then((items) => {
+      if (active) setRecentlyPlayedHistory(Array.isArray(items) ? items : []);
+    }).catch(() => {
+      if (active) setRecentlyPlayedHistory([]);
+    });
+    return () => { active = false; };
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
+
   const [discoveryError, setDiscoveryError] = useState("");
 
   const [
@@ -1316,6 +1331,13 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       : combinedResults;
     const ordered = orderSearchResultsForDisplay(relevant);
     const result = { ...ordered };
+    const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
+    if (Array.isArray(result.tracks)) {
+      result.tracks = result.tracks.map((track) => ({
+        ...track,
+        last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? null,
+      }));
+    }
     for (const key of ["tracks", "artists", "albums", "collaborations", "playlists", "people"]) {
       if (Array.isArray(result[key])) result[key] = sortResultItems(result[key], sortMode);
     }
@@ -1329,8 +1351,24 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
       playlists: result.playlists.length,
     };
     return result;
-  }, [combinedResults, sortMode, normalizedQuery]);
+  }, [combinedResults, sortMode, normalizedQuery, recentlyPlayedHistory]);
 
+
+  useEffect(() => {
+    if (!currentTrackId || sortMode !== "recent") return;
+    const tracks = displayResults.tracks ?? [];
+    if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
+      player.reorderQueueFromCollection(tracks, currentTrackId);
+    }
+  }, [displayResults.tracks, currentTrackId, sortMode]);
+
+  useEffect(() => {
+    if (!currentTrackId || sortMode !== "recent" || !openedPlaylist) return;
+    const tracks = filteredOpenedPlaylistTracks;
+    if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
+      player.reorderQueueFromCollection(tracks, currentTrackId);
+    }
+  }, [filteredOpenedPlaylistTracks, currentTrackId, sortMode, openedPlaylist?.id]);
 
   const resultTotal =
     useMemo(
@@ -1344,18 +1382,14 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     );
 
   const filteredOpenedPlaylistTracks =
-    useMemo(
-      () =>
-        filterPlaylistTracks(
-          openedPlaylist?.tracks ??
-            [],
-          playlistSearchQuery,
-        ),
-      [
-        openedPlaylist?.tracks,
-        playlistSearchQuery,
-      ],
-    );
+    useMemo(() => {
+      const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
+      const withHistory = (openedPlaylist?.tracks ?? []).map((track) => ({
+        ...track,
+        last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? null,
+      }));
+      return sortResultItems(filterPlaylistTracks(withHistory, playlistSearchQuery), sortMode);
+    }, [openedPlaylist?.tracks, playlistSearchQuery, sortMode, recentlyPlayedHistory]);
 
   useEffect(() => {
     setPlaylistSearchQuery(
