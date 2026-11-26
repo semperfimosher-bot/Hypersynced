@@ -3512,3 +3512,19 @@ button.hs-profile-stat:hover,
 .hs-artist-profile-page .hs-recent-card > strong { font-size:12px; }
 .hs-artist-profile-page .hs-recent-card > span { font-size:10px; }
 @media(max-width:700px){ .hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .hs-artist-profile-page .hs-recent-card { padding:7px; } }
+
+
+/* Artist page rows are connected, with square middle rows and only block-end corners. */
+.hs-artist-profile-page .hs-artist-track-list { display:flex; flex-direction:column; gap:0; overflow:hidden; border-radius:8px; background:var(--hs-surface); }
+.hs-artist-profile-page .hs-artist-track-list > button { border-radius:0 !important; border-bottom:1px solid rgba(80,125,148,.16) !important; background:var(--hs-surface) !important; min-height:54px; height:auto; padding:6px 10px; }
+.hs-artist-profile-page .hs-artist-track-list > button:first-child { border-radius:8px 8px 0 0 !important; }
+.hs-artist-profile-page .hs-artist-track-list > button:last-child { border-bottom:0 !important; border-radius:0 0 8px 8px !important; }
+.hs-artist-profile-page .hs-artist-track-list > button:hover { background:var(--hs-surface-hover) !important; }
+.hs-artist-profile-page .hs-artist-albums { grid-template-columns:repeat(auto-fill,minmax(120px,154px)); gap:8px; }
+.hs-artist-profile-page .hs-artist-release-card { padding:7px; border-radius:6px; background:var(--hs-surface); }
+.hs-artist-profile-page .hs-artist-albums__art { max-width:128px; }
+.hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:8px; }
+.hs-artist-profile-page .hs-recent-card { padding:7px; border-radius:6px; background:var(--hs-surface); border:1px solid rgba(75,150,180,.08); transition:background 140ms ease,border-color 140ms ease; }
+.hs-artist-profile-page .hs-recent-card:hover { background:var(--hs-surface-hover); border-color:rgba(75,180,210,.2); }
+.hs-artist-profile-page .hs-recent-card__art { max-width:128px; margin-inline:auto; }
+@media(max-width:700px) { .hs-artist-profile-page .hs-artist-albums { grid-template-columns:repeat(2,minmax(0,1fr)); } .hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
