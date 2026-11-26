@@ -35,7 +35,7 @@ const tracks = [
 
 
 test(
-  "smart sort puts most recently played first and keeps unknown recency last",
+  "smart sort preserves source order for non-library search results",
   () => {
     assert.deepEqual(
       sortResultItems(
@@ -45,14 +45,24 @@ test(
         (track) => track.id,
       ),
       [
-        "two",
         "one",
+        "two",
         "three",
       ],
     );
   },
 );
 
+
+test(
+  "library smart sort puts recent track metadata first and unknown recency last",
+  () => {
+    assert.deepEqual(
+      sortResultItems(tracks, "librarySmart").map((track) => track.id),
+      ["two", "one", "three"],
+    );
+  },
+);
 
 test(
   "albums mode groups by album then artist and title",
