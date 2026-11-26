@@ -23,8 +23,11 @@ test("ProfilePage receives navigation callback for Total Played stat", () => {
   assert.match(appSource, /hs-total-played-keepalive/);
   assert.match(appSource, /totalPlayedScrollPositionRef/);
   assert.match(appSource, /main\.scrollTop = totalPlayedScrollPositionRef\.current/);
-  assert.match(appSource, /<TotalPlayedPage currentUser=\{currentUser\} onNavigate=\{onNavigate\} isActive=\{activePage === "total-played"\} \/>/);
+  assert.match(appSource, /<TotalPlayedPage currentUser=\{currentUser\} isActive=\{activePage === "total-played"\} \/>/);
   const totalPlayedSource = fs.readFileSync(new URL("./components/pages/TotalPlayedPage.jsx", import.meta.url), "utf8");
   assert.match(totalPlayedSource, /rootMargin: "1400px 0px"/);
   assert.match(totalPlayedSource, /tracksRef\.current/);
+  assert.doesNotMatch(totalPlayedSource, /Back to Profile|hs-search-playlist-back/);
+  assert.match(profileSource, /DATA FROM ACROSS ACCOUNT/);
+  assert.match(profileSource, /PER THIS DEVICE/);
 });
