@@ -655,8 +655,9 @@ async def get_me(
 async def get_my_recently_played(
     user: CurrentUser,
     session: DatabaseSession,
+    limit: int = Query(default=12, ge=1, le=1000),
 ) -> list[TrackSummary]:
-    """Return only recent listening history for the Home page."""
+    """Return listening history ordered newest-first for Home and Library sorting."""
     recent_summary = (
         select(
             ListeningEvent.track_id.label("track_id"),
@@ -680,7 +681,7 @@ async def get_my_recently_played(
             recent_summary.c.track_id == Track.id,
         )
         .order_by(recent_summary.c.last_played_at.desc())
-        .limit(12)
+        .limit(limit)
     )
 
     return [
