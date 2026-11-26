@@ -9186,3 +9186,86 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .hs-search-scan-dot.is-active { animation: none; }
 }
+
+
+/* Search "All" keeps Albums, Artists and Collaborations as full-width long rows. */
+.hs-search-discovery-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px;
+}
+.hs-search-discovery-grid > .hs-search-discovery-panel {
+  width: 100%;
+  min-width: 0;
+}
+.hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+.hs-search-discovery-grid .hs-search-track.hs-library-entity-row {
+  display: grid;
+  grid-template-columns: 28px 68px minmax(0, 1fr) 18px !important;
+  align-items: center;
+  min-height: 94px !important;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 12px !important;
+  padding: 12px 16px !important;
+  border-radius: 0;
+  text-align: left;
+}
+.hs-search-discovery-grid .hs-search-track__art,
+.hs-search-discovery-grid .hs-search-entity-card__art {
+  width: 68px !important;
+  height: 68px !important;
+  flex: 0 0 68px;
+}
+.hs-search-discovery-grid .hs-search-track__copy,
+.hs-search-discovery-grid .hs-search-entity-card > span:nth-child(3) {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  justify-self: start;
+  gap: 3px;
+  text-align: left;
+}
+.hs-search-discovery-grid .hs-search-track__copy strong,
+.hs-search-discovery-grid .hs-search-track__copy small,
+.hs-search-discovery-grid .hs-search-entity-card strong,
+.hs-search-discovery-grid .hs-search-entity-card em {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hs-search-discovery-grid .hs-search-entity-card > svg {
+  justify-self: end;
+}
+.hs-search-discovery-grid .hs-search-entity-card:first-of-type,
+.hs-search-discovery-grid .hs-search-track:first-of-type {
+  border-top: 1px solid rgba(66, 128, 154, 0.11);
+}
+@media (max-width: 979px) {
+  .hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+  .hs-search-discovery-grid .hs-search-track.hs-library-entity-row {
+    grid-template-columns: 22px 50px minmax(0, 1fr) 16px !important;
+    min-height: 78px !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  .hs-search-discovery-grid .hs-search-track__art,
+  .hs-search-discovery-grid .hs-search-entity-card__art {
+    width: 50px !important;
+    height: 50px !important;
+  }
+}
+@media (max-width: 480px) {
+  .hs-search-discovery-grid .hs-search-entity-card.hs-library-entity-row,
+  .hs-search-discovery-grid .hs-search-track.hs-library-entity-row {
+    grid-template-columns: 18px 46px minmax(0, 1fr) 14px !important;
+    min-height: 72px !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+  .hs-search-discovery-grid .hs-search-track__art,
+  .hs-search-discovery-grid .hs-search-entity-card__art {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}
