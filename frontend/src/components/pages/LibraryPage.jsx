@@ -4620,13 +4620,11 @@ useEffect(() => {
         )}
 
         </div>
-        {isRegistered ? (
-          {visiblePlaylists.length > 0 ? (
+        {isRegistered && visiblePlaylists.length > 0 ? (
           <button type="button" className="hs-search-primary-action hs-library-new-playlist hs-library-new-playlist--desktop" onClick={() => setCreateOpen(true)}>
             <Icon name="plus" size={16} />
             New Playlist
           </button>
-        ) : null}
         ) : null}
       </div>
 
