@@ -130,7 +130,6 @@ export default function ArtistProfilePage({
   artistName,
   currentUser,
   onOpenAuth,
-  onBack,
   onOpenRelease,
 }) {
   const online =
@@ -548,19 +547,6 @@ export default function ArtistProfilePage({
 
   return (
     <div className="hs-profile-page hs-artist-profile-page">
-      <button
-        type="button"
-        className="hs-artist-back"
-        onClick={
-          onBack
-        }
-      >
-        <Icon
-          name="chevron"
-          size={16}
-        />
-        Back to search
-      </button>
 
       <section className="hs-profile-hero hs-artist-hero">
         <div
