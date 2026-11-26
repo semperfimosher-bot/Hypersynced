@@ -30,6 +30,7 @@ test("Song action menu has no standalone offline download action", () => {
 
 test("Find Your Mix uses discovery candidates with a 30-day listening cooldown", () => {
   const home = read("./components/pages/HomePage.jsx");
+  const library = read("./components/pages/LibraryPage.jsx");
   const api = read("./profileApi.js");
   const recommendations = read("../../backend/app/api/routes/recommendations.py");
   const autoplay = read("../../backend/app/services/autoplay.py");
