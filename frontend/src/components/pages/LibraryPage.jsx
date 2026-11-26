@@ -41,6 +41,7 @@ import {
 
 import {
   getFollowedArtists,
+  getMyRecentlyPlayed,
 } from "../../profileApi.js";
 
 import Icon from
@@ -364,6 +365,21 @@ useEffect(() => {
   );
 
   const [followedArtists, setFollowedArtists] = useState([]);
+  const [recentlyPlayedHistory, setRecentlyPlayedHistory] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    if (currentUser?.account_type !== "registered") {
+      setRecentlyPlayedHistory([]);
+      return () => { active = false; };
+    }
+    void getMyRecentlyPlayed({ limit: 1000 }).then((items) => {
+      if (active) setRecentlyPlayedHistory(Array.isArray(items) ? items : []);
+    }).catch(() => {
+      if (active) setRecentlyPlayedHistory([]);
+    });
+    return () => { active = false; };
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
 
   useEffect(() => {
     let active = true;
@@ -3030,8 +3046,13 @@ useEffect(() => {
   useEffect(() => {
     if (!activeLibraryEntity || !currentTrackId) return;
     const onlineNow = typeof navigator === "undefined" || navigator.onLine !== false;
+    const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
+    const collectionWithHistory = (Array.isArray(activeLibraryEntity.tracks) ? activeLibraryEntity.tracks : []).map((track) => ({
+      ...track,
+      last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? null,
+    }));
     const playableCollectionTracks = filterOfflinePlayableTracks(
-      Array.isArray(activeLibraryEntity.tracks) ? activeLibraryEntity.tracks : [],
+      collectionWithHistory,
       onlineNow,
       downloadedTrackIds,
     );
@@ -3042,18 +3063,18 @@ useEffect(() => {
     if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(sortedCollectionTracks, currentTrackId);
     }
-  }, [activeLibraryEntity, currentTrackId, sortMode, offlineMode, downloadedTrackIds]);
+  }, [activeLibraryEntity, currentTrackId, sortMode, offlineMode, downloadedTrackIds, recentlyPlayedHistory]);
 
   function renderLibraryEntityTracks(
     entity,
   ) {
+    const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
     const tracks =
       sortResultItems(
-        Array.isArray(
-          entity?.tracks,
-        )
-          ? entity.tracks
-          : [],
+        (Array.isArray(entity?.tracks) ? entity.tracks : []).map((track) => ({
+          ...track,
+          last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? null,
+        })),
         sortMode === "smart" ? "librarySmart" : sortMode,
       );
 
