@@ -915,3 +915,18 @@
   .hs-search-playlist-view__copy .hs-playlist-track-search__query { flex-basis:100%; min-height:36px; }
   .hs-search-playlist-view__copy .hs-liked-genre-filter { flex:1 1 100%; min-width:0; }
 }
+
+
+/* Playlist search controls belong above the playlist track rows, not in the hero. */
+.hs-search-playlist-view__copy > .hs-playlist-track-search__controls { display:none !important; }
+.hs-playlist-track-search { display:flex; flex-direction:column; gap:0; min-width:0; }
+.hs-playlist-track-search__controls {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; margin:0 0 8px; padding:0;
+}
+.hs-playlist-track-search__query { display:flex; flex:1 1 260px; min-width:0; min-height:34px; align-items:center; gap:8px; padding:0 10px; border:1px solid var(--hs-shared-border,#18313f); border-radius:7px; background:#020a10; }
+.hs-playlist-track-search__query input { min-width:0; width:100%; background:transparent; border:0; outline:0; color:inherit; }
+.hs-liked-genre-filter { display:flex; align-items:center; gap:6px; flex:0 1 150px; min-width:120px; min-height:34px; font-size:11px; }
+.hs-liked-genre-filter select { width:100%; min-width:0; }
+.hs-playlist-track-search__clear { flex:0 0 auto; min-height:32px; padding:0 10px; border:1px solid var(--hs-shared-border,#18313f); border-radius:7px; background:#020a10; color:inherit; font-size:11px; }
+.hs-playlist-track-search__clear:hover { background:#012036; }
+@media(max-width:650px) { .hs-playlist-track-search__controls { gap:6px; } .hs-playlist-track-search__query { flex-basis:100%; min-height:34px; } .hs-liked-genre-filter { flex:1 1 100%; min-width:0; } }
