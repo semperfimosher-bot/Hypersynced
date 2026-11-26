@@ -309,35 +309,25 @@ export default function ArtistProfilePage({
       return;
     }
 
-    setFollowBusy(
-      true,
-    );
+    setFollowBusy(true);
+    const previousProfile = profile;
+    const wasFollowing = Boolean(profile.is_following);
+    setProfile((current) => current ? {
+      ...current,
+      is_following: !wasFollowing,
+      followers_count: Math.max(0, Number(current.followers_count || 0) + (wasFollowing ? -1 : 1)),
+    } : current);
 
     try {
-      const next =
-        profile.is_following
-          ? await unfollowArtist(
-              profile.name,
-              artistCacheOwner,
-            )
-          : await followArtist(
-              profile.name,
-              artistCacheOwner,
-            );
-
-      setProfile(
-        next,
-      );
+      const next = wasFollowing
+        ? await unfollowArtist(profile.name, artistCacheOwner)
+        : await followArtist(profile.name, artistCacheOwner);
+      if (next) setProfile(next);
     } catch (actionError) {
-      setError(
-        actionError instanceof Error
-          ? actionError.message
-          : "Unable to update artist follow.",
-      );
+      setProfile(previousProfile);
+      setError(actionError instanceof Error ? actionError.message : "Unable to update artist follow.");
     } finally {
-      setFollowBusy(
-        false,
-      );
+      setFollowBusy(false);
     }
   }
 
