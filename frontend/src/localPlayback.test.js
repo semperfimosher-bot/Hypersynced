@@ -27,7 +27,7 @@ test("app shell and playback restore from local snapshots without cross-device s
 test("upcoming audio and playlist artwork warm before transitions", () => {
   const source = readFileSync(new URL("./audioPlayer.js", import.meta.url), "utf8");
   assert.match(source, /remaining > 5/);
-  assert.match(source, /warmQueuedAudioEntry\(nextEntry/);
+  assert.match(source, /warmQueuedAudioEntry\(entry, \{ warmBytes: 256 \* 1024 \}\)/);
   assert.match(source, /playbackPhase !== "loading"/);
   assert.match(source, /setPlaybackPhase\("loading"\)/);
 });
