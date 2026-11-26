@@ -3993,11 +3993,11 @@ useEffect(() => {
                     </select>
                   </label>
                 ) : null}
+                {(playlistSearchQuery || likedGenreFilter !== "all") ? (
+                  <button type="button" className="hs-playlist-track-search__clear" onClick={() => { setPlaylistSearchQuery(""); setLikedGenreFilter("all"); }}>Clear filters</button>
+                ) : null}
               </div>
 
-              
-
-              
             </div>
           ) : null}
 
