@@ -944,3 +944,14 @@
 .hs-library-page .hs-library-entity-row:first-child { border-top:1px solid rgba(80,125,148,.18) !important; }
 .hs-library-page .hs-library-entity-row:last-child { border-radius:0 0 8px 8px !important; }
 @media(max-width:760px) { .hs-library-page .hs-library-entity-row { grid-template-columns:18px 38px minmax(0,1fr) 12px !important; min-height:54px !important; height:54px; gap:6px !important; padding:5px 8px !important; } .hs-library-page .hs-library-entity-row .hs-search-track__art { width:38px !important; height:38px !important; flex-basis:38px !important; } }
+
+
+/* Compact connected row rhythm for remaining list-style surfaces. */
+.hs-message-conversation-list { display:flex; flex-direction:column; gap:0 !important; overflow:hidden; border-radius:8px; }
+.hs-messages-page .hs-message-conversation-card { min-height:58px; height:auto; padding:8px 10px; border-radius:0 !important; border:0; border-bottom:1px solid rgba(80,125,148,.18); background:#020a10; }
+.hs-messages-page .hs-message-conversation-card:first-child { border-top:1px solid rgba(80,125,148,.18); }
+.hs-messages-page .hs-message-conversation-card:last-child { border-radius:0 0 8px 8px !important; }
+.hs-messages-page .hs-message-conversation-card:hover { background:#012036; }
+.hs-artist-row, .message-notification-row, .admin-explorer-file, .admin-explorer-folder, .upload-queue-item, .hs-admin-device-row { min-height:56px; padding-top:6px; padding-bottom:6px; }
+.hs-artist-row { gap:8px; }
+@media(max-width:700px) { .hs-messages-page .hs-message-conversation-card { min-height:54px; padding:6px 8px; } }
