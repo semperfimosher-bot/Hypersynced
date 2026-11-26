@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   resolveArtworkUrl,
 } from "../../artworkUrl.js";
@@ -90,8 +91,22 @@ function TrackArtwork({
   variant = 1,
   priority = false,
 }) {
-  const artworkUrl =
-    resolveArtworkUrl(src);
+  const artworkUrl = resolveArtworkUrl(src);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!artworkUrl || typeof navigator === "undefined" || !navigator.serviceWorker) return undefined;
+    const onMessage = (event) => {
+      if (event.data?.type !== "HYPERSYNC_ARTWORK_REFRESHED" || !event.data.url) return;
+      try {
+        if (new URL(event.data.url, window.location.href).href === new URL(artworkUrl, window.location.href).href) {
+          setRefreshKey((current) => current + 1);
+        }
+      } catch {}
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, [artworkUrl]);
 
   if (!artworkUrl) {
     return (
@@ -105,6 +120,7 @@ function TrackArtwork({
   return (
     <div className="track-artwork-shell">
       <img
+        key={refreshKey}
         className="track-artwork"
         src={artworkUrl}
         alt={alt || "Track artwork"}
