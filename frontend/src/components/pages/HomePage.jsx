@@ -171,7 +171,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: true });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: false });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       writeCachedHomeSuggestions(recentOwner, tracks);
@@ -213,26 +213,13 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   }, [firstWarmTrack?.id]);
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
-  const actualRecentIds = new Set(recentlyPlayed.map((track) => String(track.id)));
-  const recentArtistKeys = new Set(recentlyPlayed.map((track) => normalizedArtistKey(track.artist)).filter(Boolean));
-  const discoveryFallback = recentlyAdded.filter((track) => !recentArtistKeys.has(normalizedArtistKey(track.artist)));
-  const homeDiscoveryPool = [...suggestedTracks, ...discoveryFallback].filter((track, index, all) => track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index).slice(0, 12);
-  const homeRecentFallback = recentlyPlayed.slice(0, 12);
-  const discoveryFresh = homeDiscoveryPool.filter((track) => !actualRecentIds.has(String(track.id)));
-  // Keep Discover populated from cached recommendations, recently added, and recent
-  // listening when the personalized pool is temporarily short.
-  const discoveryFallbackPool = [...discoveryFresh, ...suggestedTracks, ...recentlyAdded, ...recentlyPlayed];
-  const discovery = discoveryFallbackPool.filter((track, index, all) =>
+  // Discovery surfaces must not fall back to recent listening or generic newly-added tracks.
+  // Recommendations are filtered server-side against the user's last 30 days of history.
+  const discovery = [...suggestedTracks].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 12);
-  // Quick Picks are recommendations shaped by recent/current listening context,
-  // not a replay list. Prefer personalized suggestions and only use fresh catalog
-  // tracks as a fallback; exclude entries already in the listening-history cache.
-  const quickPickFallback = recentlyAdded.filter((track) => !actualRecentIds.has(String(track.id)));
-  const quickPickPool = [...suggestedTracks, ...quickPickFallback, ...discoveryFallback];
-  const quickPicks = quickPickPool.filter((track, index, all) =>
-    track?.id && !actualRecentIds.has(String(track.id)) &&
-    all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
+  const quickPicks = [...suggestedTracks].filter((track, index, all) =>
+    track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 6);
   const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
   const artworkWarmKey = artworkWarmTracks.map((track) => track?.id).filter(Boolean).join("|");
@@ -247,7 +234,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
       {discovery.length ? <TrackRow title="Picked for you" eyebrow="DISCOVER" tracks={discovery} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {recentlyAdded.length ? <TrackRow title="Newly Uploaded" eyebrow="JUST ADDED TO HYPERSYNCED" tracks={recentlyAdded} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
       {homeRecentFallback.length >= 6 ? <TrackRow title="Recently played" eyebrow="YOUR LISTENING" tracks={homeRecentFallback} onPlay={play} onWarm={warm} onPlayNext={playNext} getMenuProps={menuProps} /> : null}
-      <ArtistRow tracks={suggestedTracks} fallbackTracks={[...recentlyAdded, ...recentlyPlayed]} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
+      <ArtistRow tracks={suggestedTracks} fallbackTracks={[]} onOpenArtist={onOpenArtist} onNavigate={onNavigate} />
       <TrackActionMenu menu={menu.menu} onClose={menu.closeMenu} currentUser={currentUser} onRequireAuth={onOpenAuth} />
     </div>
   );
