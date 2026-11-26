@@ -65,6 +65,16 @@ test(
 );
 
 test(
+  "recent sort orders played tracks newest first and unplayed tracks last",
+  () => {
+    assert.deepEqual(
+      sortResultItems(tracks, "recent").map((track) => track.id),
+      ["two", "one", "three"],
+    );
+  },
+);
+
+test(
   "albums mode groups by album then artist and title",
   () => {
     assert.deepEqual(
