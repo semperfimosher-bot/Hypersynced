@@ -214,7 +214,7 @@ export default function PublicProfilePage({
     setProfile((current) => current ? {
       ...current,
       follow_status: removeFollow ? null : "pending",
-      followers_count: Math.max(0, Number(current.followers_count || 0) + (wasFollowing ? -1 : removeFollow ? 0 : 1)),
+      followers_count: Math.max(0, Number(current.followers_count || 0) - (wasFollowing ? 1 : 0)),
     } : current);
 
     try {
