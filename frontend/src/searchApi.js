@@ -24,10 +24,10 @@ const SEARCH_STORAGE_INDEX_KEY =
   SEARCH_STORAGE_PREFIX + "index";
 
 const SEARCH_STORAGE_MAX_ENTRIES =
-  30;
+  50;
 
 const SEARCH_CACHE_MAX_BYTES =
-  100_000;
+  300_000;
 
 const searchCache =
   new Map();
