@@ -84,7 +84,7 @@ export default class PageErrorBoundary
                 )}
           </p>
 
-          {this.props.scope === "search" && this.state.error?.message ? (
+          {this.props.scope !== "app" && this.state.error?.message ? (
             <small className="page-error-diagnostic">
               {String(this.state.error.message).slice(0, 240)}
             </small>
