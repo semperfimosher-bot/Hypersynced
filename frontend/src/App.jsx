@@ -12,6 +12,7 @@ import * as player from "./audioPlayer.js";
 import { apiRequest } from "./api/client.js";
 import { shouldSendVisitorHeartbeat } from "./visitorHeartbeat.js";
 import { bindAccountPlayback } from "./accountPlayback.js";
+import { recordDevicePlayback } from "./deviceListeningStats.js";
 
 import {
   getGreetingName,
@@ -723,6 +724,16 @@ export default function App() {
   // only; protected requests still require server session validation.
   const [currentUser, setCurrentUser] =
     useState(() => readCachedUserProfile());
+  useEffect(() => {
+    const owner = currentUser?.id ?? currentUser?.username ?? null;
+    if (!owner) return undefined;
+    let previous = player.getState();
+    return player.subscribe((nextState) => {
+      recordDevicePlayback(owner, nextState, previous);
+      previous = nextState;
+    });
+  }, [currentUser?.id, currentUser?.username]);
+
 
   // Playback and navigation are restored from this browser's local snapshots.
   const [accountStateReady, setAccountStateReady] =
