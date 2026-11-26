@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -12,6 +13,7 @@ import { apiRequest } from "../../api/client.js";
 import UploadDropzone from "../uploads/UploadDropzone.jsx";
 
 import UploadQueue from "../uploads/UploadQueue.jsx";
+import UploadCompletionWheel from "../uploads/UploadCompletionWheel.jsx";
 
 import useUploadQueue from "../../hooks/useUploadQueue.js";
 
@@ -88,6 +90,16 @@ export default function AdminUploadsPage() {
       globalThis.window?.dispatchEvent(new Event("hypersynced:catalog-updated"));
     }
   }, [successCount]);
+  const allQueueUploadsSucceeded = queue.length > 0 && queue.every((item) => item.status === "success");
+  const previousQueueCompletionRef = useRef(false);
+  const [queueCompletionAnimationKey, setQueueCompletionAnimationKey] = useState(0);
+  useEffect(() => {
+    if (allQueueUploadsSucceeded && !previousQueueCompletionRef.current) {
+      setQueueCompletionAnimationKey((current) => current + 1);
+    }
+    previousQueueCompletionRef.current = allQueueUploadsSucceeded;
+  }, [allQueueUploadsSucceeded]);
+
 
   const backfillMetadata =
     async () => {
@@ -356,6 +368,16 @@ export default function AdminUploadsPage() {
             />
           </div>
         </div>
+
+        {allQueueUploadsSucceeded ? (
+          <div className="upload-completion-banner" role="status">
+            <UploadCompletionWheel size={46} animate animationKey={queueCompletionAnimationKey} label="All uploads complete" />
+            <div>
+              <strong>All songs uploaded successfully</strong>
+              <span>{successCount} track{successCount === 1 ? "" : "s"} are ready in the catalog.</span>
+            </div>
+          </div>
+        ) : null}
 
         <UploadQueue
           queue={queue}
