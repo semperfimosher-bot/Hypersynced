@@ -1316,6 +1316,15 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     for (const key of ["tracks", "artists", "albums", "collaborations", "playlists", "people"]) {
       if (Array.isArray(result[key])) result[key] = sortResultItems(result[key], sortMode);
     }
+    result.counts = {
+      ...result.counts,
+      tracks: result.tracks.length,
+      artists: result.artists.length,
+      collaborations: result.collaborations.length,
+      albums: result.albums.length,
+      people: result.people.length,
+      playlists: result.playlists.length,
+    };
     return result;
   }, [combinedResults, sortMode, normalizedQuery]);
 
@@ -1324,7 +1333,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
     useMemo(
       () =>
         totalSearchResultCount(
-          combinedResults.counts,
+          displayResults.counts,
         ),
       [
         combinedResults.counts,
@@ -4451,7 +4460,7 @@ displayResults.tracks.length > 0 ? (
                 </div>
 
                 <strong>
-                  {results.counts.people}
+                  {displayResults.counts.people}
                 </strong>
 
               </div>
