@@ -636,7 +636,7 @@ async def serialize_playlist_summaries(
                 title=playlist.title,
                 description=playlist.description,
                 visibility=playlist.visibility,
-                allow_collaborators=playlist.allow_collaborators,
+                allow_collaborators=bool(playlist.allow_collaborators),
                 owner_id=playlist.owner_id,
                 owner_username=(
                     "HyperSynced"
