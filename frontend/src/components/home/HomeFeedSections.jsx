@@ -83,7 +83,14 @@ export function ArtistRow({ tracks, fallbackTracks = [], onNavigate, onOpenArtis
     artists.push({ name, art: resolveArtworkUrl(track.artist_artwork_url ?? track.artist_image_url ?? track.artwork_url) });
     if (artists.length >= 8) break;
   }
-  if (!artists.length) return (\n    <section className="home-feed-row" aria-label="Artists to explore">\n      <div className="home-feed-heading"><div><span>DISCOVER SOMETHING NEW</span><h2>Artists to explore</h2></div></div>\n      <div className="home-artist-scroll home-scroll-fade">\n        {["Find artists", "Explore genres", "New sounds", "Browse music"].map((label) => <button key={label} type="button" className="home-artist-chip home-artist-chip--empty" onClick={() => onNavigate?.("search")}><span className="home-artist-chip__avatar">♫</span><strong>{label}</strong><small>Explore</small></button>)}\n      </div>\n    </section>\n  );
+  if (!artists.length) return (
+    <section className="home-feed-row" aria-label="Artists to explore">
+      <div className="home-feed-heading"><div><span>DISCOVER SOMETHING NEW</span><h2>Artists to explore</h2></div></div>
+      <div className="home-artist-scroll home-scroll-fade">
+        {["Find artists", "Explore genres", "New sounds", "Browse music"].map((label) => <button key={label} type="button" className="home-artist-chip home-artist-chip--empty" onClick={() => onNavigate?.("search")}><span className="home-artist-chip__avatar">♫</span><strong>{label}</strong><small>Explore</small></button>)}
+      </div>
+    </section>
+  );
   return (
     <section className="home-feed-row">
       <div className="home-feed-heading"><div><span>FROM YOUR MUSIC</span><h2>Artists to explore</h2></div></div>
