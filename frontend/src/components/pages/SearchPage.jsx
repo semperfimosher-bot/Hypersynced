@@ -1941,27 +1941,6 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
   }
 
 
-function closeSearchPlaylist() {
-  setPlaylistSearchQuery(
-    "",
-  );
-
-  openedPlaylistIdRef.current = null;
-  setOpenedPlaylist(null);
-
-  setPlaylistError("");
-  setRemoveDownloadOpen(
-    false,
-  );
-
-  setPlaylistDownload({
-    status: "idle",
-    progress: 0,
-    trackProgress: {},
-  });
-}
-
-
 function playOpenedPlaylist(
   startIndex = 0,
   tracksOverride = null,
