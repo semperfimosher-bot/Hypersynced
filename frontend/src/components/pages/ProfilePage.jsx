@@ -576,12 +576,7 @@ export default function ProfilePage({
                       ×{track.play_count}
                     </span>
 
-                    <span className="hs-play-overlay">
-                      <Icon
-                        name="play"
-                        size={20}
-                      />
-                    </span>
+                    
                   </div>
 
                   <strong>
@@ -590,6 +585,9 @@ export default function ProfilePage({
 
                   <span>
                     {track.artist}
+                  </span>
+                  <span className="hs-recent-card__play" aria-hidden="true">
+                    <Icon name="play" size={15} />
                   </span>
                 </button>
               ),
