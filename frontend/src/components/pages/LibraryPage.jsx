@@ -210,6 +210,14 @@ function formatDuration(
 }
 
 
+function attachRecentlyPlayedHistory(tracks, history) {
+  const historyById = new Map((Array.isArray(history) ? history : []).map((track) => [String(track?.id ?? ""), track]));
+  return (Array.isArray(tracks) ? tracks : []).map((track) => ({
+    ...track,
+    last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? track?.last_played_at ?? null,
+  }));
+}
+
 function playlistPresentation(
   playlist,
 ) {
@@ -3050,7 +3058,7 @@ useEffect(() => {
   useEffect(() => {
     if (!activeLibraryEntity || !currentTrackId) return;
     const onlineNow = typeof navigator === "undefined" || navigator.onLine !== false;
-    const collectionWithHistory = tracksWithPlayHistory(activeLibraryEntity.tracks);
+    const collectionWithHistory = attachRecentlyPlayedHistory(activeLibraryEntity.tracks, recentlyPlayedHistory);
     const playableCollectionTracks = filterOfflinePlayableTracks(collectionWithHistory, onlineNow, downloadedTrackIds);
     const sortedCollectionTracks = sortResultItems(playableCollectionTracks, sortMode === "smart" ? "librarySmart" : sortMode);
     if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
@@ -3320,26 +3328,18 @@ useEffect(() => {
     ),
   ];
 
-  const recentlyPlayedByTrackId = useMemo(
-    () => new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track])),
-    [recentlyPlayedHistory],
-  );
-
-  const tracksWithPlayHistory = (tracks) => (Array.isArray(tracks) ? tracks : []).map((track) => ({
-    ...track,
-    last_played_at: recentlyPlayedByTrackId.get(String(track?.id ?? ""))?.last_played_at ?? track?.last_played_at ?? null,
-  }));
 
   const sortedDownloadedTracks =
     useMemo(
       () =>
         sortResultItems(
-          tracksWithPlayHistory(downloadedTracks),
+          attachRecentlyPlayedHistory(downloadedTracks, recentlyPlayedHistory),
           sortMode,
         ),
       [
         downloadedTracks,
         sortMode,
+        recentlyPlayedHistory,
       ],
     );
 
@@ -3348,7 +3348,7 @@ useEffect(() => {
       ? [focusedLibraryTrack]
       : offlineMode
         ? sortResultItems(
-            tracksWithPlayHistory(mergeLibraryTracks(
+            attachRecentlyPlayedHistory(mergeLibraryTracks(
               libraryTracks,
               allDownloadedTracks,
             )),
@@ -3407,7 +3407,7 @@ useEffect(() => {
     useMemo(
       () =>
         sortResultItems(
-          tracksWithPlayHistory(selectedPlaylist?.tracks ?? []),
+          attachRecentlyPlayedHistory(selectedPlaylist?.tracks ?? [], recentlyPlayedHistory),
           sortMode,
         ),
       [
