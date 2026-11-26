@@ -3559,7 +3559,7 @@ button.hs-profile-stat:hover,
 .hs-profile-top-artist-row .hs-search-track__signals em { font-size:8px; }
 .hs-profile-top-artist-row .hs-search-track__duration { color:#78909d; }
 @media(max-width:700px) {
- .hs-profile-listening-stat-bands { grid-template-columns:1fr; }
+ .hs-profile-listening-stat-bands { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .hs-profile-stat--split { min-height:90px; }
  .hs-profile-top-artist-row { grid-template-columns:20px 40px minmax(0,1fr) minmax(58px,auto) 20px 20px; gap:6px; padding-inline:8px; min-height:58px; }
  .hs-profile-top-artist-row .hs-profile-top-artist-rank { width:40px; height:40px; }
