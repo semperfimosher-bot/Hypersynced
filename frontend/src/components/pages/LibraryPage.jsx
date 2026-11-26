@@ -4634,7 +4634,7 @@ useEffect(() => {
           <span className="hs-library-empty-status">Ready to sync</span>
         ) : (
           <>
-            <span className={"hs-search-status-chip " + "hs-search-status-chip--primary"><i /></span>
+            <span className="hs-search-status-chip hs-search-status-chip--primary"><i /></span>
             <span className="hs-search-status-chip">{ownedPlaylists.length} OWNED</span>
             <span className="hs-search-status-chip">{savedPlaylists.length} SAVED</span>
           </>
