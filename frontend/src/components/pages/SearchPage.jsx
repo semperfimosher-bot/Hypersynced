@@ -2817,7 +2817,7 @@ async function downloadOpenedPlaylist() {
                   <span className="hs-search-history-suggestions__icon"><Icon name="search" size={14} /></span>
                   <span>{item}</span>
                 </button>
-                <button type="button" className="hs-search-history-suggestion__remove" aria-label={`Remove ${item} from search history`} title="Remove from search history" onClick={(event) => { event.stopPropagation(); const next = removeRecentSearch(item, recentSearchOwner); setRecentSearches(next); }}>
+                <button type="button" className="hs-search-history-suggestion__remove" aria-label={`Remove ${item} from search history`} title="Remove from search history" onClick={(event) => { event.preventDefault(); event.stopPropagation(); const next = removeRecentSearch(item, recentSearchOwner); setRecentSearches(next); setSuggestionsDismissed(false); }}>
                   <Icon name="close" size={14} />
                 </button>
               </div>
