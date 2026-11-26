@@ -1055,6 +1055,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
                     quietRefresh,
                   onRefresh: (freshData) => {
                     if (controller.signal.aborted) return;
+                    warmTrackArtwork(freshData?.tracks || [], 8, true);
                     setResults({
                       ...EMPTY_RESULTS,
                       ...(freshData || {}),
@@ -1082,6 +1083,7 @@ const [currentTrackIsPlaying, setCurrentTrackIsPlaying] = useState(
               return;
             }
 
+            warmTrackArtwork(data?.tracks || [], 8, true);
             setResults({
               ...EMPTY_RESULTS,
               ...(data || {}),
