@@ -234,13 +234,16 @@ test("artist profiles cache for instant re-entry and quietly refresh portraits",
 });
 
 
-test("collaboration search rows define their ranking index", () => {
+test("collaboration search rows use collaborative songs and preserve queue track identity", () => {
   const collaborationMap = searchPageSource.slice(
-    searchPageSource.indexOf("displayResults.collaborations.map"),
+    searchPageSource.indexOf("collaborationTracks.map"),
     searchPageSource.indexOf("const albumPanel"),
   );
-  assert.match(collaborationMap, /\(collaboration,\s*index\)\s*=>/);
-  assert.match(collaborationMap, /String\(index\s*\+\s*1\)/);
+  assert.match(searchPageSource, /const collaborationTracks = displayResults\.tracks\.filter\(isCollaborativeTrack\)/);
+  assert.match(collaborationMap, /trackIndex = displayResults\.tracks\.findIndex/);
+  assert.match(collaborationMap, /playTrack\(trackIndex\)/);
+  assert.match(collaborationMap, /track\.title/);
+  assert.match(collaborationMap, /ArtistCreditLinks/);
 });
 
 
