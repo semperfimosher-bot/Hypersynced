@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   resolveArtworkUrl,
 } from "../../artworkUrl.js";
@@ -80,6 +81,21 @@ export default function PlaylistArtwork({
       artworkUrl,
     });
 
+  const [refreshKey, setRefreshKey] = useState(0);
+  const sourceSignature = sources.join("|");
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.serviceWorker) return undefined;
+    const onMessage = (event) => {
+      if (event.data?.type !== "HYPERSYNC_ARTWORK_REFRESHED" || !event.data.url) return;
+      try {
+        const updated = new URL(event.data.url, window.location.href).href;
+        if (sources.some((source) => source && new URL(source, window.location.href).href === updated)) setRefreshKey((current) => current + 1);
+      } catch {}
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, [sourceSignature]);
+
   const visibleCount =
     Math.min(
       Math.max(
@@ -136,11 +152,7 @@ export default function PlaylistArtwork({
           index,
         ) => (
           <span
-            key={
-              String(
-                index,
-              )
-            }
+            key={`${index}-${refreshKey}`}
             className="playlist-artwork-collage__tile"
           >
             {source ? (
