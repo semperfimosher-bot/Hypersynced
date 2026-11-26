@@ -3535,8 +3535,7 @@ async function downloadOpenedPlaylist() {
                   <strong>
                     {searchFilterCount(
                       filter,
-                      combinedResults
-                        .counts,
+                      displayResults.counts,
                     )}
                   </strong>
                 </button>
