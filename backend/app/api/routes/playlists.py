@@ -1777,7 +1777,13 @@ async def add_track_to_playlist(
     await lock_playlist(session, playlist_id)
     playlist = await get_playlist_or_404(session, playlist_id)
     await session.refresh(playlist)
-    if playlist.owner_id != user.id and not (playlist.allow_collaborators and playlist.visibility == "public"):
+    if (
+        playlist.owner_id != user.id
+        and not (
+            playlist.allow_collaborators
+            and playlist.visibility == "public"
+        )
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the owner or an allowed collaborator can add tracks.",
