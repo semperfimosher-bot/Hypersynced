@@ -171,7 +171,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
     setSuggestionsState({ owner: recentOwner, tracks: cached });
     const contextTrackIds = context.split("|").filter(Boolean).slice(0, 12);
     try {
-      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: true });
+      const response = await getSuggestedMusic({ currentTrackId: contextTrackIds[0] ?? null, excludeTrackIds: contextTrackIds, contextTrackIds, limit: 40, homeExplore: true, neverPlayedOnly: false });
       if (requestId !== suggestionsRequestRef.current) return;
       const tracks = Array.isArray(response) ? response : [];
       // A transient empty recommendation response must not erase a known-good
@@ -217,17 +217,17 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   const greetingPeriod = (() => { const hour = new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good night"; })();
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
-  // Discovery surfaces must not fall back to recent listening or generic newly-added tracks.
-  // Recommendations are filtered server-side against the user's last 30 days of history.
-  // Home discovery stays populated when recommendations are empty/unavailable:
-  // use newest catalog tracks, not recent listening, as a neutral fallback.
+  // Request a broad recommendation pool so Home cannot disappear when every song is recently played.
+  // Quick Picks prioritize songs outside the locally known recent-history set, then fill from the catalog.
   const homeDiscoveryPool = suggestedTracks.length ? suggestedTracks : recentlyAdded;
   const discovery = [...homeDiscoveryPool].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
   ).slice(0, 12);
-  const quickPicks = [...homeDiscoveryPool, ...recentlyAdded].filter((track, index, all) =>
+  const recentTrackIds = new Set(recentlyPlayed.map((track) => String(track?.id ?? "")).filter(Boolean));
+  const quickPickPool = [...homeDiscoveryPool, ...recentlyAdded].filter((track, index, all) =>
     track?.id && all.findIndex((candidate) => String(candidate?.id) === String(track.id)) === index
-  ).slice(0, 6);
+  );
+  const quickPicks = [...quickPickPool.filter((track) => !recentTrackIds.has(String(track.id))), ...quickPickPool.filter((track) => recentTrackIds.has(String(track.id)))].slice(0, 6);
   const artworkWarmTracks = [...quickPicks, ...recentlyPlayed, ...suggestedTracks, ...recentlyAdded];
   const artworkWarmKey = artworkWarmTracks.map((track) => track?.id).filter(Boolean).join("|");
   useEffect(() => { warmTrackArtwork(artworkWarmTracks, 18); }, [artworkWarmKey]);

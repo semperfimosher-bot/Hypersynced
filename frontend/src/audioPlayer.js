@@ -212,6 +212,8 @@ const AUTOPLAY_CONTEXT_SIZE =
 let queueRevision =
   0;
 
+let shuffleModeEnabled = false;
+
 let autoplayFill =
   null;
 
@@ -1273,6 +1275,9 @@ export function getState() {
 
     paused:
       audio.paused,
+
+    shuffleEnabled:
+      shuffleModeEnabled,
 
     phase:
       playbackPhase,
@@ -2791,6 +2796,7 @@ export function playTrackNext(
 
 
 export function shuffleUpcomingQueue(){if(!currentQueue.length)return false;const pinned=currentQueueIndex>=0&&currentQueueIndex<currentQueue.length?currentQueue[currentQueueIndex]:null;const next=currentQueue.slice(pinned?currentQueueIndex+1:0);for(let i=next.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[next[i],next[j]]=[next[j],next[i]];}currentQueue=pinned?[pinned,...next]:next;currentQueueIndex=pinned?0:-1;queueRevision+=1;persistQueueSnapshot();notify();return next.length>1;}
+export function toggleUpcomingQueueShuffle(){if(!currentQueue.length)return false;if(shuffleModeEnabled){shuffleModeEnabled=false;queueRevision+=1;persistQueueSnapshot();notify();return false;}if(currentQueue.length-(currentQueueIndex>=0?currentQueueIndex+1:0)<2)return false;shuffleModeEnabled=true;shuffleUpcomingQueue();return true;}
 export function reorderQueueFromCollection(
   tracks,
   currentTrackId,

@@ -44,6 +44,7 @@ import {
   getMyRecentlyPlayed,
 } from "../../profileApi.js";
 import { readFollowedArtistsCache, writeFollowedArtistsCache } from "../../followedArtistsCache.js";
+import { getArtistProfile } from "../../artistApi.js";
 
 import Icon from
   "../ui/Icon.jsx";
@@ -492,6 +493,7 @@ const [
   selectedLibraryEntity,
   setSelectedLibraryEntity,
 ] = useState(null);
+const [artistCatalogProfiles, setArtistCatalogProfiles] = useState({});
 
 const [
   focusedLibraryTrack,
@@ -3031,14 +3033,14 @@ useEffect(() => {
             name,
             artwork_url: follow?.artwork_url || null,
             has_profile_picture: Boolean(follow?.has_profile_picture),
-            tracks: local?.tracks ?? [],
-            track_count: local?.track_count ?? 0,
-            album_count: local?.album_count ?? 0,
+            tracks: artistCatalogProfiles[key]?.tracks ?? local?.tracks ?? [],
+            track_count: artistCatalogProfiles[key]?.tracks?.length ?? local?.track_count ?? 0,
+            album_count: artistCatalogProfiles[key]?.albums?.length ?? local?.album_count ?? 0,
           };
         })
         .filter((artist) => artist.name)
         .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base", numeric: true }));
-    }, [libraryEntityTracks, followedArtists]);
+    }, [libraryEntityTracks, followedArtists, artistCatalogProfiles]);
 
 
   const libraryAlbums =
@@ -3098,6 +3100,17 @@ useEffect(() => {
     setFocusedLibraryTrack(null);
     setActiveTab(kind === "artist" ? "Artists" : "Albums");
     setSelectedLibraryEntity({ kind, key });
+    if (kind === "artist") {
+      const artist = libraryArtists.find((item) => item.key === key);
+      const name = artist?.name;
+      if (name && !artistCatalogProfiles[key]?.tracks?.length && online) {
+        void getArtistProfile(name, followedArtistsCacheOwner).then((profile) => {
+          if (profile && Array.isArray(profile.tracks)) {
+            setArtistCatalogProfiles((current) => ({ ...current, [key]: profile }));
+          }
+        }).catch(() => {});
+      }
+    }
   }
 
 

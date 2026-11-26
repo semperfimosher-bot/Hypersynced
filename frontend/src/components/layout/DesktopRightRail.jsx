@@ -92,6 +92,8 @@ function DesktopRightRail({
       ),
   );
 
+  const [shuffleEnabled, setShuffleEnabled] = useState(() => Boolean(player.getState()?.shuffleEnabled));
+
   const [
     activeTab,
     setActiveTab,
@@ -107,6 +109,7 @@ function DesktopRightRail({
               nextState,
             );
 
+          setShuffleEnabled(Boolean(nextState?.shuffleEnabled));
           setState(
             (currentState) =>
               isSameRightRailPlayerState(
@@ -317,7 +320,7 @@ function DesktopRightRail({
     "right-rail-queue"
   }
 >
-  <div className="right-rail-queue__heading"><div className="right-rail-queue__heading-copy"><span>UP NEXT</span><small>{upcomingQueue.length} {upcomingQueue.length===1?"track":"tracks"}</small></div><div className="right-rail-queue__actions"><button type="button" onClick={()=>player.shuffleUpcomingQueue()} disabled={upcomingQueue.length<2}>Shuffle</button><button type="button" onClick={()=>player.clearUpcomingQueue()} disabled={!upcomingQueue.length}>Clear</button></div></div>
+  <div className="right-rail-queue__heading"><div className="right-rail-queue__heading-copy"><span>UP NEXT</span><small>{upcomingQueue.length} {upcomingQueue.length===1?"track":"tracks"}</small></div><div className="right-rail-queue__actions"><button type="button" aria-pressed={shuffleEnabled} className={shuffleEnabled?"is-active":""} onClick={()=>setShuffleEnabled(player.toggleUpcomingQueueShuffle())} disabled={upcomingQueue.length<2}>{shuffleEnabled?"Shuffle on":"Shuffle"}</button><button type="button" onClick={()=>player.clearUpcomingQueue()} disabled={!upcomingQueue.length}>Clear</button></div></div>
   {upcomingQueue.length>0?<div className="right-rail-queue__rows">{upcomingQueue.map(({queueIndex,track})=><button type="button" className="right-rail-queue-row" key={`${track.id}-${queueIndex}`} {...trackActionMenu.getTriggerProps({id:track.id,title:track.meta?.title??"",artist:track.meta?.artist??"",album:track.meta?.album??"",genre:track.meta?.genre??"",release_year:track.meta?.releaseYear??null,audio_url:track.meta?.audioUrl??null,artwork_url:track.meta?.artworkUrl??null,mime_type:track.meta?.mimeType??null,file_size:track.meta?.fileSize??null,media_version:track.meta?.mediaVersion??null,artwork_version:track.meta?.artworkVersion??null,duration_seconds:track.meta?.durationSeconds??null})} onClick={()=>void player.playQueueIndex(queueIndex).catch(()=>{})} aria-label={`Play ${track.meta?.title||"queued track"}`}><span className="right-rail-queue-row__art"><TrackArtwork src={track.meta?.artworkUrl} alt={track.meta?.title||"Track artwork"} variant={1}/></span><span className="right-rail-queue-row__copy"><strong>{track.meta?.title||"Untitled Track"}</strong><small>{[track.meta?.artist||"Unknown artist",track.meta?.album||"",formatQueueDuration(track.meta?.durationSeconds)].filter(Boolean).join(" • ")}</small></span><Icon name="chevron" size={12}/></button>)}</div>:<div className="right-rail-list"><span>Queue is empty</span><small>Play a collection of tracks to see what is coming next.</small></div>}</div>
 
         )}
