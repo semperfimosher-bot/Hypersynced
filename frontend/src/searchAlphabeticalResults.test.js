@@ -3,6 +3,7 @@ import {
   existsSync,
 } from "node:fs";
 import test from "node:test";
+import { filterSearchResultsForQuery, splitArtistCredits, isCollaborativeTrack } from "./searchAlphabetical.js";
 
 
 const moduleUrl =
@@ -161,8 +162,8 @@ test(
 );
 
 
-test("short search terms only return direct name/title/credit matches", async () => {
-  const { filterSearchResultsForQuery } = await import("./searchAlphabetical.js").catch(async () => ({filterSearchResultsForQuery:(await import("./searchAlphabetical.js")).filterSearchResultsForQuery}));
+test("short search terms only return direct name/title/credit matches", () => {
+
   const result = filterSearchResultsForQuery({
     tracks:[{title:"Moonlight",artist:"Morgan",album:"Midnight"},{title:"Summer",artist:"Taylor",album:"Daylight"}],
     artists:[{name:"Morgan"},{name:"Taylor"}],
@@ -174,8 +175,8 @@ test("short search terms only return direct name/title/credit matches", async ()
   assert.deepEqual(result.playlists.map(x=>x.title),["Morgan Mix"]);
 });
 
-test("artist credits split collaboration names into distinct profile targets", async () => {
-  const { splitArtistCredits, isCollaborativeTrack } = await import("./searchAlphabetical.js");
+test("artist credits split collaboration names into distinct profile targets", () => {
+
   assert.deepEqual(splitArtistCredits("Artist One feat. Artist Two"),["Artist One","Artist Two"]);
   assert.equal(isCollaborativeTrack({artist:"Artist One & Artist Two",title:"Song"}),true);
   assert.equal(isCollaborativeTrack({artist:"Artist One",title:"Song ft Artist Two"}),true);
