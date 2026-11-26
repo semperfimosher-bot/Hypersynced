@@ -852,35 +852,9 @@ export default function MessagesPage({
 
         <section className="hs-message-thread hs-message-thread--focused">
           <header className="hs-message-thread__header hs-message-thread__header--focused">
-            <button
-              type="button"
-              className="hs-search-playlist-back hs-message-thread__back hs-message-thread__back--desktop"
-              onClick={
-                closeConversation
-              }
-            >
-              <Icon
-                name="chevron"
-                size={15}
-              />
+            
 
-              Back to messages
-            </button>
-
-            <button
-              type="button"
-              className="hs-search-playlist-back hs-message-thread__back hs-message-thread__back--mobile"
-              onClick={() => {
-                onBackToSearch?.();
-              }}
-            >
-              <Icon
-                name="chevron"
-                size={15}
-              />
-
-              Back to search
-            </button>
+            
 
             {conversation ? (
               <button
