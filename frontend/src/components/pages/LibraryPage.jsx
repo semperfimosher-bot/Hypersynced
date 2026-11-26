@@ -2247,117 +2247,101 @@ useEffect(() => {
 }
 
 
-  async function handleCreatePlaylist(
-    event,
-  ) {
+  async function handleCreatePlaylist(event) {
     event.preventDefault();
+    const title = createTitle.trim();
+    if (!title || creating) return;
 
-    const title =
-      createTitle.trim();
+    const description = createDescription.trim() || null;
+    const visibility = createVisibility;
+    const optimisticId = `pending-playlist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticPlaylist = {
+      id: optimisticId,
+      title,
+      description,
+      visibility,
+      owner_username: currentUser?.username ?? "You",
+      is_owner: true,
+      track_count: 0,
+      tracks: [],
+      artwork_urls: [],
+      artwork_url: null,
+      pending_create: true,
+    };
 
-    if (!title) {
-      return;
-    }
-
-    setCreating(true);
+    // Show the new playlist immediately. The API request and cache write
+    // happen in the background; failed creation removes the optimistic row.
+    setOwnedPlaylists(current => [optimisticPlaylist, ...current]);
+    setCreateTitle("");
+    setCreateDescription("");
+    setCreateVisibility("private");
+    setCreateOpen(false);
+    setCreating(false);
     setError("");
 
-    try {
-      const playlist =
-        await createPlaylist({
-          title,
-
-          description:
-            createDescription.trim()
-              ? createDescription.trim()
-              : null,
-
-          visibility:
-            createVisibility,
-        });
-
-      setOwnedPlaylists(
-        (current) => [
-          playlist,
-          ...current,
-        ],
-      );
-
-      setCreateTitle("");
-      setCreateDescription("");
-
-      setCreateVisibility(
-        "private",
-      );
-
-      setCreateOpen(false);
-
-      setSelectedPlaylist(
-        playlist,
-      );
-    } catch (requestError) {
-      setError(
-        requestError
-          instanceof Error
-          ? requestError.message
-          : "Unable to create playlist.",
-      );
-    } finally {
-      setCreating(false);
-    }
+    void createPlaylist({ title, description, visibility })
+      .then(async (playlist) => {
+        setOwnedPlaylists(current => current.map(item =>
+          String(item.id) === optimisticId ? playlist : item
+        ));
+        const cached = getCachedLibrary(libraryCacheKey);
+        void setCachedLibrary(libraryCacheKey, {
+          owned: [playlist, ...(cached?.owned ?? ownedPlaylists).filter(item => String(item.id) !== String(playlist.id))],
+          saved: cached?.saved ?? savedPlaylists,
+          tracks: cached?.tracks ?? libraryTracksRef.current,
+          hasMoreLibraryTracks: cached?.hasMoreLibraryTracks ?? hasMoreLibraryTracks,
+          libraryNextOffset: cached?.libraryNextOffset ?? libraryNextOffsetRef.current,
+          changeToken: cached?.changeToken ?? libraryChangeTokenRef.current,
+          pendingSavedPlaylistIds: cached?.pendingSavedPlaylistIds ?? [],
+          pendingSavedPlaylistChanges: cached?.pendingSavedPlaylistChanges ?? {},
+        }).catch(() => {});
+      })
+      .catch((requestError) => {
+        setOwnedPlaylists(current => current.filter(item => String(item.id) !== optimisticId));
+        setCreateTitle(title);
+        setCreateDescription(description ?? "");
+        setCreateVisibility(visibility);
+        setCreateOpen(true);
+        setError(requestError instanceof Error ? requestError.message : "Unable to create playlist. Please try again.");
+      });
   }
 
 
   async function handleDeletePlaylist() {
-    if (
-      !selectedPlaylist ||
-      !selectedPlaylist.is_owner ||
-      actionBusy
-    ) {
-      return;
-    }
+    if (!selectedPlaylist || !selectedPlaylist.is_owner || actionBusy) return;
 
-    const confirmed =
-      window.confirm(
-        `Delete "${selectedPlaylist.title}"?`,
-      );
+    const confirmed = window.confirm(`Delete "${selectedPlaylist.title}"?`);
+    if (!confirmed) return;
 
-    if (!confirmed) {
-      return;
-    }
-
+    const target = selectedPlaylist;
     setActionBusy(true);
     setError("");
 
-    try {
-      await deletePlaylist(
-        selectedPlaylist.id,
-      );
+    // Remove from the visible Library immediately. Server confirmation runs
+    // silently; restore the row and selection if deletion fails.
+    setOwnedPlaylists(current => current.filter(item => String(item.id) !== String(target.id)));
+    setSelectedPlaylist(null);
 
-      setOwnedPlaylists(
-        (current) =>
-          current.filter(
-            (playlist) =>
-              playlist.id !==
-              selectedPlaylist.id,
-          ),
-      );
-
-      setSelectedPlaylist(
-        null,
-      );
-
-      await loadLibrary();
-    } catch (requestError) {
-      setError(
-        requestError
-          instanceof Error
-          ? requestError.message
-          : "Unable to delete playlist.",
-      );
-    } finally {
-      setActionBusy(false);
-    }
+    void deletePlaylist(target.id)
+      .then(async () => {
+        const cached = getCachedLibrary(libraryCacheKey);
+        void setCachedLibrary(libraryCacheKey, {
+          owned: (cached?.owned ?? ownedPlaylists).filter(item => String(item.id) !== String(target.id)),
+          saved: cached?.saved ?? savedPlaylists,
+          tracks: cached?.tracks ?? libraryTracksRef.current,
+          hasMoreLibraryTracks: cached?.hasMoreLibraryTracks ?? hasMoreLibraryTracks,
+          libraryNextOffset: cached?.libraryNextOffset ?? libraryNextOffsetRef.current,
+          changeToken: cached?.changeToken ?? libraryChangeTokenRef.current,
+          pendingSavedPlaylistIds: cached?.pendingSavedPlaylistIds ?? [],
+          pendingSavedPlaylistChanges: cached?.pendingSavedPlaylistChanges ?? {},
+        }).catch(() => {});
+      })
+      .catch((requestError) => {
+        setOwnedPlaylists(current => current.some(item => String(item.id) === String(target.id)) ? current : [target, ...current]);
+        setSelectedPlaylist(target);
+        setError(requestError instanceof Error ? requestError.message : "Unable to delete playlist. It was restored.");
+      })
+      .finally(() => setActionBusy(false));
   }
 
 
