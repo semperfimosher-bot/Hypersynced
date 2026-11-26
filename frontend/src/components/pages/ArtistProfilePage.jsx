@@ -173,6 +173,7 @@ export default function ArtistProfilePage({
     setFollowBusy,
   ] = useState(false);
 
+  const artistCacheOwner = currentUser?.id ? String(currentUser.id) : "guest";
   const artworkUrl = resolveArtworkUrl(profile?.artwork_url);
   const [artworkImageLoaded, setArtworkImageLoaded] = useState(false);
   const [artworkImageFailed, setArtworkImageFailed] = useState(false);
@@ -196,13 +197,13 @@ export default function ArtistProfilePage({
           return;
         }
 
-        const cachedProfile = getCachedArtistProfile(artistName);
+        const cachedProfile = getCachedArtistProfile(artistName, artistCacheOwner);
         setProfile(cachedProfile);
         setLoading(!cachedProfile);
         setError("");
 
         try {
-          const nextProfile = await getArtistProfile(artistName);
+          const nextProfile = await getArtistProfile(artistName, artistCacheOwner);
           setProfile(nextProfile);
           setLoading(false);
         } catch (loadError) {
@@ -218,6 +219,7 @@ export default function ArtistProfilePage({
       },
       [
         artistName,
+        artistCacheOwner,
         online,
       ],
     );
