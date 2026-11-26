@@ -7,7 +7,7 @@ const searchPageSource = readFileSync(
   "utf8",
 );
 const openHandlerStart = searchPageSource.indexOf("function openSearchPlaylist(playlistSeed)");
-const openHandlerEnd = searchPageSource.indexOf("\n\n\nfunction closeSearchPlaylist()", openHandlerStart);
+const openHandlerEnd = searchPageSource.indexOf("\n\n\nfunction playOpenedPlaylist(", openHandlerStart);
 const openHandler = searchPageSource.slice(openHandlerStart, openHandlerEnd);
 
 test("search playlist navigation renders the shell before awaiting playlist data", () => {
