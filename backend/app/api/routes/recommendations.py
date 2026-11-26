@@ -234,9 +234,9 @@ async def autoplay(
         )
     )
 
-    # Home discovery avoids tracks and artists listened to during the last two weeks.
+    # Home discovery avoids tracks and artists listened to during the last month.
     if user is not None and payload.home_explore:
-        cutoff = datetime.now(UTC) - timedelta(days=14)
+        cutoff = datetime.now(UTC) - timedelta(days=30)
         recent_result = await session.execute(
             select(Track.id, Track.artist)
             .join(ListeningEvent, ListeningEvent.track_id == Track.id)
@@ -260,7 +260,7 @@ async def autoplay(
             and str(track.artist or "").strip().casefold()
             not in recent_artist_keys
         ]
-        # Return the filtered candidate pool; Home renders at most 12.
+        # Only recommendation candidates are returned; Home must not inject recent-listening fallbacks.
 
     return [
         AutoplayTrackResponse(
