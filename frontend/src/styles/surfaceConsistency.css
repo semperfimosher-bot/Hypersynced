@@ -826,427 +826,56 @@
 }
 
 
-/* ============================================================
-   REFERENCE ROW SYSTEM — shared music/list surfaces.
-   Home feed/card selectors are intentionally not included here.
-   ============================================================ */
+/* Visual-only shared row finish based on the approved reference. No grid, sizing, or content positioning overrides. */
 :root {
-  --hs-surface: #020A10;
-  --hs-surface-hover: #012036;
-  --hs-shared-surface: var(--hs-surface);
-  --hs-shared-border: rgba(67, 180, 224, 0.16);
-  --hs-shared-row-divider: rgba(114, 165, 190, 0.16);
-  --hs-shared-row-highlight: var(--hs-surface-hover);
-  --hs-shared-row-highlight-shadow: none;
+  --hs-reference-row-surface: #020a10;
+  --hs-reference-row-hover: #012036;
+  --hs-reference-row-border: #18313f;
 }
-
-
-/* Connected row containers all use the same compact border and 8px outline. */
-.hs-search-track-list,
-.library-track-list,
-.hs-search-entity-grid,
-.hs-search-people-list,
-.hs-message-conversation-list,
-.hs-top-artists,
-.hs-recent-grid,
-.message-notification-list,
-.admin-explorer-folder-list,
-.admin-explorer-files,
-.upload-queue,
-.hs-messages-search-section .user-search-results,
-.hs-messages-directory .user-search-results {
-  display: grid;
-  gap: 0;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--hs-shared-border);
-  border-radius: 8px;
-  background: var(--hs-surface);
-}
-
-.hs-total-played-rows,
-.hs-admin-device-rows,
-.admin-device-registry__list {
-  display: grid;
-  gap: 0;
-  min-width: 0;
-  background: var(--hs-surface);
-}
-
-
-/* Row base: consistent color, divider, flat connection, and 8px list outline. */
-.hs-search-track,
-.hs-library-track-row,
-.library-track-row,
-.hs-search-entity-card,
-.hs-library-entity-row,
-.hs-search-person,
-.hs-message-conversation,
-.hs-user-result,
-.hs-artist-row,
-.hs-recent-card,
-.hs-admin-device-row,
-.admin-device-registry__row,
-.admin-explorer-folder-list .admin-explorer-folder,
-.admin-explorer-file,
-.message-notification-row,
-.upload-queue-item {
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: 100%;
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  border-bottom: 1px solid var(--hs-shared-row-divider);
-  background: var(--hs-surface);
-  box-shadow: none;
-  transition: background-color 120ms ease;
-}
-
-.hs-search-track-list > :first-child,
-.library-track-list > :first-child,
-.hs-search-entity-grid > :first-child,
-.hs-search-people-list > :first-child,
-.hs-message-conversation-list > :first-child,
-.hs-top-artists > :first-child,
-.hs-recent-grid > :first-child,
-.message-notification-list > :first-child,
-.admin-explorer-folder-list > :first-child,
-.admin-explorer-files > :first-child,
-.upload-queue > :first-child,
-.hs-total-played-rows > :first-child,
-.hs-admin-device-rows > :first-child,
-.admin-device-registry__list > :first-child,
-.hs-messages-search-section .user-search-results > :first-child,
-.hs-messages-directory .user-search-results > :first-child {
-  border-top: 1px solid var(--hs-shared-row-divider);
-}
-.hs-search-track-list > :last-child,
-.library-track-list > :last-child,
-.hs-search-entity-grid > :last-child,
-.hs-search-people-list > :last-child,
-.hs-message-conversation-list > :last-child,
-.hs-top-artists > :last-child,
-.hs-recent-grid > :last-child,
-.message-notification-list > :last-child,
-.admin-explorer-folder-list > :last-child,
-.admin-explorer-files > :last-child,
-.upload-queue > :last-child,
-.hs-total-played-rows > :last-child,
-.hs-admin-device-rows > :last-child,
-.admin-device-registry__list > :last-child,
-.hs-messages-search-section .user-search-results > :last-child,
-.hs-messages-directory .user-search-results > :last-child {
-  border-bottom: 0;
-}
-.hs-search-track:hover:not(.is-current-track),
-.hs-library-track-row:hover,
-.library-track-row:hover,
-.hs-search-entity-card:hover,
-.hs-library-entity-row:hover,
-.hs-search-person:hover,
-.hs-message-conversation:hover,
-.hs-user-result:hover,
-.hs-artist-row:hover,
-.hs-recent-card:hover,
-.hs-admin-device-row:hover,
-.admin-device-registry__row:hover,
-.admin-explorer-folder-list .admin-explorer-folder:hover,
-.admin-explorer-file:hover,
-.message-notification-row:hover,
-.upload-queue-item:hover {
-  background: var(--hs-surface-hover);
-  box-shadow: none;
-  transform: none;
-}
-
-/* Track rows use the reference geometry on desktop. */
 .hs-search-track:not(.hs-admin-device-row),
 .hs-library-track-row,
-.library-track-row {
-  min-height: 94px;
-  padding: 12px 16px;
-  grid-template-columns: 36px 68px minmax(0, 1fr) minmax(112px, 160px) 44px 44px;
-  gap: 12px;
-}
-.hs-search-track__art,
-.hs-search-track__art .track-artwork-shell,
-.hs-search-track__art .track-artwork,
-.hs-search-track__art .cover-placeholder {
-  width: 68px;
-  height: 68px;
+.library-track-row,
+.hs-library-entity-row,
+.hs-search-entity-row,
+.hs-search-entity-card,
+.hs-recent-card,
+.hs-artist-row,
+.message-notification-row,
+.admin-explorer-file,
+.admin-explorer-folder,
+.upload-queue-item,
+.hs-admin-device-row {
+  background-color: var(--hs-reference-row-surface);
+  border-color: var(--hs-reference-row-border);
   border-radius: 8px;
 }
-.hs-search-track__art { overflow: hidden; }
-.hs-search-track__copy,
-.hs-library-track-row__copy,
-.library-track-row__copy { min-width: 0; }
-.hs-search-track__play,
-.hs-search-track__download,
-.hs-library-track-actions button,
-.library-track-actions button {
-  border-radius: 8px;
+.hs-search-track:not(.hs-admin-device-row):hover,
+.hs-library-track-row:hover,
+.library-track-row:hover,
+.hs-library-entity-row:hover,
+.hs-search-entity-row:hover,
+.hs-search-entity-card:hover,
+.hs-recent-card:hover,
+.hs-artist-row:hover,
+.message-notification-row:hover,
+.admin-explorer-file:hover,
+.admin-explorer-folder:hover,
+.upload-queue-item:hover,
+.hs-admin-device-row:hover {
+  background-color: var(--hs-reference-row-hover);
 }
-
-/* Artist/album and playlist/entity result rows. */
-.hs-library-entity-row.hs-search-track {
-  min-height: 94px;
-  padding: 12px 16px;
-  grid-template-columns: 36px 68px minmax(0, 1fr) 44px;
-  gap: 12px;
+.hs-search-track:not(.hs-admin-device-row) > :first-child,
+.hs-library-track-row > :first-child,
+.library-track-row > :first-child,
+.hs-library-entity-row > :first-child,
+.hs-search-entity-row > :first-child,
+.hs-recent-card > :first-child,
+.hs-artist-row > :first-child,
+.message-notification-row > :first-child,
+.admin-explorer-file > :first-child,
+.admin-explorer-folder > :first-child,
+.upload-queue-item > :first-child,
+.hs-admin-device-row > :first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
-.hs-library-entity-row .hs-search-track__art { width: 68px; height: 68px; }
-.hs-search-entity-card {
-  min-height: 94px;
-  padding: 12px 16px;
-  grid-template-columns: 68px minmax(0, 1fr) 44px;
-  gap: 12px;
-}
-.hs-search-entity-card__art { width: 68px; height: 68px; border-radius: 8px; }
-.hs-search-entity-card > svg,
-.hs-library-entity-row > svg { justify-self: center; }
-.hs-search-person { min-height: 94px; padding: 12px 16px; grid-template-columns: 56px minmax(0, 1fr) 44px; gap: 12px; }
-.hs-search-person > :first-child { width: 56px; height: 56px; }
-.hs-search-person > svg { justify-self: center; }
-
-/* Profile recent plays become connected rows without touching the Home feed. */
-.hs-recent-grid { grid-template-columns: minmax(0, 1fr); }
-.hs-recent-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 68px minmax(0, 1fr) 44px;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 3px 12px;
-  min-height: 94px;
-  padding: 12px 16px;
-  text-align: left;
-  overflow: hidden;
-}
-.hs-recent-card__art { grid-column: 1; grid-row: 1 / span 2; width: 68px; height: 68px; margin: 0; border-radius: 8px; }
-.hs-recent-card__art .track-artwork-shell,
-.hs-recent-card__art .track-artwork,
-.hs-recent-card__art .cover-placeholder { width: 68px; height: 68px; border-radius: 8px; }
-.hs-recent-card > strong { grid-column: 2; grid-row: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: end; }
-.hs-recent-card > span:not(.hs-recent-card__play) { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: start; }
-.hs-recent-card__play { grid-column: 3; grid-row: 1 / span 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--hs-shared-border); border-radius: 8px; color: #78b8d0; background: var(--hs-surface); }
-.hs-recent-card:hover { border-color: var(--hs-shared-border); box-shadow: none; }
-.hs-recent-card:nth-child(even):hover { transform: none; }
-.hs-recent-card:hover .hs-recent-card__play { background: var(--hs-surface-hover); }
-.hs-recent-card__art .hs-play-overlay { display: none; }
-
-/* Top-artist rankings are connected rows, not separated floating cards. */
-.hs-top-artists { grid-template-columns: minmax(0, 1fr); }
-.hs-artist-row {
-  grid-template-columns: 36px minmax(0, 1fr) auto 44px;
-  min-height: 94px;
-  padding: 12px 16px;
-  gap: 12px;
-  border-radius: 0;
-}
-.hs-artist-row > strong { width: 36px; height: 36px; border-radius: 8px; }
-.hs-artist-row > svg { justify-self: center; }
-.hs-artist-row::before { display: none; }
-.hs-artist-row:hover { transform: none; border-color: var(--hs-shared-border); box-shadow: none; }
-
-/* Messages, notification rows, shared music, and content bubbles. */
-.hs-message-conversation-list,
-.message-notification-list { padding: 0; }
-.hs-message-conversation-card,
-.hs-user-result { min-height: 94px; padding: 12px 16px; border-radius: 0; }
-.message-notification-row { min-height: 82px; border-radius: 0; }
-.hs-message-bubble { border-radius: 8px; border-color: var(--hs-shared-border); background: var(--hs-surface); }
-.hs-message-bubble.is-mine { border-radius: 8px; }
-.hs-shared-music-card { border-radius: 8px; background: var(--hs-surface); }
-.hs-shared-music-card__art { border-radius: 8px; }
-
-/* Media catalog list rows and folder rows. Grid overview tiles are excluded. */
-.admin-explorer-files,
-.admin-explorer-folder-list { gap: 0; }
-.admin-explorer-file { min-height: 94px; padding: 12px 16px; grid-template-columns: 68px minmax(0, 1fr) auto auto; gap: 12px; border-radius: 0; }
-.admin-explorer-file > .track-artwork-shell,
-.admin-explorer-file > .track-artwork,
-.admin-explorer-file > .cover-placeholder { width: 68px; height: 68px; border-radius: 8px; }
-.admin-explorer-folder-list .admin-explorer-folder { min-height: 94px; padding: 12px 16px; grid-template-columns: 68px minmax(0, 1fr) 44px; gap: 12px; border-radius: 0; }
-.admin-explorer-folder-list .admin-explorer-folder__icon { width: 68px; height: 68px; border-radius: 8px; }
-
-/* Upload songs: queue itself is a connected list and each item uses the shared row surface. */
-.upload-queue { padding: 0; }
-.upload-queue-item { min-height: 94px; padding: 12px 16px; border-radius: 0; background: var(--hs-surface); }
-.upload-queue-item__main { min-height: 68px; gap: 12px; }
-.upload-queue-item__art { width: 68px; height: 68px; border-radius: 8px; }
-.upload-queue-item__info { min-width: 0; }
-.upload-queue-item__info strong,
-.upload-queue-item__info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upload-queue-item__actions { gap: 8px; flex-wrap: wrap; }
-.upload-item-action { border-radius: 8px; }
-
-/* Device rows remain responsive while sharing the list surface. */
-.hs-admin-device-row,
-.admin-device-registry__row { border-radius: 0; background: var(--hs-surface); }
-.hs-admin-device-rows { border: 0; border-radius: 0; overflow: hidden; }
-.hs-admin-device-list { border-radius: 8px; }
-.hs-total-played-list { border-radius: 8px; overflow: hidden; background: var(--hs-surface); }
-.hs-total-played-table-head,
-.hs-admin-device-head { background: var(--hs-surface); border-bottom: 1px solid var(--hs-shared-row-divider); }
-
-/* Narrow screens: same row surfaces, scaled artwork and safe column sizes. */
-@media (max-width: 979px) {
-  .hs-search-track:not(.hs-admin-device-row),
-  .hs-library-track-row,
-  .library-track-row { min-height: 78px; padding: 8px 10px; gap: 7px; grid-template-columns: 22px 52px minmax(0, 1fr) 36px; }
-  .hs-search-track__art,
-  .hs-search-track__art .track-artwork-shell,
-  .hs-search-track__art .track-artwork,
-  .hs-search-track__art .cover-placeholder { width: 52px; height: 52px; border-radius: 8px; }
-  .hs-library-entity-row.hs-search-track { min-height: 78px; padding: 8px 10px; grid-template-columns: 22px 52px minmax(0, 1fr) 16px; gap: 7px; }
-  .hs-library-entity-row .hs-search-track__art { width: 52px; height: 52px; }
-  .hs-search-entity-card { min-height: 78px; padding: 8px 10px; grid-template-columns: 52px minmax(0, 1fr) 32px; gap: 8px; }
-  .hs-search-entity-card__art { width: 52px; height: 52px; border-radius: 8px; }
-  .hs-search-person { min-height: 78px; padding: 8px 10px; grid-template-columns: 48px minmax(0, 1fr) 32px; gap: 8px; }
-  .hs-search-person > :first-child { width: 48px; height: 48px; }
-  .hs-recent-card { min-height: 78px; padding: 8px 10px; grid-template-columns: 52px minmax(0, 1fr) 36px; gap: 3px 8px; }
-  .hs-recent-card__art,
-  .hs-recent-card__art .track-artwork-shell,
-  .hs-recent-card__art .track-artwork,
-  .hs-recent-card__art .cover-placeholder { width: 52px; height: 52px; border-radius: 8px; }
-  .hs-recent-card__play { width: 36px; height: 36px; border-radius: 8px; }
-  .hs-artist-row { min-height: 78px; padding: 8px 10px; grid-template-columns: 30px minmax(0, 1fr) auto 32px; gap: 8px; }
-  .hs-artist-row > strong { width: 30px; height: 30px; }
-  .hs-message-conversation-card, .hs-user-result { min-height: 78px; padding: 8px 10px; }
-  .admin-explorer-file { min-height: 78px; padding: 8px 10px; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; }
-  .admin-explorer-file > .track-artwork-shell,
-  .admin-explorer-file > .track-artwork,
-  .admin-explorer-file > .cover-placeholder { width: 52px; height: 52px; border-radius: 8px; }
-  .admin-explorer-file .danger-button { grid-column: 3; }
-  .admin-explorer-folder-list .admin-explorer-folder { min-height: 78px; padding: 8px 10px; grid-template-columns: 52px minmax(0, 1fr) 32px; gap: 8px; }
-  .admin-explorer-folder-list .admin-explorer-folder__icon { width: 52px; height: 52px; border-radius: 8px; }
-  .upload-queue-item { padding: 8px 10px; }
-  .upload-queue-item__main { min-height: 52px; }
-  .upload-queue-item__art { width: 52px; height: 52px; border-radius: 8px; }
-}
-@media (max-width: 480px) {
-  .hs-search-track,
-  .hs-library-track-row,
-  .library-track-row { grid-template-columns: 18px 48px minmax(0, 1fr) 30px; gap: 5px; }
-  .hs-search-track__art,
-  .hs-search-track__art .track-artwork-shell,
-  .hs-search-track__art .track-artwork,
-  .hs-search-track__art .cover-placeholder { width: 48px; height: 48px; }
-  .hs-library-entity-row.hs-search-track { grid-template-columns: 18px 48px minmax(0, 1fr) 14px; gap: 5px; }
-  .hs-library-entity-row .hs-search-track__art { width: 48px; height: 48px; }
-  .hs-search-entity-card { grid-template-columns: 48px minmax(0, 1fr) 28px; gap: 6px; }
-  .hs-search-entity-card__art { width: 48px; height: 48px; }
-  .hs-recent-card { grid-template-columns: 48px minmax(0, 1fr) 30px; gap: 3px 6px; }
-  .hs-recent-card__art,
-  .hs-recent-card__art .track-artwork-shell,
-  .hs-recent-card__art .track-artwork,
-  .hs-recent-card__art .cover-placeholder { width: 48px; height: 48px; }
-  .hs-recent-card__play { width: 30px; height: 30px; }
-}
-
-
-/* Responsive reference-row sizing; keep all six track-row cells in one line. */
-@media (max-width: 979px) {
-  .hs-search-track:not(.hs-library-entity-row):not(.hs-admin-device-row),
-  .hs-library-track-row:not(.hs-library-entity-row),
-  .library-track-row {
-    grid-template-columns: 22px 50px minmax(0, 1fr) minmax(44px, 70px) 34px 28px !important;
-    gap: 7px !important;
-  }
-  .hs-search-track__art,
-  .hs-search-track__art .track-artwork-shell,
-  .hs-search-track__art .track-artwork,
-  .hs-search-track__art .cover-placeholder { width: 50px !important; height: 50px !important; }
-  .hs-library-entity-row.hs-search-track { grid-template-columns: 22px 50px minmax(0, 1fr) 16px !important; }
-  .hs-library-entity-row .hs-search-track__art { width: 50px !important; height: 50px !important; }
-  .hs-search-track.hs-admin-device-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto !important; }
-  .hs-admin-device-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
-  .hs-admin-device-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; min-width: 0; }
-  .hs-admin-device-info > small { grid-column: 1 / -1; overflow-wrap: anywhere; }
-}
-@media (max-width: 480px) {
-  .hs-search-track:not(.hs-library-entity-row):not(.hs-admin-device-row),
-  .hs-library-track-row:not(.hs-library-entity-row),
-  .library-track-row {
-    grid-template-columns: 18px 46px minmax(0, 1fr) minmax(38px, 54px) 30px 26px !important;
-    gap: 5px !important;
-  }
-  .hs-search-track__art,
-  .hs-search-track__art .track-artwork-shell,
-  .hs-search-track__art .track-artwork,
-  .hs-search-track__art .cover-placeholder { width: 46px !important; height: 46px !important; }
-  .hs-library-entity-row.hs-search-track { grid-template-columns: 18px 46px minmax(0, 1fr) 14px !important; }
-  .hs-library-entity-row .hs-search-track__art { width: 46px !important; height: 46px !important; }
-  .hs-search-track.hs-admin-device-row { grid-template-columns: minmax(0, 1fr) !important; }
-  .hs-admin-device-info { grid-template-columns: minmax(0, 1fr); }
-  .hs-admin-device-info > small { grid-column: 1; }
-}
-
-
-/* Reference-row quick controls use the same 44px 8px-corner button geometry. */
-.hs-search-track__play {
-  width: 44px;
-  height: 44px;
-  justify-self: center;
-  border-radius: 8px;
-  border-color: var(--hs-shared-border);
-  background: var(--hs-surface);
-}
-.hs-search-track__play:hover,
-.hs-search-track__download:hover,
-.hs-library-track-actions button:hover,
-.library-track-actions button:hover { background: var(--hs-surface-hover); }
-@media (max-width: 979px) {
-  .hs-search-track__play { width: 34px; height: 34px; border-radius: 8px; }
-}
-@media (max-width: 480px) {
-  .hs-search-track__play { width: 30px; height: 30px; border-radius: 8px; }
-}
-
-
-/* Finish shared-row normalization for profile ranks, message notifications, and quick controls. */
-.hs-recent-card:hover { transform: none; }
-.hs-artist-row > strong {
-  display: block;
-  width: auto;
-  height: auto;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #5c7b89;
-  font: 600 8px "JetBrains Mono", monospace;
-}
-.message-notification-row { min-height: 94px; }
-.message-notification-row__open { min-height: 94px; padding: 12px 16px; }
-.message-notification-row__delete { width: 44px; min-height: 94px; }
-.hs-message-bubble.is-mine { background: var(--hs-surface-hover); border-color: var(--hs-shared-border); }
-.admin-quick-action { border-radius: 8px; background: var(--hs-surface); }
-.admin-quick-action:hover:not(:disabled) { background: var(--hs-surface-hover); }
-@media (max-width: 979px) {
-  .message-notification-row,
-  .message-notification-row__open,
-  .message-notification-row__delete { min-height: 78px; }
-  .message-notification-row__open { padding: 8px 10px; }
-  .message-notification-row__delete { width: 36px; }
-}
-@media (max-width: 480px) {
-  .message-notification-row__delete { width: 30px; }
-}
-
-
-/* Device/session rows use their own three-column content layout inside the shared row surface. */
-.hs-search-track.hs-admin-device-row {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
-  min-height: 94px;
-  padding: 12px 16px;
-  gap: 12px;
-}
-.hs-admin-device-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
-.hs-admin-device-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: 0; }
-.hs-admin-device-info > small { grid-column: 1 / -1; overflow-wrap: anywhere; }
-.hs-admin-device-actions { display: flex; align-items: center; justify-content: flex-end; }
-.hs-admin-device-actions button { border-radius: 8px; }
