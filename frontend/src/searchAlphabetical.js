@@ -216,3 +216,14 @@ export function isCollaborativeTrack(track) {
   const featured = /\\b(?:feat(?:uring)?|ft)\\.?\\s+[^)\\]}]+/i.test(String(track?.title ?? ""));
   return credits.length > 1 || featured;
 }
+
+
+export function trackArtistCredits(track) {
+  const primary = splitArtistCredits(track?.artist);
+  const title = String(track?.title ?? "");
+  const featureMatch = title.match(/\\b(?:feat(?:uring)?|ft)\\.?\\s+([^)]*)/i);
+  const featured = featureMatch ? splitArtistCredits(featureMatch[1].replace(/[\\]}].*$/, "").replace(/\\s*[-–]\\s*(?:live|remix|version).*$/i, "")) : [];
+  const merged = [...primary];
+  for (const name of featured) if (!merged.some((existing) => normalizeSortText(existing) === normalizeSortText(name))) merged.push(name);
+  return merged.join(" & ");
+}
