@@ -304,7 +304,7 @@ function MainPage({
       }
 
       if (page === "admin-devices") {
-        return <AdminVisitorDevicesPage onNavigate={onNavigate} />;
+        return <AdminVisitorDevicesPage />;
       }
 
       if (
@@ -434,11 +434,6 @@ function MainPage({
           onOpenProfile={
             onOpenProfile
           }
-          onBackToSearch={() => {
-            onNavigate(
-              "search",
-            );
-          }}
           resetToken={
             messagesResetToken
           }
