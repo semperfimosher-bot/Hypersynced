@@ -2703,6 +2703,8 @@ async function downloadOpenedPlaylist() {
               }}
             >
 
+              <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
+
               <span className="hs-search-entity-card__art">
 
                 {resolveArtworkUrl(
