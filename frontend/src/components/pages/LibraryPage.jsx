@@ -3356,6 +3356,13 @@ useEffect(() => {
           )
         : sortedDownloadedTracks;
 
+  useEffect(() => {
+    if (!currentTrackId || sortMode !== "recent") return;
+    if (visibleSongTracks.some((track) => String(track?.id ?? "") === String(currentTrackId))) {
+      player.reorderQueueFromCollection(visibleSongTracks, currentTrackId);
+    }
+  }, [visibleSongTracks, currentTrackId, sortMode]);
+
   const renderedSongTracks =
     getLibraryRenderItems(
       visibleSongTracks,
