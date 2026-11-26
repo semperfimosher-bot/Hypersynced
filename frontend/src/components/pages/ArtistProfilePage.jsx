@@ -319,6 +319,7 @@ export default function ArtistProfilePage({
         profile.is_following
           ? await unfollowArtist(
               profile.name,
+              artistCacheOwner,
             )
           : await followArtist(
               profile.name,
