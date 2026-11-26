@@ -260,7 +260,8 @@ async def autoplay(
             and str(track.artist or "").strip().casefold()
             not in recent_artist_keys
         ]
-        # Only recommendation candidates are returned; Home must not inject recent-listening\n        # fallbacks.
+        # Only recommendation candidates are returned.
+        # Home must not inject recent-listening fallbacks.
 
     return [
         AutoplayTrackResponse(
