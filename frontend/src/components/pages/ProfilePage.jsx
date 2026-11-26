@@ -11,6 +11,8 @@ import { readDeviceListeningStats, DEVICE_LISTENING_STATS_CHANGED_EVENT } from "
 import {
   getMyProfile,
 } from "../../profileApi.js";
+import { getCachedArtistProfile, getArtistArtworkStatus } from "../../artistApi.js";
+import { resolveArtworkUrl } from "../../artworkUrl.js";
 
 import Avatar from "../profile/Avatar.jsx";
 import EditProfileModal from "../profile/EditProfileModal.jsx";
@@ -195,6 +197,30 @@ export default function ProfilePage({
     return () => window.removeEventListener(DEVICE_LISTENING_STATS_CHANGED_EVENT, refreshDeviceStats);
   }, [deviceStatsOwner]);
   const recentRequest = useRef(0);
+  const [topArtistArtwork, setTopArtistArtwork] = useState({});
+  const topArtists = profile?.top_artists ?? [];
+  const topArtistNamesKey = topArtists.map(artist => artist.artist).join("\\u001f");
+  useEffect(() => {
+    let cancelled = false;
+    const names = topArtists.map(item => String(item.artist || "").trim()).filter(Boolean).slice(0, 10);
+    const initial = {};
+    names.forEach(name => {
+      const cached = getCachedArtistProfile(name, currentUser?.id ? String(currentUser.id) : "guest");
+      if (cached?.artwork_url) initial[name] = resolveArtworkUrl(cached.artwork_url);
+    });
+    setTopArtistArtwork(initial);
+    if (!online || !names.length) return () => { cancelled = true; };
+    Promise.all(names.map(async name => {
+      try {
+        const response = await getArtistArtworkStatus(name);
+        const url = resolveArtworkUrl(response?.artwork_url);
+        if (!url || cancelled) return;
+        setTopArtistArtwork(current => ({ ...current, [name]: url }));
+        const preload = new Image(); preload.decoding = "async"; preload.src = url;
+      } catch { /* Top-artist portrait is optional; retain any cached image. */ }
+    }));
+    return () => { cancelled = true; };
+  }, [topArtistNamesKey, online, currentUser?.id]);
 
 
   const loadProfile =
@@ -708,7 +734,7 @@ export default function ProfilePage({
                   }}
                 >
                   <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="hs-search-track__art hs-profile-top-artist-rank" aria-hidden="true">{index + 1}</span>
+                  <span className="hs-search-track__art hs-profile-top-artist-thumb" aria-hidden="true">{topArtistArtwork[artist.artist] ? <img src={topArtistArtwork[artist.artist]} alt="" loading="eager" decoding="async"/> : <Icon name="music" size={19}/>}</span>
                   <span className="hs-search-track__copy">
                     <strong>{artist.artist}</strong>
                     <small>Top artist</small>
