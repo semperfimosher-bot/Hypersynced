@@ -259,7 +259,6 @@ export default function MessagesPage({
   onOpenSharedMusic,
   onUnreadChange,
   onOpenProfile,
-  onBackToSearch,
   resetToken = 0,
 }) {
   const cachedMessagesSnapshot = readMessagesListSnapshot(currentUser?.id);
