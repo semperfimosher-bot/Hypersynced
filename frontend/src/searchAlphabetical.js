@@ -181,14 +181,14 @@ function matchesSearchQuery(value, query) {
   const normalizedQuery = normalizeSortText(query);
   if (!normalizedValue || !normalizedQuery) return false;
   if (normalizedValue.startsWith(normalizedQuery)) return true;
-  return normalizedValue.split(/[\\s&,+/|]+/).some((token) => token.startsWith(normalizedQuery));
+  return normalizedValue.split(/[\s&,+/|]+/).some((token) => token.startsWith(normalizedQuery));
 }
 
 
 /** Keep short/general searches focused on direct name/title/credit matches. */
 export function filterSearchResultsForQuery(results, query) {
   const normalizedQuery = normalizeSortText(query);
-  if (!normalizedQuery || normalizedQuery.length < 1) return results;
+  if (!normalizedQuery) return results;
   const filter = (items, fields) => (items || []).filter((item) => fields.some((field) => matchesSearchQuery(item?.[field], normalizedQuery)));
   return {
     ...results,
@@ -205,15 +205,16 @@ export function filterSearchResultsForQuery(results, query) {
 export function splitArtistCredits(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return [];
-  const parts = raw.split(/\\s*(?:,|&|\\band\\b|\\bwith\\b|\\bfeat(?:uring)?\\.?|\\bft\\.?|\\bvs\\.?|\\bversus)\\s*|\\s+x\\s+/i)
+  const parts = raw.split(/\s*(?:,|&|\band\b|\bwith\b|\bfeat(?:uring)?\.?|\bft\.?|\bvs\.?|\bversus)\s*|\s+x\s+/i)
     .map((part) => part.trim())
     .filter(Boolean);
   return [...new Set(parts)];
 }
 
+
 export function isCollaborativeTrack(track) {
   const credits = splitArtistCredits(track?.artist);
-  const featured = /\\b(?:feat(?:uring)?|ft)\\.?\\s+[^)\\]}]+/i.test(String(track?.title ?? ""));
+  const featured = /\b(?:feat(?:uring)?|ft)\.?\s+[^)\]}]+/i.test(String(track?.title ?? ""));
   return credits.length > 1 || featured;
 }
 
@@ -221,8 +222,8 @@ export function isCollaborativeTrack(track) {
 export function trackArtistCredits(track) {
   const primary = splitArtistCredits(track?.artist);
   const title = String(track?.title ?? "");
-  const featureMatch = title.match(/\\b(?:feat(?:uring)?|ft)\\.?\\s+([^)]*)/i);
-  const featured = featureMatch ? splitArtistCredits(featureMatch[1].replace(/[\\]}].*$/, "").replace(/\\s*[-–]\\s*(?:live|remix|version).*$/i, "")) : [];
+  const featureMatch = title.match(/\b(?:feat(?:uring)?|ft)\.?\s+([^)]*)/i);
+  const featured = featureMatch ? splitArtistCredits(featureMatch[1].replace(/[\]}].*$/, "").replace(/\s*[-–]\s*(?:live|remix|version).*$/i, "")) : [];
   const merged = [...primary];
   for (const name of featured) if (!merged.some((existing) => normalizeSortText(existing) === normalizeSortText(name))) merged.push(name);
   return merged.join(" & ");
