@@ -987,7 +987,7 @@ function isCacheableSameOriginImage(request) {
   if (request.method !== "GET" || request.destination !== "image") return false;
   const url = new URL(request.url);
   if (typeof self !== "undefined" && url.origin !== self.location.origin) return false;
-  if (/\\/(?:api\\/)?catalog\\/tracks\\/[^/]+\\/artwork$/.test(url.pathname)) return false;
+  if (url.pathname.includes("/catalog/tracks/") && url.pathname.endsWith("/artwork")) return false;
   return true;
 }
 
