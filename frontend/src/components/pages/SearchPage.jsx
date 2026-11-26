@@ -2515,7 +2515,7 @@ async function downloadOpenedPlaylist() {
               key={
                 collaboration.name
               }
-              className="hs-search-entity-card"
+              className="hs-search-track hs-library-entity-row hs-search-entity-card"
               {...collectionActionMenu.getTriggerProps({
                 key:
                   `artist:${collaboration.name}`,
