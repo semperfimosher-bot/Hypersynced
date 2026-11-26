@@ -115,6 +115,10 @@ export function sortResultItems(
     );
 
   if (mode === "smart") {
+    return [...source];
+  }
+
+  if (mode === "librarySmart") {
     return [...indexed]
       .sort((left, right) => {
         const aTime = recentTime(left.item);
