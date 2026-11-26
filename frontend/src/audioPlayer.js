@@ -2704,6 +2704,23 @@ export function playTrackNext(
 
 
 export function shuffleUpcomingQueue(){if(!currentQueue.length)return false;const pinned=currentQueueIndex>=0&&currentQueueIndex<currentQueue.length?currentQueue[currentQueueIndex]:null;const next=currentQueue.slice(pinned?currentQueueIndex+1:0);for(let i=next.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[next[i],next[j]]=[next[j],next[i]];}currentQueue=pinned?[pinned,...next]:next;currentQueueIndex=pinned?0:-1;queueRevision+=1;persistQueueSnapshot();notify();return next.length>1;}
+export function reorderQueueFromCollection(
+  tracks,
+  currentTrackId,
+) {
+  const sortedEntries = buildTrackQueue(tracks);
+  const activeId = String(currentTrackId ?? currentTrackIdFromPlayer() ?? "");
+  if (!activeId || !sortedEntries.some((entry) => String(entry.id) === activeId)) {
+    return false;
+  }
+  currentQueue = sortedEntries;
+  currentQueueIndex = sortedEntries.findIndex((entry) => String(entry.id) === activeId);
+  queueRevision += 1;
+  persistQueueSnapshot();
+  notify();
+  return true;
+}
+
 export function clearUpcomingQueue(){if(!currentQueue.length)return false;if(currentQueueIndex>=0&&currentQueueIndex<currentQueue.length){currentQueue=[currentQueue[currentQueueIndex]];currentQueueIndex=0;}else{currentQueue=[];currentQueueIndex=-1;}queueRevision+=1;persistQueueSnapshot();notify();return true;}
 export function addTrackToQueue(
   track,
