@@ -28,7 +28,8 @@ export function QuickPickGrid({ onNavigate, onRecent }) {
   );
 }
 
-export function QuickPicks({ tracks, onPlay, onWarm, getMenuProps, onPlayNext }) {
+export function QuickPicks({ tracks, onPlay, onWarm, getMenuProps, onPlayNext, onNavigate, onRecent }) {
+  if (!Array.isArray(tracks) || !tracks.length) return <QuickPickGrid onNavigate={onNavigate} onRecent={onRecent} />;
   return (
     <section className="home-quick-picks" aria-label="Quick picks">
       <div className="home-feed-heading"><div><span>READY TO PLAY</span><h2>Quick picks</h2></div></div>
@@ -82,7 +83,7 @@ export function ArtistRow({ tracks, fallbackTracks = [], onNavigate, onOpenArtis
     artists.push({ name, art: resolveArtworkUrl(track.artist_artwork_url ?? track.artist_image_url ?? track.artwork_url) });
     if (artists.length >= 8) break;
   }
-  if (!artists.length) return null;
+  if (!artists.length) return (\n    <section className="home-feed-row" aria-label="Artists to explore">\n      <div className="home-feed-heading"><div><span>DISCOVER SOMETHING NEW</span><h2>Artists to explore</h2></div></div>\n      <div className="home-artist-scroll home-scroll-fade">\n        {["Find artists", "Explore genres", "New sounds", "Browse music"].map((label) => <button key={label} type="button" className="home-artist-chip home-artist-chip--empty" onClick={() => onNavigate?.("search")}><span className="home-artist-chip__avatar">♫</span><strong>{label}</strong><small>Explore</small></button>)}\n      </div>\n    </section>\n  );
   return (
     <section className="home-feed-row">
       <div className="home-feed-heading"><div><span>FROM YOUR MUSIC</span><h2>Artists to explore</h2></div></div>
