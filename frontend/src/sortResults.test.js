@@ -35,7 +35,7 @@ const tracks = [
 
 
 test(
-  "smart sort preserves source order",
+  "smart sort puts most recently played first and keeps unknown recency last",
   () => {
     assert.deepEqual(
       sortResultItems(
@@ -45,8 +45,8 @@ test(
         (track) => track.id,
       ),
       [
-        "one",
         "two",
+        "one",
         "three",
       ],
     );
@@ -55,12 +55,12 @@ test(
 
 
 test(
-  "recents sorts newest first and keeps unknown recency last",
+  "albums sorts newest album grouping alphabetically by album then title",
   () => {
     assert.deepEqual(
       sortResultItems(
         tracks,
-        "recent",
+        "smart",
       ).map(
         (track) => track.id,
       ),
