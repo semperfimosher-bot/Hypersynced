@@ -222,8 +222,8 @@ test("home quick picks have right-side sparkle accents and Library playlist acti
 
 test("artist profiles cache for instant re-entry and quietly refresh portraits", () => {
   assert.doesNotMatch(artistProfilePageSource, /profile\.artwork_source_page_url/);
-  assert.match(artistProfilePageSource, /getCachedArtistProfile\(artistName\)/);
-  assert.match(artistProfilePageSource, /getArtistProfile\(artistName\)/);
+  assert.match(artistProfilePageSource, /getCachedArtistProfile\(artistName, artistCacheOwner\)/);
+  assert.match(artistProfilePageSource, /getArtistProfile\(artistName, artistCacheOwner\)/);
   assert.match(artistApiSource, /artistProfileCache = new Map/);
   assert.match(artistApiSource, /getCachedArtistProfile/);
   assert.match(artistProfilePageSource, /getArtistArtworkStatus\(artistName\)/);
