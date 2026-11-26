@@ -3027,6 +3027,17 @@ useEffect(() => {
   }
 
 
+  useEffect(() => {
+    if (!activeLibraryEntity || !currentTrackId) return;
+    const sortedCollectionTracks = sortResultItems(
+      Array.isArray(activeLibraryEntity.tracks) ? activeLibraryEntity.tracks : [],
+      sortMode,
+    );
+    if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
+      player.reorderQueueFromCollection(sortedCollectionTracks, currentTrackId);
+    }
+  }, [activeLibraryEntity, currentTrackId, sortMode]);
+
   function renderLibraryEntityTracks(
     entity,
   ) {
@@ -3040,11 +3051,7 @@ useEffect(() => {
         sortMode,
       );
 
-    const renderedTracks =
-      getLibraryRenderItems(
-        tracks,
-        visibleEntityTrackCount,
-      );
+    const renderedTracks = tracks;
 
     return (
       <div className="hs-search-track-list">
@@ -3227,24 +3234,7 @@ useEffect(() => {
             );
           },
         )}
-        <LibraryLoadMore
-          label="tracks"
-          visibleCount={
-            renderedTracks.length
-          }
-          totalCount={
-            tracks.length
-          }
-          onClick={() => {
-            setVisibleEntityTrackCount(
-              (current) =>
-                getNextLibraryRenderCount(
-                  current,
-                  tracks.length,
-                ),
-            );
-          }}
-        />
+
 
       </div>
     );
