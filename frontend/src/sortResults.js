@@ -4,10 +4,6 @@ export const RESULTS_SORT_OPTIONS = [
     label: "My Smart Sort",
   },
   {
-    value: "recent",
-    label: "Recently Played",
-  },
-  {
     value: "albums",
     label: "Albums",
   },
@@ -81,11 +77,7 @@ export function sortResultItems(
       }),
     );
 
-  if (mode === "smart") {
-    return [...source];
-  }
-
-  if (mode === "recent" || mode === "librarySmart") {
+  if (mode === "smart" || mode === "recent" || mode === "librarySmart") {
     return [...indexed]
       .sort((left, right) => {
         const aTime = Date.parse(left.item?.last_played_at ?? left.item?.lastPlayedAt ?? "") || null;
