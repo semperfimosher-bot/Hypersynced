@@ -323,6 +323,7 @@ export default function ArtistProfilePage({
             )
           : await followArtist(
               profile.name,
+              artistCacheOwner,
             );
 
       setProfile(
