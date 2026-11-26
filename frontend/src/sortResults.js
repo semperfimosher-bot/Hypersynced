@@ -121,8 +121,8 @@ export function sortResultItems(
   if (mode === "librarySmart") {
     return [...indexed]
       .sort((left, right) => {
-        const aTime = recentTime(left.item);
-        const bTime = recentTime(right.item);
+        const aTime = Date.parse(left.item?.last_played_at ?? left.item?.lastPlayedAt ?? "") || null;
+        const bTime = Date.parse(right.item?.last_played_at ?? right.item?.lastPlayedAt ?? "") || null;
         if (aTime === null && bTime === null) return left.index - right.index;
         if (aTime === null) return 1;
         if (bTime === null) return -1;
