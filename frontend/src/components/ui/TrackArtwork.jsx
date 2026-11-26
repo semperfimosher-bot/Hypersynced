@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getSearchArtwork, refreshSearchArtwork } from "../../searchArtworkCache.js";
 import {
   resolveArtworkUrl,
 } from "../../artworkUrl.js";
@@ -95,7 +94,33 @@ function TrackArtwork({
   const artworkUrl = resolveArtworkUrl(src);
   const [refreshKey, setRefreshKey] = useState(0);
   const [cachedSrc, setCachedSrc] = useState("");
-  useEffect(() => { if (!artworkUrl) { setCachedSrc(""); return undefined; } let active=true, objectUrl=""; const show=(blob)=>{if(!active||!blob)return;const next=URL.createObjectURL(blob);if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=next;setCachedSrc(next);}; void getSearchArtwork(artworkUrl).then(cached=>{if(!active)return;if(cached?.blob)show(cached.blob);if(!cached||cached.stale)void refreshSearchArtwork(artworkUrl).then(show);});return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl);};},[artworkUrl]);
+  useEffect(() => {
+    if (!artworkUrl) {
+      setCachedSrc("");
+      return undefined;
+    }
+    let active = true;
+    let objectUrl = "";
+    const show = (blob) => {
+      if (!active || !blob) return;
+      const next = URL.createObjectURL(blob);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = next;
+      setCachedSrc(next);
+    };
+    void import("../../searchArtworkCache.js").then(({ getSearchArtwork, refreshSearchArtwork }) => {
+      if (!active) return;
+      return getSearchArtwork(artworkUrl).then((cached) => {
+        if (!active) return;
+        if (cached?.blob) show(cached.blob);
+        if (!cached || cached.stale) void refreshSearchArtwork(artworkUrl).then(show);
+      });
+    }).catch(() => {});
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [artworkUrl]);
 
   useEffect(() => {
     if (!artworkUrl || typeof navigator === "undefined" || !navigator.serviceWorker) return undefined;
