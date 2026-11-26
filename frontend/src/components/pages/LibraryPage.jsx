@@ -3050,20 +3050,9 @@ useEffect(() => {
   useEffect(() => {
     if (!activeLibraryEntity || !currentTrackId) return;
     const onlineNow = typeof navigator === "undefined" || navigator.onLine !== false;
-    const historyById = new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track]));
-    const collectionWithHistory = (Array.isArray(activeLibraryEntity.tracks) ? activeLibraryEntity.tracks : []).map((track) => ({
-      ...track,
-      last_played_at: historyById.get(String(track?.id ?? ""))?.last_played_at ?? null,
-    }));
-    const playableCollectionTracks = filterOfflinePlayableTracks(
-      collectionWithHistory,
-      onlineNow,
-      downloadedTrackIds,
-    );
-    const sortedCollectionTracks = sortResultItems(
-      playableCollectionTracks,
-      sortMode === "smart" ? "librarySmart" : sortMode,
-    );
+    const collectionWithHistory = tracksWithPlayHistory(activeLibraryEntity.tracks);
+    const playableCollectionTracks = filterOfflinePlayableTracks(collectionWithHistory, onlineNow, downloadedTrackIds);
+    const sortedCollectionTracks = sortResultItems(playableCollectionTracks, sortMode === "smart" ? "librarySmart" : sortMode);
     if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(sortedCollectionTracks, currentTrackId);
     }
@@ -3331,11 +3320,21 @@ useEffect(() => {
     ),
   ];
 
+  const recentlyPlayedByTrackId = useMemo(
+    () => new Map(recentlyPlayedHistory.map((track) => [String(track?.id ?? ""), track])),
+    [recentlyPlayedHistory],
+  );
+
+  const tracksWithPlayHistory = (tracks) => (Array.isArray(tracks) ? tracks : []).map((track) => ({
+    ...track,
+    last_played_at: recentlyPlayedByTrackId.get(String(track?.id ?? ""))?.last_played_at ?? track?.last_played_at ?? null,
+  }));
+
   const sortedDownloadedTracks =
     useMemo(
       () =>
         sortResultItems(
-          downloadedTracks,
+          tracksWithPlayHistory(downloadedTracks),
           sortMode,
         ),
       [
@@ -3349,10 +3348,10 @@ useEffect(() => {
       ? [focusedLibraryTrack]
       : offlineMode
         ? sortResultItems(
-            mergeLibraryTracks(
+            tracksWithPlayHistory(mergeLibraryTracks(
               libraryTracks,
               allDownloadedTracks,
-            ),
+            )),
             sortMode,
           )
         : sortedDownloadedTracks;
@@ -3408,8 +3407,7 @@ useEffect(() => {
     useMemo(
       () =>
         sortResultItems(
-          selectedPlaylist?.tracks ??
-            [],
+          tracksWithPlayHistory(selectedPlaylist?.tracks ?? []),
           sortMode,
         ),
       [
@@ -3417,6 +3415,14 @@ useEffect(() => {
         sortMode,
       ],
     );
+
+  useEffect(() => {
+    if (!selectedPlaylist || !currentTrackId || sortMode !== "recent") return;
+    const tracks = sortedSelectedPlaylistTracks;
+    if (tracks.some((track) => String(track.id) === String(currentTrackId))) {
+      player.reorderQueueFromCollection(tracks, currentTrackId);
+    }
+  }, [selectedPlaylist?.id, sortedSelectedPlaylistTracks, currentTrackId, sortMode]);
 
   const selectedPlaylistIsLiked =
     Boolean(
