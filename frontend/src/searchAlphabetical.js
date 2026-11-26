@@ -205,7 +205,7 @@ export function filterSearchResultsForQuery(results, query) {
 export function splitArtistCredits(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return [];
-  const parts = raw.split(/\\s*(?:,|&|\\bx\\b|\\band\\b|\\bwith\\b|\\bfeat(?:uring)?\\.?|\\bft\\.?|\\bvs\\.?|\\bversus\\b)\\s*/i)
+  const parts = raw.split(/\\s*(?:,|&|\\band\\b|\\bwith\\b|\\bfeat(?:uring)?\\.?|\\bft\\.?|\\bvs\\.?|\\bversus)\\s*|\\s+x\\s+/i)
     .map((part) => part.trim())
     .filter(Boolean);
   return [...new Set(parts)];
