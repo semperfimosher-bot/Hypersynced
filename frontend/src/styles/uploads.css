@@ -612,4 +612,4 @@
 .upload-success-wheel { display:block; width:34px; height:34px; color:#54ddff; transform:rotate(0deg); }
 .upload-success-wheel--spin { animation:upload-completion-wheel 2.35s cubic-bezier(.08,.62,.18,1) both; }
 @keyframes upload-completion-wheel { from { transform:rotate(0deg); } to { transform:rotate(2880deg); } }
-@media (prefers-reduced-motion:reduce) { .upload-success-wheel--spin { animation-duration:650ms; } }
+@media (prefers-reduced-motion:reduce) { .upload-success-wheel--spin { animation:none; } }
