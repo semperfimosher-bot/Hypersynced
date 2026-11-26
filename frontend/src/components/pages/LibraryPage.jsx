@@ -5258,7 +5258,7 @@ useEffect(() => {
             </button>
             <div className="hs-library-empty-prompts" aria-label="Playlist starter ideas">
               {["Late Night Synthwave","High-Energy Workout","Chill Focus Beats","Road Trip Favorites"].map((prompt) => (
-                <button type="button" key={prompt} onClick={() => { setCreateTitle(prompt); setCreateDescription(""); setCreateOpen(true); }}>
+                <button type="button" key={prompt} onClick={() => { if (!isRegistered) { onOpenAuth?.(); return; } setCreateTitle(prompt); setCreateDescription(""); setCreateOpen(true); }}>
                   {prompt}
                 </button>
               ))}
