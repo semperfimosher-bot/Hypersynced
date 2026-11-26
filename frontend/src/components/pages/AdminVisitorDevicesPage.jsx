@@ -4,7 +4,7 @@ import Icon from "../ui/Icon.jsx";
 import useQuietRefresh from "../../hooks/useQuietRefresh.js";
 import { getVisitorDevicesCache, setVisitorDevicesCache } from "../../adminVisitorDevicesCache.js";
 
-export default function AdminVisitorDevicesPage({ onNavigate }) {
+export default function AdminVisitorDevicesPage() {
   const [devices, setDevices] = useState(getVisitorDevicesCache());
   const [busy, setBusy] = useState(getVisitorDevicesCache() === null);
   const [deleteBusy, setDeleteBusy] = useState(null);
@@ -44,9 +44,7 @@ export default function AdminVisitorDevicesPage({ onNavigate }) {
     <div className="page-stack hs-search-page hs-library-page hs-admin-device-page">
       <header className="hs-total-played-header">
         <div className="hs-search-playlist-view__nav">
-          <button type="button" className="hs-search-playlist-back" onClick={() => onNavigate?.("admin")}>
-            <Icon name="chevron" size={15} /> Back to Admin Dashboard
-          </button>
+          
         </div>
         <section className="hs-search-playlist-view__hero hs-total-played-hero">
           <div className="hs-search-playlist-view__copy hs-total-played-heading">
