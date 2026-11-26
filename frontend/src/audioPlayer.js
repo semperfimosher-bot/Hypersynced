@@ -1966,6 +1966,8 @@ function loadAudioSource(
           || null
         );
 
+  // Replacing the source pauses the previous media element by design.
+  if (!audio.paused) requestedPauseCause = "source-transition";
   audio.src =
     url;
 }
