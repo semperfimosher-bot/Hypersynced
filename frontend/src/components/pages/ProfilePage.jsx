@@ -510,11 +510,11 @@ export default function ProfilePage({
 
 
         {recentTracks.length ? (
-          <div className="hs-recent-grid">
+          <div className="hs-search-track-list hs-profile-recent-list">
             {recentTracks.map(
               (track) => (
                 <button
-                  className="hs-recent-card"
+                  className="hs-search-track hs-library-track-row hs-recent-card"
                   type="button"
                   key={track.id}
                   {...trackActionMenu.getTriggerProps(
@@ -572,11 +572,7 @@ export default function ProfilePage({
                       variant={1}
                     />
 
-                    <span className="hs-play-count">
-                      ×{track.play_count}
-                    </span>
 
-                    
                   </div>
 
                   <strong>
