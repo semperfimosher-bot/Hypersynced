@@ -69,6 +69,12 @@ class Playlist(
         index=True,
     )
 
+    allow_collaborators: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
     generated_key: Mapped[str | None] = mapped_column(
         String(96),
         nullable=True,
