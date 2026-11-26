@@ -28,15 +28,15 @@ test("Song action menu has no standalone offline download action", () => {
   assert.match(menu, /downloadTrackForOffline/); // Liked Songs retains its background offline cache.
 });
 
-test("Find Your Mix asks for never-played candidates and refreshes cache quietly", () => {
+test("Find Your Mix uses discovery candidates with a 30-day listening cooldown", () => {
   const home = read("./components/pages/HomePage.jsx");
   const api = read("./profileApi.js");
   const recommendations = read("../../backend/app/api/routes/recommendations.py");
   const autoplay = read("../../backend/app/services/autoplay.py");
-  assert.match(home, /neverPlayedOnly:\s*true/);
+  assert.match(home, /neverPlayedOnly:\s*false/);
   assert.match(home, /writeCachedHomeSuggestions/);
   assert.match(api, /never_played_only:\s*neverPlayedOnly/);
-  assert.match(recommendations, /never_played_only/);
+  assert.match(recommendations, /timedelta\(days=30\)/);\n  assert.match(recommendations, /recent_artist_keys/);
   assert.match(autoplay, /never_played_only\s+and\s+user_id\s+is\s+not\s+None/);
   assert.match(autoplay, /ListeningEvent\.user_id\s*==\s*user_id/);
 });
