@@ -393,7 +393,7 @@ useEffect(() => {
       if (active) setRecentlyPlayedHistory([]);
     });
     return () => { active = false; };
-  }, [currentUser?.id, currentUser?.username, currentUser?.account_type, followedArtistsCacheOwner]);
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
 
   useEffect(() => {
     let active = true;
@@ -411,7 +411,7 @@ useEffect(() => {
       if (active && !cached) setFollowedArtists([]);
     });
     return () => { active = false; };
-  }, [currentUser?.id, currentUser?.username, currentUser?.account_type]);
+  }, [currentUser?.id, currentUser?.username, currentUser?.account_type, followedArtistsCacheOwner]);
 
   const libraryCacheKey =
   currentUser?.id ??
