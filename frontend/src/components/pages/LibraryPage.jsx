@@ -3037,7 +3037,7 @@ useEffect(() => {
     );
     const sortedCollectionTracks = sortResultItems(
       playableCollectionTracks,
-      sortMode,
+      sortMode === "smart" ? "librarySmart" : sortMode,
     );
     if (sortedCollectionTracks.some((track) => String(track.id) === String(currentTrackId))) {
       player.reorderQueueFromCollection(sortedCollectionTracks, currentTrackId);
@@ -3054,7 +3054,7 @@ useEffect(() => {
         )
           ? entity.tracks
           : [],
-        sortMode,
+        sortMode === "smart" ? "librarySmart" : sortMode,
       );
 
     const renderedTracks = tracks;
