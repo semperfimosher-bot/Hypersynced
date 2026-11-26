@@ -138,9 +138,7 @@ export default function TotalPlayedPage({ currentUser, onNavigate, onRequireAuth
     <div className="page-stack hs-search-page hs-library-page hs-total-played-route">
       <header className="hs-total-played-header">
         <div className="hs-search-playlist-view__nav">
-          <button type="button" className="hs-search-playlist-back" onClick={() => onNavigate?.("profile")}>
-            <Icon name="chevron" size={15} /> Back to Profile
-          </button>
+          
         </div>
         <section className="hs-search-playlist-view__hero hs-total-played-hero">
           <div className="hs-search-playlist-view__copy hs-total-played-heading">
