@@ -224,6 +224,9 @@ let playbackPhase =
 let playbackError =
   null;
 
+let requestedPauseCause = null;
+let lastPauseCause = null;
+
 
 const queuedAudioWarmups =
   new Map();
@@ -1063,6 +1066,13 @@ function isExpectedPlayInterruption(
 }
 
 
+function pauseAudioWithCause(cause) {
+  if (audio.paused) return false;
+  requestedPauseCause = cause;
+  audio.pause();
+  return true;
+}
+
 function setPlaybackPhase(
   phase,
   error = null,
@@ -1265,6 +1275,8 @@ export function getState() {
 
     error:
       playbackError,
+
+    lastPauseCause,
 
     currentTime:
       currentTrackId && (
@@ -1541,6 +1553,12 @@ function attachEvents() {
   audio.addEventListener(
   "pause",
   () => {
+    const cause = requestedPauseCause ?? "external-browser-or-device";
+    requestedPauseCause = null;
+    lastPauseCause = { cause, trackId: currentTrackId, positionSeconds: getSafeCurrentTime(), timestamp: Date.now(), visibility: globalThis.document?.visibilityState ?? "unknown", readyState: audio.readyState, networkState: audio.networkState, mediaError: audio.error?.code ?? null };
+    if (cause === "external-browser-or-device") {
+      console.warn("[HyperSynced] Playback paused outside an app pause request. Diagnostic:", lastPauseCause);
+    }
     sampleListeningProgress();
     // Pause is not a new play. Keep the current event open so resuming this
     // same track does not create another Recently Played or play-count entry.
@@ -2957,7 +2975,7 @@ export async function togglePlay() {
     }
 
   } else {
-    audio.pause();
+    pauseAudioWithCause("player-toggle");
 
     /*
      * Do not make pause wait on network.
@@ -2980,11 +2998,7 @@ export function pausePlayback() {
 
 
 export function silenceLocalPlayback() {
-  if (
-    !audio.paused
-  ) {
-    audio.pause();
-  }
+  pauseAudioWithCause("pause-playback-api");
 
   /*
    * Keep this exact pause point hot for
@@ -3020,7 +3034,7 @@ export function setPlaybackPersistenceOwner(userId) {
   // account while its own database state is being restored.
   if (activePlaybackOwnerId !== nextOwner) {
     cancelActivePlaybackSession();
-    audio.pause();
+    pauseAudioWithCause("account-owner-change");
     clearQueue();
     audio.removeAttribute("src");
     audio.load();
@@ -3123,7 +3137,7 @@ export function restoreCachedTrackMetadata(track, positionSeconds = 0) {
   if (!track?.id) return null;
 
   const restoringTrackId = String(track.id);
-  audio.pause();
+  pauseAudioWithCause("restore-cached-metadata");
   cancelActivePlaybackSession();
 
   // Restore the cached queue immediately when it belongs to this track.
@@ -3153,7 +3167,7 @@ export async function restoreTrackPaused(track, positionSeconds = 0) {
 
   // A database restore is authoritative even when this tab already has the
   // same track loaded. Pause first so a remote restore can never keep playing.
-  audio.pause();
+  pauseAudioWithCause("restore-track-paused");
   applyTrackMetadata(restoringTrackId, track);
   restoredTimeSeconds = Math.max(0, Number(positionSeconds) || 0);
 
@@ -3228,7 +3242,7 @@ export function stopTrack(
   // track is a new start and should create a fresh listening event.
   finishListeningEvent("paused");
 
-  audio.pause();
+  pauseAudioWithCause("stop-track");
 
 
   clearQueue();
