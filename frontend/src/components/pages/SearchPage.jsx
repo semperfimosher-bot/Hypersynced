@@ -2417,7 +2417,7 @@ async function downloadOpenedPlaylist() {
         eyebrow="ENTITY INDEX"
         title="Artists"
         count={
-          results.counts.artists
+          displayResults.counts.artists
         }
         modifier={
           "hs-search-discovery-panel--artists"
@@ -2566,7 +2566,7 @@ async function downloadOpenedPlaylist() {
         eyebrow="RELEASE INDEX"
         title="Albums"
         count={
-          results.counts.albums
+          displayResults.counts.albums
         }
         modifier={
           "hs-search-discovery-panel--albums"
