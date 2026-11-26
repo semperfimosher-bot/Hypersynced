@@ -77,6 +77,9 @@ import {
 import SearchEntityPanel from
   "../search/SearchEntityPanel.jsx";
 
+import SearchArtworkImage from
+  "../search/SearchArtworkImage.jsx";
+
 import Avatar from
   "../profile/Avatar.jsx";
 
