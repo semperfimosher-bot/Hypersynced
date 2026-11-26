@@ -48,3 +48,14 @@ test("Per Device Played opens a local-history page matching Total Played rows", 
   assert.ok(stats.includes("saveDevicePlayedHistory"));
   assert.ok(stats.includes("DEVICE_PLAYED_HISTORY_CHANGED_EVENT"));
 });
+
+test("profile top artists reuse recently-played track row layout and stats are two split cards", () => {
+  const profile = fs.readFileSync(new URL("./components/pages/ProfilePage.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("./styles/profile.css", import.meta.url), "utf8");
+  assert.ok(profile.includes("hs-profile-top-artist-row"));
+  assert.ok(profile.includes("hs-search-track__copy"));
+  assert.ok(profile.includes("function StatSplit("));
+  assert.ok(profile.includes("hs-profile-stat--split__values"));
+  assert.ok(css.includes(".hs-profile-top-artist-row {"));
+  assert.ok(css.includes(".hs-profile-listening-stat-bands { grid-template-columns:repeat(2,minmax(0,1fr))"));
+});
