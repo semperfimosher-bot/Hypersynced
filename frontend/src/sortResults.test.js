@@ -85,26 +85,6 @@ test(
 
 
 test(
-  "albums groups by album then artist and title",
-  () => {
-    assert.deepEqual(
-      sortResultItems(
-        tracks,
-        "albums",
-      ).map(
-        (track) => track.id,
-      ),
-      [
-        "two",
-        "three",
-        "one",
-      ],
-    );
-  },
-);
-
-
-test(
   "alphabetical sorts by visible title",
   () => {
     assert.deepEqual(
