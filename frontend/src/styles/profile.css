@@ -3452,3 +3452,33 @@ button.hs-profile-stat:hover,
   .hs-profile-hero__avatar { min-height: 172px; padding: 14px; }
   .hs-profile-hero__identity { padding: 14px; }
 }
+
+
+/* Profile Recently Played uses the shared compact playlist-style row pattern. */
+.hs-profile-recent-list { display:flex !important; flex-direction:column !important; gap:0 !important; overflow:hidden; border-radius:8px; }
+.hs-profile-recent-list > .hs-recent-card {
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) 18px !important;
+  grid-template-rows:1fr 1fr;
+  grid-template-areas:"art title play" "art artist play";
+  align-items:center;
+  gap:2px 10px !important;
+  min-height:60px !important;
+  height:60px !important;
+  width:100%;
+  padding:6px 10px !important;
+  margin:0 !important;
+  border:0 !important;
+  border-bottom:1px solid rgba(80,125,148,.18) !important;
+  border-radius:0 !important;
+  text-align:left;
+  background:#020a10 !important;
+}
+.hs-profile-recent-list > .hs-recent-card:first-child { border-top:1px solid rgba(80,125,148,.18) !important; }
+.hs-profile-recent-list > .hs-recent-card:last-child { border-radius:0 0 8px 8px !important; }
+.hs-profile-recent-list > .hs-recent-card:hover { background:#012036 !important; }
+.hs-profile-recent-list .hs-recent-card__art { grid-area:art; width:48px !important; height:48px !important; min-width:48px; border-radius:5px !important; overflow:hidden; }
+.hs-profile-recent-list > .hs-recent-card > strong { grid-area:title; align-self:end; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:13px; line-height:1.2; }
+.hs-profile-recent-list > .hs-recent-card > span:not(.hs-recent-card__play) { grid-area:artist; align-self:start; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; line-height:1.2; color:var(--hs-muted,#718c9e); }
+.hs-profile-recent-list > .hs-recent-card .hs-recent-card__play { grid-area:play; justify-self:end; position:static !important; display:flex; opacity:1; background:transparent; }
+@media(max-width:700px) { .hs-profile-recent-list > .hs-recent-card { grid-template-columns:44px minmax(0,1fr) 16px !important; min-height:56px !important; height:56px !important; gap:2px 8px !important; padding:5px 8px !important; } .hs-profile-recent-list .hs-recent-card__art { width:44px !important; height:44px !important; min-width:44px; } }
