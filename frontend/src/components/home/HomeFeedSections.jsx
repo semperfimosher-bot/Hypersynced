@@ -29,12 +29,20 @@ export function QuickPickGrid({ onNavigate, onRecent }) {
 }
 
 export function QuickPicks({ tracks, onPlay, onWarm, getMenuProps, onPlayNext, onNavigate, onRecent }) {
-  if (!Array.isArray(tracks) || !tracks.length) return <QuickPickGrid onNavigate={onNavigate} onRecent={onRecent} />;
+  const visibleTracks = Array.isArray(tracks) ? tracks.slice(0, 6) : [];
+  if (!visibleTracks.length) return (
+    <section className="home-quick-picks" aria-label="Quick picks">
+      <div className="home-feed-heading"><div><span>READY TO PLAY</span><h2>Quick picks</h2></div></div>
+      <div className="home-quick-picks__grid" aria-busy="true">
+        {Array.from({ length: 6 }, (_, index) => <div key={index} className="home-track-tile home-track-tile--loading" aria-hidden="true"><span className="home-track-tile__cover"><span className="home-track-tile__placeholder">♫</span></span><span className="home-track-tile__copy"><strong>Finding music…</strong><small>Unplayed tracks</small></span></div>)}
+      </div>
+    </section>
+  );
   return (
     <section className="home-quick-picks" aria-label="Quick picks">
       <div className="home-feed-heading"><div><span>READY TO PLAY</span><h2>Quick picks</h2></div></div>
       <div className="home-quick-picks__grid">
-        {tracks.map((track) => <TrackTile key={track.id} track={track} onPlay={onPlay} onWarm={onWarm} menuProps={getMenuProps?.(track)} simple />)}
+        {visibleTracks.map((track) => <TrackTile key={track.id} track={track} onPlay={onPlay} onWarm={onWarm} menuProps={getMenuProps?.(track)} simple />)}
       </div>
     </section>
   );
