@@ -340,6 +340,7 @@ async def test_recently_played_endpoint_uses_one_focused_database_query() -> Non
     result = await users_route.get_my_recently_played(
         user,
         cast(AsyncSession, fake_session),
+        limit=12,
     )
 
     assert len(fake_session.statements) == 1
