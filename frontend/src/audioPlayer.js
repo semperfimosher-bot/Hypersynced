@@ -1553,7 +1553,7 @@ function attachEvents() {
   audio.addEventListener(
   "pause",
   () => {
-    const cause = requestedPauseCause ?? "external-browser-or-device";
+    const cause = requestedPauseCause ?? (playbackPhase === "loading" ? "source-change" : "external-browser-or-device");
     requestedPauseCause = null;
     lastPauseCause = { cause, trackId: currentTrackId, positionSeconds: getSafeCurrentTime(), timestamp: Date.now(), visibility: globalThis.document?.visibilityState ?? "unknown", readyState: audio.readyState, networkState: audio.networkState, mediaError: audio.error?.code ?? null };
     if (cause === "external-browser-or-device") {

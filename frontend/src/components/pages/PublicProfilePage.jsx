@@ -207,32 +207,29 @@ export default function PublicProfilePage({
     setActing(true);
     setError("");
 
+    const previousProfile = profile;
+    const wasFollowing = profile.follow_status === "accepted";
+    const wasPending = profile.follow_status === "pending";
+    const removeFollow = wasFollowing || wasPending;
+    setProfile((current) => current ? {
+      ...current,
+      follow_status: removeFollow ? null : "pending",
+      followers_count: Math.max(0, Number(current.followers_count || 0) + (wasFollowing ? -1 : removeFollow ? 0 : 1)),
+    } : current);
+
     try {
-      if (
-        profile.follow_status ===
-          "pending" ||
-        profile.follow_status ===
-          "accepted"
-      ) {
-        await unfollowUser(
-          profile.username,
-        );
-
+      if (removeFollow) {
+        await unfollowUser(profile.username);
       } else {
-        await followUser(
-          profile.username,
-        );
+        await followUser(profile.username);
       }
-
-      await load();
+      // Reconcile quietly after the immediate UI update. The follow button
+      // remains responsive and the page never flashes into a loading state.
+      void load({ quiet: true });
 
     } catch (actionError) {
-      setError(
-        actionError instanceof Error
-          ? actionError.message
-          : "Unable to update follow request.",
-      );
-
+      setProfile(previousProfile);
+      setError(actionError instanceof Error ? actionError.message : "Unable to update follow request.");
     } finally {
       setActing(false);
     }
