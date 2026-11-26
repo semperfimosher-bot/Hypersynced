@@ -55,19 +55,19 @@ test(
 
 
 test(
-  "albums sorts newest album grouping alphabetically by album then title",
+  "albums mode groups by album then artist and title",
   () => {
     assert.deepEqual(
       sortResultItems(
         tracks,
-        "smart",
+        "albums",
       ).map(
         (track) => track.id,
       ),
       [
         "two",
-        "one",
         "three",
+        "one",
       ],
     );
   },
