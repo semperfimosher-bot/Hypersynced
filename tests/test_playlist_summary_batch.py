@@ -104,9 +104,11 @@ async def test_playlist_summary_batch_uses_fixed_reads_and_preserves_fields() ->
     assert summaries[0].artwork_urls == ["https://cdn.example/cover.jpg"]
     assert summaries[0].artwork_url == "https://cdn.example/cover.jpg"
     assert summaries[0].is_owner is False
+    assert summaries[0].allow_collaborators is False
     assert summaries[0].is_saved is True
     assert summaries[1].owner_username == "HyperSynced"
     assert summaries[1].track_count == 0
     assert summaries[1].total_duration_seconds == 0
     assert summaries[1].artwork_urls == []
     assert summaries[1].is_saved is False
+    assert summaries[1].allow_collaborators is False
