@@ -3538,3 +3538,31 @@ button.hs-profile-stat:hover,
 .hs-profile-listening-stat-band__cards .hs-profile-stat { min-width:0; min-height:82px; padding:10px 12px; border-radius:8px; }
 .hs-profile-listening-stat-band__cards .hs-profile-stat strong { font-size:clamp(16px,2.4vw,24px); }
 .hs-profile-listening-stat-band__cards .hs-profile-stat span { font-size:11px; }
+
+
+/* Profile listening metrics: two cards, each split into account/device values. */
+.hs-profile-listening-stat-bands { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0 18px; }
+.hs-profile-listening-stat-band { min-width:0; }
+.hs-profile-stat--split { min-width:0; min-height:104px; padding:12px; display:grid; grid-template-columns:20px minmax(0,1fr); align-items:center; gap:6px 9px; }
+.hs-profile-stat--split > svg { grid-row:1; }
+.hs-profile-stat--split__label { grid-row:1; font-size:clamp(12px,1.6vw,17px)!important; line-height:1.15; }
+.hs-profile-stat--split__values { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; min-width:0; }
+.hs-profile-stat--split__values > button,.hs-profile-stat--split__values > div { display:grid; min-width:0; gap:3px; padding:7px 6px 3px; text-align:left; background:transparent; color:inherit; border:0; border-radius:5px; }
+.hs-profile-stat--split__values > button { cursor:pointer; }
+.hs-profile-stat--split__values > button:hover { background:rgba(49,167,214,.09); }
+.hs-profile-stat--split__values > button + button,.hs-profile-stat--split__values > div + div { border-left:1px solid var(--hs-border); padding-left:10px; }
+.hs-profile-stat--split__values span { color:var(--hs-muted,#718c9e); font-size:9px; font-weight:800; letter-spacing:.07em; }
+.hs-profile-stat--split__values strong { overflow:hidden; font-size:clamp(14px,2vw,20px); text-overflow:ellipsis; white-space:nowrap; }
+.hs-profile-top-artist-row { grid-template-columns:28px 46px minmax(0,1fr) minmax(112px,auto) 44px 31px; min-height:64px; gap:10px; }
+.hs-profile-top-artist-rank { display:grid; place-items:center; font-weight:800; font-size:13px; color:#57d9ff; background:var(--hs-surface); border-radius:6px; }
+.hs-profile-top-artist-row .hs-search-track__signals { justify-self:start; }
+.hs-profile-top-artist-row .hs-search-track__signals em { font-size:8px; }
+.hs-profile-top-artist-row .hs-search-track__duration { color:#78909d; }
+@media(max-width:700px) {
+ .hs-profile-listening-stat-bands { grid-template-columns:1fr; }
+ .hs-profile-stat--split { min-height:90px; }
+ .hs-profile-top-artist-row { grid-template-columns:20px 40px minmax(0,1fr) minmax(58px,auto) 20px 20px; gap:6px; padding-inline:8px; min-height:58px; }
+ .hs-profile-top-artist-row .hs-profile-top-artist-rank { width:40px; height:40px; }
+ .hs-profile-top-artist-row .hs-search-track__copy strong { font-size:11px; }
+ .hs-profile-top-artist-row .hs-search-track__signals em { font-size:7px; }
+}
