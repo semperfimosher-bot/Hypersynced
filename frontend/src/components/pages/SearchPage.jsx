@@ -152,6 +152,22 @@ import {
 } from "../../recentSearches.js";
 
 
+function ArtistCreditLinks({ credit, onOpenArtist }) {
+  const names = splitArtistCredits(credit);
+  if (!names.length) return <span>{credit || "Unknown artist"}</span>;
+  return (
+    <span className="hs-artist-credit-links">
+      {names.map((name, index) => (
+        <span key={name}>
+          {index ? <span aria-hidden="true"> · </span> : null}
+          <button type="button" onClick={(event) => { event.stopPropagation(); onOpenArtist(name); }}>{name}</button>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+
 // Search playlist data is kept warm for this page-module lifetime.
 const searchPlaylistCache = new Map();
 const searchPlaylistRequests = new Map();
@@ -2521,7 +2537,7 @@ async function downloadOpenedPlaylist() {
             </span>
             <span className="hs-search-track__copy">
               <strong>{track.title}</strong>
-              <small>{artists.length ? artists.join(" · ") : track.artist}</small>
+              <small><ArtistCreditLinks credit={track.artist} onOpenArtist={setOpenedArtistName} /></small>
             </span>
             <Icon name="chevron" size={16} />
           </button>
@@ -2654,29 +2670,25 @@ async function downloadOpenedPlaylist() {
 
 
   if (openedArtistName) {
+    const artistNames = splitArtistCredits(openedArtistName);
     return (
-      <ArtistProfilePage
-        artistName={
-          openedArtistName
-        }
-        currentUser={
-          currentUser
-        }
-        onOpenAuth={
-          onOpenAuth
-        }
-        onBack={() => {
-          setOpenedArtistName(
-            "",
-          );
-        }}
-        onOpenRelease={(releaseQuery) => {
-          setOpenedArtistName("");
-          setOpenedPlaylist(null);
-          setPlaylistSearchQuery("");
-          onQueryChange?.(releaseQuery);
-        }}
-      />
+      <div className="hs-search-artist-profile-stack">
+        {artistNames.map((artistName, index) => (
+          <ArtistProfilePage
+            key={artistName}
+            artistName={artistName}
+            currentUser={currentUser}
+            onOpenAuth={onOpenAuth}
+            onBack={() => setOpenedArtistName("")}
+            onOpenRelease={(releaseQuery) => {
+              setOpenedArtistName("");
+              setOpenedPlaylist(null);
+              setPlaylistSearchQuery("");
+              onQueryChange?.(releaseQuery);
+            }}
+          />
+        ))}
+      </div>
     );
   }
 
@@ -3737,11 +3749,8 @@ async function downloadOpenedPlaylist() {
                             </strong>
 
                             <small>
-                              {track.artist}
-
-                              {track.album
-                                ? ` • ${track.album}`
-                                : ""}
+                              <ArtistCreditLinks credit={track.artist} onOpenArtist={setOpenedArtistName} />
+                              {track.album ? ` • ${track.album}` : ""}
                             </small>
                           </span>
 
@@ -4318,11 +4327,8 @@ displayResults.tracks.length > 0 ? (
                           </strong>
 
                           <small>
-                            {track.artist}
-
-                            {track.album
-                              ? ` • ${track.album}`
-                              : ""}
+                            <ArtistCreditLinks credit={track.artist} onOpenArtist={setOpenedArtistName} />
+                            {track.album ? ` • ${track.album}` : ""}
                           </small>
 
                         </span>
