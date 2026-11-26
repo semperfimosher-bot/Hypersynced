@@ -9428,3 +9428,15 @@ button:disabled {
   .hs-search-discovery-grid .hs-search-entity-card__art,
   .hs-search-discovery-grid .hs-collaboration-song-row .hs-search-track__art { width:38px !important; height:38px !important; flex-basis:38px !important; }
 }
+
+
+/* Compact song rows across Search and Library without changing Home. */
+.hs-search-page .hs-search-track:not(.hs-admin-device-row) {
+  min-height:62px !important;
+  padding-top:7px !important;
+  padding-bottom:7px !important;
+  gap:8px !important;
+}
+.hs-search-page .hs-search-track__art { width:44px; height:44px; flex-basis:44px; border-radius:5px; }
+.hs-search-page .hs-search-track__copy strong { font-size:13px; line-height:1.2; }
+.hs-search-page .hs-search-track__copy small { font-size:11px; line-height:1.2; }
