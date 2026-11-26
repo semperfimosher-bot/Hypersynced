@@ -509,8 +509,8 @@ export default function ProfilePage({
         </div>
         <div className="hs-profile-listening-stat-band">
           <StatSplit icon="headphones" label="Listening Time">
-            <div><span>ACCOUNT</span><strong>{profile?.hours_listened ?? 0}h</strong></div>
-            <div><span>THIS DEVICE</span><strong>{Math.floor(deviceListeningStats.listenedSeconds / 3600)}h {Math.floor((deviceListeningStats.listenedSeconds % 3600) / 60)}m</strong></div>
+            <button type="button" onClick={() => onNavigate?.("listening-time")} aria-label="Open account listening time"><span>ACCOUNT</span><strong>{profile?.hours_listened ?? 0}h</strong></button>
+            <button type="button" onClick={() => onNavigate?.("listening-time")} aria-label="Open device listening time"><span>THIS DEVICE</span><strong>{Math.floor(deviceListeningStats.listenedSeconds / 3600)}h {Math.floor((deviceListeningStats.listenedSeconds % 3600) / 60)}m</strong></button>
           </StatSplit>
         </div>
       </section>

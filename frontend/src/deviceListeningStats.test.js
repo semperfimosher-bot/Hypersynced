@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readDeviceListeningStats, readDevicePlayedHistory, recordDevicePlayback } from "./deviceListeningStats.js";
+import { readDeviceListeningStats, readDeviceListeningSessions, readDevicePlayedHistory, recordDevicePlayback } from "./deviceListeningStats.js";
 
 function withStorage(run) {
   const original = globalThis.localStorage;

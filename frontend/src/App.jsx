@@ -172,6 +172,9 @@ function preloadPage(page) {
     case "device-played":
       request = import("./components/pages/DevicePlayedPage.jsx");
       break;
+    case "listening-time":
+      request = import("./components/pages/ListeningTimePage.jsx");
+      break;
     case "public-profile":
       request = import("./components/pages/PublicProfilePage.jsx");
       break;
@@ -203,7 +206,8 @@ const SearchPage = lazy(() => import("./components/pages/SearchPage.jsx"));
 const MessagesPage = lazy(() => import("./components/pages/MessagesPage.jsx"));
 const ProfilePage = lazy(() => import("./components/pages/ProfilePage.jsx"));
 const TotalPlayedPage = lazy(() => import("./components/pages/TotalPlayedPage.jsx"));
-const DevicePlayedPage = lazy(() => import("./components/pages/DevicePlayedPage.jsx"));\nconst ListeningTimePage = lazy(() => import("./components/pages/ListeningTimePage.jsx"));
+const DevicePlayedPage = lazy(() => import("./components/pages/DevicePlayedPage.jsx"));
+const ListeningTimePage = lazy(() => import("./components/pages/ListeningTimePage.jsx"));
 const PublicProfilePage = lazy(() => import("./components/pages/PublicProfilePage.jsx"));
 const AdminUploadsPage = lazy(() => import("./components/pages/AdminUploadsPage.jsx"));
 const AdminCatalogPage = lazy(() => import("./components/pages/AdminCatalogPage.jsx"));
@@ -481,6 +485,10 @@ function MainPage({
     if (page === "device-played") {
       return <DevicePlayedPage currentUser={currentUser} />;
    }
+
+    if (page === "listening-time") {
+      return <ListeningTimePage currentUser={currentUser} />;
+    }
 
     if (
       page === "profile"
