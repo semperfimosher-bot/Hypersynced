@@ -497,7 +497,7 @@ export default function ProfilePage({
         <div className="hs-profile-listening-stat-band">
           <span className="hs-profile-listening-stat-band__label">PER THIS DEVICE</span>
           <div className="hs-profile-listening-stat-band__cards">
-            <Stat icon="music" value={deviceListeningStats.tracksPlayed.toLocaleString()} label="Total Played" />
+            <Stat icon="music" value={deviceListeningStats.tracksPlayed.toLocaleString()} label="Total Played" onClick={() => onNavigate?.("device-played")} />
             <Stat icon="headphones" value={`${Math.floor(deviceListeningStats.listenedSeconds / 3600)}h ${Math.floor((deviceListeningStats.listenedSeconds % 3600) / 60)}m`} label="Listening Time" />
           </div>
         </div>

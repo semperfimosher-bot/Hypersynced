@@ -619,6 +619,15 @@ function normalizeTrackMeta(
     album:
       meta.album ??
       "",
+
+    genre:
+      meta.genre ??
+      "",
+
+    releaseYear:
+      meta.releaseYear ??
+      meta.release_year ??
+      null,
   };
 }
 
@@ -1281,6 +1290,9 @@ export function getState() {
     artworkUrl:
       currentArtworkUrl,
 
+    audioUrl:
+      currentTrackMeta?.audioUrl ?? null,
+
     title:
       currentTrackTitle,
 
@@ -1290,6 +1302,14 @@ export function getState() {
     album:
       currentTrackMeta?.album ??
       "",
+
+    genre:
+      currentTrackMeta?.genre ??
+      "",
+
+    releaseYear:
+      currentTrackMeta?.releaseYear ??
+      null,
 
     mimeType:
       currentTrackMeta?.mimeType ??
