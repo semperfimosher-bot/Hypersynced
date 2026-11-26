@@ -3485,3 +3485,12 @@ button.hs-profile-stat:hover,
 
 .hs-profile-recent-artist-links button { display:inline; padding:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
 .hs-profile-recent-artist-links button:hover { color:var(--hs-blue,#54ddff); text-decoration:underline; }
+
+
+/* Profile Top Artists also use the thin connected playlist-row rhythm. */
+.hs-profile-section .hs-top-artists { display:flex; flex-direction:column; gap:0; overflow:hidden; border-radius:8px; }
+.hs-profile-section .hs-top-artists > .hs-artist-row { display:grid; grid-template-columns:26px minmax(0,1fr) auto 14px; align-items:center; min-height:56px; height:56px; gap:8px; padding:6px 10px; margin:0; border:0; border-bottom:1px solid rgba(80,125,148,.18); border-radius:0; background:#020a10; }
+.hs-profile-section .hs-top-artists > .hs-artist-row:first-child { border-top:1px solid rgba(80,125,148,.18); }
+.hs-profile-section .hs-top-artists > .hs-artist-row:last-child { border-radius:0 0 8px 8px; }
+.hs-profile-section .hs-top-artists > .hs-artist-row:hover { background:#012036; transform:none; }
+@media(max-width:700px) { .hs-profile-section .hs-top-artists > .hs-artist-row { min-height:52px; height:52px; padding:5px 8px; gap:6px; } }
