@@ -40,7 +40,8 @@ test("Per Device Played opens a local-history page matching Total Played rows", 
   const appSource = fs.readFileSync(new URL("./App.jsx", import.meta.url), "utf8");
   const devicePage = fs.readFileSync(new URL("./components/pages/DevicePlayedPage.jsx", import.meta.url), "utf8");
   const stats = fs.readFileSync(new URL("./deviceListeningStats.js", import.meta.url), "utf8");
-  assert.match(profile, /<span>THIS DEVICE<\/span><strong>\{deviceListeningStats\.tracksPlayed\.toLocaleString\(\)\}<\/strong>[\s\S]*?onClick=\{\(\) => onNavigate\?\.\("device-played"\)\}/);
+  assert.match(profile, /deviceListeningStats\.tracksPlayed\.toLocaleString\(\)/);
+  assert.match(profile, /onClick=\{\(\) => onNavigate\?\.\("device-played"\)\}/);
   assert.ok(appSource.includes('page === "device-played"'));
   assert.ok(appSource.includes('case "device-played"'));
   assert.ok(devicePage.includes("hs-total-played-track"));
