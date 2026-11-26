@@ -1,11 +1,30 @@
 import { resolveArtworkUrl } from "./artworkUrl.js";
 
 const MAX_WARMED_ARTWORK_URLS = 600;
+const PERSISTED_ARTWORK_URLS_KEY = "hypersynced:warmed-artwork-urls:v1";
+const PERSISTED_ARTWORK_URL_LIMIT = 240;
 const MAX_PRIORITY_ARTWORKS = 8;
 
 const warmedArtworkUrls = new Set();
 const MAX_ARTWORKS_PER_BATCH = 24;
 const warmedPriorityUrls = new Set();
+
+function readPersistedArtworkUrls() {
+  try {
+    const raw = globalThis.localStorage?.getItem(PERSISTED_ARTWORK_URLS_KEY);
+    const urls = raw ? JSON.parse(raw) : [];
+    return Array.isArray(urls) ? urls.filter((url) => typeof url === "string").slice(-PERSISTED_ARTWORK_URL_LIMIT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistWarmedArtworkUrls() {
+  try {
+    const urls = [...warmedArtworkUrls].slice(-PERSISTED_ARTWORK_URL_LIMIT);
+    globalThis.localStorage?.setItem(PERSISTED_ARTWORK_URLS_KEY, JSON.stringify(urls));
+  } catch {}
+}
 
 function rawArtwork(track) {
   return track?.artwork_url ?? track?.artworkUrl ?? null;
@@ -34,6 +53,7 @@ export function warmArtworkUrls(rawUrls, limit = MAX_ARTWORKS_PER_BATCH, priorit
       warmedArtworkUrls.delete(warmedArtworkUrls.values().next().value);
     }
     warmed += 1;
+    persistWarmedArtworkUrls();
   }
   return warmed;
 }
@@ -57,3 +77,6 @@ export function warmPlaylistArtwork(playlists, limit = MAX_ARTWORKS_PER_BATCH) {
   }
   return warmArtworkUrls(urls, limit);
 }
+
+// Warm a small subset from the previous session before the first page renders.
+if (typeof Image !== "undefined") warmArtworkUrls(readPersistedArtworkUrls(), 12, true);
