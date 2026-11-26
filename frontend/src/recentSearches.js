@@ -33,6 +33,19 @@ export function saveRecentSearch(query, ownerKey = "guest") {
   return next;
 }
 
+export function removeRecentSearch(query, ownerKey = "guest") {
+  const normalized = String(query ?? "").trim();
+  const next = readRecentSearches(ownerKey).filter(
+    (value) => value.toLocaleLowerCase() !== normalized.toLocaleLowerCase(),
+  );
+  try {
+    globalThis.localStorage?.setItem(getStorageKey(ownerKey), JSON.stringify(next));
+  } catch {
+    // Recent searches are an optional local convenience.
+  }
+  return next;
+}
+
 export function clearRecentSearches(ownerKey = "guest") {
   try {
     globalThis.localStorage?.removeItem(getStorageKey(ownerKey));
