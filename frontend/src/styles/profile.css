@@ -3530,6 +3530,7 @@ button.hs-profile-stat:hover,
 @media(max-width:700px) { .hs-artist-profile-page .hs-artist-albums { grid-template-columns:repeat(2,minmax(0,1fr)); } .hs-artist-profile-page .hs-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
 /* Account-wide and device-local listening stats are visually separated. */
+.hs-profile-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .hs-profile-listening-stat-bands { display:grid; gap:10px; margin:10px 0 18px; }
 .hs-profile-listening-stat-band { display:grid; gap:7px; min-width:0; }
 .hs-profile-listening-stat-band__label { color:var(--hs-muted,#718c9e); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
