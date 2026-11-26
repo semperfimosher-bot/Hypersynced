@@ -226,6 +226,10 @@ let playbackError =
 
 let requestedPauseCause = null;
 let lastPauseCause = null;
+let unexpectedPauseRecoveryTimer = null;
+let unexpectedPauseRecoveryTrackId = null;
+let unexpectedPauseRecoveryAttempts = 0;
+const MAX_UNEXPECTED_PAUSE_RECOVERIES = 2;
 
 
 const queuedAudioWarmups =
@@ -1551,30 +1555,67 @@ function attachEvents() {
 
 
   audio.addEventListener(
-  "pause",
-  () => {
-    const cause = requestedPauseCause ?? "external-browser-or-device";
-    requestedPauseCause = null;
-    lastPauseCause = { cause, trackId: currentTrackId, positionSeconds: getSafeCurrentTime(), timestamp: Date.now(), visibility: globalThis.document?.visibilityState ?? "unknown", readyState: audio.readyState, networkState: audio.networkState, mediaError: audio.error?.code ?? null };
-    if (cause === "external-browser-or-device") {
-      console.warn("[HyperSynced] Playback paused outside an app pause request. Diagnostic:", lastPauseCause);
-    }
-    sampleListeningProgress();
-    // Pause is not a new play. Keep the current event open so resuming this
-    // same track does not create another Recently Played or play-count entry.
-    if (
-      (currentTrackId ||
-        audio.currentSrc) &&
-      playbackPhase !== "loading"
-    ) {
-      setPlaybackPhase(
-        "paused",
-      );
-    }
-
-    notify();
-  },
-);
+    "pause",
+    () => {
+      const previousPhase = playbackPhase;
+      const cause = requestedPauseCause ?? (previousPhase === "loading" ? "source-change" : "external-browser-or-device");
+      requestedPauseCause = null;
+      lastPauseCause = {
+        cause,
+        trackId: currentTrackId,
+        previousPhase,
+        positionSeconds: getSafeCurrentTime(),
+        timestamp: Date.now(),
+        visibility: globalThis.document?.visibilityState ?? "unknown",
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        mediaError: audio.error?.code ?? null,
+      };
+      if (cause === "external-browser-or-device") {
+        console.warn("[HyperSynced] Playback paused outside an app pause request. Diagnostic:", lastPauseCause);
+      }
+      if (unexpectedPauseRecoveryTimer) {
+        globalThis.clearTimeout(unexpectedPauseRecoveryTimer);
+        unexpectedPauseRecoveryTimer = null;
+      }
+      sampleListeningProgress();
+      // Preserve the pause point and current history event. Only recover
+      // unexpected pauses while the app is visible; explicit pause requests
+      // and source-change pauses never auto-resume.
+      if ((currentTrackId || audio.currentSrc) && playbackPhase !== "loading") {
+        setPlaybackPhase("paused");
+      }
+      const trackAtPause = currentTrackId;
+      if (
+        cause === "external-browser-or-device" &&
+        previousPhase === "playing" &&
+        trackAtPause &&
+        globalThis.document?.visibilityState === "visible" &&
+        hasAudioSource() &&
+        unexpectedPauseRecoveryTrackId === trackAtPause &&
+        unexpectedPauseRecoveryAttempts < MAX_UNEXPECTED_PAUSE_RECOVERIES
+      ) {
+        unexpectedPauseRecoveryTimer = globalThis.setTimeout(() => {
+          unexpectedPauseRecoveryTimer = null;
+          if (
+            currentTrackId !== trackAtPause ||
+            !audio.paused ||
+            playbackPhase !== "paused" ||
+            globalThis.document?.visibilityState !== "visible"
+          ) return;
+          unexpectedPauseRecoveryAttempts += 1;
+          setPlaybackPhase("loading");
+          notify();
+          void togglePlay().catch((error) => {
+            if (currentTrackId !== trackAtPause) return;
+            setPlaybackPhase("error", error instanceof Error ? error.message : "Playback recovery failed.");
+            notify();
+          });
+        }, 1200);
+      }
+      notify();
+    },
+  );
 
 
   audio.addEventListener(
@@ -2269,10 +2310,16 @@ function applyTrackMetadata(
       meta,
     );
 
-  currentTrackId =
-    String(
-      trackId,
-    );
+  const nextTrackId = String(trackId);
+  if (unexpectedPauseRecoveryTrackId !== nextTrackId) {
+    unexpectedPauseRecoveryTrackId = nextTrackId;
+    unexpectedPauseRecoveryAttempts = 0;
+    if (unexpectedPauseRecoveryTimer) {
+      globalThis.clearTimeout(unexpectedPauseRecoveryTimer);
+      unexpectedPauseRecoveryTimer = null;
+    }
+  }
+  currentTrackId = nextTrackId;
 
   currentTrackMeta =
     normalizedMeta;
