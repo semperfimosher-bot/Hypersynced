@@ -2709,7 +2709,7 @@ export function reorderQueueFromCollection(
   currentTrackId,
 ) {
   const sortedEntries = buildTrackQueue(tracks);
-  const activeId = String(currentTrackId ?? currentTrackIdFromPlayer() ?? "");
+  const activeId = String(currentTrackId ?? "");
   if (!activeId || !sortedEntries.some((entry) => String(entry.id) === activeId)) {
     return false;
   }
