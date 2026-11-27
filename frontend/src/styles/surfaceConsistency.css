@@ -955,3 +955,26 @@
 .hs-artist-row, .message-notification-row, .admin-explorer-file, .admin-explorer-folder, .upload-queue-item, .hs-admin-device-row { min-height:56px; padding-top:6px; padding-bottom:6px; }
 .hs-artist-row { gap:8px; }
 @media(max-width:700px) { .hs-messages-page .hs-message-conversation-card { min-height:54px; padding:6px 8px; } }
+
+/* Mobile list-row alignment polish: nudge copy and play affordances right,
+   consistently across Search filters and Library tracks/entities. */
+@media (max-width: 760px) {
+  .hs-search-page .hs-search-track__copy,
+  .hs-library-page .hs-search-track__copy,
+  .hs-search-page .hs-search-entity-card > span:nth-child(2),
+  .hs-library-page .hs-library-entity-row .hs-search-track__copy,
+  .hs-library-page .hs-library-track-row__copy {
+    padding-left: 5px !important;
+    box-sizing: border-box !important;
+  }
+  .hs-search-page .hs-search-track__play,
+  .hs-library-page .hs-search-track__play,
+  .hs-search-page .hs-search-entity-row .hs-search-track__play,
+  .hs-library-page .hs-library-entity-row .hs-search-track__play {
+    transform: translateX(3px) !important;
+  }
+  .hs-search-page .hs-search-track__copy > *,
+  .hs-library-page .hs-search-track__copy > * {
+    text-align: left !important;
+  }
+}
