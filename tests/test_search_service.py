@@ -4,6 +4,7 @@ import pytest
 
 from backend.app.services.search import (
     parse_search_query,
+    score_artist,
     score_person,
     score_track,
     sort_track_rows,
