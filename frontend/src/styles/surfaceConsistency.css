@@ -995,264 +995,180 @@
   }
 }
 
-/* Mobile fix: entity rows (artists, albums and collaboration results) were
-   still clipping at the left. Reposition the whole row content grid, not only
-   the text padding, and reserve safe space at both edges. */
-@media (max-width: 760px) {
+/* Search mobile rows: responsive clone of the desktop Search row system.
+   Preserve the desktop surface, color, typography, corners, artwork and copy order.
+   Only narrow column sizing changes on phones; the copy gets a consistent inset. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-track-list,
+  .hs-search-page .hs-search-entity-grid,
+  .hs-search-page .hs-search-discovery-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border: 1px solid var(--hs-shared-border, rgba(67, 180, 224, .16));
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--hs-surface, #020a10);
+  }
+
+  .hs-search-page .hs-search-track,
   .hs-search-page .hs-search-entity-card,
   .hs-search-page .hs-collaboration-song-row,
-  .hs-library-page .hs-library-entity-row {
+  .hs-search-page .hs-library-entity-row {
     display: grid !important;
-    grid-template-columns: 44px minmax(0, 1fr) 24px !important;
-    grid-template-areas: "art copy action" !important;
-    gap: 10px !important;
-    padding: 8px 16px 8px 18px !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
+    height: auto !important;
+    min-height: 64px !important;
     margin: 0 !important;
+    padding: 8px 10px !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
-    justify-content: initial !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__rank,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__rank,
-  .hs-library-page .hs-library-entity-row > .hs-search-track__rank {
-    display: none !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
-  .hs-library-page .hs-library-entity-row > .hs-search-track__art {
-    grid-area: art !important;
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    max-width: 44px !important;
-    flex: 0 0 44px !important;
-    margin: 0 !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
-  .hs-library-page .hs-library-entity-row > .hs-search-track__copy {
-    grid-area: copy !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 0 0 8px !important;
-    justify-self: stretch !important;
+    align-items: center !important;
+    gap: 8px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--hs-shared-row-divider, rgba(114, 165, 190, .16)) !important;
+    border-radius: 0 !important;
+    background: var(--hs-surface, #020a10) !important;
+    box-shadow: none !important;
+    color: inherit;
     text-align: left !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
+    overflow: hidden;
   }
-  .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child,
-  .hs-library-page .hs-library-entity-row > svg:last-child {
-    grid-area: action !important;
-    justify-self: end !important;
-    width: 24px !important;
-    min-width: 24px !important;
-    max-width: 24px !important;
-    margin: 0 !important;
-    transform: translateX(2px) !important;
+
+  .hs-search-page .hs-search-track-list > :last-child,
+  .hs-search-page .hs-search-entity-grid > :last-child,
+  .hs-search-page .hs-search-discovery-grid > :last-child {
+    border-bottom: 0 !important;
   }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy strong,
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy small,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy strong,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy small,
-  .hs-library-page .hs-library-entity-row > .hs-search-track__copy strong,
-  .hs-library-page .hs-library-entity-row > .hs-search-track__copy small {
+
+  /* Entity results: keep rank + art + copy + trailing chevron in desktop order. */
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row,
+  .hs-search-page .hs-library-entity-row {
+    grid-template-columns: 20px 42px minmax(0, 1fr) 18px !important;
+  }
+
+  .hs-search-page .hs-search-track__rank {
     display: block !important;
     min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
+    font-size: 9px !important;
     text-align: left !important;
-    text-indent: 0 !important;
-  }
-}
-
-
-/* =====================================================================
-   MOBILE ROW SYSTEM — consistent alignment without changing the original
-   dark row color. All row text is inset; artwork and action controls stay put.
-   ===================================================================== */
-@media (max-width: 979px) {
-  .hs-search-track,
-  .hs-library-track-row,
-  .library-track-row,
-  .hs-search-entity-row,
-  .hs-search-entity-card,
-  .hs-library-entity-row,
-  .hs-collaboration-song-row,
-  .hs-library-playlist-row {
-    box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-inline: 0 !important;
-    border-radius: 0 !important;
-    overflow: hidden;
-    text-align: left !important;
-    align-items: center !important;
-    background: var(--hs-surface, #020a10) !important;
-    border-bottom: 1px solid rgba(73, 130, 158, .18) !important;
   }
 
-  .hs-search-track:not(.hs-library-entity-row):not(.hs-search-entity-card),
-  .hs-library-track-row,
-  .library-track-row,
-  .hs-library-playlist-row {
-    grid-template-columns: 20px 40px minmax(0, 1fr) minmax(38px, 56px) 32px 28px !important;
-    gap: 7px !important;
-    min-height: 60px !important;
-    height: auto !important;
-    padding: 7px 9px !important;
-  }
-
-  .hs-library-entity-row,
-  .hs-search-entity-card,
-  .hs-search-entity-row,
-  .hs-collaboration-song-row {
-    display: grid !important;
-    grid-template-columns: 20px 40px minmax(0, 1fr) 16px !important;
-    gap: 8px !important;
-    min-height: 60px !important;
-    height: auto !important;
-    padding: 7px 9px !important;
-  }
-
-  .hs-library-entity-row .hs-search-track__art,
-  .hs-search-entity-card .hs-search-track__art,
-  .hs-search-entity-card__art,
-  .hs-collaboration-song-row .hs-search-track__art,
-  .hs-search-track__art {
-    box-sizing: border-box !important;
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
-    flex: 0 0 40px !important;
-    border-radius: 5px !important;
-    overflow: hidden;
-  }
-
-  /* Actual copy is the third grid item in entity cards (not the second).
-     Inset by 24px from its cell; no shifting of artwork or row width. */
-  .hs-search-track__copy,
-  .hs-library-track-row__copy,
-  .hs-library-entity-row .hs-search-track__copy,
-  .hs-search-entity-row .hs-search-track__copy,
-  .hs-search-entity-card > span:nth-child(3),
-  .hs-library-playlist-row > .hs-search-track__copy,
-  .search-music-row__info,
-  .library-track-row__info,
-  .track-row__info,
-  .artist-row__info,
-  .album-row__info,
-  .collaboration-row__info,
-  .home-track-tile__copy,
-  .home-artist-tile__copy {
-    box-sizing: border-box !important;
-    justify-self: stretch !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
+  .hs-search-page .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card__art {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    flex: 0 0 42px !important;
     margin: 0 !important;
-    padding-inline-start: 24px !important;
-    text-align: left !important;
-    overflow: hidden;
-    transform: translateX(0) !important;
+    border-radius: 6px !important;
   }
 
-  /* Across other mobile app rows, move the label/content column inward,
-     excluding artwork, ranks, buttons, icons, and action controls. */
-  .settings-row > span:first-child,
-  .settings-row > div:first-child,
-  .admin-device-row__copy,
-  .admin-list-row__copy,
-  .library-list-row__copy,
-  .profile-list-row__copy,
-  .page-list-row__copy {
-    padding-inline-start: 24px !important;
-    box-sizing: border-box !important;
+  /* The full copy block is inset as a unit—title and subtitle never diverge. */
+  .hs-search-page .hs-search-track__copy {
+    display: grid !important;
+    grid-area: auto !important;
+    justify-self: stretch !important;
+    align-self: center !important;
     min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-inline-start: 12px !important;
+    box-sizing: border-box !important;
+    gap: 3px !important;
     text-align: left !important;
+    overflow: hidden !important;
+    transform: none !important;
   }
 
-  .hs-search-track__copy strong,
-  .hs-search-track__copy small,
-  .hs-search-entity-card .hs-search-track__copy strong,
-  .hs-search-entity-card .hs-search-track__copy small,
-  .hs-library-entity-row .hs-search-track__copy strong,
-  .hs-library-entity-row .hs-search-track__copy small {
+  .hs-search-page .hs-search-track__copy strong,
+  .hs-search-page .hs-search-track__copy small,
+  .hs-search-page .hs-search-track__copy em {
     display: block;
-    width: 100%;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: left !important;
+    text-indent: 0 !important;
   }
 
-  .hs-search-track__rank,
-  .hs-search-track__duration,
-  .hs-search-track__play,
-  .hs-search-track__signals,
-  .hs-library-entity-row > svg:last-child,
-  .hs-search-entity-card > svg:last-child {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    justify-self: center !important;
+  .hs-search-page .hs-search-track__copy strong {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+  .hs-search-page .hs-search-track__copy small {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
   }
 
-  .hs-search-entity-grid,
-  .hs-library-entity-grid,
-  .hs-search-discovery-grid,
-  .hs-search-track-list,
-  .library-track-list {
-    grid-template-columns: minmax(0, 1fr) !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    gap: 0 !important;
-    overflow-x: clip !important;
+  /* Song rows: collapse optional metadata columns, retain the square play action. */
+  .hs-search-page .hs-search-track:not(.hs-search-entity-card):not(.hs-library-entity-row):not(.hs-collaboration-song-row) {
+    grid-template-columns: 18px 42px minmax(0, 1fr) 32px !important;
+  }
+  .hs-search-page .hs-search-track__signals,
+  .hs-search-page .hs-search-track__duration {
+    display: none !important;
+  }
+  .hs-search-page .hs-search-track__play {
+    display: grid !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    justify-self: end !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  .hs-search-page .hs-search-track__download {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    justify-self: end !important;
+    margin: 0 !important;
+  }
+  .hs-search-page .hs-search-track--playlist-download {
+    grid-template-columns: 18px 42px minmax(0, 1fr) 30px 30px !important;
   }
 
-  .hs-search-entity-grid > *,
-  .hs-library-entity-grid > *,
-  .hs-search-discovery-grid > *,
-  .hs-search-track-list > *,
-  .library-track-list > * {
-    min-width: 0 !important;
-    max-width: 100% !important;
+  /* Small phones retain the same row styling, only using smaller artwork. */
+  @media (max-width: 380px) {
+    .hs-search-page .hs-search-track,
+    .hs-search-page .hs-search-entity-card,
+    .hs-search-page .hs-collaboration-song-row,
+    .hs-search-page .hs-library-entity-row {
+      gap: 6px !important;
+      padding-inline: 8px !important;
+    }
+    .hs-search-page .hs-search-entity-card,
+    .hs-search-page .hs-collaboration-song-row,
+    .hs-search-page .hs-library-entity-row {
+      grid-template-columns: 18px 38px minmax(0, 1fr) 16px !important;
+    }
+    .hs-search-page .hs-search-track:not(.hs-search-entity-card):not(.hs-library-entity-row):not(.hs-collaboration-song-row) {
+      grid-template-columns: 16px 38px minmax(0, 1fr) 30px !important;
+    }
+    .hs-search-page .hs-search-track__art,
+    .hs-search-page .hs-search-entity-card__art {
+      width: 38px !important;
+      height: 38px !important;
+      min-width: 38px !important;
+      max-width: 38px !important;
+      flex-basis: 38px !important;
+    }
+    .hs-search-page .hs-search-track--playlist-download {
+      grid-template-columns: 16px 38px minmax(0, 1fr) 28px 28px !important;
+    }
   }
 }
 
-@media (max-width: 380px) {
-  .hs-search-track:not(.hs-library-entity-row):not(.hs-search-entity-card),
-  .hs-library-track-row,
-  .library-track-row,
-  .hs-library-playlist-row {
-    grid-template-columns: 18px 36px minmax(0, 1fr) minmax(30px, 44px) 28px 24px !important;
-    gap: 5px !important;
-    padding-inline: 7px !important;
-  }
-  .hs-library-entity-row,
-  .hs-search-entity-card,
-  .hs-search-entity-row,
-  .hs-collaboration-song-row {
-    grid-template-columns: 18px 36px minmax(0, 1fr) 14px !important;
-    gap: 6px !important;
-    padding-inline: 7px !important;
-  }
-  .hs-search-track__art,
-  .hs-search-entity-card__art {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    max-width: 36px !important;
-    flex-basis: 36px !important;
-  }
-}
+/* Mobile Search is responsive, not a separate visual theme. */
