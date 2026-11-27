@@ -110,3 +110,18 @@ test("Library albums and artists render as playlist-style rows", () => {
   assert.match(shared, /\.hs-library-entity-row[\s\S]*grid-template-columns:\s*28px\s+46px\s+minmax\(0,\s*1fr\)\s+18px/);
   assert.doesNotMatch(library, /className="hs-search-entity-card hs-library-entity-card"/);
 });
+
+
+test("mobile row system unifies tracks, playlists, albums, artists, and collaborations", () => {
+  const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
+  const mobile = fs.readFileSync(new URL("./styles/mobile.css", import.meta.url), "utf8");
+  const mobileRowSystem = shared.slice(shared.lastIndexOf("MOBILE ROW SYSTEM"));
+  assert.match(mobileRowSystem, /\.hs-library-playlist-row/);
+  assert.match(mobileRowSystem, /\.hs-library-entity-row/);
+  assert.match(mobileRowSystem, /\.hs-search-entity-card/);
+  assert.match(mobileRowSystem, /\.hs-collaboration-song-row/);
+  assert.match(mobileRowSystem, /grid-template-columns:\s*20px\s+40px\s+minmax\(0,\s*1fr\)\s+16px/);
+  assert.match(mobileRowSystem, /padding-inline-start:\s*24px/);
+  assert.match(mobileRowSystem, /min-width:\s*0\s*!important/);
+  assert.doesNotMatch(mobile, /FINAL MOBILE ROW TEXT OFFSET/);
+});
