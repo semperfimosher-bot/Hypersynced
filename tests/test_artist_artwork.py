@@ -107,14 +107,14 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
 
 def test_artist_image_source_requires_explicit_portrait_evidence() -> None:
     assert is_formal_artist_portrait_candidate("File:Artist portrait.jpg", "Portrait of Artist")
-    assert is_formal_artist_portrait_candidate("File:Artist press photo.jpg", "Press photo of Artist")
+    assert is_formal_artist_portrait_candidate(\n        "File:Artist press photo.jpg", "Press photo of Artist"\n    )
     assert is_formal_artist_portrait_candidate("File:Artist.jpg", "Studio portrait of Artist")
     assert not is_formal_artist_portrait_candidate("File:Artist.jpg", "")
-    assert not is_formal_artist_portrait_candidate("File:Artist at red carpet.jpg", "Photo at red carpet")
-    assert not is_formal_artist_portrait_candidate("File:Artist live.jpg", "Photo of Artist at concert")
-    assert not is_formal_artist_portrait_candidate("File:Artist signature.png", "Signature of Artist")
+    assert not is_formal_artist_portrait_candidate(\n        "File:Artist at red carpet.jpg", "Photo at red carpet"\n    )
+    assert not is_formal_artist_portrait_candidate(\n        "File:Artist live.jpg", "Photo of Artist at concert"\n    )
+    assert not is_formal_artist_portrait_candidate(\n        "File:Artist signature.png", "Signature of Artist"\n    )
     assert not is_formal_artist_portrait_candidate("File:Artist logo.png", "Logo with text")
-    assert not is_formal_artist_portrait_candidate("File:Artist poster.png", "Graphic with text and a banner")
+    assert not is_formal_artist_portrait_candidate(\n        "File:Artist poster.png", "Graphic with text and a banner"\n    )
     assert not is_formal_artist_portrait_candidate("File:Artist.jpg", "Photo at festival")
 
 def test_artist_image_source_urls_must_be_wikimedia_https() -> None:
