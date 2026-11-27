@@ -3696,6 +3696,7 @@ async function downloadOpenedPlaylist() {
                           )}
                           className={[
                             "hs-search-track",
+                            "hs-search-track-result-row",
                             "hs-search-generated-track",
                             selectedTrackIndex ===
                               trackIndex
@@ -3922,7 +3923,7 @@ async function downloadOpenedPlaylist() {
                         }
                         role="button"
                         tabIndex={0}
-                        className="hs-search-track"
+                        className="hs-search-track hs-search-playlist-result-row"
                         {...collectionActionMenu.getTriggerProps({
                           key:
                             `playlist:${playlist.id}`,
