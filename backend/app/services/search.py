@@ -340,6 +340,59 @@ def _score_value(
         similarities,
     )
 
+    # Match multi-word searches token-by-token as well as as a whole phrase.
+    # This allows partial words and typos in one token without requiring
+    # every character in the full query to line up.
+    token_scores: list[float] = []
+    for query_token in term_words:
+        if len(query_token) < 2:
+            continue
+        best_token_score = 0.0
+        for value_token in value_words:
+            if value_token.startswith(query_token):
+                best_token_score = max(
+                    best_token_score,
+                    0.96 if len(query_token) >= 3 else 0.84,
+                )
+            elif query_token in value_token:
+                best_token_score = max(
+                    best_token_score,
+                    0.90 if len(query_token) >= 3 else 0.78,
+                )
+            elif len(query_token) >= 4 and len(value_token) >= 4:
+                best_token_score = max(
+                    best_token_score,
+                    SequenceMatcher(
+                        None,
+                        query_token,
+                        value_token,
+                    ).ratio(),
+                )
+        token_scores.append(best_token_score)
+
+    token_coverage = (
+        sum(score >= 0.67 for score in token_scores)
+        / len(token_scores)
+        if token_scores
+        else 0.0
+    )
+    token_similarity = (
+        sum(token_scores) / len(token_scores)
+        if token_scores
+        else 0.0
+    )
+    similarity = max(
+        similarity,
+        token_similarity * (0.75 + token_coverage * 0.25),
+    )
+
+    if similarity >= 0.66 and token_coverage >= 0.5:
+        return (
+            250 + int(similarity * 200),
+            1,
+            "CLOSE MATCH",
+        )
+
     if similarity >= 0.72:
         return (
             250 + int(similarity * 200),

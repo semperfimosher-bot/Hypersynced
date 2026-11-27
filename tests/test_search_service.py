@@ -224,6 +224,17 @@ def test_exact_username_beats_prefix_match() -> None:
     )
 
 
+def test_typo_and_partial_multiword_artist_search() -> None:
+    parsed = parse_search_query("post malnoe")
+    match = score_artist("Post Malone", parsed)
+    assert match.score > 0
+    assert match.tier == 1
+
+    parsed_partial = parse_search_query("post mal")
+    partial = score_artist("Post Malone", parsed_partial)
+    assert partial.score > 0
+
+
 def test_typo_matches_word_inside_display_name() -> None:
     parsed = parse_search_query(
         "shnae",

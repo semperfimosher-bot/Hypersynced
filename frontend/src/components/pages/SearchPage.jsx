@@ -2520,22 +2520,16 @@ async function downloadOpenedPlaylist() {
               <span className="hs-search-track__rank">{String(index + 1).padStart(2, "0")}</span>
               <span className="hs-search-track__art hs-search-entity-card__art">
 
-                {resolveArtworkUrl(
-                  artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
-                ) ? (
-                  <ArtistPortraitImage
-                    artistName={artist.name}
-                    src={resolveArtworkUrl(artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url)}
-                    alt=""
-                    loading="eager"
-                    fetchPriority="high"
-                  />
-                ) : (
-                  <Icon
-                    name="music"
-                    size={26}
-                  />
-                )}
+                <ArtistPortraitImage
+                  artistName={artist.name}
+                  src={resolveArtworkUrl(
+                    artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
+                  )}
+                  alt=""
+                  loading="eager"
+                  fetchPriority="high"
+                  fallback={<Icon name="music" size={26} />}
+                />
 
               </span>
 
