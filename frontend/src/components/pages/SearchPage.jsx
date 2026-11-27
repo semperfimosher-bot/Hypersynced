@@ -3573,7 +3573,8 @@ async function downloadOpenedPlaylist() {
           </section>
 
 
-          {!searchError && completedSearchQuery === normalizedQuery && !loading && activeFilter !== "all" && searchFilterCount(activeFilter, displayResults.counts) === 0 ? (<section className="hs-search-filter-empty" role="status" aria-live="polite"><span className="hs-search-filter-empty__orb"><i /><i /><i /></span><strong>Nothing in this frequency yet</strong><p>Try another filter or let HyperSynced find something new.</p><button type="button" onClick={() => setActiveFilter("all")}>Show all results</button></section>) : null}\n          {searchError ? (
+          {!searchError && completedSearchQuery === normalizedQuery && !loading && activeFilter !== "all" && searchFilterCount(activeFilter, displayResults.counts) === 0 ? (<section className="hs-search-filter-empty" role="status" aria-live="polite"><span className="hs-search-filter-empty__orb"><i /><i /><i /></span><strong>Nothing in this frequency yet</strong><p>Try another filter or let HyperSynced find something new.</p><button type="button" onClick={() => setActiveFilter("all")}>Show all results</button></section>) : null}
+          {searchError ? (
             <section className="hs-search-message hs-search-message--error">
 
               <Icon
