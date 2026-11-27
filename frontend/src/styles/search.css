@@ -9535,30 +9535,3 @@ button:disabled {
   font-size: 11px;
   line-height: 1.45;
 }
-
-/* Profile row overrides follow search.css mobile track defaults in import order. */
-@media (max-width: 760px) {
-  .hs-profile-page .hs-profile-top-artist-row,
-  .hs-profile-page .hs-profile-recent-list > .hs-profile-recent-track-row {
-    grid-template-columns:42px minmax(0,1fr) 28px !important;
-    grid-template-areas:none !important;
-    gap:9px !important;
-    min-height:58px !important;
-    height:auto !important;
-    padding:8px 10px !important;
-    box-sizing:border-box !important;
-  }
-  .hs-profile-page .hs-profile-top-artist-row > .hs-search-track__rank,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__rank,
-  .hs-profile-page .hs-profile-top-artist-row > .hs-search-track__signals,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__signals,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__duration { display:none !important; }
-  .hs-profile-page .hs-profile-top-artist-row > .hs-search-track__art,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__art { grid-column:1 !important; grid-row:1 !important; width:42px !important; height:42px !important; min-width:42px !important; max-width:42px !important; flex-basis:42px !important; }
-  .hs-profile-page .hs-profile-top-artist-row > .hs-search-track__copy,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__copy { grid-column:2 !important; grid-row:1 !important; min-width:0 !important; width:100% !important; max-width:100% !important; padding:0 !important; overflow:hidden !important; text-align:left !important; }
-  .hs-profile-page .hs-profile-top-artist-row > svg:last-child,
-  .hs-profile-page .hs-profile-recent-track-row > .hs-search-track__play { grid-column:3 !important; grid-row:1 !important; justify-self:end !important; width:28px !important; min-width:28px !important; max-width:28px !important; }
-  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__play { grid-area:action !important; display:grid !important; place-items:center !important; justify-self:end !important; width:30px !important; min-width:30px !important; max-width:30px !important; }
-  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__duration { display:none !important; }
-}
