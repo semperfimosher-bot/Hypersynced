@@ -15,6 +15,10 @@ test("mobile search result copy stays left aligned and avoids oversized metadata
   assert.match(sharedRows, /padding-inline-start:\s*24px\s*!important/);
   assert.match(sharedRows, /\.hs-search-page \.hs-search-entity-card[\s\S]*?grid-template-columns:\s*20px\s+40px\s+minmax\(0,\s*1fr\)\s+16px\s*!important/);
   assert.match(sharedRows, /\.hs-search-page \.hs-search-track:not\([\s\S]*?grid-template-columns:\s*18px\s+40px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
+  assert.match(sharedRows, /Mobile row titles\/subtitles wrap instead of being truncated/);
+  assert.match(sharedRows, /white-space:\s*normal\s*!important/);
+  assert.match(sharedRows, /overflow-wrap:\s*anywhere\s*!important/);
+  assert.match(sharedRows, /text-overflow:\s*clip\s*!important/);
 });
 
 test("mobile player swipes skip tracks in both directions", () => {
