@@ -9,7 +9,7 @@ export default function SearchArtworkImage({
   loading = "lazy",
   decoding = "async",
   fetchPriority = "auto",
-  fallback = <Icon name="disc" size={20} />,
+  fallback = <Icon name="disc" size={20} />,\n  onError,
   ...props
 }) {
   const [cachedSrc, setCachedSrc] = useState("");
