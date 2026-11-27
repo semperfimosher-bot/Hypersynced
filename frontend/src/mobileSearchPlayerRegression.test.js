@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const css = readFileSync(new URL("./styles/search.css", import.meta.url), "utf8");
+const sharedRows = readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
 const player = readFileSync(new URL("./components/player/PlayerBar.jsx", import.meta.url), "utf8");
 
 test("mobile search filters are restricted to All, Playlists, Artists, People", () => {
@@ -10,8 +11,10 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
 });
 
 test("mobile search result copy stays left aligned and avoids oversized metadata columns", () => {
-  assert.match(css, /\.hs-search-track__copy[\s\S]*?justify-self:\s*start\s*!important/);
-  assert.match(css, /grid-template-columns:\s*22px\s+42px\s+minmax\(0,\s*1fr\)\s+minmax\(44px,\s*70px\)\s+34px\s+28px/);
+  assert.match(sharedRows, /MOBILE ROW SYSTEM[\s\S]*?\.hs-search-page \.hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
+  assert.match(sharedRows, /padding-inline-start:\s*24px\s*!important/);
+  assert.match(sharedRows, /\.hs-search-page \.hs-search-entity-card[\s\S]*?grid-template-columns:\s*20px\s+40px\s+minmax\(0,\s*1fr\)\s+16px\s*!important/);
+  assert.match(sharedRows, /\.hs-search-page \.hs-search-track:not\([\s\S]*?grid-template-columns:\s*18px\s+40px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
 });
 
 test("mobile player swipes skip tracks in both directions", () => {
