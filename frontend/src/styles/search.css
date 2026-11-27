@@ -9550,3 +9550,87 @@ button:disabled {
   font-size: 11px;
   line-height: 1.45;
 }
+
+/* Mobile-first search result rows: explicit, predictable columns keep artwork
+   separate from text and remove desktop metadata columns that crowd phones. */
+@media (max-width: 760px) {
+  .hs-search-page .hs-search-playlist-result-row,
+  .hs-search-page .hs-search-track-result-row {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 30px !important;
+    grid-template-areas: "art copy action" !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 64px !important;
+    height: auto !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__rank,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__rank,
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__signals,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__signals,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__duration {
+    display: none !important;
+  }
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__art,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__art {
+    grid-area: art !important;
+    display: grid !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    flex-basis: 44px !important;
+    overflow: hidden !important;
+    border-radius: 6px !important;
+  }
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__copy,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__copy {
+    grid-area: copy !important;
+    display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
+    text-align: left !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    gap: 3px !important;
+  }
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__copy strong,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__copy strong,
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__copy small,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__copy small {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    text-indent: 0 !important;
+    text-align: left !important;
+  }
+  .hs-search-page .hs-search-playlist-result-row > .hs-search-track__signals,
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__play {
+    grid-area: action !important;
+    display: grid !important;
+    place-items: center !important;
+    justify-self: end !important;
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+  .hs-search-page .hs-search-track-result-row > .hs-search-track__play {
+    border-radius: 6px;
+  }
+  .hs-search-page .hs-search-playlist-result-row .hs-search-track__art img,
+  .hs-search-page .hs-search-track-result-row .hs-search-track__art img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+}
