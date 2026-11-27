@@ -76,7 +76,7 @@ export default function ArtistPortraitImage({
       src={imageSrc}
       alt={alt}
       className={className}
-      onError={() => setFailed(false)}
+      onError={() => setFailed(true)}
       {...props}
     />
   );
