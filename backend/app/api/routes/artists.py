@@ -29,7 +29,7 @@ from ...models.artist import (
     ArtistProfile,
 )
 from ...models.media import Track
-from ...services.artist_artwork import enqueue_artist_artwork
+from ...services.artist_artwork import enqueue_artist_artwork, is_formal_artist_portrait_candidate
 from ...services.artists import (
     ensure_artist_profile,
     load_published_artist_tracks,
@@ -576,6 +576,25 @@ async def get_artist_profile(
         session,
         artist_name,
     )
+
+    # Revalidate legacy cached artwork against the stricter portrait-only
+    # policy. Older records accepted generic file extensions as proof of a
+    # portrait, which could cache logos/signatures/text graphics.
+    legacy_source = profile.artwork_source_page_url or ""
+    if profile.artwork_object_key and not is_formal_artist_portrait_candidate(
+        legacy_source,
+        "",
+    ):
+        profile.artwork_object_key = None
+        profile.artwork_temporary_url = None
+        profile.has_profile_picture = False
+        profile.artwork_status = "missing"
+        profile.artwork_artist_qid = None
+        profile.artwork_source_url = None
+        profile.artwork_source_page_url = None
+        profile.artwork_license = None
+        profile.artwork_credit = None
+        await session.commit()
 
     if not profile.artwork_object_key:
         queued = await enqueue_artist_artwork(
