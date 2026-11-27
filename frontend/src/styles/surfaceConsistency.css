@@ -1117,8 +1117,10 @@
     grid-template-columns: 18px 42px minmax(0, 1fr) 30px 30px !important;
   }
 
-  /* Small phones retain the same row styling, only using smaller artwork. */
-  @media (max-width: 380px) {
+}
+
+/* Small phones retain the same row styling, only using smaller artwork. */
+@media (max-width: 380px) {
     .hs-search-page .hs-search-track,
     .hs-search-page .hs-search-entity-card,
     .hs-search-page .hs-collaboration-song-row,
@@ -1145,7 +1147,6 @@
     .hs-search-page .hs-search-track--playlist-download {
       grid-template-columns: 16px 38px minmax(0, 1fr) 28px 28px !important;
     }
-  }
 }
 
 /* Mobile Search is responsive, not a separate visual theme. */
