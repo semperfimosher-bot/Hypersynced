@@ -994,3 +994,81 @@
     transform: translateX(5px) !important;
   }
 }
+
+/* Mobile fix: entity rows (artists, albums and collaboration results) were
+   still clipping at the left. Reposition the whole row content grid, not only
+   the text padding, and reserve safe space at both edges. */
+@media (max-width: 760px) {
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row,
+  .hs-library-page .hs-library-entity-row {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 24px !important;
+    grid-template-areas: "art copy action" !important;
+    gap: 10px !important;
+    padding: 8px 16px 8px 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    justify-content: initial !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__rank,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__rank,
+  .hs-library-page .hs-library-entity-row > .hs-search-track__rank {
+    display: none !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
+  .hs-library-page .hs-library-entity-row > .hs-search-track__art {
+    grid-area: art !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
+  .hs-library-page .hs-library-entity-row > .hs-search-track__copy {
+    grid-area: copy !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 0 0 8px !important;
+    justify-self: stretch !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child {
+    grid-area: action !important;
+    justify-self: end !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
+    margin: 0 !important;
+    transform: translateX(2px) !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy strong,
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy small,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy strong,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy small,
+  .hs-library-page .hs-library-entity-row > .hs-search-track__copy strong,
+  .hs-library-page .hs-library-entity-row > .hs-search-track__copy small {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    text-align: left !important;
+    text-indent: 0 !important;
+  }
+}
