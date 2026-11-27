@@ -79,6 +79,19 @@ export function filterCatalogTrackIds(
 }
 
 
+export function restoreQueueOrder(originalQueue, currentQueue, activeTrackId) {
+  const restored = Array.isArray(originalQueue) ? originalQueue.slice() : [];
+  const seen = new Set(restored.map((entry) => String(entry?.id ?? ""));
+  for (const entry of Array.isArray(currentQueue) ? currentQueue : []) {
+    const id = String(entry?.id ?? "");
+    if (id && !seen.has(id)) { seen.add(id); restored.push(entry); }
+  }
+  const activeId = String(activeTrackId ?? "");
+  let index = activeId ? restored.findIndex((entry) => String(entry?.id ?? "") === activeId) : -1;
+  if (index < 0 && restored.length) index = 0;
+  return { queue: restored, index };
+}
+
 export function buildTrackQueue(
   tracks = [],
 ) {

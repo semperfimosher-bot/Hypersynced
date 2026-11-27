@@ -606,11 +606,7 @@ export default function ArtistProfilePage({
                 void toggleFollow();
               }}
             >
-              {followBusy
-                ? "Updating..."
-                : profile.is_following
-                  ? "Following"
-                  : "Follow"}
+              {profile.is_following ? "Following" : "Follow"}
             </button>
           </div>
         </div>

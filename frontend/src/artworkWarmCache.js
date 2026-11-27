@@ -3,10 +3,10 @@ import { resolveArtworkUrl } from "./artworkUrl.js";
 const MAX_WARMED_ARTWORK_URLS = 600;
 const PERSISTED_ARTWORK_URLS_KEY = "hypersynced:warmed-artwork-urls:v1";
 const PERSISTED_ARTWORK_URL_LIMIT = 600;
-const MAX_PRIORITY_ARTWORKS = 16;
+const MAX_PRIORITY_ARTWORKS = 48;
 
 const warmedArtworkUrls = new Set();
-const MAX_ARTWORKS_PER_BATCH = 24;
+const MAX_ARTWORKS_PER_BATCH = 48;
 const warmedPriorityUrls = new Set();
 
 function readPersistedArtworkUrls() {
@@ -79,4 +79,4 @@ export function warmPlaylistArtwork(playlists, limit = MAX_ARTWORKS_PER_BATCH) {
 }
 
 // Warm a small subset from the previous session before the first page renders.
-if (typeof Image !== "undefined") warmArtworkUrls(readPersistedArtworkUrls(), 48, true);
+if (typeof Image !== "undefined") warmArtworkUrls(readPersistedArtworkUrls(), 64, true);

@@ -2476,7 +2476,7 @@ async function downloadOpenedPlaylist() {
                 subtitle:
                   "Artist",
                 artwork_url:
-                  artist.artwork_url ??
+                  artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url ??
                   null,
                 actions: [
                   {
@@ -2520,12 +2520,11 @@ async function downloadOpenedPlaylist() {
               <span className="hs-search-track__art hs-search-entity-card__art">
 
                 {resolveArtworkUrl(
-                  artist.artwork_url,
+                  artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
                 ) ? (
-                  <SearchArtworkImage
-                    src={
+                  <SearchArtworkImage\n                    loading="eager"\n                    fetchPriority="high"\n                    src={
                       resolveArtworkUrl(
-                        artist.artwork_url,
+                        artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
                       )
                     }
                     alt=""

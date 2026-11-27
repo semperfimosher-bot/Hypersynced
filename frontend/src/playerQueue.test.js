@@ -648,3 +648,18 @@ test(
     );
   },
 );
+
+test("restoreQueueOrder restores original queue order and preserves current selection", async () => {
+  const q = await loadQueueModule();
+  const original = [{id:"a"},{id:"b"},{id:"c"},{id:"d"}];
+  const shuffled = [{id:"a"},{id:"d"},{id:"b"},{id:"c"},{id:"extra"}];
+  const result = q.restoreQueueOrder(original, shuffled, "b");
+  assert.deepEqual(result.queue.map(x=>x.id), ["a","b","c","d","extra"]);
+  assert.equal(result.index, 1);
+});
+test("restoreQueueOrder uses index zero if active id is not in queue", async () => {
+  const q = await loadQueueModule();
+  const result = q.restoreQueueOrder([{id:"a"},{id:"b"}], [{id:"b"}], "not-found");
+  assert.deepEqual(result.queue.map(x=>x.id), ["a","b"]);
+  assert.equal(result.index, 0);
+});
