@@ -3374,7 +3374,6 @@ input, select, textarea { min-width:0; max-width:100%; }
   .hs-search-filterbar button[data-filter="tracks"] {
     display: none;
   }
-
-
+}
 
 /* Mobile row geometry is centralized in surfaceConsistency.css. */
