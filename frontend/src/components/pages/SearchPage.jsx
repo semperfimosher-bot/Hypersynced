@@ -301,7 +301,8 @@ function SearchPage({
           }
         }
       };
-      // Discovery artwork prewarming is intentionally serial: these idle searches are optional, and parallel requests can overload the backend's admission limit.\n      await worker();
+      // Discovery artwork prewarming is intentionally serial: these idle searches are optional, and parallel requests can overload the backend's admission limit.
+      await worker();
     };
     if (typeof window.requestIdleCallback === "function") idleHandle = window.requestIdleCallback(load, { timeout: 5000 });
     else idleHandle = window.setTimeout(load, 1800);
