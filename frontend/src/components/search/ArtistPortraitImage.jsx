@@ -46,7 +46,7 @@ export default function ArtistPortraitImage({
         const status = await getArtistArtworkStatus(artistName);
         if (!active) return;
         if (status?.artwork_url) {
-          setLiveSrc(status.artwork_url);
+          setLiveSrc(status.artwork_url);\n          setFailed(false);
           void refreshArtistPortrait(artistName, status.artwork_url).then(setBlob).catch(() => {});
         }
         if (["ready", "missing", "failed"].includes(status?.status)) return;
