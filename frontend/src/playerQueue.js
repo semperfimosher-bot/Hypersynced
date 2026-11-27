@@ -81,7 +81,7 @@ export function filterCatalogTrackIds(
 
 export function restoreQueueOrder(originalQueue, currentQueue, activeTrackId) {
   const restored = Array.isArray(originalQueue) ? originalQueue.slice() : [];
-  const seen = new Set(restored.map((entry) => String(entry?.id ?? ""));
+  const seen = new Set(restored.map((entry) => String(entry?.id ?? "")));
   for (const entry of Array.isArray(currentQueue) ? currentQueue : []) {
     const id = String(entry?.id ?? "");
     if (id && !seen.has(id)) { seen.add(id); restored.push(entry); }
