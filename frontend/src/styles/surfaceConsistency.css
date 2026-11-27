@@ -978,3 +978,19 @@
     text-align: left !important;
   }
 }
+
+/* Library mobile rows: consistent inset for copy and play action across filters. */
+@media (max-width: 760px) {
+  .hs-library-page .hs-search-track__copy,
+  .hs-library-page .hs-library-entity-row__copy,
+  .hs-library-page .hs-library-track-row__copy {
+    padding-left: 8px !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+  }
+  .hs-library-page .hs-search-track__play,
+  .hs-library-page .hs-library-track-row__play,
+  .hs-library-page .hs-library-entity-row__play {
+    transform: translateX(5px) !important;
+  }
+}
