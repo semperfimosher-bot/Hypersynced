@@ -2877,10 +2877,20 @@ async function downloadOpenedPlaylist() {
                             ? discoveryCardArtwork.filter((art) => art.artistArtwork)
                             : discoveryCardArtwork.filter((art) => commandTerms.some((term) => art.genre.split(/[^a-z0-9]+/).includes(term)));
                         const searchedMatches = discoveryArtworkByCommand[command.id] || [];
-                        // Prefer matching cached library art, then matching category-query art.
-                        // Query results are scoped to the card's category, not borrowed from another genre.
-                        const relevantArtwork = libraryMatches.length ? libraryMatches : searchedMatches;
-                        return relevantArtwork.slice(0, 3).map((art) => command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork);
+                        // Combine category matches with that card's search results. Fill remaining
+                        // slots from cached catalog art so a card never stays visually empty when
+                        // a genre has a sparse catalog; never repeat the same artwork within a tile.
+                        const candidates = [...libraryMatches, ...searchedMatches, ...discoveryCardArtwork];
+                        const used = new Set();
+                        const picked = [];
+                        for (const art of candidates) {
+                          const image = command.filter === "artists" && art.artistArtwork ? art.artistArtwork : art.artwork;
+                          if (!image || used.has(String(image))) continue;
+                          used.add(String(image));
+                          picked.push(image);
+                          if (picked.length >= 3) break;
+                        }
+                        return picked;
                       })()).slice(0, 3).map((src, artIndex) => <SearchArtworkImage key={`${command.id}-${artIndex}`} className={`hs-search-discovery__tile-art-cover hs-search-discovery__tile-art-cover--${artIndex + 1}`} src={resolveArtworkUrl(src)} alt="" loading={command.filter === "people" ? "eager" : "lazy"} decoding="async" />)}
                   <span className="hs-search-discovery__tile-icon"><Icon name={command.icon} size={19} /></span>
                   <span className="hs-search-discovery__tile-sparkles" aria-hidden="true">
