@@ -1104,7 +1104,7 @@
     max-width: 30px !important;
     justify-self: end !important;
     margin: 0 !important;
-    transform: none !important;
+    transform: translateX(3px) !important;
   }
   .hs-search-page .hs-search-track__download {
     width: 28px !important;
