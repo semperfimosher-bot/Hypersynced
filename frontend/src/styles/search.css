@@ -9661,3 +9661,80 @@ button:disabled {
   .hs-search-page .hs-search-playlist-result-row > .hs-search-track__play { grid-area:action !important; display:grid !important; place-items:center !important; justify-self:end !important; width:30px !important; min-width:30px !important; max-width:30px !important; }
   .hs-search-page .hs-search-playlist-result-row > .hs-search-track__duration { display:none !important; }
 }
+
+/* ROOT FIX: search result rows were clipped because mobile rules only matched
+   two row variants while other filters used different classes/grid templates.
+   Normalize every search result row and its container at phone widths. */
+@media (max-width: 760px) {
+  .hs-search-page,
+  .hs-search-page .hs-search-section,
+  .hs-search-page .hs-search-track-list,
+  .hs-search-page .hs-search-entity-panel,
+  .hs-search-page .hs-search-discovery-panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+  .hs-search-page .hs-search-track,
+  .hs-search-page .hs-library-entity-row,
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    padding-inline: 12px !important;
+    grid-template-columns: 44px minmax(0, 1fr) 30px !important;
+    grid-template-areas: "art copy action" !important;
+    gap: 10px !important;
+  }
+  .hs-search-page .hs-search-track__rank { display:none !important; }
+  .hs-search-page .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card__art {
+    grid-area: art !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    flex-basis: 44px !important;
+    margin: 0 !important;
+    overflow:hidden !important;
+  }
+  .hs-search-page .hs-search-track__copy {
+    grid-area: copy !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 0 0 4px !important;
+    overflow: hidden !important;
+    text-align:left !important;
+    justify-self:stretch !important;
+    box-sizing:border-box !important;
+  }
+  .hs-search-page .hs-search-track__copy strong,
+  .hs-search-page .hs-search-track__copy small {
+    min-width:0 !important;
+    max-width:100% !important;
+    width:100% !important;
+    display:block !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+    text-indent:0 !important;
+    text-align:left !important;
+  }
+  .hs-search-page .hs-search-track__play,
+  .hs-search-page .hs-search-track__signals {
+    grid-area:action !important;
+    width:30px !important;
+    min-width:30px !important;
+    max-width:30px !important;
+    justify-self:end !important;
+    margin:0 !important;
+  }
+}
