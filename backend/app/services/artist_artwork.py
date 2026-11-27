@@ -44,7 +44,8 @@ ARTWORK_REJECT_TERMS = (
     "party", "nightclub", "backstage", "tour photo", "poster", "logo",
     "album cover", "cover art", "promo graphic", "promotional graphic",
     "screenshot", "text image", "typography", "text", "lyrics", "fan art",
-    "illustration", "drawing", "painting", "cartoon", "banner", "advertisement",\n    "watermark", "signature", "handwritten", "wordmark", "logo", "autograph", "typography",
+    "illustration", "drawing", "painting", "cartoon", "banner", "advertisement",
+    "watermark", "signature", "handwritten", "wordmark", "logo", "autograph", "typography",
 )
 
 def is_formal_artist_portrait_candidate(title: str | None, description: str | None = None) -> bool:
