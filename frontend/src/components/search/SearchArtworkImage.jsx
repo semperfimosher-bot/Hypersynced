@@ -45,7 +45,7 @@ export default function SearchArtworkImage({
   }, [src]);
 
   const handleImageError = async (event) => {
-    props.onError?.(event);
+    onError?.(event);
     if (retrying || !src) {
       setFailed(true);
       return;
