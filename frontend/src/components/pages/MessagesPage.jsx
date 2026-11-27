@@ -1315,19 +1315,14 @@ export default function MessagesPage({
           </div>
         ) : conversations.length ===
           0 ? (
-          <div className="hs-messages-empty hs-messages-empty--directory">
-            <Icon
-              name="mail"
-              size={28}
-            />
-
-            <strong>
-              No conversations yet
-            </strong>
-
-            <span>
-              Search for a username above to start one.
-            </span>
+          <div className="hs-library-empty hs-library-playlist-empty hs-messages-library-empty">
+            <div className="hs-library-empty-art" aria-hidden="true">
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--back"><Icon name="mail" size={24} /></span>
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--middle"><Icon name="users" size={26} /></span>
+              <span className="hs-library-empty-art-card hs-library-empty-art-card--front"><Icon name="message-circle" size={28} /></span>
+            </div>
+            <strong>No conversations yet</strong>
+            <p>Start a conversation with someone on HyperSynced by searching their name or username above.</p>
           </div>
         ) : (
           <div className="user-search-results hs-message-conversation-list">
