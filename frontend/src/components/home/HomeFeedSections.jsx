@@ -1,7 +1,8 @@
 import React from "react";
 import Icon from "../ui/Icon.jsx";
 import { resolveArtworkUrl } from "../../artworkUrl.js";
-import SearchArtworkImage from "../search/SearchArtworkImage.jsx";\nimport ArtistPortraitImage from "../search/ArtistPortraitImage.jsx";
+import SearchArtworkImage from "../search/SearchArtworkImage.jsx";
+import ArtistPortraitImage from "../search/ArtistPortraitImage.jsx";
 
 const PICKS = [
   ["Search music", "Find your next track", "search", "search"],

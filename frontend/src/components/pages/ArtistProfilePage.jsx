@@ -30,6 +30,7 @@ import OfflineNotice from
   "../ui/OfflineNotice.jsx";
 import TrackArtwork from
   "../ui/TrackArtwork.jsx";
+import ArtistPortraitImage from "../search/ArtistPortraitImage.jsx";
 
 import TrackActionMenu from
   "../music/TrackActionMenu.jsx";
