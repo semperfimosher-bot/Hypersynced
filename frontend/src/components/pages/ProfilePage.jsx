@@ -562,7 +562,7 @@ export default function ProfilePage({
             {recentTracks.map(
               (track) => (
                 <button
-                  className="hs-search-track hs-library-track-row hs-recent-card"
+                  className="hs-search-track hs-library-track-row hs-profile-recent-track-row"
                   type="button"
                   key={track.id}
                   {...trackActionMenu.getTriggerProps(
@@ -609,35 +609,19 @@ export default function ProfilePage({
                     );
                   }}
                 >
-                  <div className="hs-recent-card__art">
-                    <TrackArtwork
-                      src={
-                        track.artwork_url
-                      }
-                      alt={
-                        track.title
-                      }
-                      variant={1}
-                    />
-
-
-                  </div>
-
-                  <strong>
-                    {track.title}
-                  </strong>
-
-                  <span className="hs-profile-recent-artist-links">
-                    {splitArtistCredits(trackArtistCredits(track)).map((artistName, artistIndex) => (
-                      <span key={artistName}>
-                        {artistIndex ? <span aria-hidden="true"> · </span> : null}
-                        <button type="button" onClick={(event) => { event.stopPropagation(); onSearchArtist?.(artistName); }}>{artistName}</button>
-                      </span>
-                    ))}
+                  <span className="hs-search-track__rank" aria-hidden="true">♫</span>
+                  <span className="hs-search-track__art hs-profile-top-artist-thumb" aria-hidden="true">
+                    <TrackArtwork src={track.artwork_url} alt={track.title} variant={1} />
                   </span>
-                  <span className="hs-recent-card__play" aria-hidden="true">
-                    <Icon name="play" size={15} />
+                  <span className="hs-search-track__copy">
+                    <strong>{track.title}</strong>
+                    <small>{trackArtistCredits(track)}</small>
                   </span>
+                  <span className="hs-search-track__signals">
+                    <em>RECENTLY PLAYED</em>
+                  </span>
+                  <span className="hs-search-track__duration" aria-hidden="true"><Icon name="chevron" size={15} /></span>
+                  <span className="hs-search-track__play" aria-hidden="true"><Icon name="play" size={14} /></span>
                 </button>
               ),
             )}
