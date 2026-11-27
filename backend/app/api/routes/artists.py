@@ -530,23 +530,10 @@ async def get_artist_artwork_status(
     session: DatabaseSession,
 ) -> dict[str, str | None]:
     """Small status endpoint for fast portrait polling without loading profile stats."""
-    normalized = normalize_artist_name(artist_name)
-    if not normalized:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Artist not found.",
-        )
-    result = await session.execute(
-        select(ArtistProfile).where(
-            ArtistProfile.normalized_name == normalized,
-        )
-    )
-    profile = result.scalar_one_or_none()
-    if profile is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Artist not found.",
-        )
+    profile = await _artist_entity(session, artist_name)
+    if not profile.artwork_object_key and profile.artwork_status in {"missing", "failed"}:
+        await enqueue_artist_artwork(profile.id, force=True)
+        profile.artwork_status = "queued"
     artwork_url = (
         create_presigned_download_url(profile.artwork_object_key)
         if profile.artwork_object_key

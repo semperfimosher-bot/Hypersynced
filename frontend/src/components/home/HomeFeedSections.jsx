@@ -1,7 +1,7 @@
 import React from "react";
 import Icon from "../ui/Icon.jsx";
 import { resolveArtworkUrl } from "../../artworkUrl.js";
-import SearchArtworkImage from "../search/SearchArtworkImage.jsx";
+import SearchArtworkImage from "../search/SearchArtworkImage.jsx";\nimport ArtistPortraitImage from "../search/ArtistPortraitImage.jsx";
 
 const PICKS = [
   ["Search music", "Find your next track", "search", "search"],
@@ -104,7 +104,7 @@ export function ArtistRow({ tracks, fallbackTracks = [], onNavigate, onOpenArtis
     <section className="home-feed-row">
       <div className="home-feed-heading"><div><span>FROM YOUR MUSIC</span><h2>Artists to explore</h2></div></div>
       <div className="home-artist-scroll home-scroll-fade">
-        {artists.map((artist) => <button key={artist.name} type="button" className="home-artist-chip" onClick={() => onOpenArtist ? onOpenArtist(artist.name) : onNavigate?.("search")}><span className="home-artist-chip__avatar">{artist.art ? <SearchArtworkImage src={artist.art} alt="" loading="eager" fetchPriority="high" /> : "♫"}</span><strong>{artist.name}</strong><small>Artist</small></button>)}
+        {artists.map((artist) => <button key={artist.name} type="button" className="home-artist-chip" onClick={() => onOpenArtist ? onOpenArtist(artist.name) : onNavigate?.("search")}><span className="home-artist-chip__avatar">{artist.art ? <ArtistPortraitImage artistName={artist.name} src={artist.art} alt="" loading="eager" fetchPriority="high" /> : "♫"}</span><strong>{artist.name}</strong><small>Artist</small></button>)}
       </div>
     </section>
   );

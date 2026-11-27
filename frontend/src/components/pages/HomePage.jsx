@@ -225,7 +225,7 @@ function HomePage({ currentUser, onNavigate, onOpenAuth, onOpenArtist }) {
   useEffect(() => {
     if (firstWarmTrack?.id) void player.warmTrackForPlayback(firstWarmTrack.id, firstWarmTrack, { warmBytes: 256 * 1024 });
   }, [firstWarmTrack?.id]);
-  const greetingPeriod = (() => { const hour = new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good night"; })();
+  const greetingPeriod = (() => { const hour = new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"; })();
   const menuProps = (track) => menu.getTriggerProps(track);
   const playNext = (track) => { if (player.playTrackNext(track)) window.dispatchEvent(new CustomEvent("hypersynced:status-message", { detail: "Added to Play Next" })); };
   // Request a broad recommendation pool so Home cannot disappear when every song is recently played.

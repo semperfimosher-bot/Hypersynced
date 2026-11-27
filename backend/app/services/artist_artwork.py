@@ -35,21 +35,22 @@ _last_musicbrainz_request_at = 0.0
 
 
 FORMAL_PORTRAIT_SIGNALS = (
-    "portrait", "headshot", "studio photo", "studio portrait", "formal portrait",
-    "red carpet", "step and repeat", "press portrait", "press photo",
-    "photograph", "photo", "pictured", ".jpg", ".jpeg", ".png", ".webp",
+    "portrait of", "headshot of", "studio portrait", "press portrait",
+    "official portrait", "photo of", "photograph of", "press photo of",
+    "studio photo of", "promotional portrait of",
 )
 ARTWORK_REJECT_TERMS = (
     "concert", "live performance", "live show", "live", "performance", "stage", "festival", "crowd",
     "party", "nightclub", "backstage", "tour photo", "poster", "logo",
     "album cover", "cover art", "promo graphic", "promotional graphic",
     "screenshot", "text image", "typography", "text", "lyrics", "fan art",
-    "illustration", "drawing", "painting", "cartoon", "banner", "advertisement", "watermark",
+    "illustration", "drawing", "painting", "cartoon", "banner", "advertisement", "watermark", "signature", "handwritten", "wordmark", "logo", "autograph", "typography",
 )
 
 def is_formal_artist_portrait_candidate(title: str | None, description: str | None = None) -> bool:
     """Accept formal artist portraits; reject event, performance, and graphic imagery."""
     blob = re.sub(r"<[^>]+>", " ", f"{title or ''} {description or ''}").casefold()
+    blob = re.sub(r"[^a-z0-9]+", " ", blob)
     if any(term in blob for term in ARTWORK_REJECT_TERMS):
         return False
     return any(signal in blob for signal in FORMAL_PORTRAIT_SIGNALS)

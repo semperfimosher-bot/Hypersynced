@@ -2522,15 +2522,12 @@ async function downloadOpenedPlaylist() {
                 {resolveArtworkUrl(
                   artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
                 ) ? (
-                  <SearchArtworkImage
+                  <ArtistPortraitImage
+                    artistName={artist.name}
+                    src={resolveArtworkUrl(artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url)}
+                    alt=""
                     loading="eager"
                     fetchPriority="high"
-                    src={
-                      resolveArtworkUrl(
-                        artist.artist_artwork_url ?? artist.artist_image_url ?? artist.artist_profile_image_url ?? artist.artist_photo_url ?? artist.artwork_url,
-                      )
-                    }
-                    alt=""
                   />
                 ) : (
                   <Icon

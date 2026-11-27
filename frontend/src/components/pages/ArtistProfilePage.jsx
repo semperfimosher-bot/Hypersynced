@@ -521,7 +521,8 @@ export default function ArtistProfilePage({
         />
         <div className="hs-profile-hero__avatar hs-artist-hero__art">
           {artworkUrl && !artworkImageFailed ? (
-            <img
+            <ArtistPortraitImage
+              artistName={artistName}
               src={artworkUrl}
               alt=""
               onLoad={() => setArtworkImageLoaded(true)}
