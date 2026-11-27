@@ -3375,19 +3375,6 @@ input, select, textarea { min-width:0; max-width:100%; }
     display: none;
   }
 
-  /* Mobile row copy should begin beside its artwork/icon, not be pushed to the far edge. */
-  .hs-search-track__copy,
-  .hs-search-entity-card > span:nth-child(2),
-  .hs-library-track-row__copy,
-  .hs-library-entity-row > span,
-  .home-track-tile__copy,
-  .home-artist-tile__copy,
-  .settings-row > span:first-child {
-    justify-self: start;
-    text-align: left;
-    min-width: 0;
-  }
-}
 
 
 /* Mobile row geometry is centralized in surfaceConsistency.css. */
