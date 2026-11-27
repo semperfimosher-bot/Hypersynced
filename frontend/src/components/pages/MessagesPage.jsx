@@ -31,6 +31,17 @@ import useQuietRefresh from
 
 import { readMessagesListSnapshot, writeMessagesListSnapshot } from "../../messagesListCache.js";
 
+const MESSAGE_USER_SEARCH_CACHE = new Map();
+const MESSAGE_USER_SEARCH_CACHE_MAX = 80;
+
+function cacheMessageUserSearch(query, results) {
+  MESSAGE_USER_SEARCH_CACHE.set(query, results);
+  if (MESSAGE_USER_SEARCH_CACHE.size > MESSAGE_USER_SEARCH_CACHE_MAX) {
+    const oldest = MESSAGE_USER_SEARCH_CACHE.keys().next().value;
+    MESSAGE_USER_SEARCH_CACHE.delete(oldest);
+  }
+}
+
 const CONVERSATION_CACHE_PREFIX = "hypersynced.conversation-snapshot.v1:";
 const CONVERSATION_CACHE_TTL = 2 * 60 * 60 * 1000;
 
@@ -609,59 +620,30 @@ export default function MessagesPage({
       return undefined;
     }
 
-    let cancelled =
-      false;
+    let cancelled = false;
+    const cached = MESSAGE_USER_SEARCH_CACHE.get(query);
+    if (cached) {
+      setSearchResults(cached);
+    } else {
+      setSearchResults([]);
+    }
 
-    const timer =
-      window.setTimeout(
-        async () => {
-          try {
-            const results =
-              await searchUsers(
-                query,
-              );
-
-            if (!cancelled) {
-              setSearchResults(
-                (
-                  Array.isArray(
-                    results,
-                  )
-                    ? results
-                    : []
-                ).filter(
-                  (person) =>
-                    String(
-                      person.username,
-                    )
-                      .toLocaleLowerCase()
-                    !==
-                    String(
-                      currentUser?.username ??
-                      "",
-                    )
-                      .toLocaleLowerCase(),
-                ),
-              );
-            }
-          } catch {
-            if (!cancelled) {
-              setSearchResults(
-                [],
-              );
-            }
-          }
-        },
-        220,
+    // Start the request on the same render cycle as the query change;
+    // cached results paint immediately and the fresh response quietly replaces them.
+    void searchUsers(query).then((results) => {
+      if (cancelled) return;
+      const filtered = (Array.isArray(results) ? results : []).filter(
+        (person) => String(person.username ?? "").toLocaleLowerCase()
+          !== String(currentUser?.username ?? "").toLocaleLowerCase(),
       );
+      cacheMessageUserSearch(query, filtered);
+      setSearchResults(filtered);
+    }).catch(() => {
+      if (!cancelled && !cached) setSearchResults([]);
+    });
 
     return () => {
-      cancelled =
-        true;
-
-      window.clearTimeout(
-        timer,
-      );
+      cancelled = true;
     };
   }, [
     currentUser?.username,
@@ -1289,21 +1271,23 @@ export default function MessagesPage({
 
 
       <section className="hs-search-section hs-messages-directory">
-        <div className="hs-search-section__heading">
-          <div>
-            <span>
-              MESSAGES
-            </span>
+        {conversations.length > 0 || loading ? (
+          <div className="hs-search-section__heading">
+            <div>
+              <span>
+                MESSAGES
+              </span>
 
-            <h3>
-              Conversations
-            </h3>
+              <h3>
+                Conversations
+              </h3>
+            </div>
+
+            <strong>
+              {conversations.length}
+            </strong>
           </div>
-
-          <strong>
-            {conversations.length}
-          </strong>
-        </div>
+        ) : null}
 
         {loading ? (
           <div className="hs-messages-empty hs-messages-empty--directory">
