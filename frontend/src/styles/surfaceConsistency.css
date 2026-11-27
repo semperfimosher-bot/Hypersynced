@@ -1075,9 +1075,8 @@
 
 
 /* =====================================================================
-   MOBILE ROW SYSTEM — one consistent geometry for tracks, playlists,
-   albums, artists, and collaborations. This intentionally supersedes the
-   older per-page mobile row patches above.
+   MOBILE ROW SYSTEM — consistent alignment without changing the original
+   dark row color. All row text is inset; artwork and action controls stay put.
    ===================================================================== */
 @media (max-width: 979px) {
   .hs-search-track,
@@ -1097,12 +1096,10 @@
     overflow: hidden;
     text-align: left !important;
     align-items: center !important;
-    background: #012036 !important;
-    border-bottom: 1px solid rgba(73, 130, 158, .22) !important;
+    background: var(--hs-surface, #020a10) !important;
+    border-bottom: 1px solid rgba(73, 130, 158, .18) !important;
   }
 
-  /* Track and playlist rows retain their metadata/action columns without
-     allowing them to crowd the title or create horizontal overflow. */
   .hs-search-track:not(.hs-library-entity-row):not(.hs-search-entity-card),
   .hs-library-track-row,
   .library-track-row,
@@ -1114,7 +1111,6 @@
     padding: 7px 9px !important;
   }
 
-  /* Artist, album, and collaboration rows share a compact 4-column layout. */
   .hs-library-entity-row,
   .hs-search-entity-card,
   .hs-search-entity-row,
@@ -1142,17 +1138,22 @@
     overflow: hidden;
   }
 
-  /* Quarter-inch inset on copy only; it stays within the text grid cell. */
+  /* Actual copy is the third grid item in entity cards (not the second).
+     Inset by 24px from its cell; no shifting of artwork or row width. */
   .hs-search-track__copy,
   .hs-library-track-row__copy,
   .hs-library-entity-row .hs-search-track__copy,
   .hs-search-entity-row .hs-search-track__copy,
+  .hs-search-entity-card > span:nth-child(3),
+  .hs-library-playlist-row > .hs-search-track__copy,
   .search-music-row__info,
   .library-track-row__info,
   .track-row__info,
   .artist-row__info,
   .album-row__info,
-  .collaboration-row__info {
+  .collaboration-row__info,
+  .home-track-tile__copy,
+  .home-artist-tile__copy {
     box-sizing: border-box !important;
     justify-self: stretch !important;
     min-width: 0 !important;
@@ -1161,6 +1162,22 @@
     padding-inline-start: 24px !important;
     text-align: left !important;
     overflow: hidden;
+    transform: translateX(0) !important;
+  }
+
+  /* Across other mobile app rows, move the label/content column inward,
+     excluding artwork, ranks, buttons, icons, and action controls. */
+  .settings-row > span:first-child,
+  .settings-row > div:first-child,
+  .admin-device-row__copy,
+  .admin-list-row__copy,
+  .library-list-row__copy,
+  .profile-list-row__copy,
+  .page-list-row__copy {
+    padding-inline-start: 24px !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    text-align: left !important;
   }
 
   .hs-search-track__copy strong,
@@ -1231,5 +1248,11 @@
     padding-inline: 7px !important;
   }
   .hs-search-track__art,
-  .hs-search-entity-card__art { width: 36px !important; height: 36px !important; min-width: 36px !important; max-width: 36px !important; flex-basis: 36px !important; }
+  .hs-search-entity-card__art {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    flex-basis: 36px !important;
+  }
 }
