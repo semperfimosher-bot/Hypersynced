@@ -972,9 +972,9 @@
   }
 }
 
-/* Search mobile rows: responsive clone of the desktop Search row system.
-   Preserve the desktop surface, color, typography, corners, artwork and copy order.
-   Only narrow column sizing changes on phones; the copy gets a consistent inset. */
+/* MOBILE ROW SYSTEM — desktop Search row visual blueprint, mobile widths only.
+   Preserve desktop surface, colors, row corners, copy order and hierarchy.
+   Mobile changes are limited to available column widths and the 24px copy inset. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-track-list,
   .hs-search-page .hs-search-entity-grid,
@@ -993,6 +993,7 @@
   }
 
   .hs-search-page .hs-search-track,
+  .hs-search-page .hs-library-playlist-row,
   .hs-search-page .hs-search-entity-card,
   .hs-search-page .hs-collaboration-song-row,
   .hs-search-page .hs-library-entity-row {
@@ -1023,11 +1024,11 @@
     border-bottom: 0 !important;
   }
 
-  /* Entity results: keep rank + art + copy + trailing chevron in desktop order. */
+  /* Entity results: desktop rank/art/copy/trailing-icon sequence, responsive sizes. */
   .hs-search-page .hs-search-entity-card,
   .hs-search-page .hs-collaboration-song-row,
   .hs-search-page .hs-library-entity-row {
-    grid-template-columns: 20px 42px minmax(0, 1fr) 18px !important;
+    grid-template-columns: 20px 40px minmax(0, 1fr) 16px !important;
   }
 
   .hs-search-page .hs-search-track__rank {
@@ -1039,16 +1040,16 @@
 
   .hs-search-page .hs-search-track__art,
   .hs-search-page .hs-search-entity-card__art {
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    flex: 0 0 42px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    flex: 0 0 40px !important;
     margin: 0 !important;
     border-radius: 6px !important;
   }
 
-  /* The full copy block is inset as a unit—title and subtitle never diverge. */
+  /* Inset the entire copy block together so title and subtitle never diverge. */
   .hs-search-page .hs-search-track__copy {
     display: grid !important;
     grid-area: auto !important;
@@ -1058,7 +1059,7 @@
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
-    padding-inline-start: 12px !important;
+    padding-inline-start: 24px !important;
     box-sizing: border-box !important;
     gap: 3px !important;
     text-align: left !important;
@@ -1088,9 +1089,9 @@
     line-height: 1.25 !important;
   }
 
-  /* Song rows: collapse optional metadata columns, retain the square play action. */
+  /* Track rows drop optional metadata columns to preserve title width. */
   .hs-search-page .hs-search-track:not(.hs-search-entity-card):not(.hs-library-entity-row):not(.hs-collaboration-song-row) {
-    grid-template-columns: 18px 42px minmax(0, 1fr) 32px !important;
+    grid-template-columns: 18px 40px minmax(0, 1fr) 32px !important;
   }
   .hs-search-page .hs-search-track__signals,
   .hs-search-page .hs-search-track__duration {
@@ -1113,40 +1114,42 @@
     justify-self: end !important;
     margin: 0 !important;
   }
-  .hs-search-page .hs-search-track--playlist-download {
-    grid-template-columns: 18px 42px minmax(0, 1fr) 30px 30px !important;
+  .hs-search-page .hs-search-track--playlist-download,
+  .hs-search-page .hs-library-playlist-row {
+    grid-template-columns: 18px 40px minmax(0, 1fr) 30px 30px !important;
   }
-
 }
 
-/* Small phones retain the same row styling, only using smaller artwork. */
+/* Smaller devices change only artwork/column sizing; desktop row design remains. */
 @media (max-width: 380px) {
-    .hs-search-page .hs-search-track,
-    .hs-search-page .hs-search-entity-card,
-    .hs-search-page .hs-collaboration-song-row,
-    .hs-search-page .hs-library-entity-row {
-      gap: 6px !important;
-      padding-inline: 8px !important;
-    }
-    .hs-search-page .hs-search-entity-card,
-    .hs-search-page .hs-collaboration-song-row,
-    .hs-search-page .hs-library-entity-row {
-      grid-template-columns: 18px 38px minmax(0, 1fr) 16px !important;
-    }
-    .hs-search-page .hs-search-track:not(.hs-search-entity-card):not(.hs-library-entity-row):not(.hs-collaboration-song-row) {
-      grid-template-columns: 16px 38px minmax(0, 1fr) 30px !important;
-    }
-    .hs-search-page .hs-search-track__art,
-    .hs-search-page .hs-search-entity-card__art {
-      width: 38px !important;
-      height: 38px !important;
-      min-width: 38px !important;
-      max-width: 38px !important;
-      flex-basis: 38px !important;
-    }
-    .hs-search-page .hs-search-track--playlist-download {
-      grid-template-columns: 16px 38px minmax(0, 1fr) 28px 28px !important;
-    }
+  .hs-search-page .hs-search-track,
+  .hs-search-page .hs-library-playlist-row,
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row,
+  .hs-search-page .hs-library-entity-row {
+    gap: 6px !important;
+    padding-inline: 8px !important;
+  }
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row,
+  .hs-search-page .hs-library-entity-row {
+    grid-template-columns: 18px 38px minmax(0, 1fr) 16px !important;
+  }
+  .hs-search-page .hs-search-track:not(.hs-search-entity-card):not(.hs-library-entity-row):not(.hs-collaboration-song-row) {
+    grid-template-columns: 16px 38px minmax(0, 1fr) 30px !important;
+  }
+  .hs-search-page .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card__art {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    flex-basis: 38px !important;
+  }
+  .hs-search-page .hs-search-track--playlist-download,
+  .hs-search-page .hs-library-playlist-row {
+    grid-template-columns: 16px 38px minmax(0, 1fr) 28px 28px !important;
+  }
 }
 
 /* Mobile Search is responsive, not a separate visual theme. */
