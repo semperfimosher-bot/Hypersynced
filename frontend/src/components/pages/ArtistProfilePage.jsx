@@ -521,7 +521,7 @@ export default function ArtistProfilePage({
           aria-hidden="true"
         />
         <div className="hs-profile-hero__avatar hs-artist-hero__art">
-          {artworkUrl && !artworkImageFailed ? (
+          {artworkUrl ? (
             <ArtistPortraitImage
               artistName={artistName}
               src={artworkUrl}
