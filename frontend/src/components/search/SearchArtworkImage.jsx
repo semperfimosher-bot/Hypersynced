@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Icon from "../ui/Icon.jsx";
 import { getSearchArtwork, refreshSearchArtwork } from "../../searchArtworkCache.js";
 
 export default function SearchArtworkImage({
@@ -8,14 +9,18 @@ export default function SearchArtworkImage({
   loading = "lazy",
   decoding = "async",
   fetchPriority = "auto",
+  fallback = <Icon name="disc" size={20} />,
   ...props
 }) {
   const [cachedSrc, setCachedSrc] = useState("");
+  const [failed, setFailed] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+
   useEffect(() => {
-    if (!src) {
-      setCachedSrc("");
-      return undefined;
-    }
+    setCachedSrc("");
+    setFailed(false);
+    setRetrying(false);
+    if (!src) return undefined;
     let active = true;
     let objectUrl = "";
     const show = (blob) => {
@@ -24,17 +29,46 @@ export default function SearchArtworkImage({
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       objectUrl = next;
       setCachedSrc(next);
+      setFailed(false);
     };
     void getSearchArtwork(src).then((cached) => {
       if (!active) return;
       if (cached?.blob) show(cached.blob);
       if (!cached || cached.stale) void refreshSearchArtwork(src).then(show);
+    }).catch(() => {
+      // Direct image rendering remains the fallback if browser cache APIs fail.
     });
     return () => {
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [src]);
+
+  const handleImageError = async (event) => {
+    props.onError?.(event);
+    if (retrying || !src) {
+      setFailed(true);
+      return;
+    }
+    setRetrying(true);
+    try {
+      const blob = await refreshSearchArtwork(src);
+      if (blob) {
+        const next = URL.createObjectURL(blob);
+        setCachedSrc(next);
+        setFailed(false);
+        return;
+      }
+    } catch {
+      // A cross-origin cache fetch may be blocked; show the card's fallback.
+    }
+    setFailed(true);
+  };
+
+  if (!src || failed) {
+    return <span className={className} aria-hidden="true">{fallback}</span>;
+  }
+
   return (
     <img
       src={cachedSrc || src}
@@ -43,6 +77,7 @@ export default function SearchArtworkImage({
       loading={loading}
       decoding={decoding}
       fetchPriority={fetchPriority}
+      onError={handleImageError}
       {...props}
     />
   );
