@@ -122,28 +122,46 @@ jobs:
             --env-file "$APP_DIR/backend/.env" \
             -p 127.0.0.1:8000:8000 "$IMAGE" >/dev/null
 
+          # App startup includes DB migrations and a DB readiness gate, so the
+          # HTTP listener may legitimately appear later than a typical web app.
+          # Keep each probe bounded and suppress Python/apport traceback noise.
           ready=0
-          for attempt in $(seq 1 60); do
-            if python3 - <<'PY'
+          for attempt in $(seq 1 120); do
+            probe_status="$(python3 - <<'PY'
           import json
+          import urllib.error
           import urllib.request
+
           try:
-              with urllib.request.urlopen("http://127.0.0.1:8000/health/ready", timeout=3) as response:
-                  data = json.load(response)
-              raise SystemExit(0 if response.status == 200 and data.get("database") == "healthy" else 1)
-          except Exception:
-              raise SystemExit(1)
+              with urllib.request.urlopen(
+                  "http://127.0.0.1:8000/health/ready",
+                  timeout=6,
+              ) as response:
+                  body = json.load(response)
+                  print("ready" if response.status == 200 and body.get("database") == "healthy" else "not-ready")
+          except urllib.error.HTTPError as error:
+              print(f"http-{error.code}")
+          except Exception as error:
+              print(f"probe-error-{type(error).__name__}")
           PY
-            then
+          )" || probe_status="probe-command-failed"
+
+            if [ "$probe_status" = "ready" ]; then
               ready=1
+              echo "Backend readiness confirmed on attempt $attempt."
               break
+            fi
+
+            if [ "$((attempt % 10))" -eq 0 ]; then
+              echo "Backend still starting (attempt $attempt/120; probe: $probe_status). Recent container logs:"
+              docker logs --tail 30 "$CONTAINER" || true
             fi
             sleep 5
           done
 
           if [ "$ready" -ne 1 ]; then
-            docker logs --tail 100 "$CONTAINER" || true
-            echo "New container did not become ready within 5 minutes."
+            docker logs --tail 150 "$CONTAINER" || true
+            echo "New container did not become ready within 10 minutes; rollback will restore the previous container."
             exit 1
           fi
 
