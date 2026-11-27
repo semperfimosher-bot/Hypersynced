@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import Icon from "../ui/Icon.jsx";
 import { getArtistPortrait, refreshArtistPortrait } from "../../artistPortraitCache.js";
-import { getArtistArtworkStatus, getArtistProfile } from "../../artistApi.js";
+import { getArtistArtworkStatus } from "../../artistApi.js";
 
 const artistPortraitUrlCache = new Map();
 const artistPortraitLookupInflight = new Map();
-function portraitUrlFromProfile(profile) {
-  return profile?.artist_artwork_url ?? profile?.artist_image_url ?? profile?.artist_profile_image_url ?? profile?.artist_photo_url ?? profile?.artwork_url ?? profile?.image_url ?? profile?.portrait_url ?? "";
-}
 async function resolveMissingPortrait(name) {
   const key = String(name ?? "").trim().toLocaleLowerCase();
   if (!key) return "";
@@ -15,8 +12,8 @@ async function resolveMissingPortrait(name) {
   if (artistPortraitLookupInflight.has(key)) return artistPortraitLookupInflight.get(key);
   const task = (async () => {
     try {
-      const profile = await getArtistProfile(name);
-      const url = portraitUrlFromProfile(profile);
+      const status = await getArtistArtworkStatus(name);
+      const url = status?.artwork_url ?? "";
       if (url) artistPortraitUrlCache.set(key, url);
       return url;
     } catch { return ""; }
