@@ -3390,20 +3390,4 @@ input, select, textarea { min-width:0; max-width:100%; }
 }
 
 
-/* FINAL MOBILE ROW TEXT OFFSET — shift row copy right ~1/4 inch, icons/actions unchanged. */
-@media (max-width: 979px) {
-  .hs-search-track__copy,
-  .hs-search-entity-card > span:nth-child(2),
-  .hs-library-track-row__copy,
-  .hs-library-entity-row > span,
-  .home-track-tile__copy,
-  .home-artist-tile__copy,
-  .search-music-row__info,
-  .library-track-row__info,
-  .track-row__info,
-  .artist-row__info,
-  .album-row__info,
-  .collaboration-row__info {
-    margin-left: 24px !important;
-  }
-}
+/* Mobile row geometry is centralized in surfaceConsistency.css. */
