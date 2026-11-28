@@ -1021,6 +1021,20 @@
     text-align: left !important;
   }
 
+
+  /* Tracks: nudge the square play control slightly inward from the edge. */
+  .hs-search-page .hs-search-track__play,
+  .hs-library-page .hs-search-track__play {
+    transform: translateX(-2px) !important;
+  }
+
+  /* Artist/entity rows: move their copy noticeably right without moving art. */
+  .hs-search-page .hs-search-entity-card .hs-search-track__copy,
+  .hs-search-page .hs-search-entity-row .hs-search-track__copy,
+  .hs-library-page .hs-library-entity-row .hs-search-track__copy,
+  .hs-library-page .hs-artist-row__copy {
+    padding-left: 12px !important;
+  }
   .hs-search-page .hs-search-track__signals,
   .hs-search-page .hs-search-track__duration,
   .hs-library-page .hs-search-track__signals,
@@ -1199,6 +1213,14 @@
     clip-path: none !important;
     background-color: var(--hs-surface, #020A10) !important;
     stroke: currentColor !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child path,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child path,
+  .hs-library-page .hs-library-entity-row > svg:last-child path,
+  .hs-artist-row > svg:last-child path {
+    fill: currentColor !important;
+    stroke: none !important;
+    clip-path: polygon(0 10%, 100% 50%, 0 90%) !important;
   }
   .hs-search-page .hs-search-entity-card > svg:last-child path,
   .hs-search-page .hs-collaboration-song-row > svg:last-child path,
