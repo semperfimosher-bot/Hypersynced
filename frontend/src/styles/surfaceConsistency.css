@@ -1275,13 +1275,30 @@
 }
 
 
-/* Mobile artist-row copy: deliberately shift the artist text far to the right. */
+/* Mobile artist rows: slightly left from the prior text position, play square right,
+   and copy gets an extended width toward the row's right edge. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-entity-card .hs-search-track__copy,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy,
   .hs-library-page .hs-library-entity-row .hs-search-track__copy,
   .hs-library-page .hs-artist-row__copy,
   .hs-artist-row__copy {
-    transform: translateX(36px) !important;
+    transform: translateX(28px) !important;
+    width: calc(100% + 28px) !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+  .hs-library-page .hs-artist-row__play,
+  .hs-artist-row__play,
+  .hs-artist-row > svg:last-child {
+    transform: translateX(6px) !important;
+  }
+  .hs-search-page .hs-search-entity-card .hs-search-track__copy strong,
+  .hs-search-page .hs-search-entity-row .hs-search-track__copy strong,
+  .hs-library-page .hs-library-entity-row .hs-search-track__copy strong,
+  .hs-library-page .hs-artist-row__copy strong,
+  .hs-artist-row__copy strong {
+    width: 100% !important;
+    max-width: none !important;
   }
 }
