@@ -1454,3 +1454,20 @@
     stroke-width: 1.35 !important;
   }
 }
+
+
+/* Mobile rows/list surfaces have a consistent 1/8-inch side inset. */
+@media (max-width: 979px) {
+  .hs-search-track-list,
+  .library-track-list,
+  .hs-total-played-rows,
+  .hs-admin-device-rows,
+  .admin-device-registry__list,
+  .hs-search-section > .hs-search-track-list,
+  .hs-search-section > .library-track-list {
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    margin-inline: 12px !important;
+    box-sizing: border-box !important;
+  }
+}
