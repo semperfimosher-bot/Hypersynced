@@ -7,6 +7,7 @@ from backend.app.services.artist_artwork import (
     exact_artist_entity_candidates,
     has_artist_entity_type,
     is_formal_artist_portrait_candidate,
+    is_verified_wikidata_photo_candidate,
     is_safe_wikimedia_url,
     license_is_reusable,
     musicbrainz_artist_id,
@@ -103,6 +104,13 @@ def test_candidate_selection_rejects_ambiguous_exact_artist_matches() -> None:
         )
         == []
     )
+
+
+def test_verified_wikidata_portrait_accepts_plain_photo_metadata_but_rejects_graphics() -> None:
+    assert is_verified_wikidata_photo_candidate("File:Artist.jpg", "Photo of Artist")
+    assert is_verified_wikidata_photo_candidate("File:Artist.jpg", "")
+    assert not is_verified_wikidata_photo_candidate("File:Artist logo.png", "Artist logo")
+    assert not is_verified_wikidata_photo_candidate("File:Artist concert.jpg", "Live performance")
 
 
 def test_artist_image_source_requires_explicit_portrait_evidence() -> None:
