@@ -1337,7 +1337,7 @@
   .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
   .hs-search-page .hs-artist-row__copy,
   .hs-library-page .hs-library-entity-row__copy {
-    width: calc(100% + 88px) !important;
+    width: calc(100% + 300px) !important;
     min-width: 0 !important;
     max-width: none !important;
     padding: 0 !important;
