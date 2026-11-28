@@ -1169,6 +1169,23 @@
     box-sizing: border-box !important;
   }
 
+  /* Reuse the desktop play-triangle glyph shape on entity rows while keeping
+     their desktop chevron untouched. */
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child {
+    clip-path: polygon(0 10%, 100% 50%, 0 90%) !important;
+    background-color: currentColor !important;
+    stroke: none !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child path,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child path,
+  .hs-library-page .hs-library-entity-row > svg:last-child path,
+  .hs-artist-row > svg:last-child path {
+    visibility: hidden !important;
+  }
+
   .hs-search-page .hs-search-track__play > svg,
   .hs-search-page .hs-search-entity-card > svg:last-child,
   .hs-search-page .hs-collaboration-song-row > svg:last-child,
