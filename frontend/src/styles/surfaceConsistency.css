@@ -1021,6 +1021,13 @@
     text-align: left !important;
   }
 
+  .hs-search-page .hs-search-track__signals,
+  .hs-search-page .hs-search-track__duration,
+  .hs-library-page .hs-search-track__signals,
+  .hs-library-page .hs-search-track__duration {
+    display: none !important;
+  }
+
   .hs-search-page .hs-search-track__rank,
   .hs-library-page .hs-search-track__rank,
   .hs-search-page .hs-library-entity-row__rank,
