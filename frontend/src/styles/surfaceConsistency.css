@@ -1178,3 +1178,120 @@
 }
 
 /* Mobile Search is responsive, not a separate visual theme. */
+
+/* MOBILE ROW RESTORE — match the original normal horizontal rows (approved reference).
+   No rank/number blocks, stacked art/copy, or tall cards. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-track__rank,
+  .hs-library-page .hs-search-track__rank,
+  .hs-search-page .hs-library-entity-row__rank,
+  .hs-library-page .hs-library-entity-row__rank {
+    display: none !important;
+  }
+
+  .hs-search-page .hs-search-track,
+  .hs-search-page .hs-library-playlist-row,
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row,
+  .hs-search-page .hs-library-entity-row,
+  .hs-library-page .hs-search-track,
+  .hs-library-page .hs-library-track-row,
+  .hs-library-page .library-track-row,
+  .hs-library-page .hs-library-entity-row {
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 32px !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 64px !important;
+    height: auto !important;
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+  }
+
+  .hs-search-page .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card__art,
+  .hs-library-page .hs-search-track__art {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    margin: 0 !important;
+  }
+
+  .hs-search-page .hs-search-track__copy,
+  .hs-search-page .hs-library-entity-row__copy,
+  .hs-search-page .hs-library-track-row__copy,
+  .hs-library-page .hs-search-track__copy,
+  .hs-library-page .hs-library-entity-row__copy,
+  .hs-library-page .hs-library-track-row__copy {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    text-align: left !important;
+    transform: none !important;
+  }
+
+  .hs-search-page .hs-search-track__copy strong,
+  .hs-search-page .hs-search-track__copy small,
+  .hs-search-page .hs-search-track__copy em,
+  .hs-library-page .hs-search-track__copy strong,
+  .hs-library-page .hs-search-track__copy small,
+  .hs-library-page .hs-search-track__copy em,
+  .hs-library-page .hs-library-entity-row__copy strong,
+  .hs-library-page .hs-library-entity-row__copy small,
+  .hs-library-page .hs-library-track-row__copy strong,
+  .hs-library-page .hs-library-track-row__copy small {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    text-align: left !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .hs-search-page .hs-search-track__play,
+  .hs-library-page .hs-search-track__play,
+  .hs-library-page .hs-library-track-row__play {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .hs-search-page .hs-search-track--playlist-download,
+  .hs-search-page .hs-library-playlist-row {
+    grid-template-columns: 40px minmax(0, 1fr) 30px 30px !important;
+  }
+  .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
+  .hs-search-page .hs-library-playlist-row .hs-search-track__play {
+    grid-column: 3 !important;
+  }
+  .hs-search-page .hs-search-track--playlist-download .hs-search-track__download,
+  .hs-search-page .hs-library-playlist-row .hs-search-track__download {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    margin: 0 !important;
+  }
+}
+
