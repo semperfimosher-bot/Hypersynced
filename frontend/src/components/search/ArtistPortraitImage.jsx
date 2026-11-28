@@ -66,7 +66,7 @@ export default function ArtistPortraitImage({
 
     let attempts = 0;
     const poll = async () => {
-      if (!active || attempts >= 20) return;
+      if (!active || attempts >= 60) return;
       attempts += 1;
       try {
         const status = await getArtistArtworkStatus(artistName);
@@ -81,7 +81,7 @@ export default function ArtistPortraitImage({
         // transient endpoint errors do not hide the existing image/fallback.
       }
       if (active) {
-        timer = window.setTimeout(poll, attempts < 5 ? 800 : 1800);
+        timer = window.setTimeout(poll, attempts < 5 ? 800 : 2500);
       }
     };
     timer = window.setTimeout(poll, 350);
