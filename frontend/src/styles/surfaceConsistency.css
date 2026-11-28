@@ -1275,16 +1275,16 @@
 }
 
 
-/* Mobile artist rows: slightly left from the prior text position, play square right,
-   and copy gets an extended width toward the row's right edge. */
+/* Mobile artist rows: shift copy slightly left and expose four times the prior
+   right-side text width without changing desktop or track-row geometry. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-entity-card .hs-search-track__copy,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy,
   .hs-library-page .hs-library-entity-row .hs-search-track__copy,
   .hs-library-page .hs-artist-row__copy,
   .hs-artist-row__copy {
-    transform: translateX(28px) !important;
-    width: calc(100% + 28px) !important;
+    transform: translateX(22px) !important;
+    width: calc(100% + 112px) !important;
     max-width: none !important;
     overflow: visible !important;
   }
