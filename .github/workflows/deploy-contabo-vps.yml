@@ -165,29 +165,27 @@ jobs:
             exit 1
           fi
 
-          # Verify route registration without calling a possibly slow authenticated
-          # handler. Read the OpenAPI route table with a bounded request.
+          # Verify the endpoint directly because production OpenAPI docs are disabled.
           route_ready=0
           for attempt in $(seq 1 15); do
             route_status="$(python3 - <<'PY'
-          import json
           import urllib.error
           import urllib.request
 
+          request = urllib.request.Request(
+              "http://127.0.0.1:8000/api/playlists/library/changes",
+              method="GET",
+          )
           try:
-              with urllib.request.urlopen(
-                  "http://127.0.0.1:8000/openapi.json",
-                  timeout=8,
-              ) as response:
-                  document = json.load(response)
-                  print("registered" if "/api/playlists/library/changes" in document.get("paths", {}) else "missing")
+              with urllib.request.urlopen(request, timeout=8) as response:
+                  print(response.status)
           except urllib.error.HTTPError as error:
-              print(f"http-{error.code}")
+              print(error.code)
           except Exception as error:
               print(f"probe-error-{type(error).__name__}")
           PY
           )" || route_status="probe-command-failed"
-            if [ "$route_status" = "registered" ]; then
+            if [ "$route_status" = "200" ] || [ "$route_status" = "401" ] || [ "$route_status" = "403" ]; then
               route_ready=1
               break
             fi
