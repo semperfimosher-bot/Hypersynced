@@ -18,6 +18,7 @@ test("mobile Search and Library rows use one desktop-matched horizontal row syst
   assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?border-radius:\s*6px\s*!important/);
   assert.match(sharedRows, /clip-path:\s*polygon\(0 10%, 100% 50%, 0 90%\)\s*!important/);
   assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?grid-template-columns:\s*46px\s+minmax\(0,\s*1fr\)\s+29px\s+30px\s*!important/);
+  assert.match(sharedRows, /hs-library-page \.hs-search-track--playlist-download[\s\S]*grid-column:\s*4\s*!important/);
   assert.doesNotMatch(sharedRows, /MOBILE ROW RESTORE|ENTITY ROW TEXT FIX|width:\s*calc\(100%\s*\+\s*300px\)/);
 });
 
