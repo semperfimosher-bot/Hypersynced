@@ -127,3 +127,14 @@ test("mobile rows share one desktop-matched row geometry across Search and Libra
   assert.match(rowSystem, /grid-template-columns:\s*46px\s+minmax\(0,\s*1fr\)\s+29px\s+30px/);
   assert.doesNotMatch(shared, /MOBILE ROW RESTORE|ENTITY ROW TEXT FIX|width:\s*calc\(100%\s*\+\s*300px\)/);
 });
+
+
+test("Search mobile playlist and track action squares shift left by 3/8 inch", () => {
+  const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
+  const adjustment = shared.slice(shared.lastIndexOf("Search mobile: move the playlist and track action squares"));
+  assert.match(adjustment, /@media \(max-width: 979px\)/);
+  assert.match(adjustment, /hs-search-track--playlist-download[\\s\\S]*hs-search-track__play/);
+  assert.match(adjustment, /hs-library-playlist-row[\\s\\S]*hs-search-track__play/);
+  assert.match(adjustment, /hs-search-track:not\\(\\.hs-search-track--playlist-download\\)[\\s\\S]*hs-search-track__play/);
+  assert.match(adjustment, /transform: translateX\\(-36px\\) !important/);
+});
