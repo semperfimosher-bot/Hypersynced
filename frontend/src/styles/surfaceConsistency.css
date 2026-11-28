@@ -1321,3 +1321,13 @@
     max-width: none !important;
   }
 }
+
+
+/* Search mobile: move the playlist and track action squares 3/8 inch left. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
+  .hs-search-page .hs-library-playlist-row .hs-search-track__play,
+  .hs-search-page .hs-search-track:not(.hs-search-track--playlist-download) .hs-search-track__play {
+    transform: translateX(-36px) !important;
+  }
+}
