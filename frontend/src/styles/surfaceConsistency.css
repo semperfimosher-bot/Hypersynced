@@ -1050,7 +1050,10 @@
   }
 
   /* Inset the entire copy block together so title and subtitle never diverge. */
-  .hs-search-page .hs-search-track__copy {
+  .hs-search-page .hs-search-track__copy,
+  .hs-library-page .hs-search-track__copy,
+  .hs-library-page .hs-library-entity-row__copy,
+  .hs-library-page .hs-library-track-row__copy {
     display: grid !important;
     grid-area: auto !important;
     justify-self: stretch !important;
