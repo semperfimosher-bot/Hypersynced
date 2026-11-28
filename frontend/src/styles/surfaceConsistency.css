@@ -1047,6 +1047,15 @@
     overflow: hidden !important; white-space: nowrap !important; text-overflow: ellipsis !important;
     word-break: normal !important; overflow-wrap: normal !important; text-align: left !important;
   }
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child {
+    grid-column: 3 !important; grid-row: 1 !important;
+    justify-self: end !important; align-self: center !important;
+    width: 30px !important; height: 30px !important;
+    margin: 0 !important; transform: none !important;
+  }
   .hs-search-page .hs-search-track__play,
   .hs-library-page .hs-search-track__play,
   .hs-library-page .hs-library-track-row__play,
