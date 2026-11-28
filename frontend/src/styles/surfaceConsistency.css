@@ -1230,15 +1230,18 @@
   }
 
   .hs-search-page .hs-search-track--playlist-download,
-  .hs-search-page .hs-library-playlist-row {
+  .hs-search-page .hs-library-playlist-row,
+  .hs-library-page .hs-search-track--playlist-download {
     grid-template-columns: 46px minmax(0, 1fr) 29px 30px !important;
   }
   .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
-  .hs-search-page .hs-library-playlist-row .hs-search-track__play {
+  .hs-search-page .hs-library-playlist-row .hs-search-track__play,
+  .hs-library-page .hs-search-track--playlist-download .hs-search-track__play {
     grid-column: 3 !important;
   }
   .hs-search-page .hs-search-track--playlist-download .hs-search-track__download,
-  .hs-search-page .hs-library-playlist-row .hs-search-track__download {
+  .hs-search-page .hs-library-playlist-row .hs-search-track__download,
+  .hs-library-page .hs-search-track--playlist-download .hs-search-track__download {
     grid-column: 4 !important;
     grid-row: 1 !important;
     justify-self: end !important;
