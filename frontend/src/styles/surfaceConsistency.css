@@ -1309,16 +1309,16 @@
 }
 
 
-/* Mobile compact rows: move entity copy farther right while reclaiming horizontal space.
-   Smaller art/action columns and tighter gutters leave more readable text before ellipsis. */
+/* Mobile compact rows: maximize readable copy while keeping it clear of artwork.
+   Smaller art, narrow action slot, tight gutters and a modest copy inset. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-entity-card,
   .hs-search-page .hs-collaboration-song-row,
   .hs-search-page .hs-artist-row,
   .hs-library-page .hs-library-entity-row {
-    grid-template-columns: 36px minmax(0, 1fr) 24px !important;
-    gap: 5px !important;
-    padding-inline: 6px !important;
+    grid-template-columns: 32px minmax(0, 1fr) 20px !important;
+    gap: 4px !important;
+    padding-inline: 4px !important;
   }
   .hs-search-page .hs-search-entity-card > .hs-search-track__art,
   .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
@@ -1326,10 +1326,10 @@
   .hs-search-page .hs-artist-row > img,
   .hs-search-page .hs-artist-row .hs-artist-row__art,
   .hs-library-page .hs-library-entity-row .hs-search-track__art {
-    width: 36px !important; height: 36px !important;
-    min-width: 36px !important; max-width: 36px !important;
-    min-height: 36px !important; max-height: 36px !important;
-    flex-basis: 36px !important;
+    width: 32px !important; height: 32px !important;
+    min-width: 32px !important; max-width: 32px !important;
+    min-height: 32px !important; max-height: 32px !important;
+    flex-basis: 32px !important;
   }
   .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
   .hs-search-page .hs-search-entity-card > .hs-library-entity-row__copy,
@@ -1337,14 +1337,14 @@
   .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
   .hs-search-page .hs-artist-row__copy,
   .hs-library-page .hs-library-entity-row__copy {
-    padding-left: 10px !important;
+    padding-left: 4px !important;
     box-sizing: border-box !important;
-    transform: translateX(10px) !important;
+    transform: translateX(4px) !important;
   }
   .hs-search-page .hs-search-entity-card > svg:last-child,
   .hs-search-page .hs-collaboration-song-row > svg:last-child,
   .hs-search-page .hs-artist-row > svg:last-child,
   .hs-library-page .hs-library-entity-row > svg:last-child {
-    width: 24px !important; height: 24px !important;
+    width: 20px !important; height: 20px !important;
   }
 }
