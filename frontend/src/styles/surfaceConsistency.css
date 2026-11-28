@@ -1016,7 +1016,7 @@
     box-sizing: border-box !important;
     overflow: hidden !important;
     border-radius: 0 !important;
-    background: var(--hs-surface, #020A10) !important;
+    background: var(--hs-surface, #020A10);
     color: inherit !important;
     text-align: left !important;
   }
@@ -1026,6 +1026,20 @@
   .hs-library-page .hs-search-track__signals,
   .hs-library-page .hs-search-track__duration {
     display: none !important;
+  }
+
+  .hs-search-page .hs-search-track:hover,
+  .hs-search-page .hs-library-playlist-row:hover,
+  .hs-search-page .hs-search-entity-card:hover,
+  .hs-search-page .hs-collaboration-song-row:hover,
+  .hs-search-page .hs-library-entity-row:hover,
+  .hs-library-page .hs-search-track:hover,
+  .hs-library-page .hs-library-track-row:hover,
+  .hs-library-page .library-track-row:hover,
+  .hs-library-page .hs-library-entity-row:hover,
+  .hs-library-page .hs-artist-row:hover,
+  .hs-artist-track-list > button:hover {
+    background: var(--hs-surface-hover, #012036) !important;
   }
 
   .hs-search-page .hs-search-track__rank,
