@@ -1353,3 +1353,48 @@
     width: 20px !important; height: 20px !important;
   }
 }
+
+
+/* Use playlist-row square artwork and square play-arrow control styling across row types. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
+  .hs-search-page .hs-artist-row > img,
+  .hs-search-page .hs-artist-row .hs-artist-row__art,
+  .hs-library-page .hs-library-entity-row .hs-search-track__art {
+    border-radius: 6px !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-search-page .hs-artist-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-search-page .hs-search-entity-card .hs-search-track__play,
+  .hs-search-page .hs-collaboration-song-row .hs-search-track__play,
+  .hs-search-page .hs-artist-row__play,
+  .hs-library-page .hs-library-entity-row .hs-search-track__play {
+    display: grid !important;
+    place-items: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    border: 1px solid rgba(78, 173, 206, 0.13) !important;
+    border-radius: 6px !important;
+    color: #537b8c !important;
+    background: var(--hs-surface) !important;
+    box-sizing: border-box !important;
+  }
+  .hs-search-page .hs-search-entity-card:hover > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row:hover > svg:last-child,
+  .hs-search-page .hs-artist-row:hover > svg:last-child,
+  .hs-library-page .hs-library-entity-row:hover > svg:last-child,
+  .hs-search-page .hs-search-entity-card:hover .hs-search-track__play,
+  .hs-search-page .hs-collaboration-song-row:hover .hs-search-track__play,
+  .hs-search-page .hs-artist-row:hover .hs-artist-row__play,
+  .hs-library-page .hs-library-entity-row:hover .hs-search-track__play {
+    border-color: rgba(77, 227, 255, 0.34) !important;
+    color: #68e7ff !important;
+    background: rgba(38, 186, 223, 0.065) !important;
+  }
+}
