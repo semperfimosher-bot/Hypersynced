@@ -1315,8 +1315,8 @@
   .hs-search-page .hs-collaboration-song-row,
   .hs-search-page .hs-artist-row,
   .hs-library-page .hs-library-entity-row {
-    grid-template-columns: 42px minmax(0, 1fr) 20px !important;
-    column-gap: 2px !important;
+    grid-template-columns: 42px minmax(0, 1fr) 16px !important;
+    column-gap: 0 !important;
     row-gap: 0 !important;
     padding-inline: 0 !important;
   }
@@ -1337,7 +1337,7 @@
   .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
   .hs-search-page .hs-artist-row__copy,
   .hs-library-page .hs-library-entity-row__copy {
-    width: calc(100% + 34px) !important;
+    width: calc(100% + 88px) !important;
     min-width: 0 !important;
     max-width: none !important;
     padding: 0 !important;
