@@ -435,13 +435,13 @@ async def fetch_and_store_artist_artwork(profile_id: UUID | str) -> None:
                 if profile:
                     profile.artwork_status = "failed"
                     profile.artwork_attempts += 1
-                    retry_days = min(30, 2 ** min(profile.artwork_attempts, 5))
+                    retry_hours = min(24, 2 ** min(profile.artwork_attempts, 4))
                     profile.artwork_next_retry_at = (
-                        datetime.now(UTC) + timedelta(days=retry_days)
+                        datetime.now(UTC) + timedelta(hours=retry_hours)
                     )
                     profile.artwork_lease_until = None
                     await session.commit()
-            _artist_artwork_retry_after[job_key] = time.monotonic() + 6 * 60 * 60
+            _artist_artwork_retry_after[job_key] = time.monotonic() + 30 * 60
             return
         if not candidate:
             async with factory() as session:
