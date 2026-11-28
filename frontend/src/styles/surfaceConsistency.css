@@ -1274,6 +1274,7 @@
 }
 
 
+@media (max-width: 979px) {
   /* Entity markup uses two art classes; both must be constrained, and copy must be explicitly column 2. */
   .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
   .hs-search-page .hs-search-entity-card > .hs-search-track__art {
@@ -1304,3 +1305,5 @@
     grid-column: 3 !important; grid-row: 1 !important;
     justify-self: end !important; align-self: center !important; margin: 0 !important;
   }
+
+}
