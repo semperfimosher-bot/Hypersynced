@@ -11,12 +11,12 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
 });
 
 test("mobile Search and Library rows use one desktop-matched horizontal row system", () => {
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s*!important/);
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?hs-search-track__art[\\s\\S]*?width:\\s*46px\\s*!important/);
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?hs-search-track__copy[\\s\\S]*?grid-column:\\s*2\\s*!important/);
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?white-space:\\s*nowrap\\s*!important/);
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?border-radius:\\s*6px\\s*!important/);
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s+30px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?hs-search-track__art[\s\S]*?width:\\s*46px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?hs-search-track__copy[\s\S]*?grid-column:\\s*2\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?white-space:\\s*nowrap\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?border-radius:\\s*6px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s+30px\\s*!important/);
   assert.doesNotMatch(sharedRows, /MOBILE ROW RESTORE|ENTITY ROW TEXT FIX|width:\\s*calc\\(100%\\s*\\+\\s*300px\\)/);
 });
 
