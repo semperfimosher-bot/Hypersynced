@@ -1323,11 +1323,17 @@
 }
 
 
-/* Search mobile: move the playlist and track action squares 3/8 inch left. */
+/* Search mobile action-square positioning refinements. */
 @media (max-width: 979px) {
+  /* Nudge the general Search playlist and track squares slightly back. */
   .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
   .hs-search-page .hs-library-playlist-row .hs-search-track__play,
   .hs-search-page .hs-search-track:not(.hs-search-track--playlist-download) .hs-search-track__play {
-    transform: translateX(-36px) !important;
+    transform: translateX(-30px) !important;
+  }
+
+  /* Tracks within an opened playlist: move the play square right by 1/2 inch. */
+  .hs-search-page .hs-search-track-list .hs-search-track--playlist-download .hs-search-track__play {
+    transform: translateX(48px) !important;
   }
 }
