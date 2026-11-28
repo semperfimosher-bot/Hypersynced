@@ -129,12 +129,10 @@ test("mobile rows share one desktop-matched row geometry across Search and Libra
 });
 
 
-test("Search mobile playlist and track action squares shift left by 3/8 inch", () => {
+test("Search mobile action squares have refined offsets, including opened-playlist tracks", () => {
   const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
-  const adjustment = shared.slice(shared.lastIndexOf("Search mobile: move the playlist and track action squares"));
-  assert.ok(adjustment.includes("@media (max-width: 979px)"));
-  assert.ok(adjustment.includes(".hs-search-track--playlist-download .hs-search-track__play"));
-  assert.ok(adjustment.includes(".hs-library-playlist-row .hs-search-track__play"));
-  assert.ok(adjustment.includes(".hs-search-track:not(.hs-search-track--playlist-download) .hs-search-track__play"));
-  assert.ok(adjustment.includes("transform: translateX(-36px) !important"));
+  const adjustment = shared.slice(shared.lastIndexOf("Search mobile action-square positioning refinements"));
+  assert.ok(adjustment.includes("translateX(-30px) !important"));
+  assert.ok(adjustment.includes(".hs-search-track-list .hs-search-track--playlist-download .hs-search-track__play"));
+  assert.ok(adjustment.includes("translateX(48px) !important"));
 });
