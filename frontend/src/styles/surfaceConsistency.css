@@ -1309,13 +1309,15 @@
 }
 
 
-/* Mobile artist and album row copy: give labels a small additional right inset. */
+/* Mobile artist and album row copy: offset text from the thumbnail edge. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
   .hs-search-page .hs-search-entity-card > .hs-library-entity-row__copy,
+  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__copy,
   .hs-search-page .hs-artist-row__copy,
   .hs-library-page .hs-library-entity-row__copy {
     padding-left: 8px !important;
     box-sizing: border-box !important;
+    transform: translateX(8px) !important;
   }
 }
