@@ -112,16 +112,16 @@ test("Library albums and artists render as playlist-style rows", () => {
 });
 
 
-test("mobile row system unifies tracks, playlists, albums, artists, and collaborations", () => {
+test("mobile rows use the original horizontal row layout across Search and Library", () => {
   const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
   const mobile = fs.readFileSync(new URL("./styles/mobile.css", import.meta.url), "utf8");
-  const mobileRowSystem = shared.slice(shared.lastIndexOf("MOBILE ROW SYSTEM"));
-  assert.match(mobileRowSystem, /\.hs-library-playlist-row/);
-  assert.match(mobileRowSystem, /\.hs-library-entity-row/);
-  assert.match(mobileRowSystem, /\.hs-search-entity-card/);
-  assert.match(mobileRowSystem, /\.hs-collaboration-song-row/);
-  assert.match(mobileRowSystem, /grid-template-columns:\s*20px\s+40px\s+minmax\(0,\s*1fr\)\s+16px/);
-  assert.match(mobileRowSystem, /padding-inline-start:\s*24px/);
-  assert.match(mobileRowSystem, /min-width:\s*0\s*!important/);
+  const rowSystem = shared.slice(shared.lastIndexOf("MOBILE NORMAL ROW SYSTEM"));
+  for (const selector of [".hs-library-playlist-row", ".hs-library-entity-row", ".hs-search-entity-card", ".hs-collaboration-song-row", ".hs-artist-row"]) {
+    assert.ok(rowSystem.includes(selector), "missing mobile row selector " + selector);
+  }
+  assert.match(rowSystem, /grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px/);
+  assert.match(rowSystem, /\.hs-search-track__rank[\s\S]*display:\s*none\s*!important/);
+  assert.match(rowSystem, /text-overflow:\s*ellipsis\s*!important/);
+  assert.match(rowSystem, /white-space:\s*nowrap\s*!important/);
   assert.doesNotMatch(mobile, /FINAL MOBILE ROW TEXT OFFSET/);
 });
