@@ -1346,3 +1346,10 @@
     height: 12px !important;
   }
 }
+
+/* Separate the Artists, Albums, and Collaborations result panels on mobile. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-discovery-grid {
+    gap: 10px !important;
+  }
+}
