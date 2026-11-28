@@ -134,5 +134,5 @@ test("Search mobile action squares have refined offsets, including opened-playli
   const adjustment = shared.slice(shared.lastIndexOf("Search mobile action-square positioning refinements"));
   assert.ok(adjustment.includes("translateX(-30px) !important"));
   assert.ok(adjustment.includes(".hs-search-track-list .hs-search-track--playlist-download .hs-search-track__play"));
-  assert.ok(adjustment.includes("translateX(48px) !important"));
+  assert.ok(adjustment.includes("translateX(24px) !important"));
 });
