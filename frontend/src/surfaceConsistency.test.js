@@ -132,9 +132,9 @@ test("mobile rows share one desktop-matched row geometry across Search and Libra
 test("Search mobile playlist and track action squares shift left by 3/8 inch", () => {
   const shared = fs.readFileSync(new URL("./styles/surfaceConsistency.css", import.meta.url), "utf8");
   const adjustment = shared.slice(shared.lastIndexOf("Search mobile: move the playlist and track action squares"));
-  assert.match(adjustment, /@media \(max-width: 979px\)/);
-  assert.match(adjustment, /hs-search-track--playlist-download[\\s\\S]*hs-search-track__play/);
-  assert.match(adjustment, /hs-library-playlist-row[\\s\\S]*hs-search-track__play/);
-  assert.match(adjustment, /hs-search-track:not\\(\\.hs-search-track--playlist-download\\)[\\s\\S]*hs-search-track__play/);
-  assert.match(adjustment, /transform: translateX\\(-36px\\) !important/);
+  assert.ok(adjustment.includes("@media (max-width: 979px)"));
+  assert.ok(adjustment.includes(".hs-search-track--playlist-download .hs-search-track__play"));
+  assert.ok(adjustment.includes(".hs-library-playlist-row .hs-search-track__play"));
+  assert.ok(adjustment.includes(".hs-search-track:not(.hs-search-track--playlist-download) .hs-search-track__play"));
+  assert.ok(adjustment.includes("transform: translateX(-36px) !important"));
 });
