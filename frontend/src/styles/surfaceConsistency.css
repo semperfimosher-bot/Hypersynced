@@ -1297,20 +1297,17 @@
   .hs-search-page .hs-search-entity-row > svg:last-child path,
   .hs-library-page .hs-library-entity-row > svg:last-child path,
   .hs-artist-row > svg:last-child path {
-    clip-path: none !important;
-    fill: none !important;
-    stroke: currentColor !important;
-    stroke-width: 1px !important;
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
+    clip-path: polygon(0 0, 100% 50%, 0 100%) !important;
+    fill: currentColor !important;
+    stroke: none !important;
   }
   .hs-search-page .hs-search-entity-card > svg:last-child,
   .hs-search-page .hs-search-entity-row > svg:last-child,
   .hs-library-page .hs-library-entity-row > svg:last-child,
   .hs-artist-row > svg:last-child,
   .hs-artist-row__play > svg {
-    width: 1px !important;
-    height: 1px !important;
+    width: 4px !important;
+    height: 4px !important;
   }
   .hs-search-page .hs-search-entity-card .hs-search-track__copy strong,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy strong,
@@ -1334,6 +1331,6 @@
 
   /* Tracks within an opened playlist: move the play square right by 1/2 inch. */
   .hs-search-page .hs-search-track-list .hs-search-track--playlist-download .hs-search-track__play {
-    transform: translateX(48px) !important;
+    transform: translateX(24px) !important;
   }
 }
