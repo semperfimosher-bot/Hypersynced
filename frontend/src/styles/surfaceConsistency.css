@@ -1398,3 +1398,59 @@
     background: rgba(38, 186, 223, 0.065) !important;
   }
 }
+
+
+/* Playlist-row alignment: trailing square sits at the row edge, with a slim play glyph. */
+.hs-library-page .hs-library-entity-row,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row {
+  grid-template-columns: 22px 42px minmax(0, 1fr) 30px !important;
+  column-gap: 8px !important;
+  align-items: center !important;
+}
+.hs-library-page .hs-library-entity-row > :first-child,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row > .hs-search-track__rank {
+  grid-column: 1 !important;
+  justify-self: start !important;
+}
+.hs-library-page .hs-library-entity-row .hs-search-track__art,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row .hs-search-track__art,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row .hs-search-entity-card__art {
+  width: 42px !important; height: 42px !important;
+  min-width: 42px !important; max-width: 42px !important;
+  min-height: 42px !important; max-height: 42px !important;
+  flex-basis: 42px !important;
+  border-radius: 6px !important;
+}
+.hs-library-page .hs-library-entity-row > :last-child,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
+  grid-column: 4 !important;
+  justify-self: end !important;
+  margin-inline: 0 !important;
+  width: 30px !important; height: 30px !important;
+  min-width: 30px !important; max-width: 30px !important;
+  min-height: 30px !important; max-height: 30px !important;
+  border-radius: 6px !important;
+}
+.hs-library-page .hs-library-entity-row > :last-child svg,
+.hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
+  width: 12px !important; height: 12px !important;
+  stroke-width: 1.5 !important;
+}
+@media (max-width: 979px) {
+  .hs-library-page .hs-library-entity-row,
+  .hs-search-page .hs-search-entity-card.hs-library-entity-row {
+    grid-template-columns: 22px 42px minmax(0, 1fr) 30px !important;
+    column-gap: 6px !important;
+    padding-inline: 0 !important;
+  }
+  .hs-library-page .hs-library-entity-row > :last-child,
+  .hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
+    justify-self: end !important;
+    margin-right: 0 !important;
+  }
+  .hs-library-page .hs-library-entity-row > :last-child svg,
+  .hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
+    width: 11px !important; height: 11px !important;
+    stroke-width: 1.35 !important;
+  }
+}
