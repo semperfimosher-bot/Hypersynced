@@ -1291,7 +1291,7 @@
   .hs-library-page .hs-artist-row__play,
   .hs-artist-row__play,
   .hs-artist-row > svg:last-child {
-    transform: translateX(14px) !important;
+    transform: translateX(20px) !important;
   }
   .hs-search-page .hs-search-entity-card > svg:last-child path,
   .hs-search-page .hs-search-entity-row > svg:last-child path,
@@ -1309,8 +1309,8 @@
   .hs-library-page .hs-library-entity-row > svg:last-child,
   .hs-artist-row > svg:last-child,
   .hs-artist-row__play > svg {
-    width: 6px !important;
-    height: 6px !important;
+    width: 3px !important;
+    height: 3px !important;
   }
   .hs-search-page .hs-search-entity-card .hs-search-track__copy strong,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy strong,
