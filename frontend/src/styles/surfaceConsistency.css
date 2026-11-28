@@ -1088,6 +1088,73 @@
     max-width: 38px !important; flex-basis: 38px !important;
   }
 }
+/* ENTITY ROW TEXT FIX — constrain artwork itself, not only its wrapper.
+   Search albums/artists/collaborations use the same track-row markup. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-entity-card,
+  .hs-search-page .hs-collaboration-song-row {
+    grid-template-columns: 42px minmax(0, 1fr) 32px !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
+  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    flex: 0 0 42px !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__art img,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art img,
+  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy strong,
+  .hs-search-page .hs-search-entity-card > .hs-search-track__copy small,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy strong,
+  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy small {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    text-align: left !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    margin: 0 !important;
+  }
+}
 /* Mobile Search is responsive, not a separate visual theme. */
 
 /* MOBILE ROW RESTORE — match the original normal horizontal rows (approved reference).
