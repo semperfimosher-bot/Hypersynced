@@ -974,7 +974,7 @@
 
 /* MOBILE ROW SYSTEM — desktop Search row visual blueprint, mobile widths only.
    Preserve desktop surface, colors, row corners, copy order and hierarchy.
-   Mobile changes are limited to available column widths and the 24px copy inset. */
+   Mobile changes are limited to available column widths and a small 8px copy inset. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-track-list,
   .hs-search-page .hs-search-entity-grid,
@@ -1062,7 +1062,7 @@
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
-    padding-inline-start: 24px !important;
+    padding-inline-start: 8px !important;
     box-sizing: border-box !important;
     gap: 3px !important;
     text-align: left !important;
