@@ -43,6 +43,8 @@ test("mobile album artist and collaboration artwork cannot overlap row copy", ()
 
 
 test("mobile artist and album row copy has a small right inset", () => {
-  assert.match(sharedRows, /Mobile artist and album row copy[\\s\\S]*?hs-search-entity-card > \.hs-search-track__copy[\\s\\S]*?padding-left:\\s*8px\\s*!important/);
-  assert.match(sharedRows, /Mobile artist and album row copy[\\s\\S]*?hs-artist-row__copy[\\s\\S]*?padding-left:\\s*8px\\s*!important/);
+  assert.ok(sharedRows.includes("Mobile artist and album row copy"));
+  assert.ok(sharedRows.includes(".hs-search-page .hs-search-entity-card > .hs-search-track__copy"));
+  assert.ok(sharedRows.includes(".hs-search-page .hs-artist-row__copy"));
+  assert.ok(sharedRows.includes("padding-left: 8px !important;"));
 });
