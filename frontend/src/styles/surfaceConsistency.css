@@ -1275,15 +1275,15 @@
 }
 
 
-/* Mobile artist rows: shift copy slightly left and expose an additional ~3/4 inch
-   of right-side text without changing desktop or track-row geometry. */
+/* Mobile artist rows: slightly adjust copy and control positions; use a small,
+   thin chevron instead of the filled play triangle. Desktop and tracks unaffected. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-entity-card .hs-search-track__copy,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy,
   .hs-library-page .hs-library-entity-row .hs-search-track__copy,
   .hs-library-page .hs-artist-row__copy,
   .hs-artist-row__copy {
-    transform: translateX(16px) !important;
+    transform: translateX(14px) !important;
     width: calc(100% + 184px) !important;
     max-width: none !important;
     overflow: visible !important;
@@ -1291,7 +1291,26 @@
   .hs-library-page .hs-artist-row__play,
   .hs-artist-row__play,
   .hs-artist-row > svg:last-child {
-    transform: translateX(6px) !important;
+    transform: translateX(8px) !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child path,
+  .hs-search-page .hs-search-entity-row > svg:last-child path,
+  .hs-library-page .hs-library-entity-row > svg:last-child path,
+  .hs-artist-row > svg:last-child path {
+    clip-path: none !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.25px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-search-entity-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child,
+  .hs-artist-row__play > svg {
+    width: 10px !important;
+    height: 10px !important;
   }
   .hs-search-page .hs-search-entity-card .hs-search-track__copy strong,
   .hs-search-page .hs-search-entity-row .hs-search-track__copy strong,
