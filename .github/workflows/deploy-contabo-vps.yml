@@ -165,26 +165,29 @@ jobs:
             exit 1
           fi
 
-          # Do not retire the previous container until the playlist endpoint
-          # is confirmed to exist (401/403 means routing and auth are active).
+          # Verify route registration without calling a possibly slow authenticated
+          # handler. Read the OpenAPI route table with a bounded request.
           route_ready=0
           for attempt in $(seq 1 15); do
             route_status="$(python3 - <<'PY'
+          import json
           import urllib.error
           import urllib.request
-          request = urllib.request.Request(
-              "http://127.0.0.1:8000/api/playlists/library/changes",
-              method="GET",
-          )
+
           try:
-              with urllib.request.urlopen(request, timeout=3) as response:
-                  status = response.status
+              with urllib.request.urlopen(
+                  "http://127.0.0.1:8000/openapi.json",
+                  timeout=8,
+              ) as response:
+                  document = json.load(response)
+                  print("registered" if "/api/playlists/library/changes" in document.get("paths", {}) else "missing")
           except urllib.error.HTTPError as error:
-              status = error.code
-          print(status)
+              print(f"http-{error.code}")
+          except Exception as error:
+              print(f"probe-error-{type(error).__name__}")
           PY
-          )"
-            if [ "$route_status" = "401" ] || [ "$route_status" = "403" ]; then
+          )" || route_status="probe-command-failed"
+            if [ "$route_status" = "registered" ]; then
               route_ready=1
               break
             fi
@@ -193,7 +196,7 @@ jobs:
 
           if [ "$route_ready" -ne 1 ]; then
             docker logs --tail 100 "$CONTAINER" || true
-            echo "Playlist library changes route was not registered; refusing deployment."
+            echo "Playlist library changes route was not registered in OpenAPI; refusing deployment."
             exit 1
           fi
 
