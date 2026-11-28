@@ -36,9 +36,9 @@ test("mobile album, artist, and collaboration cards use the same normal horizont
 });
 
 test("mobile album artist and collaboration artwork cannot overlap row copy", () => {
-  assert.match(sharedRows, /ENTITY ROW TEXT FIX[\\s\\S]*?grid-template-columns:\\s*42px\\s+minmax\\(0,\\s*1fr\\)\\s+32px\\s*!important/);
-  assert.match(sharedRows, /hs-search-entity-card > \\.hs-search-track__art[\\s\\S]*?width:\\s*42px\\s*!important[\\s\\S]*?height:\\s*42px\\s*!important/);
-  assert.match(sharedRows, /hs-search-entity-card > \\.hs-search-track__copy[\\s\\S]*?grid-column:\\s*2\\s*!important/);
-  assert.match(sharedRows, /hs-collaboration-song-row > \\.hs-search-track__copy/);
-  assert.match(sharedRows, /object-fit:\\s*cover\\s*!important/);
+  assert.match(sharedRows, /ENTITY ROW TEXT FIX[\s\S]*?grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
+  assert.match(sharedRows, /hs-search-entity-card > \.hs-search-track__art[\s\S]*?width:\s*42px\s*!important[\s\S]*?height:\s*42px\s*!important/);
+  assert.match(sharedRows, /hs-search-entity-card > \.hs-search-track__copy[\s\S]*?grid-column:\s*2\s*!important/);
+  assert.match(sharedRows, /hs-collaboration-song-row > \.hs-search-track__copy/);
+  assert.match(sharedRows, /object-fit:\s*cover\s*!important/);
 });
