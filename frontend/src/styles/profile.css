@@ -2608,38 +2608,44 @@ button.hs-profile-stat:hover,
 @media (
   max-width: 760px
 ) {
-  /* Compact mobile hero: portrait sits beside the profile identity. */
+  /* Mobile hero: compact portrait module with the rotated wire-frame restored. */
   .hs-profile-hero {
     grid-template-columns:
-      112px
+      104px
       minmax(0, 1fr);
 
-    gap: 10px;
+    gap: 9px;
     align-items: stretch;
+    padding: 12px;
   }
 
 
   .hs-profile-hero__avatar {
-    min-height: 0;
-    padding: 8px;
+    min-height: 126px;
+    padding: 6px;
     align-content: center;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .hs-profile-hero__avatar .hs-avatar--hero {
-    width: 96px;
-    height: 96px;
+    width: 82px;
+    height: 82px;
     max-width: 100%;
   }
 
   .hs-profile-hero__avatar .hs-avatar-orbit--one {
-    width: 108px;
-    height: 108px;
+    width: 98px;
+    height: 98px;
   }
 
   .hs-profile-hero__avatar .hs-avatar-orbit--two {
-    width: 118px;
-    height: 118px;
+    width: 110px;
+    height: 110px;
+  }
+
+  .hs-profile-hero__identity {
+    padding: 14px 16px;
+    justify-content: center;
   }
 
 
@@ -2696,48 +2702,36 @@ button.hs-profile-stat:hover,
   }
 
   .hs-profile-hero__avatar {
-    min-height: 0;
-    padding: 6px;
+    min-height: 112px;
+    padding: 4px;
   }
 
   .hs-profile-hero__identity {
-    padding: 12px;
+    padding: 10px 12px;
     min-width: 0;
   }
 
   .hs-profile-hero h1 {
-    font-size: clamp(1.5rem, 8vw, 2.2rem);
-    line-height: 1.05;
-    overflow-wrap: anywhere;
+    font-size: clamp(1.45rem, 7.5vw, 2rem);
+    line-height: 1.04;
+    overflow-wrap: break-word;
+    margin-top: 6px;
   }
 
   .hs-profile-hero__avatar .hs-avatar--hero {
-    width: 78px;
-    height: 78px;
+    width: 74px;
+    height: 74px;
   }
 
+  /* Keep the rotated wire-frame square visible, but contained around the portrait. */
   .hs-profile-hero__avatar .hs-avatar-orbit--one {
-    width: 88px;
-    height: 88px;
+    width: 86px;
+    height: 86px;
   }
 
   .hs-profile-hero__avatar .hs-avatar-orbit--two {
     width: 96px;
     height: 96px;
-  }
-
-
-  .hs-avatar-orbit--one {
-    width: 143px;
-
-    height: 143px;
-  }
-
-
-  .hs-avatar-orbit--two {
-    width: 154px;
-
-    height: 154px;
   }
 
 
