@@ -27,10 +27,10 @@ test("mobile player swipes skip tracks in both directions", () => {
 
 
 test("mobile entity rows explicitly place copy beside artwork", () => {
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > \\.hs-search-entity-card__art[\\s\\S]*?grid-column:\\s*1\\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > \\.hs-search-track__copy[\\s\\S]*?grid-column:\\s*2\\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > svg:last-child[\\s\\S]*?grid-column:\\s*3\\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-collaboration-song-row > \\.hs-search-track__copy/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-entity-card > \.hs-search-entity-card__art[\s\S]*?grid-column:\s*1\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-entity-card > \.hs-search-track__copy[\s\S]*?grid-column:\s*2\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-entity-card > svg:last-child[\s\S]*?grid-column:\s*3\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-collaboration-song-row > \.hs-search-track__copy/);
 });
 
 test("mobile album artist and collaboration artwork cannot overlap row copy", () => {
