@@ -11,11 +11,11 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
 });
 
 test("mobile Search and Library rows restore compact horizontal artwork-copy-action layout", () => {
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?grid-template-columns:\\s*42px\\s+minmax\\(0,\\s*1fr\\)\\s+32px\\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card__art[\\s\\S]*?width:\\s*42px\\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-track__copy[\\s\\S]*?text-align:\\s*left\\s*!important/);
-  assert.match(sharedRows, /white-space:\\s*nowrap\\s*!important/);
-  assert.match(sharedRows, /text-overflow:\\s*ellipsis\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-entity-card__art[\s\S]*?width:\s*42px\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
+  assert.match(sharedRows, /white-space:\s*nowrap\s*!important/);
+  assert.match(sharedRows, /text-overflow:\s*ellipsis\s*!important/);
 });
 
 test("mobile player swipes skip tracks in both directions", () => {
