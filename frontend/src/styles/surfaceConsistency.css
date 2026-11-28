@@ -1005,14 +1005,14 @@
     display: grid !important;
     grid-template-columns: 46px minmax(0, 1fr) 29px !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
     min-height: 64px !important;
     height: auto !important;
     margin: 0 !important;
-    padding: 8px 12px !important;
+    padding: 8px 0 8px 6px !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
     border-radius: 0 !important;
@@ -1196,15 +1196,15 @@
   .hs-search-page .hs-collaboration-song-row > svg:last-child,
   .hs-library-page .hs-library-entity-row > svg:last-child,
   .hs-artist-row > svg:last-child {
-    clip-path: polygon(0 10%, 100% 50%, 0 90%) !important;
-    background-color: currentColor !important;
-    stroke: none !important;
+    clip-path: none !important;
+    background-color: var(--hs-surface, #020A10) !important;
+    stroke: currentColor !important;
   }
   .hs-search-page .hs-search-entity-card > svg:last-child path,
   .hs-search-page .hs-collaboration-song-row > svg:last-child path,
   .hs-library-page .hs-library-entity-row > svg:last-child path,
   .hs-artist-row > svg:last-child path {
-    visibility: hidden !important;
+    visibility: visible !important;
   }
 
   .hs-search-page .hs-search-track__play > svg,
