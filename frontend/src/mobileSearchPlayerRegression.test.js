@@ -10,13 +10,10 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
   assert.match(css, /@media\s*\(max-width:\s*979px\)[\s\S]*?button\[data-filter="albums"\][\s\S]*?button\[data-filter="collaborations"\][\s\S]*?button\[data-filter="tracks"\][\s\S]*?display:\s*none\s*!important/);
 });
 
-test("mobile search result copy stays left aligned and avoids oversized metadata columns", () => {
-  assert.match(sharedRows, /MOBILE ROW SYSTEM[\s\S]*?\.hs-search-page \.hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
-  assert.match(sharedRows, /padding-inline-start:\s*4px\s*!important/);
-  assert.match(sharedRows, /\.hs-library-page \.hs-search-track__copy[\s\S]*?\.hs-library-page \.hs-library-entity-row__copy[\s\S]*?\.hs-library-page \.hs-library-track-row__copy/);
-  assert.match(sharedRows, /\.hs-search-page \.hs-search-entity-card[\s\S]*?grid-template-columns:\s*20px\s+40px\s+minmax\(0,\s*1fr\)\s+16px\s*!important/);
-  assert.match(sharedRows, /\.hs-search-page \.hs-search-track:not\([\s\S]*?grid-template-columns:\s*18px\s+40px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
-  assert.match(sharedRows, /single-line row style, but give copy more usable width/);
+test("mobile Search and Library rows restore compact horizontal artwork-copy-action layout", () => {
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?\.hs-search-page \.hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
+  assert.match(sharedRows, /grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
+  assert.match(sharedRows, /\.hs-search-page \.hs-search-track__rank[\s\S]*display:\s*none\s*!important/);
   assert.match(sharedRows, /white-space:\s*nowrap\s*!important/);
   assert.match(sharedRows, /text-overflow:\s*ellipsis\s*!important/);
 });
