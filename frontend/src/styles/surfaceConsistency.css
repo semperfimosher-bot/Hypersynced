@@ -1334,3 +1334,15 @@
     transform: translateX(24px) !important;
   }
 }
+
+/* Match mobile entity-row triangles (artists, albums, collaborations) to the playlist-row play glyph. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-search-entity-row > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
