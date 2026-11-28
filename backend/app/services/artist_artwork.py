@@ -57,6 +57,13 @@ def is_formal_artist_portrait_candidate(title: str | None, description: str | No
     return any(signal in blob for signal in FORMAL_PORTRAIT_SIGNALS)
 
 
+def is_verified_wikidata_photo_candidate(title: str | None, description: str | None = None) -> bool:
+    """Accept a photo attached to a verified artist entity unless metadata flags it as unsuitable."""
+    blob = re.sub(r"<[^>]+>", " ", f"{title or ''} {description or ''}").casefold()
+    blob = re.sub(r"[^a-z0-9]+", " ", blob)
+    return not any(term in blob for term in ARTWORK_REJECT_TERMS)
+
+
 def exact_artist_entity_candidates(artist_name: str, search_results: list[dict]) -> list[dict]:
     """Keep exact case-folded label matches only; fuzzy matches are never accepted."""
     target = " ".join(str(artist_name or "").split()).casefold()
@@ -328,7 +335,7 @@ async def find_reusable_artist_image(artist_name: str) -> dict | None:
                     image_url = info.get("thumburl") or info.get("url")
                     source_page = info.get("descriptionurl")
                     if (
-                        is_formal_artist_portrait_candidate(title, description)
+                        is_verified_wikidata_photo_candidate(title, description)
                         and license_is_reusable(license_name)
                         and image_url and source_page
                         and is_safe_wikimedia_url(image_url)
@@ -591,7 +598,7 @@ async def _artist_artwork_backfill_loop() -> None:
                 batch = list(result.scalars())
             for artist_id in batch:
                 await enqueue_artist_artwork(artist_id)
-            await asyncio.sleep(900)
+            await asyncio.sleep(600)
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -644,7 +651,7 @@ async def _artist_artwork_worker_loop() -> None:
 
 async def run_artist_artwork_worker() -> None:
     """Bounded pool: at most three artist image fetches/uploads concurrently."""
-    pool_size = 1
+    pool_size = 2
     tasks = [
         asyncio.create_task(_artist_artwork_worker_loop())
         for _ in range(pool_size)
