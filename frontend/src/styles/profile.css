@@ -2608,17 +2608,38 @@ button.hs-profile-stat:hover,
 @media (
   max-width: 760px
 ) {
+  /* Compact mobile hero: portrait sits beside the profile identity. */
   .hs-profile-hero {
     grid-template-columns:
-      1fr;
+      112px
+      minmax(0, 1fr);
 
-    gap: 12px;
+    gap: 10px;
+    align-items: stretch;
   }
 
 
   .hs-profile-hero__avatar {
-    min-height:
-      205px;
+    min-height: 0;
+    padding: 8px;
+    align-content: center;
+    overflow: hidden;
+  }
+
+  .hs-profile-hero__avatar .hs-avatar--hero {
+    width: 96px;
+    height: 96px;
+    max-width: 100%;
+  }
+
+  .hs-profile-hero__avatar .hs-avatar-orbit--one {
+    width: 108px;
+    height: 108px;
+  }
+
+  .hs-profile-hero__avatar .hs-avatar-orbit--two {
+    width: 118px;
+    height: 118px;
   }
 
 
