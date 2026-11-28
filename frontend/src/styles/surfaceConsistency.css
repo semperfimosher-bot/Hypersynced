@@ -972,17 +972,24 @@
   }
 }
 
-/* MOBILE NORMAL ROW SYSTEM — single authoritative compact horizontal layout.
-   Match the original reference: artwork, copy, trailing action; no rank column. */
+/* MOBILE NORMAL ROW SYSTEM — ONE AUTHORITATIVE MOBILE ROW RULE
+   Desktop styles remain untouched. Mobile Search and Library rows use the
+   desktop playlist-row geometry, surfaces, copy typography, artwork and play control. */
 @media (max-width: 979px) {
   .hs-search-page .hs-search-track-list,
   .hs-search-page .hs-search-entity-grid,
   .hs-search-page .hs-search-discovery-grid,
   .hs-library-page .hs-search-track-list,
   .hs-library-page .library-track-list {
-    width: 100%; max-width: 100%; min-width: 0;
-    display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; overflow: hidden;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    gap: 0 !important;
+    overflow: hidden !important;
   }
+
   .hs-search-page .hs-search-track,
   .hs-search-page .hs-library-playlist-row,
   .hs-search-page .hs-search-entity-card,
@@ -993,29 +1000,73 @@
   .hs-library-page .hs-library-track-row,
   .hs-library-page .library-track-row,
   .hs-library-page .hs-library-entity-row,
-  .hs-artist-row,
+  .hs-library-page .hs-artist-row,
   .hs-artist-track-list > button {
-    display: grid !important; grid-template-columns: 42px minmax(0, 1fr) 32px !important;
-    align-items: center !important; gap: 8px !important;
-    width: 100% !important; min-width: 0 !important; max-width: 100% !important;
-    min-height: 62px !important; height: auto !important; margin: 0 !important;
-    padding: 7px 9px !important; box-sizing: border-box !important; overflow: hidden !important;
+    display: grid !important;
+    grid-template-columns: 46px minmax(0, 1fr) 29px !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 64px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    background: var(--hs-surface, #020A10) !important;
+    color: inherit !important;
+    text-align: left !important;
   }
+
   .hs-search-page .hs-search-track__rank,
   .hs-library-page .hs-search-track__rank,
   .hs-search-page .hs-library-entity-row__rank,
   .hs-library-page .hs-library-entity-row__rank,
-  .hs-artist-track-list__rank { display: none !important; }
+  .hs-artist-track-list__rank {
+    display: none !important;
+  }
+
   .hs-search-page .hs-search-track__art,
   .hs-search-page .hs-search-entity-card__art,
   .hs-library-page .hs-search-track__art,
+  .hs-library-page .hs-library-entity-row__art,
   .hs-artist-row > img,
   .hs-artist-row .hs-artist-row__art,
   .hs-artist-track-list > button > .track-artwork {
-    grid-column: 1 !important; grid-row: 1 !important;
-    width: 42px !important; height: 42px !important; min-width: 42px !important;
-    max-width: 42px !important; flex: 0 0 42px !important; margin: 0 !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    max-width: 46px !important;
+    max-height: 46px !important;
+    flex: 0 0 46px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 6px !important;
+    object-fit: cover !important;
   }
+
+  .hs-search-page .hs-search-track__art img,
+  .hs-search-page .hs-search-entity-card__art img,
+  .hs-library-page .hs-search-track__art img,
+  .hs-library-page .hs-library-entity-row__art img,
+  .hs-artist-row__art img,
+  .hs-artist-track-list > button > .track-artwork img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+  }
+
   .hs-search-page .hs-search-track__copy,
   .hs-search-page .hs-library-entity-row__copy,
   .hs-search-page .hs-library-track-row__copy,
@@ -1024,11 +1075,20 @@
   .hs-library-page .hs-library-track-row__copy,
   .hs-artist-track-list__copy,
   .hs-artist-row__copy {
-    grid-column: 2 !important; grid-row: 1 !important; display: grid !important;
-    min-width: 0 !important; width: 100% !important; max-width: 100% !important;
-    padding: 0 !important; margin: 0 !important; gap: 2px !important;
-    overflow: hidden !important; text-align: left !important; transform: none !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 3px !important;
+    overflow: hidden !important;
+    text-align: left !important;
+    transform: none !important;
   }
+
   .hs-search-page .hs-search-track__copy strong,
   .hs-search-page .hs-search-track__copy small,
   .hs-search-page .hs-search-track__copy em,
@@ -1043,222 +1103,97 @@
   .hs-artist-track-list__copy small,
   .hs-artist-row__copy strong,
   .hs-artist-row__copy small {
-    display: block !important; min-width: 0 !important; max-width: 100% !important;
-    overflow: hidden !important; white-space: nowrap !important; text-overflow: ellipsis !important;
-    word-break: normal !important; overflow-wrap: normal !important; text-align: left !important;
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-align: left !important;
   }
-  .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child,
-  .hs-library-page .hs-library-entity-row > svg:last-child,
-  .hs-artist-row > svg:last-child {
-    grid-column: 3 !important; grid-row: 1 !important;
-    justify-self: end !important; align-self: center !important;
-    width: 30px !important; height: 30px !important;
-    margin: 0 !important; transform: none !important;
+
+  .hs-search-page .hs-search-track__copy strong,
+  .hs-library-page .hs-search-track__copy strong,
+  .hs-library-page .hs-library-entity-row__copy strong,
+  .hs-library-page .hs-library-track-row__copy strong,
+  .hs-artist-track-list__copy strong,
+  .hs-artist-row__copy strong {
+    color: #edf6f9 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.015em !important;
   }
+
+  .hs-search-page .hs-search-track__copy small,
+  .hs-library-page .hs-search-track__copy small,
+  .hs-library-page .hs-library-entity-row__copy small,
+  .hs-library-page .hs-library-track-row__copy small,
+  .hs-artist-track-list__copy small,
+  .hs-artist-row__copy small {
+    color: #697f89 !important;
+    font-size: 7.5px !important;
+    font-weight: 400 !important;
+    line-height: 1.42 !important;
+  }
+
   .hs-search-page .hs-search-track__play,
   .hs-library-page .hs-search-track__play,
   .hs-library-page .hs-library-track-row__play,
   .hs-artist-row__play,
-  .hs-artist-track-list__play {
-    grid-column: 3 !important; grid-row: 1 !important; justify-self: end !important;
-    align-self: center !important; width: 30px !important; height: 30px !important;
-    min-width: 30px !important; max-width: 30px !important; margin: 0 !important; transform: none !important;
-  }
-  .hs-search-page .hs-search-track--playlist-download,
-  .hs-search-page .hs-library-playlist-row { grid-template-columns: 42px minmax(0, 1fr) 30px 30px !important; }
-  .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
-  .hs-search-page .hs-library-playlist-row .hs-search-track__play { grid-column: 3 !important; }
-  .hs-search-page .hs-search-track--playlist-download .hs-search-track__download,
-  .hs-search-page .hs-library-playlist-row .hs-search-track__download {
-    grid-column: 4 !important; grid-row: 1 !important; justify-self: end !important; margin: 0 !important;
-  }
-}
-@media (max-width: 380px) {
-  .hs-search-page .hs-search-track, .hs-search-page .hs-library-playlist-row,
-  .hs-search-page .hs-search-entity-card, .hs-search-page .hs-search-entity-row,
-  .hs-search-page .hs-collaboration-song-row, .hs-search-page .hs-library-entity-row,
-  .hs-library-page .hs-search-track, .hs-library-page .hs-library-track-row,
-  .hs-library-page .library-track-row, .hs-library-page .hs-library-entity-row {
-    grid-template-columns: 38px minmax(0, 1fr) 30px !important; gap: 6px !important; padding-inline: 7px !important;
-  }
-  .hs-search-page .hs-search-track__art, .hs-search-page .hs-search-entity-card__art,
-  .hs-library-page .hs-search-track__art {
-    width: 38px !important; height: 38px !important; min-width: 38px !important;
-    max-width: 38px !important; flex-basis: 38px !important;
-  }
-}
-/* ENTITY ROW TEXT FIX — constrain artwork itself, not only its wrapper.
-   Search albums/artists/collaborations use the same track-row markup. */
-@media (max-width: 979px) {
-  .hs-search-page .hs-search-entity-card,
-  .hs-search-page .hs-collaboration-song-row {
-    grid-template-columns: 42px minmax(0, 1fr) 32px !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    min-height: 42px !important;
-    max-height: 42px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    flex: 0 0 42px !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art img,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art img,
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art img {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    object-fit: cover !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    text-align: left !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy strong,
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy small,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy strong,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy small {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-    text-align: left !important;
-  }
+  .hs-artist-track-list__play,
   .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child {
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child {
     grid-column: 3 !important;
     grid-row: 1 !important;
     justify-self: end !important;
     align-self: center !important;
-    margin: 0 !important;
-  }
-}
-/* Mobile Search is responsive, not a separate visual theme. */
-
-/* MOBILE ROW RESTORE — match the original normal horizontal rows (approved reference).
-   No rank/number blocks, stacked art/copy, or tall cards. */
-@media (max-width: 979px) {
-  .hs-search-page .hs-search-track__rank,
-  .hs-library-page .hs-search-track__rank,
-  .hs-search-page .hs-library-entity-row__rank,
-  .hs-library-page .hs-library-entity-row__rank {
-    display: none !important;
-  }
-
-  .hs-search-page .hs-search-track,
-  .hs-search-page .hs-library-playlist-row,
-  .hs-search-page .hs-search-entity-card,
-  .hs-search-page .hs-collaboration-song-row,
-  .hs-search-page .hs-library-entity-row,
-  .hs-library-page .hs-search-track,
-  .hs-library-page .hs-library-track-row,
-  .hs-library-page .library-track-row,
-  .hs-library-page .hs-library-entity-row {
     display: grid !important;
-    grid-template-columns: 42px minmax(0, 1fr) 32px !important;
-    align-items: center !important;
-    gap: 10px !important;
-    min-height: 64px !important;
-    height: auto !important;
-    padding: 8px 10px !important;
+    place-items: center !important;
+    width: 29px !important;
+    height: 29px !important;
+    min-width: 29px !important;
+    max-width: 29px !important;
+    min-height: 29px !important;
+    max-height: 29px !important;
     margin: 0 !important;
+    transform: none !important;
+    border: 1px solid rgba(78, 173, 206, 0.13) !important;
+    border-radius: 6px !important;
+    color: #537b8c !important;
+    background: var(--hs-surface, #020A10) !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
-    border-radius: 0 !important;
   }
 
-  .hs-search-page .hs-search-track__art,
-  .hs-search-page .hs-search-entity-card__art,
-  .hs-library-page .hs-search-track__art {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    margin: 0 !important;
+  .hs-search-page .hs-search-track__play > svg,
+  .hs-search-page .hs-search-entity-card > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child,
+  .hs-library-page .hs-library-entity-row > svg:last-child,
+  .hs-artist-row > svg:last-child,
+  .hs-artist-row__play > svg,
+  .hs-artist-track-list__play > svg {
+    width: 12px !important;
+    height: 12px !important;
+    stroke-width: 1.5 !important;
   }
 
-  .hs-search-page .hs-search-track__copy,
-  .hs-search-page .hs-library-entity-row__copy,
-  .hs-search-page .hs-library-track-row__copy,
-  .hs-library-page .hs-search-track__copy,
-  .hs-library-page .hs-library-entity-row__copy,
-  .hs-library-page .hs-library-track-row__copy {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    min-width: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    text-align: left !important;
-    transform: none !important;
-  }
-
-  .hs-search-page .hs-search-track__copy strong,
-  .hs-search-page .hs-search-track__copy small,
-  .hs-search-page .hs-search-track__copy em,
-  .hs-library-page .hs-search-track__copy strong,
-  .hs-library-page .hs-search-track__copy small,
-  .hs-library-page .hs-search-track__copy em,
-  .hs-library-page .hs-library-entity-row__copy strong,
-  .hs-library-page .hs-library-entity-row__copy small,
-  .hs-library-page .hs-library-track-row__copy strong,
-  .hs-library-page .hs-library-track-row__copy small {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-    text-align: left !important;
-    word-break: normal !important;
-    overflow-wrap: normal !important;
-  }
-
-  .hs-search-page .hs-search-track__play,
-  .hs-library-page .hs-search-track__play,
-  .hs-library-page .hs-library-track-row__play {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
-    justify-self: end !important;
-    align-self: center !important;
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    max-width: 30px !important;
-    margin: 0 !important;
-    transform: none !important;
+  .hs-search-page .hs-search-track:hover .hs-search-track__play,
+  .hs-search-page .hs-search-entity-card:hover > svg:last-child,
+  .hs-search-page .hs-collaboration-song-row:hover > svg:last-child,
+  .hs-library-page .hs-library-entity-row:hover > svg:last-child,
+  .hs-artist-row:hover > svg:last-child {
+    border-color: rgba(77, 227, 255, 0.34) !important;
+    color: #68e7ff !important;
+    background: rgba(38, 186, 223, 0.065) !important;
   }
 
   .hs-search-page .hs-search-track--playlist-download,
   .hs-search-page .hs-library-playlist-row {
-    grid-template-columns: 40px minmax(0, 1fr) 30px 30px !important;
+    grid-template-columns: 46px minmax(0, 1fr) 29px 30px !important;
   }
   .hs-search-page .hs-search-track--playlist-download .hs-search-track__play,
   .hs-search-page .hs-library-playlist-row .hs-search-track__play {
@@ -1269,211 +1204,9 @@
     grid-column: 4 !important;
     grid-row: 1 !important;
     justify-self: end !important;
-    margin: 0 !important;
-  }
-}
-
-
-@media (max-width: 979px) {
-  /* Entity markup uses two art classes; both must be constrained, and copy must be explicitly column 2. */
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art {
-    grid-column: 1 !important; grid-row: 1 !important;
-    width: 42px !important; height: 42px !important;
-    min-width: 42px !important; max-width: 42px !important;
-    min-height: 42px !important; max-height: 42px !important;
-    overflow: hidden !important; margin: 0 !important; padding: 0 !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy {
-    grid-column: 2 !important; grid-row: 1 !important;
-    width: 100% !important; min-width: 0 !important; max-width: 100% !important;
-    overflow: hidden !important; margin: 0 !important; padding: 0 !important;
-    text-align: left !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy strong,
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy small,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy strong,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy small {
-    display: block !important; width: 100% !important; min-width: 0 !important;
-    max-width: 100% !important; overflow: hidden !important;
-    white-space: nowrap !important; text-overflow: ellipsis !important;
-    text-align: left !important;
-  }
-  .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child {
-    grid-column: 3 !important; grid-row: 1 !important;
-    justify-self: end !important; align-self: center !important; margin: 0 !important;
-  }
-
-}
-
-
-/* Mobile entity rows: text uses the full grid space up to the trailing action. */
-@media (max-width: 979px) {
-  .hs-search-page .hs-search-entity-card,
-  .hs-search-page .hs-collaboration-song-row,
-  .hs-search-page .hs-artist-row,
-  .hs-library-page .hs-library-entity-row {
-    grid-template-columns: 42px minmax(0, 1fr) 16px !important;
-    column-gap: 0 !important;
-    row-gap: 0 !important;
-    padding-inline: 0 !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
-  .hs-search-page .hs-artist-row > img,
-  .hs-search-page .hs-artist-row .hs-artist-row__art,
-  .hs-library-page .hs-library-entity-row .hs-search-track__art {
-    width: 42px !important; height: 42px !important;
-    min-width: 42px !important; max-width: 42px !important;
-    min-height: 42px !important; max-height: 42px !important;
-    flex-basis: 42px !important;
-  }
-  .hs-search-page .hs-search-entity-card > .hs-search-track__copy,
-  .hs-search-page .hs-search-entity-card > .hs-library-entity-row__copy,
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__copy,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__copy,
-  .hs-search-page .hs-artist-row__copy,
-  .hs-library-page .hs-library-entity-row__copy {
-    width: calc(100% + 300px) !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    transform: translateX(24px) !important;
-    justify-self: stretch !important;
-  }
-  .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child,
-  .hs-search-page .hs-artist-row > svg:last-child,
-  .hs-library-page .hs-library-entity-row > svg:last-child {
-    width: 20px !important; height: 20px !important;
-  }
-}
-
-
-/* Use playlist-row square artwork and square play-arrow control styling across row types. */
-@media (max-width: 979px) {
-  .hs-search-page .hs-search-entity-card > .hs-search-track__art,
-  .hs-search-page .hs-search-entity-card > .hs-search-entity-card__art,
-  .hs-search-page .hs-collaboration-song-row > .hs-search-track__art,
-  .hs-search-page .hs-artist-row > img,
-  .hs-search-page .hs-artist-row .hs-artist-row__art,
-  .hs-library-page .hs-library-entity-row .hs-search-track__art {
-    border-radius: 6px !important;
-  }
-  .hs-search-page .hs-search-entity-card > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row > svg:last-child,
-  .hs-search-page .hs-artist-row > svg:last-child,
-  .hs-library-page .hs-library-entity-row > svg:last-child,
-  .hs-search-page .hs-search-entity-card .hs-search-track__play,
-  .hs-search-page .hs-collaboration-song-row .hs-search-track__play,
-  .hs-search-page .hs-artist-row__play,
-  .hs-library-page .hs-library-entity-row .hs-search-track__play {
-    display: grid !important;
-    place-items: center !important;
     width: 30px !important;
-    height: 30px !important;
     min-width: 30px !important;
     max-width: 30px !important;
-    border: 1px solid rgba(78, 173, 206, 0.13) !important;
-    border-radius: 6px !important;
-    color: #537b8c !important;
-    background: var(--hs-surface) !important;
-    box-sizing: border-box !important;
-  }
-  .hs-search-page .hs-search-entity-card:hover > svg:last-child,
-  .hs-search-page .hs-collaboration-song-row:hover > svg:last-child,
-  .hs-search-page .hs-artist-row:hover > svg:last-child,
-  .hs-library-page .hs-library-entity-row:hover > svg:last-child,
-  .hs-search-page .hs-search-entity-card:hover .hs-search-track__play,
-  .hs-search-page .hs-collaboration-song-row:hover .hs-search-track__play,
-  .hs-search-page .hs-artist-row:hover .hs-artist-row__play,
-  .hs-library-page .hs-library-entity-row:hover .hs-search-track__play {
-    border-color: rgba(77, 227, 255, 0.34) !important;
-    color: #68e7ff !important;
-    background: rgba(38, 186, 223, 0.065) !important;
-  }
-}
-
-
-/* Playlist-row alignment: trailing square sits at the row edge, with a slim play glyph. */
-.hs-library-page .hs-library-entity-row,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row {
-  grid-template-columns: 22px 42px minmax(0, 1fr) 30px !important;
-  column-gap: 8px !important;
-  align-items: center !important;
-}
-.hs-library-page .hs-library-entity-row > :first-child,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row > .hs-search-track__rank {
-  grid-column: 1 !important;
-  justify-self: start !important;
-}
-.hs-library-page .hs-library-entity-row .hs-search-track__art,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row .hs-search-track__art,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row .hs-search-entity-card__art {
-  width: 42px !important; height: 42px !important;
-  min-width: 42px !important; max-width: 42px !important;
-  min-height: 42px !important; max-height: 42px !important;
-  flex-basis: 42px !important;
-  border-radius: 6px !important;
-}
-.hs-library-page .hs-library-entity-row > :last-child,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
-  grid-column: 4 !important;
-  justify-self: end !important;
-  margin-inline: 0 !important;
-  width: 30px !important; height: 30px !important;
-  min-width: 30px !important; max-width: 30px !important;
-  min-height: 30px !important; max-height: 30px !important;
-  border-radius: 6px !important;
-}
-.hs-library-page .hs-library-entity-row > :last-child svg,
-.hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
-  width: 12px !important; height: 12px !important;
-  stroke-width: 1.5 !important;
-}
-@media (max-width: 979px) {
-  .hs-library-page .hs-library-entity-row,
-  .hs-search-page .hs-search-entity-card.hs-library-entity-row {
-    grid-template-columns: 22px 42px minmax(0, 1fr) 30px !important;
-    column-gap: 6px !important;
-    padding-inline: 0 !important;
-  }
-  .hs-library-page .hs-library-entity-row > :last-child,
-  .hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
-    justify-self: end !important;
-    margin-right: 0 !important;
-  }
-  .hs-library-page .hs-library-entity-row > :last-child svg,
-  .hs-search-page .hs-search-entity-card.hs-library-entity-row > svg:last-child {
-    width: 11px !important; height: 11px !important;
-    stroke-width: 1.35 !important;
-  }
-}
-
-
-
-
-/* Mobile: keep rows full-width; inset their contents by 12px on both sides. */
-@media (max-width: 979px) {
-  .hs-search-page .hs-search-track,
-  .hs-search-page .hs-library-playlist-row,
-  .hs-search-page .hs-search-entity-card,
-  .hs-search-page .hs-collaboration-song-row,
-  .hs-search-page .hs-library-entity-row,
-  .hs-search-page .hs-artist-row,
-  .hs-library-page .hs-search-track,
-  .hs-library-page .hs-library-track-row,
-  .hs-library-page .library-track-row,
-  .hs-library-page .hs-library-entity-row {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    box-sizing: border-box !important;
+    margin: 0 !important;
   }
 }
