@@ -10,12 +10,14 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
   assert.match(css, /@media\s*\(max-width:\s*979px\)[\s\S]*?button\[data-filter="albums"\][\s\S]*?button\[data-filter="collaborations"\][\s\S]*?button\[data-filter="tracks"\][\s\S]*?display:\s*none\s*!important/);
 });
 
-test("mobile Search and Library rows restore compact horizontal artwork-copy-action layout", () => {
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-entity-card__art[\s\S]*?width:\s*42px\s*!important/);
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
-  assert.match(sharedRows, /white-space:\s*nowrap\s*!important/);
-  assert.match(sharedRows, /text-overflow:\s*ellipsis\s*!important/);
+test("mobile Search and Library rows use one desktop-matched horizontal row system", () => {
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?hs-search-track__art[\\s\\S]*?width:\\s*46px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?hs-search-track__copy[\\s\\S]*?grid-column:\\s*2\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?white-space:\\s*nowrap\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?border-radius:\\s*6px\\s*!important/);
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?grid-template-columns:\\s*46px\\s+minmax\\(0,\\s*1fr\\)\\s+29px\\s+30px\\s*!important/);
+  assert.doesNotMatch(sharedRows, /MOBILE ROW RESTORE|ENTITY ROW TEXT FIX|width:\\s*calc\\(100%\\s*\\+\\s*300px\\)/);
 });
 
 test("mobile player swipes skip tracks in both directions", () => {
