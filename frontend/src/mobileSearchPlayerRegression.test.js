@@ -27,3 +27,11 @@ test("mobile player swipes skip tracks in both directions", () => {
   assert.match(player, /if\s*\(dx\s*<\s*0\)\s*handleNext\(\);\s*else\s*handlePrevious\(\);/);
   assert.match(css, /\.player-bar\s*\{\s*touch-action:\s*pan-y;/);
 });
+
+
+test("mobile rows restore normal horizontal layout and hide rank numbers", () => {
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?\.hs-search-page \.hs-search-track__rank[\s\S]*?display:\s*none\s*!important/);
+  assert.match(sharedRows, /grid-template-columns:\s*40px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
+  assert.match(sharedRows, /min-height:\s*64px\s*!important/);
+  assert.match(sharedRows, /padding:\s*8px\s+10px\s*!important/);
+});
