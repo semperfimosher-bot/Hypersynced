@@ -593,7 +593,7 @@ async def _artist_artwork_backfill_loop() -> None:
                         ),
                     ).order_by(
                         ArtistProfile.updated_at.asc()
-                    ).limit(2)
+                    ).limit(4)
                 )
                 batch = list(result.scalars())
             for artist_id in batch:
