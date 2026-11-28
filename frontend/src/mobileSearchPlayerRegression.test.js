@@ -26,9 +26,11 @@ test("mobile player swipes skip tracks in both directions", () => {
 });
 
 
-test("mobile rows restore normal horizontal layout and hide rank numbers", () => {
-  assert.match(sharedRows, /MOBILE ROW RESTORE[\s\S]*?\.hs-search-page \.hs-search-track__rank[\s\S]*?display:\s*none\s*!important/);
-  assert.match(sharedRows, /grid-template-columns:\s*40px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
-  assert.match(sharedRows, /min-height:\s*64px\s*!important/);
-  assert.match(sharedRows, /padding:\s*8px\s+10px\s*!important/);
+test("mobile album, artist, and collaboration cards use the same normal horizontal row", () => {
+  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?\\.hs-search-page \\.hs-search-entity-card[\\s\\S]*?grid-template-columns:\\s*42px\\s+minmax\\(0,\\s*1fr\\)\\s+32px\\s*!important/);
+  assert.match(sharedRows, /\\.hs-search-page \\.hs-collaboration-song-row/);
+  assert.match(sharedRows, /\\.hs-search-page \\.hs-search-entity-card > svg:last-child[\\s\\S]*grid-column:\\s*3\\s*!important/);
+  assert.match(sharedRows, /\\.hs-artist-row/);
+  assert.match(sharedRows, /text-overflow:\\s*ellipsis\\s*!important/);
+  assert.match(sharedRows, /display:\\s*none\\s*!important/);
 });
