@@ -11,11 +11,11 @@ test("mobile search filters are restricted to All, Playlists, Artists, People", 
 });
 
 test("mobile Search and Library rows restore compact horizontal artwork-copy-action layout", () => {
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\s\S]*?\.hs-search-page \.hs-search-track__copy[\s\S]*?text-align:\s*left\s*!important/);
-  assert.match(sharedRows, /grid-template-columns:\s*42px\s+minmax\(0,\s*1fr\)\s+32px\s*!important/);
-  assert.match(sharedRows, /\.hs-search-page \.hs-search-track__rank[\s\S]*display:\s*none\s*!important/);
-  assert.match(sharedRows, /white-space:\s*nowrap\s*!important/);
-  assert.match(sharedRows, /text-overflow:\s*ellipsis\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?grid-template-columns:\\s*42px\\s+minmax\\(0,\\s*1fr\\)\\s+32px\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card__art[\\s\\S]*?width:\\s*42px\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-track__copy[\\s\\S]*?text-align:\\s*left\\s*!important/);
+  assert.match(sharedRows, /white-space:\\s*nowrap\\s*!important/);
+  assert.match(sharedRows, /text-overflow:\\s*ellipsis\\s*!important/);
 });
 
 test("mobile player swipes skip tracks in both directions", () => {
@@ -26,13 +26,11 @@ test("mobile player swipes skip tracks in both directions", () => {
 });
 
 
-test("mobile album, artist, and collaboration cards use the same normal horizontal row", () => {
-  assert.match(sharedRows, /MOBILE NORMAL ROW SYSTEM[\\s\\S]*?\\.hs-search-page \\.hs-search-entity-card[\\s\\S]*?grid-template-columns:\\s*42px\\s+minmax\\(0,\\s*1fr\\)\\s+32px\\s*!important/);
-  assert.match(sharedRows, /\\.hs-search-page \\.hs-collaboration-song-row/);
-  assert.match(sharedRows, /\\.hs-search-page \\.hs-search-entity-card > svg:last-child[\\s\\S]*grid-column:\\s*3\\s*!important/);
-  assert.match(sharedRows, /\\.hs-artist-row/);
-  assert.match(sharedRows, /text-overflow:\\s*ellipsis\\s*!important/);
-  assert.match(sharedRows, /display:\\s*none\\s*!important/);
+test("mobile entity rows explicitly place copy beside artwork", () => {
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > \\.hs-search-entity-card__art[\\s\\S]*?grid-column:\\s*1\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > \\.hs-search-track__copy[\\s\\S]*?grid-column:\\s*2\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-search-entity-card > svg:last-child[\\s\\S]*?grid-column:\\s*3\\s*!important/);
+  assert.match(sharedRows, /MOBILE ROW RESTORE[\\s\\S]*?hs-collaboration-song-row > \\.hs-search-track__copy/);
 });
 
 test("mobile album artist and collaboration artwork cannot overlap row copy", () => {
