@@ -1353,3 +1353,15 @@
     gap: 10px !important;
   }
 }
+
+/* Actually reduce the triangle glyph inside the entity-row square, not the square itself. */
+@media (max-width: 979px) {
+  .hs-search-page .hs-search-entity-card > svg:last-child path,
+  .hs-search-page .hs-search-entity-row > svg:last-child path,
+  .hs-search-page .hs-collaboration-song-row > svg:last-child path,
+  .hs-library-page .hs-library-entity-row > svg:last-child path,
+  .hs-artist-row > svg:last-child path {
+    transform: scale(0.32) !important;
+    transform-origin: center !important;
+  }
+}
